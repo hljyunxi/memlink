@@ -41,13 +41,16 @@ myconfig_create(char *filename)
     fp = fopen(filepath, "r");
     if (NULL == fp) {
         DERROR("open config file error: %s\n", filepath);
+        MEMLINK_EXIT;
     }
 
     char buffer[2048];
     while (1) {
         if (fgets(buffer, 2048, fp) == NULL) {
+            DINFO("config file read complete!\n");
             break;
         }
+        //DINFO("buffer: %s\n", buffer);
         char *sp = strchr(buffer, '=');
         if (sp == NULL) {
             DERROR("config file error: %s\n", buffer);
@@ -75,6 +78,7 @@ myconfig_create(char *filename)
                 *(end + 1) = 0;
                 break;
             }
+            end += 1;
         }
         
         if (strcmp(buffer, "block_data_count") == 0) {
@@ -107,6 +111,7 @@ myconfig_create(char *filename)
          
     }
 
+    fclose(fp);
 
     g_cf = mcf;
 
@@ -138,34 +143,35 @@ runtime_create(char *pgname)
         MEMLINK_EXIT;
         return NULL;
     }
-
+    DINFO("mutex init ok!\n");
     rt->synclog = synclog_create("bin.log");
     if (NULL == rt->synclog) {
         DERROR("synclog_create error!\n");
         MEMLINK_EXIT;
         return NULL;
     }
-
+    DINFO("synclog open ok!\n");
     rt->mpool = mempool_create();
     if (NULL == rt->mpool) {
         DERROR("mempool create error!\n");
         MEMLINK_EXIT;
         return NULL;
     }
-
+    DINFO("mempool create ok!\n");
     rt->wrthread = wrthread_create();
     if (NULL == rt->wrthread) {
         DERROR("wrthread_create error!\n");
         MEMLINK_EXIT;
         return NULL;
     }
-
+    DINFO("write thread create ok!\n");
     rt->server = mainserver_create();
     if (NULL == rt->server) {
         DERROR("mainserver_create error!\n");
         MEMLINK_EXIT;
         return NULL;
     }
+    DINFO("main thread create ok!\n");
 
     g_runtime = rt;
 

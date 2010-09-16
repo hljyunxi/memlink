@@ -35,10 +35,11 @@ int main(int argc, char *argv[])
     struct rlimit rlim;
 
     myconfig_create("memlink.conf");
+    DINFO("config ok!\n");
     logfile_create("stdout", 3);
-
+    DINFO("logfile ok!\n");
     runtime_create(argv[0]);
-
+    DINFO("runtime ok!\n");
     
     if (g_cf->max_core) {
         struct rlimit rlim_new;
@@ -83,6 +84,7 @@ int main(int argc, char *argv[])
     }
 
     signal_install();
+    DINFO("signal ok!\n");
 
     if (g_cf->is_daemon) {
         ret = daemonize(g_cf->max_core, 0);
