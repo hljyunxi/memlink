@@ -140,6 +140,7 @@ data_ready(Conn *conn, char *data, int datalen)
     pthread_mutex_lock(&g_runtime->mutex);
     switch(cmd) {
         case CMD_DUMP:
+            pthread_mutex_unlock(&g_runtime->mutex);
             dumpfile_start(conn->sock, 0, conn);
             break;
         case CMD_CLEAN:

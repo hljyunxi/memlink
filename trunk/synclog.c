@@ -100,17 +100,19 @@ synclog_create()
         return NULL;
     }
     snprintf(slog->filename, PATH_MAX, "%s/%s", g_cf->datadir, SYNCLOG_NAME);
+    DINFO("synclog filename: %s\n", slog->filename);
 
     int ret;
     struct stat stbuf;
 
     ret = stat(slog->filename, &stbuf);
+    DINFO("stat: %d, err: %s\n", ret, strerror(errno));
     if (ret == -1 && errno == ENOENT) { // not found file, check last log id from disk filename
         unsigned int lastver = synclog_lastlog();
         DINFO("synclog_lastlog: %u\n", lastver);
         g_runtime->logver = lastver;
     }
-
+    DINFO("try open sync logfile ...\n");
     slog->fd = open(slog->filename, O_RDWR|O_CREAT|O_APPEND, 0644);
     if (slog->fd == -1) {
         DERROR("open synclog %s error: %s\n", slog->filename, strerror(errno));
@@ -136,14 +138,22 @@ synclog_create()
     }else if (cur < len) { // file error, clear
         truncate_file(slog->fd, 0);
         truncate_file(slog->fd, len);
+        
         unsigned short format = 0;
         readn(slog->fd, &format, sizeof(short));
 
         unsigned int nowver = 0;
         readn(slog->fd, &nowver, sizeof(int));
 
+        if (nowver > 0) {
+            g_runtime->logver = nowver;
+        }else{
+            nowver = synclog_lastlog() + 1;
+            g_runtime->logver = nowver;
+        }
+
         format = DUMP_FORMAT_VERSION;
-        unsigned int newver = g_runtime->logver + 1;
+        unsigned int newver = g_runtime->logver;
         write(slog->fd, &format, sizeof(short));
         write(slog->fd, &newver, sizeof(int));
         g_runtime->logver = newver;
@@ -174,7 +184,7 @@ synclog_new(SyncLog *slog)
     truncate_file(slog->fd, slog->len);
 
     unsigned short format = DUMP_FORMAT_VERSION;
-    unsigned int newver = g_runtime->logver + 1;
+    unsigned int newver = g_runtime->logver;
     writen(slog->fd, &format, sizeof(short));
     writen(slog->fd, &newver, sizeof(int));
 
@@ -214,17 +224,42 @@ int
 synclog_validate(SyncLog *slog)
 {
     int i;
-    int looplen = slog->len - sizeof(short) - sizeof(int) * 2;
-    char *data  = slog->index + sizeof(short) + sizeof(int) * 2;
+    int looplen = (slog->len - sizeof(short) - sizeof(int) * 2) / sizeof(int); // index zone length
+    char *data  = slog->index + sizeof(short) + sizeof(int) * 2; // skip to index
     unsigned int *loopdata = (unsigned int*)data;
     unsigned int lastidx = 0;
 
     for (i = 0; i < looplen; i++) {
         if (loopdata[i] == 0) {
             //off_t nowpos = lseek(slog->fd, 0, SEEK_SET);
-            lseek(slog->fd, lastidx, SEEK_SET);
+            //lseek(slog->fd, lastidx, SEEK_SET);
+            i -= 1;
+            break;
         }
         lastidx = loopdata[i];
+    }
+
+    unsigned short dlen;
+    int            idx;
+    int            filelen = lseek(slog->fd, 0, SEEK_END);
+
+    idx = loopdata[i];     
+
+    while (1) {
+        int cur = lseek(slog->fd, idx, SEEK_SET);
+        readn(slog->fd, &dlen, sizeof(short));
+
+
+        if (filelen - cur == dlen + sizeof(short)) {
+            break;
+        }else if (filelen - cur < dlen + sizeof(short)) {
+            loopdata[i] = 0;
+            lseek(slog->fd, idx, SEEK_SET);
+            break;
+        }else{
+            idx = idx + sizeof(short) + dlen;
+            continue;
+        }
     }
 
     return 0;
@@ -290,6 +325,7 @@ synclog_lastlog()
     while (readdir_r(mydir, nodes, &result) == 0) {
         if (nodes == NULL)
             break;
+        DINFO("name: %s\n", nodes->d_name);
         if (strncmp(nodes->d_name, "bin.log.", 8) == 0) {
             int binid = atoi(&nodes->d_name[8]);
             if (binid > maxid) {
