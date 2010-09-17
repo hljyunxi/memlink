@@ -8,7 +8,7 @@
 #include "logfile.h"
 #include "myconfig.h"
 #include "server.h"
-#include "wrthread.h"
+#include "wthread.h"
 #include "network.h"
 #include "zzmalloc.h"
 
@@ -89,7 +89,7 @@ static void*
 thserver_run(void *arg)
 {
     ThreadServer *ts = (ThreadServer*)arg;
-
+    DINFO("thserver_run loop ...\n");
     event_base_loop(ts->base, 0);
 
     return NULL;

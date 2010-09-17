@@ -9,7 +9,7 @@
 #include "synclog.h"
 #include "hashtable.h"
 #include "mem.h"
-#include "wrthread.h"
+#include "wthread.h"
 #include "server.h"
 
 typedef struct _myconfig
@@ -41,7 +41,7 @@ typedef struct _runtime
     MemPool         *mpool; 
     HashTable       *ht;
     volatile int    indump;
-    WRThread        *wrthread;
+    WThread         *wthread;
     MainServer      *server;
 }Runtime;
 

@@ -2,7 +2,7 @@
 #define MEMLINK_QUEUE_H
 
 #include <stdio.h>
-#include "wrthread.h"
+#include "wthread.h"
 
 #define MEMLINK_QUEUE_MAX_FREE  1000
 
