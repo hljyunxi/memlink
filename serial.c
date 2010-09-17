@@ -322,7 +322,7 @@ cmd_tag_pack(char *data, char *key, char *value, unsigned char valuelen, unsigne
 {
     unsigned char cmd = CMD_TAG;
     unsigned short len;
-    int count;
+    int count = sizeof(short);
 
     memcpy(data + count, &cmd, sizeof(char));
     count += sizeof(char);
