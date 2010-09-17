@@ -18,13 +18,18 @@ static void sig_handler(const int sig) {
 
 int signal_install()
 {
-    signal(SIGINT, sig_handler);
+    struct sigaction sigact;
+    //int    ret;
 
-    if (sigignore(SIGPIPE) == -1) {
-        DERROR("failed to ignore SIGPIPE\n");
-        return -1;
-    }
-   
+    sigact.sa_handler = sig_handler;
+    sigemptyset(&sigact.sa_mask);
+    sigact.sa_flags = 0;
+
+    sigaction(SIGINT, &sigact, NULL);
+
+    sigact.sa_handler = SIG_IGN;
+    sigaction(SIGPIPE, &sigact, NULL);
+
     return 0;
 }
 
