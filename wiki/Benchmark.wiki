@@ -1,4 +1,4 @@
-#性能测试报告
+#Benchmark
 
 = Introduction =
 
@@ -6,6 +6,9 @@ Memlink用于持久化存储论坛中forum=>thread list,thread=>post list数据�
 
 
 = Details =
+硬件
+Dell 2950 16G Mem SATA Disk
+
 数据模型
 {{{
 CREATE TABLE `ThreadList` (
