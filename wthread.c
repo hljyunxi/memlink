@@ -2,12 +2,12 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/ioctl.h>
+#include <sys/socket.h>
 #ifdef __linux
 #include <linux/if.h>
 #endif
 #include <sys/un.h>
 #include <sys/types.h>
-#include <sys/socket.h>
 #include <unistd.h>
 #include <netdb.h>
 #include "wthread.h"
