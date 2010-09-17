@@ -1,0 +1,19 @@
+#summary One-sentence summary of this page.
+
+= Introduction =
+
+Memlink是持久化的内存数据引擎，保存key => List数据对象，List是可以排序的。可以用于海量数据的论坛类产品，保存帖子列表逻辑关系；也可以用于海量数据的微博产品，保存消息队列。
+
+特点：
+  * 内存数据引擎，性能极为高效
+  * 数据持久化，非Cache模式
+  * 内存使用精简
+  * 分布式，主从同步
+
+
+= Details =
+
+Add your content here.  Format your content with:
+  * Text in *bold* or _italic_
+  * Headings, paragraphs, and lists
+  * Automatic links to other wiki pages
