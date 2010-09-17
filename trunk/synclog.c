@@ -106,11 +106,12 @@ synclog_create()
     struct stat stbuf;
 
     ret = stat(slog->filename, &stbuf);
-    DINFO("stat: %d, err: %s\n", ret, strerror(errno));
+    //DINFO("stat: %d, err: %s\n", ret, strerror(errno));
     if (ret == -1 && errno == ENOENT) { // not found file, check last log id from disk filename
         unsigned int lastver = synclog_lastlog();
-        DINFO("synclog_lastlog: %u\n", lastver);
+        DINFO("synclog_lastlog: %d\n", lastver);
         g_runtime->logver = lastver;
+        DINFO("haha\n");
     }
     DINFO("try open sync logfile ...\n");
     slog->fd = open(slog->filename, O_RDWR|O_CREAT|O_APPEND, 0644);
@@ -314,7 +315,7 @@ synclog_lastlog()
 {
     DIR     *mydir; 
     struct  dirent *nodes;
-    struct  dirent *result;
+    //struct  dirent *result;
     int     maxid = 0;
 
     mydir = opendir(g_cf->datadir);
@@ -322,9 +323,9 @@ synclog_lastlog()
         DERROR("opendir %s error: %s\n", g_cf->datadir, strerror(errno));
         return 0;
     }
-    while (readdir_r(mydir, nodes, &result) == 0) {
-        if (nodes == NULL)
-            break;
+    DINFO("readdir ...\n");
+    //while (readdir_r(mydir, nodes, &result) == 0 && nodes) {
+    while ((nodes = readdir(mydir)) != NULL) {
         DINFO("name: %s\n", nodes->d_name);
         if (strncmp(nodes->d_name, "bin.log.", 8) == 0) {
             int binid = atoi(&nodes->d_name[8]);
@@ -333,6 +334,8 @@ synclog_lastlog()
             }
         }
     }
+    closedir(mydir);
+
     return maxid;
 }
 

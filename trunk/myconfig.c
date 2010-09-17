@@ -6,7 +6,6 @@
 #include "myconfig.h"
 #include "zzmalloc.h"
 #include "synclog.h"
-#include "wrthread.h"
 #include "server.h"
 
 MyConfig *g_cf;
@@ -134,6 +133,8 @@ runtime_create(char *pgname)
         return NULL; 
     }
     memset(rt, 0, sizeof(Runtime));
+    g_runtime = rt;
+
     realpath(pgname, rt->home);
    
     int ret;
@@ -158,9 +159,9 @@ runtime_create(char *pgname)
         return NULL;
     }
     DINFO("mempool create ok!\n");
-    rt->wrthread = wrthread_create();
-    if (NULL == rt->wrthread) {
-        DERROR("wrthread_create error!\n");
+    rt->wthread = wthread_create();
+    if (NULL == rt->wthread) {
+        DERROR("wthread_create error!\n");
         MEMLINK_EXIT;
         return NULL;
     }
@@ -173,7 +174,6 @@ runtime_create(char *pgname)
     }
     DINFO("main thread create ok!\n");
 
-    g_runtime = rt;
 
     DINFO("create Runtime ok!\n");
 
