@@ -2,11 +2,12 @@
 
 = Introduction =
 
-Memlink用于持久化存储论坛中forum=>thread list,thread=>post list数据，下面对比了不同数据存储引擎存储上述逻辑关系的性能。
+Memlink用于持久化存储论坛中forum=>thread list,thread=>post list数据，下面对比了不同数据存储引擎存储上述逻辑关系的查询性能和内存开销。
 
 
 = Details =
 数据模型
+{{{
 CREATE TABLE `ThreadList` (
   `forumid` int(11) NOT NULL,
   `threadid` int(11) NOT NULL,
@@ -14,18 +15,19 @@ CREATE TABLE `ThreadList` (
   `reply_time` datetime NOT NULL,
   KEY `threadlist` (`forumid`,`reply_time`,`status`)
 ) ENGINE=Innodb DEFAULT CHARSET=utf8;
+}}}
 
-|| *operation* || *engine* || *api* || *count(*) 100k* || *count(*) 500k* || *count(*) 1M* || *count(*) 5M* ||
+|| *operation* || *engine* || *api* || *count 100k* || *count 500k* || *count 1M* || *count 5M* ||
 || Frist 10k || mysql || select threadid from ThreadList where forumid=x order by reply_time limit 10000,100 || time/mem || time/mem ||
 || Frist 100k || mysql || select threadid from ThreadList where forumid=x order by reply_time limit 100000,100 || ||
 || Frist 1M || mysql || select threadid from ThreadList where forumid=x order by reply_time limit 1000000,100 || ||
 
-|| *operation* || *engine* || *api* || *count(*) 100k* || *count(*) 500k* || *count(*) 1M* || *count(*) 5M* ||
+|| *operation* || *engine* || *api* || *count 100k* || *count 500k* || *count 1M* || *count 5M* ||
 || Frist 10k || redis || ./redis-cli lrange forumid 10000,10100 || ||
 || Frist 100k || redis || ./redis-cli lrange forumid 100000,100100  || ||
 || Frist 1M || redis || ./redis-cli lrange forumid 1000000,1000100 || ||
 
-|| *operation* || *engine* || *api* || *count(*) 100k* || *count(*) 500k* || *count(*) 1M* || *count(*) 5M* ||
+|| *operation* || *engine* || *api* || *count 100k* || *count 500k* || *count 1M* || *count 5M* ||
 || Frist 10k || memlink ||  || ||
 || Frist 100k || memlik ||  || ||
 || Frist 1M || memlink ||  || ||
