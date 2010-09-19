@@ -30,6 +30,8 @@ MainServer*     mainserver_create();
 void            mainserver_destroy(MainServer *ms);
 void            mainserver_loop(MainServer *ms);
 
+void            mainserver_read(int fd, short event, void *arg);
+
 int             thserver_init(ThreadServer *ts);
 
 #endif

@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include "logfile.h"
 #include "serial.h"
 
 static int 
@@ -27,6 +28,39 @@ pack_string(char *s, char *v, unsigned char vlen)
     memcpy(s + sizeof(char), v, vlen);
 
     return vlen + sizeof(char);
+}
+
+static int
+unpack_mask(char *s, unsigned int *v, unsigned char *vlen)
+{
+    unsigned char len;
+    int clen = len * sizeof(int);
+    //int i;
+
+    memcpy(&len, s, sizeof(char));
+    memcpy(v, s + sizeof(char), clen);
+
+    if (vlen) {
+        *vlen = len;
+    }
+    return clen + sizeof(char);
+}
+
+static int
+pack_mask(char *s, unsigned int *v, unsigned char vlen)
+{
+    int clen = vlen * sizeof(int);
+
+    if (vlen <= 0) {
+        DERROR("vlen must not <= 0\n");
+        MEMLINK_EXIT;
+        return 0;
+    }
+
+    memcpy(s, &vlen, sizeof(char));
+    memcpy(s + sizeof(char), v, clen);
+
+    return clen + sizeof(char);
 }
 
 int 
@@ -123,69 +157,47 @@ cmd_stat_unpack(char *data, char *key)
 }
 
 int 
-cmd_create_pack(char *data, unsigned char valuelen, unsigned char masknum, char *maskformat)
+cmd_create_pack(char *data, char *key, unsigned char valuelen, unsigned char masknum, char *maskformat)
 {
     unsigned char  cmd = CMD_STAT;
     unsigned short count = sizeof(short);
 
     memcpy(data + count, &cmd, sizeof(char)); 
     count += sizeof(char);
+    count += pack_string(data, key, 0);
     memcpy(data + count, &valuelen, sizeof(char));
     count += sizeof(char);
 
-    /*
-    memcpy(data + count, &masknum, sizeof(char));
-    count += sizeof(char);
-    memcpy(data + count, maskformat, masknum);
-    count += masknum;
-    */
     count += pack_string(data + count, maskformat, masknum);
     count -= sizeof(short);
     memcpy(data, &count, sizeof(short));
     
     return count + sizeof(short);
-
 }
 
 int 
-cmd_create_unpack(char *data, unsigned char *valuelen, unsigned char *masknum, char *maskformat)
+cmd_create_unpack(char *data, char *key, unsigned char *valuelen, unsigned char *masknum, char *maskformat)
 {
-    //unsigned short len; 
     int count = sizeof(short) + sizeof(char);
+    unsigned char len;
 
+    count += unpack_string(data + count, key, &len);
     memcpy(valuelen, data + count, sizeof(char));
     count += sizeof(char);
-    /*
-    memcpy(masknum, data + count, sizeof(char));
-    count += sizeof(char);
-    memcpy(*maskformat, data + count, *masknum);
-    */
     unpack_string(data + count, maskformat, masknum);
 
     return 0;
 }
-
 
 int 
 cmd_del_pack(char *data, char *key, char *value, unsigned char valuelen)
 {
     unsigned char cmd = CMD_DEL;
     unsigned short len;
-    //unsigned char keylen = strlen(key);
     int count = sizeof(short);
 
     memcpy(data + count, &cmd, sizeof(char));
     count += sizeof(char);
-    /*
-    memcpy(data + count, &keylen, sizeof(char));
-    count += sizeof(char);
-    memcpy(data + count, key, keylen);
-    count += keylen;
-    memcpy(data + count, &valuelen, sizeof(char)); 
-    count += sizeof(char);
-    memcpy(data + count, value, valuelen);
-    count += valuelen;
-    */
 
     count += pack_string(data + count, key, 0);
     count += pack_string(data + count, value, valuelen);
@@ -200,7 +212,6 @@ int
 cmd_del_unpack(char *data, char *key, char *value, unsigned char *valuelen)
 {
     int count = sizeof(short) + sizeof(char);
-    //unsigned char keylen;
     
     count += unpack_string(data + count, key, NULL);
     unpack_string(data + count, value, valuelen);
@@ -210,7 +221,7 @@ cmd_del_unpack(char *data, char *key, char *value, unsigned char *valuelen)
 
 int 
 cmd_insert_pack(char *data, char *key, char *value, unsigned char valuelen, 
-                unsigned char masknum, char *maskformat, unsigned int pos)
+                unsigned char masknum, unsigned int *maskarray, unsigned int pos)
 {
     unsigned char cmd = CMD_INSERT;
     unsigned short len;
@@ -220,7 +231,8 @@ cmd_insert_pack(char *data, char *key, char *value, unsigned char valuelen,
     count += sizeof(char);
     count += pack_string(data + count, key, 0);  
     count += pack_string(data + count, value, valuelen);
-    count += pack_string(data + count, maskformat, masknum);
+    //count += pack_string(data + count, maskformat, masknum);
+    count += pack_mask(data + count, maskarray, masknum);
     memcpy(data + count, &pos, sizeof(int));
 
     len = count - sizeof(short);
@@ -231,14 +243,15 @@ cmd_insert_pack(char *data, char *key, char *value, unsigned char valuelen,
 
 int 
 cmd_insert_unpack(char *data, char *key, char *value, unsigned char *valuelen,
-                  unsigned char *masknum, char *maskformat, unsigned int *pos)
+                  unsigned char *masknum, unsigned int *maskarray, unsigned int *pos)
 {
     int count = sizeof(short) + sizeof(char);
 
     unsigned char vlen;
     count += unpack_string(data + count, key, NULL);
     count += unpack_string(data + count, value, &vlen);
-    count += unpack_string(data + count, maskformat, masknum);
+    //count += unpack_string(data + count, maskformat, masknum);
+    count += unpack_mask(data + count, maskarray, masknum);
     memcpy(pos, data + count, sizeof(int));
 
     *valuelen = vlen;
@@ -283,7 +296,7 @@ cmd_update_unpack(char *data, char *key, char *value, unsigned char *valuelen, u
 
 int 
 cmd_mask_pack(char *data, char *key, char *value, unsigned char valuelen, 
-              unsigned char masknum, char *maskformat)
+              unsigned char masknum, unsigned int *maskarray)
 {
     unsigned char cmd = CMD_MASK;
     unsigned short len;
@@ -293,7 +306,8 @@ cmd_mask_pack(char *data, char *key, char *value, unsigned char valuelen,
     count += sizeof(char);
     count += pack_string(data + count, key, 0);
     count += pack_string(data + count, value, valuelen);
-    count += pack_string(data + count, maskformat, masknum);
+    //count += pack_string(data + count, maskformat, masknum);
+    count += pack_mask(data + count, maskarray, masknum);
 
     len = count - sizeof(short);
     
@@ -303,17 +317,18 @@ cmd_mask_pack(char *data, char *key, char *value, unsigned char valuelen,
 
 int 
 cmd_mask_unpack(char *data, char *key, char *value, unsigned char *valuelen, 
-                unsigned char *masknum, char *maskformat)
+                unsigned char *masknum, unsigned int *maskarray)
 {
     int count = sizeof(short) + sizeof(char);
-    unsigned char vlen, mlen; 
+    unsigned char vlen; 
 
     count += unpack_string(data + count, key, NULL);
     count += unpack_string(data + count, value, &vlen);
-    count += unpack_string(data + count, maskformat, &mlen);
+    //count += unpack_string(data + count, maskformat, &mlen);
+    count += unpack_mask(data + count, maskarray, masknum);
 
     *valuelen = vlen;
-    *masknum  = mlen;
+    //*masknum  = mlen;
     return 0;
 }
 
@@ -350,7 +365,7 @@ cmd_tag_unpack(char *data, char *key, char *value, unsigned char *valuelen, unsi
 }
 
 int 
-cmd_range_pack(char *data, char *key, unsigned char masknum, char *maskformat, 
+cmd_range_pack(char *data, char *key, unsigned char masknum, unsigned int *maskarray, 
                unsigned int frompos, unsigned int rlen)
 {
     unsigned char cmd = CMD_RANGE;
@@ -360,7 +375,8 @@ cmd_range_pack(char *data, char *key, unsigned char masknum, char *maskformat,
     memcpy(data + count, &cmd, sizeof(char));
     count += sizeof(char);
     count += pack_string(data + count, key, 0);
-    count += pack_string(data + count, maskformat, masknum);
+    //count += pack_string(data + count, maskformat, masknum);
+    count += pack_mask(data + count, maskarray, masknum);
     memcpy(data + count, &frompos, sizeof(int));
     count += sizeof(int);
     memcpy(data + count, &rlen, sizeof(int));
@@ -372,17 +388,18 @@ cmd_range_pack(char *data, char *key, unsigned char masknum, char *maskformat,
 }
 
 int 
-cmd_range_unpack(char *data, char *key, unsigned char *masknum, char *maskformat, 
+cmd_range_unpack(char *data, char *key, unsigned char *masknum, unsigned int *maskarray, 
                  unsigned int *frompos, unsigned int *len)
 {
     int count = sizeof(short) + sizeof(char);
-    unsigned char mlen;
+    //unsigned char mlen;
     count += unpack_string(data + count, key, NULL); 
-    count += unpack_string(data + count, maskformat, &mlen);
+    //count += unpack_string(data + count, maskformat, &mlen);
+    count += unpack_mask(data + count, maskarray, masknum);
     memcpy(frompos, data + count, sizeof(int));
     count += sizeof(int);
     memcpy(len, data + count, sizeof(int));
-    *masknum = mlen;
+    //*masknum = mlen;
     return 0;
 }
 

@@ -18,6 +18,38 @@
 #include "dumpfile.h"
 #include "zzmalloc.h"
 
+Conn*   
+conn_create(int svrfd)
+{
+    Conn    *conn;
+    int     newfd;
+    struct sockaddr_in  clientaddr;
+    socklen_t           slen = sizeof(clientaddr);
+
+    while (1) {
+        newfd = accept(svrfd, (struct sockaddr*)&clientaddr, &slen);
+        if (newfd == -1) {
+            if (errno == EINTR) {
+                continue;
+            }else{
+                DERROR("accept error: %s\n", strerror(errno));
+                return NULL;
+            }
+        }
+        break;
+    }
+
+    conn = (Conn*)zz_malloc(sizeof(Conn));
+    if (conn == NULL) {
+        DERROR("wr_read malloc error.\n");
+        MEMLINK_EXIT;
+    }
+    memset(conn, 0, sizeof(Conn)); 
+    conn->sock = newfd;
+
+    return conn;
+}
+
 void
 conn_destroy(Conn *conn)
 {
@@ -93,17 +125,61 @@ make_reply_data(char **retdata, short retcode, char *msg, char *replydata, int r
     return datalen;
 }
 
+/**
+ * 回复数据
+ */
 static int
 data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
 {
-    int datalen = 0; 
+    //int datalen = 0; 
+    //char *wdata;
+   
+
+    int mlen = 0;  // msg string len
+    unsigned short datalen = 0;
     char *wdata;
-    
+
+    if (msg) {
+        mlen = strlen(msg);
+    }
+
+    // package length + retcode + msg len + msg + retdata
+    datalen = sizeof(short) + sizeof(short) + sizeof(char) + mlen + retlen;
+    DINFO("datalen: %d\n", datalen); 
+    wdata = (char*)malloc(datalen);
+    if (NULL == wdata) {
+        DERROR("datareply malloc error: %s\n", strerror(errno));
+        MEMLINK_EXIT;
+        return -1;
+    }
+    int count = 0; 
+
+    unsigned short dlen = datalen - sizeof(short);
+    memcpy(wdata, &dlen, sizeof(short));
+    count += sizeof(short);
+    memcpy(wdata + count, &retcode, sizeof(short));
+    count += sizeof(short);
+   
+    unsigned char msglen = mlen;
+    memcpy(wdata + count, &msglen, sizeof(char));
+    count += sizeof(char);
+    if (msglen > 0) {
+        memcpy(wdata + count, msg, msglen);
+        count += msglen;
+    }
+    if (retlen > 0) {
+        memcpy(wdata + count, retdata, retlen);
+        count += retlen;
+    }
+
+    //*retdata = wdata;
+
+    /*
     datalen = make_reply_data(&wdata, retcode, msg, retdata, retlen);
     if (datalen <= 0) {
         DERROR("make_reply_data error!\n");
         return -1;
-    }
+    }*/
 
     if (conn->wbuf) {
         zz_free(conn->wbuf);
@@ -131,11 +207,13 @@ data_ready(Conn *conn, char *data, int datalen)
     unsigned char   valuelen;
     unsigned char   masknum;
     char            maskformat[HASHTABLE_MASK_MAX_LEN];
+    unsigned int    maskarray[HASHTABLE_MASK_MAX_LEN];
     unsigned int    pos;
     unsigned char   tag;
     int             vnum;
 
     memcpy(&cmd, data + sizeof(short), sizeof(char));
+    DINFO("data ready cmd: %d\n", cmd);
 
     pthread_mutex_lock(&g_runtime->mutex);
     switch(cmd) {
@@ -148,24 +226,27 @@ data_ready(Conn *conn, char *data, int datalen)
             ret = hashtable_clean(g_runtime->ht, key); 
             break;
         case CMD_CREATE:
-            cmd_create_unpack(data, &valuelen, &masknum, maskformat);
+            DINFO("unpack create ...\n");
+            cmd_create_unpack(data, key, &valuelen, &masknum, maskformat);
+            DINFO("unpack valuelen: %d, masknum: %d\n", valuelen, masknum);
             vnum = valuelen;
             ret = hashtable_add_info(g_runtime->ht, key, vnum, maskstr);
+            DINFO("hashtabl_add_info return: %d\n", ret);
             break;
         case CMD_DEL:
             cmd_del_unpack(data, key, value, &valuelen);
             ret = hashtable_del(g_runtime->ht, key, value);
             break;
         case CMD_INSERT:
-            cmd_insert_unpack(data, key, value, &valuelen, &masknum, maskformat, &pos);
-            ret = hashtable_add(g_runtime->ht, key, value, maskformat, pos);
+            cmd_insert_unpack(data, key, value, &valuelen, &masknum, maskarray, &pos);
+            ret = hashtable_add_mask(g_runtime->ht, key, value, maskarray, masknum, pos);
             break;
         case CMD_UPDATE:
             cmd_update_unpack(data, key, value, &valuelen, &pos);
             ret = hashtable_update(g_runtime->ht, key, value, pos);
             break;
         case CMD_MASK:
-            cmd_mask_unpack(data, key, value, &valuelen, &masknum, maskformat);
+            cmd_mask_unpack(data, key, value, &valuelen, &masknum, maskarray);
             ret = hashtable_mask(g_runtime->ht, key, value, maskstr);
             break;
         case CMD_TAG:
@@ -185,44 +266,30 @@ data_ready(Conn *conn, char *data, int datalen)
 data_ready_over:
     pthread_mutex_unlock(&g_runtime->mutex);
 
-    data_reply(conn, ret, NULL, NULL, 0);
+    ret = data_reply(conn, ret, NULL, NULL, 0);
+    DINFO("data_reply return: %d\n", ret);
 
     return 0;
 }
 
 void
-thread_read(int fd, short event, void *arg)
+wthread_read(int fd, short event, void *arg)
 {
     ThreadBase *tb = (ThreadBase*)arg;
     Conn    *conn;
-    int     newfd;
-    struct sockaddr_in  clientaddr;
-    socklen_t           slen = sizeof(clientaddr);
 
-    while (1) {
-        newfd = accept(fd, (struct sockaddr*)&clientaddr, &slen);
-        if (newfd == -1) {
-            if (errno == EINTR) {
-                continue;
-            }else{
-                DERROR("accept error: %s\n", strerror(errno));
-                return;
-            }
-        }
-        break;
+    conn = conn_create(fd);
+    if (conn) {
+        struct timeval tm;
+
+        evutil_timerclear(&tm);
+        tm.tv_sec = g_cf->timeout;
+
+        event_set(&conn->revt, conn->sock, EV_READ|EV_PERSIST, client_read, conn);
+        event_base_set(tb->base, &conn->revt);
+
+        event_add(&conn->revt, &tm);
     }
-
-    conn = (Conn*)zz_malloc(sizeof(Conn));
-    if (conn == NULL) {
-        DERROR("wr_read malloc error.\n");
-        conn_destroy(conn);
-        MEMLINK_EXIT;
-    }
-    memset(conn, 0, sizeof(Conn)); 
-    conn->sock = newfd;
-
-    event_set(&conn->revt, newfd, EV_READ|EV_PERSIST, client_read, conn);
-    event_base_set(tb->base, &conn->revt);
 }
 
 /*
@@ -310,6 +377,10 @@ client_read(int fd, short event, void *arg)
                 conn_destroy(conn);
                 return;
             }
+        }else if (ret == 0) {
+            DINFO("read 0, close conn.\n");
+            conn_destroy(conn);
+            return;
         }else{
             conn->rlen += ret;
         }
@@ -317,6 +388,7 @@ client_read(int fd, short event, void *arg)
         break;
     }
 
+    DINFO("conn rbuf len: %d\n", conn->rlen);
     while (conn->rlen >= 2) {
         memcpy(&datalen, conn->rbuf, sizeof(short));
 
@@ -340,6 +412,7 @@ client_write(int fd, short event, void *arg)
             DERROR("change event error! close socket\n");
             wrconn_destroy(conn);
         }*/
+        DINFO("%d write complete!\n", fd);
         event_del(&conn->wevt);
         conn->wlen = conn->wpos = 0;
         return;
@@ -349,6 +422,7 @@ client_write(int fd, short event, void *arg)
 
     while (1) {
         ret = write(fd, &conn->wbuf[conn->wpos], conn->wlen - conn->wpos);
+        DINFO("write: %d\n", ret);
         if (ret == -1) {
             if (errno == EINTR) {
                 continue;
@@ -388,7 +462,7 @@ wthread_create()
 
     wt->base = event_base_new();
     
-    event_set(&wt->event, wt->sock, EV_READ | EV_PERSIST, thread_read, wt);
+    event_set(&wt->event, wt->sock, EV_READ | EV_PERSIST, wthread_read, wt);
     event_base_set(wt->base, &wt->event);
 
     struct timeval tm;

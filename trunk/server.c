@@ -34,8 +34,6 @@ mainserver_create()
             MEMLINK_EXIT;
         }
     }
-
-
     
     ms->sock = tcp_socket_server(g_cf->read_port);  
     if (ms->sock < 0) {
@@ -44,7 +42,7 @@ mainserver_create()
     }
  
     ms->base = event_init(); 
-    event_set(&ms->event, ms->sock, EV_READ|EV_PERSIST, thread_read, ms);
+    event_set(&ms->event, ms->sock, EV_READ|EV_PERSIST, mainserver_read, ms);
     event_add(&ms->event, 0);
 
     return ms;
@@ -54,6 +52,31 @@ mainserver_create()
 void 
 mainserver_destroy(MainServer *ms)
 {
+}
+
+void
+mainserver_read(int fd, short event, void *arg)
+{
+    MainServer  *ms = (MainServer*)arg;
+    Conn        *conn;
+
+    conn = conn_create(fd);
+    if (NULL == conn) {
+        return;
+    }
+  
+    int             n   = ms->lastth;
+    ThreadServer    *ts = &ms->threads[n];
+    ms->lastth = (ms->lastth + 1) % g_cf->thread_num;
+
+    queue_append(ts->cq, conn); 
+    
+    DINFO("send %d to notify ...\n", conn->sock);
+    if (write(ts->notify_send_fd, "", 1) == -1) {
+        DERROR("Writing to thread %d notify pipe error: %s\n", n, strerror(errno));
+        conn_destroy(conn);
+    }
+
 }
 
 void
@@ -68,14 +91,22 @@ thserver_notify(int fd, short event, void *arg)
     ThreadServer    *ts   = (ThreadServer*)arg;
     QueueItem       *item = queue_get(ts->cq);
     Conn            *conn;
+    struct timeval  tm;
 
     DINFO("thserver_notify: %d\n", fd);
+
+    char buf;
+    read(ts->notify_recv_fd, &buf, 1);
+
+    evutil_timerclear(&tm);
+    tm.tv_sec = g_cf->timeout;
+
     while (item) {
         conn = item->conn; 
-
+        DINFO("notify fd: %d\n", conn->sock);
         event_set(&conn->revt, conn->sock, EV_READ|EV_PERSIST, client_read, conn);
         event_base_set(ts->base, &conn->revt);
-        event_add(&conn->revt, 0); 
+        event_add(&conn->revt, &tm); 
         
         item = item->next;
     }
