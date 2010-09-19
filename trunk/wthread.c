@@ -18,47 +18,6 @@
 #include "dumpfile.h"
 #include "zzmalloc.h"
 
-Conn*   
-conn_create(int svrfd)
-{
-    Conn    *conn;
-    int     newfd;
-    struct sockaddr_in  clientaddr;
-    socklen_t           slen = sizeof(clientaddr);
-
-    while (1) {
-        newfd = accept(svrfd, (struct sockaddr*)&clientaddr, &slen);
-        if (newfd == -1) {
-            if (errno == EINTR) {
-                continue;
-            }else{
-                DERROR("accept error: %s\n", strerror(errno));
-                return NULL;
-            }
-        }
-        break;
-    }
-
-    conn = (Conn*)zz_malloc(sizeof(Conn));
-    if (conn == NULL) {
-        DERROR("wr_read malloc error.\n");
-        MEMLINK_EXIT;
-    }
-    memset(conn, 0, sizeof(Conn)); 
-    conn->sock = newfd;
-
-    return conn;
-}
-
-void
-conn_destroy(Conn *conn)
-{
-    event_del(&conn->revt);
-    event_del(&conn->wevt);
-    close(conn->sock);
-    zz_free(conn);
-}
-
 /*
 static int
 change_event(Conn *conn, int newflag)
@@ -81,7 +40,7 @@ change_event(Conn *conn, int newflag)
         return -2;
     }
     return 0;
-}*/
+}
 
 int
 make_reply_data(char **retdata, short retcode, char *msg, char *replydata, int rlen)
@@ -123,12 +82,12 @@ make_reply_data(char **retdata, short retcode, char *msg, char *replydata, int r
     *retdata = wdata;
 
     return datalen;
-}
+}*/
 
 /**
  * 回复数据
  */
-static int
+int
 data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
 {
     //int datalen = 0; 
@@ -197,7 +156,7 @@ data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
 }
 
 static int
-data_ready(Conn *conn, char *data, int datalen)
+wdata_ready(Conn *conn, char *data, int datalen)
 {
     char key[1024]; 
     char value[1024];
@@ -255,7 +214,7 @@ data_ready(Conn *conn, char *data, int datalen)
             break;
         default:
             ret = 300;
-            goto data_ready_over;
+            goto wdata_ready_over;
     }
    
     if (ret < 0) {
@@ -263,7 +222,7 @@ data_ready(Conn *conn, char *data, int datalen)
     }else{
         ret = 200;
     }
-data_ready_over:
+wdata_ready_over:
     pthread_mutex_unlock(&g_runtime->mutex);
 
     ret = data_reply(conn, ret, NULL, NULL, 0);
@@ -393,7 +352,7 @@ client_read(int fd, short event, void *arg)
         memcpy(&datalen, conn->rbuf, sizeof(short));
 
         if (conn->rlen >= datalen + sizeof(short)) {
-            data_ready(conn, conn->rbuf, datalen);
+            wdata_ready(conn, conn->rbuf, datalen);
         
             int mlen = datalen + sizeof(short);
             memmove(conn->rbuf, conn->rbuf + mlen, conn->rlen - mlen);

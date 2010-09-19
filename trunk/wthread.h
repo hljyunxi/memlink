@@ -2,24 +2,7 @@
 #define MEMLINK_WTHREAD_H
 
 #include <stdio.h>
-#include <event.h>
-
-#define CONN_MAX_READ_LEN   1024
-
-typedef struct _conn
-{
-    int     sock;
-    char    rbuf[CONN_MAX_READ_LEN];
-    int     rlen;
-    char    *wbuf;
-    int     wlen;
-    int     wpos;
-    struct event revt;
-    struct event wevt;
-}Conn;
-
-Conn*   conn_create(int svrfd);
-void    conn_destroy(Conn *conn);
+#include "conn.h"
 
 typedef struct _thread
 {
@@ -43,11 +26,13 @@ void*       wthread_loop(void *arg);
 
 void        client_read(int fd, short event, void *arg);
 void        client_write(int fd, short event, void *arg);
-void        thread_read(int fd, short event, void *arg);
+int         data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen);
 
-typedef     int (*func_data_ready)(void*, char*, int);
-int         make_reply_data(char **wdata, short retcode, char *msg, char *replydata, int rlen);
-int         client_buffer_read(int fd, char *data, int *dlen, func_data_ready func, void *conn);
+//void        thread_read(int fd, short event, void *arg);
+
+//typedef     int (*func_data_ready)(void*, char*, int);
+//int         make_reply_data(char **wdata, short retcode, char *msg, char *replydata, int rlen);
+//int         client_buffer_read(int fd, char *data, int *dlen, func_data_ready func, void *conn);
 
 
 #endif
