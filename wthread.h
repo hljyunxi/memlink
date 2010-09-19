@@ -18,6 +18,7 @@ typedef struct _conn
     struct event wevt;
 }Conn;
 
+Conn*   conn_create(int svrfd);
 void    conn_destroy(Conn *conn);
 
 typedef struct _thread
