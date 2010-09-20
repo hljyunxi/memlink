@@ -106,8 +106,11 @@ myconfig_create(char *filename)
             mcf->max_core = atoi(start);
         }else if (strcmp(buffer, "is_daemon") == 0) {
             mcf->is_daemon = atoi(start);
+        }else if (strcmp(buffer, "role") == 0) {
+            mcf->role = atoi(start);
+        }else if (strcmp(buffer, "master_addr") == 0) {
+            mcf->master_addr = atoi(start);
         }
-         
     }
 
     fclose(fp);

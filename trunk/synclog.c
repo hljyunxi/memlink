@@ -310,6 +310,9 @@ synclog_destroy(SyncLog *slog)
     zz_free(slog);
 }
 
+/**
+ * synclog_lastlog - find the log number for the latest log file.
+ */
 int
 synclog_lastlog()
 {
