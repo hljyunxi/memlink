@@ -27,6 +27,8 @@ typedef struct _myconfig
     int          max_conn;  // max connection
     int          max_core;  // maximize core file limit
     int          is_daemon; // is run with daemon
+    int          role;
+    int          master_addr;
 }MyConfig;
 
 
