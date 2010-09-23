@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include "mem.h"
+#include "serial.h"
 
 /// HashTable中桶的数量
 #define HASHTABLE_BUNKNUM           1000000
@@ -58,5 +59,6 @@ int             hashtable_range(HashTable *ht, char *key, unsigned int *maskarra
                                 char **data, int *datanum, int *valuesize, int *masksize);
 //int             hashtable_range_mask_bin(HashTable *ht, char *key, void *mask, int frompos, int len);
 int             hashtable_clean(HashTable *ht, char *key);
+int             hashtable_stat(HashTable *ht, char *key, HashTableStat *stat);
 
 #endif

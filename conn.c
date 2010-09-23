@@ -34,7 +34,7 @@ conn_create(int svrfd)
         }
         break;
     }
-
+    DINFO("accept newfd: %d\n", newfd);
     conn = (Conn*)zz_malloc(sizeof(Conn));
     if (conn == NULL) {
         DERROR("wr_read malloc error.\n");

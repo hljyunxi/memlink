@@ -10,6 +10,7 @@
 
 int  dumpfile(HashTable *ht);
 int  loaddump(HashTable *ht);
-void dumpfile_start(int fd, short event, void *arg);
+void dumpfile_call_loop(int fd, short event, void *arg);
+int  dumpfile_call();
 
 #endif

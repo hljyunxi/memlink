@@ -147,6 +147,15 @@ runtime_create(char *pgname)
         MEMLINK_EXIT;
         return NULL;
     }
+    
+    rt->ht = hashtable_create();
+    if (NULL == rt->ht) {
+        DERROR("hashtable_create error!\n");
+        MEMLINK_EXIT;
+        return NULL;
+    }
+    DINFO("hashtable create ok!\n");
+
     DINFO("mutex init ok!\n");
     rt->synclog = synclog_create("bin.log");
     if (NULL == rt->synclog) {

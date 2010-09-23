@@ -16,7 +16,9 @@
 #include "myconfig.h"
 #include "logfile.h"
 #include "dumpfile.h"
+#include "rthread.h"
 #include "zzmalloc.h"
+#include "utils.h"
 
 /*
 static int
@@ -93,7 +95,6 @@ data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
     //int datalen = 0; 
     //char *wdata;
    
-
     int mlen = 0;  // msg string len
     unsigned short datalen = 0;
     char *wdata;
@@ -104,7 +105,7 @@ data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
 
     // package length + retcode + msg len + msg + retdata
     datalen = sizeof(short) + sizeof(short) + sizeof(char) + mlen + retlen;
-    DINFO("datalen: %d\n", datalen); 
+    DINFO("datalen: %d, retcode: %d\n", datalen, retcode); 
     wdata = (char*)malloc(datalen);
     if (NULL == wdata) {
         DERROR("datareply malloc error: %s\n", strerror(errno));
@@ -165,7 +166,7 @@ wdata_ready(Conn *conn, char *data, int datalen)
     int  ret = 0;
     unsigned char   valuelen;
     unsigned char   masknum;
-    char            maskformat[HASHTABLE_MASK_MAX_LEN];
+    unsigned int    maskformat[HASHTABLE_MASK_MAX_LEN];
     unsigned int    maskarray[HASHTABLE_MASK_MAX_LEN];
     unsigned int    pos;
     unsigned char   tag;
@@ -177,38 +178,53 @@ wdata_ready(Conn *conn, char *data, int datalen)
     pthread_mutex_lock(&g_runtime->mutex);
     switch(cmd) {
         case CMD_DUMP:
+            DINFO("<<< cmd DUMP >>>\n");
             pthread_mutex_unlock(&g_runtime->mutex);
-            dumpfile_start(conn->sock, 0, conn);
+            ret = dumpfile_call(conn->sock, 0, conn);
             break;
         case CMD_CLEAN:
+            DINFO("<<< cmd CLEAN >>>\n");
             cmd_clean_unpack(data, key);
+            DINFO("clean unpack key: %s\n", key);
             ret = hashtable_clean(g_runtime->ht, key); 
             break;
         case CMD_CREATE:
-            DINFO("unpack create ...\n");
+            DINFO("<<< cmd CREATE >>>\n");
+            
+            printh(data, datalen);
+
             cmd_create_unpack(data, key, &valuelen, &masknum, maskformat);
-            DINFO("unpack valuelen: %d, masknum: %d\n", valuelen, masknum);
+            DINFO("unpack key: %s, valuelen: %d, masknum: %d, maskarray: %d,%d,%d\n", key, valuelen, masknum, maskformat[0], maskformat[1], maskformat[2]);
             vnum = valuelen;
-            ret = hashtable_add_info(g_runtime->ht, key, vnum, maskstr);
+            ret = hashtable_add_info_mask(g_runtime->ht, key, vnum, maskformat, masknum);
             DINFO("hashtabl_add_info return: %d\n", ret);
             break;
         case CMD_DEL:
+            DINFO("<<< cmd DEL >>>\n");
             cmd_del_unpack(data, key, value, &valuelen);
+            DINFO("unpack del, key: %s, value: %s, valuelen: %d\n", key, value, valuelen);
             ret = hashtable_del(g_runtime->ht, key, value);
+            DINFO("hashtable_del: %d\n", ret);
             break;
         case CMD_INSERT:
+            DINFO("<<< cmd INSERT >>>\n");
             cmd_insert_unpack(data, key, value, &valuelen, &masknum, maskarray, &pos);
+            DINFO("unpak mask: %d, array:%d,%d,%d\n", masknum, maskarray[0], maskarray[1], maskarray[2]);
             ret = hashtable_add_mask(g_runtime->ht, key, value, maskarray, masknum, pos);
+            DINFO("hashtable_add_mask: %d\n", ret);
             break;
         case CMD_UPDATE:
+            DINFO("<<< cmd UPDATE >>>\n");
             cmd_update_unpack(data, key, value, &valuelen, &pos);
             ret = hashtable_update(g_runtime->ht, key, value, pos);
             break;
         case CMD_MASK:
+            DINFO("<<< cmd MASK >>>\n");
             cmd_mask_unpack(data, key, value, &valuelen, &masknum, maskarray);
             ret = hashtable_mask(g_runtime->ht, key, value, maskstr);
             break;
         case CMD_TAG:
+            DINFO("<<< cmd TAG >>>\n");
             cmd_tag_unpack(data, key, value, &valuelen, &tag);
             ret = hashtable_tag(g_runtime->ht, key, value, tag);
             break;
@@ -234,20 +250,27 @@ wdata_ready_over:
 void
 wthread_read(int fd, short event, void *arg)
 {
-    ThreadBase *tb = (ThreadBase*)arg;
+    WThread *wt = (WThread*)arg;
     Conn    *conn;
-
+    
+    DINFO("wthread_read ...\n");
     conn = conn_create(fd);
     if (conn) {
-        struct timeval tm;
+        int ret = 0;
+        conn->port = g_cf->write_port;
+        //struct timeval tm;
+        DINFO("new conn: %d\n", conn->sock);
 
-        evutil_timerclear(&tm);
-        tm.tv_sec = g_cf->timeout;
+        //evutil_timerclear(&tm);
+        //tm.tv_sec = g_cf->timeout;
 
         event_set(&conn->revt, conn->sock, EV_READ|EV_PERSIST, client_read, conn);
-        event_base_set(tb->base, &conn->revt);
+        ret = event_base_set(wt->base, &conn->revt);
+        DINFO("event_base_set: %d\n", ret);
 
-        event_add(&conn->revt, &tm);
+        //event_add(&conn->revt, &tm);
+        ret = event_add(&conn->revt, 0);
+        DINFO("event_add: %d\n", ret);
     }
 }
 
@@ -302,17 +325,6 @@ client_buffer_read(int fd, char *data, int *dlen, func_data_ready func, void *co
 void
 client_read(int fd, short event, void *arg)
 {
-    /*
-    Conn *conn = (Conn*)arg;
-    int rlen;
-
-    rlen = client_buffer_read(fd, conn->rbuf, &conn->rlen, (func_data_ready)data_ready, conn);
-    if (rlen < 0) {
-        DERROR("client_buffer_read error! %d\n", rlen);
-        return;
-    }
-    */
-
     Conn *conn = (Conn*)arg;
     int     ret;
     unsigned short   datalen = 0;
@@ -320,13 +332,17 @@ client_read(int fd, short event, void *arg)
     if (conn->rlen >= 2) {
         memcpy(&datalen, conn->rbuf, sizeof(short));
     }
+    DINFO("client read datalen: %d\n", datalen);
+    DINFO("conn rlen: %d\n", conn->rlen);
 
     while (1) {
         int rlen = datalen;
         if (rlen == 0) {
             rlen = CONN_MAX_READ_LEN - conn->rlen;
         }
+        DINFO("read len: %d\n", rlen);
         ret = read(fd, &conn->rbuf[conn->rlen], rlen);
+        DINFO("read return: %d\n", ret);
         if (ret == -1) {
             if (errno == EINTR) {
                 continue;
@@ -342,6 +358,7 @@ client_read(int fd, short event, void *arg)
             return;
         }else{
             conn->rlen += ret;
+            DINFO("2 conn rlen: %d\n", conn->rlen);
         }
 
         break;
@@ -350,13 +367,24 @@ client_read(int fd, short event, void *arg)
     DINFO("conn rbuf len: %d\n", conn->rlen);
     while (conn->rlen >= 2) {
         memcpy(&datalen, conn->rbuf, sizeof(short));
+        DINFO("check datalen: %d, rlen: %d\n", datalen, conn->rlen);
+        int mlen = datalen + sizeof(short);
 
-        if (conn->rlen >= datalen + sizeof(short)) {
-            wdata_ready(conn, conn->rbuf, datalen);
+        if (conn->rlen >= mlen) {
+            if (conn->port == g_cf->write_port) {
+                wdata_ready(conn, conn->rbuf, mlen);
+            }else if (conn->port == g_cf->read_port) {
+                rdata_ready(conn, conn->rbuf, mlen);
+            }else{
+                DERROR("conn port error: %d\n", conn->port);
+                conn_destroy(conn);
+                return;
+            }
         
-            int mlen = datalen + sizeof(short);
             memmove(conn->rbuf, conn->rbuf + mlen, conn->rlen - mlen);
             conn->rlen -= mlen;
+        }else{
+            break;
         }
     }
 }
@@ -376,7 +404,7 @@ client_write(int fd, short event, void *arg)
         conn->wlen = conn->wpos = 0;
         return;
     }
-    
+    DINFO("client write: %d\n", conn->wlen); 
     int ret;
 
     while (1) {
@@ -423,9 +451,10 @@ wthread_create()
     
     event_set(&wt->event, wt->sock, EV_READ | EV_PERSIST, wthread_read, wt);
     event_base_set(wt->base, &wt->event);
+    event_add(&wt->event, 0);
 
     struct timeval tm;
-    evtimer_set(&wt->dumpevt, dumpfile_start, &wt->dumpevt);
+    evtimer_set(&wt->dumpevt, dumpfile_call_loop, &wt->dumpevt);
     evutil_timerclear(&tm);
     tm.tv_sec = g_cf->dump_interval * 60; 
     event_base_set(wt->base, &wt->dumpevt);
