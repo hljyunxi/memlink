@@ -5,6 +5,9 @@
 #include <event.h>
 
 #define CONN_MAX_READ_LEN   1024
+#define CONN_READ   1
+#define CONN_WRITE  2
+#define CONN_SYNC   3
 
 typedef struct _conn
 {
@@ -14,6 +17,8 @@ typedef struct _conn
     char    *wbuf;
     int     wlen;
     int     wpos;
+    int     port; // server port
+
     struct event revt;
     struct event wevt;
 }Conn;

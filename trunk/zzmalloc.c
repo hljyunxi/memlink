@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
-#include "logfile.h"
+//#include "logfile.h"
 #include "zzmalloc.h"
 
 void*
@@ -22,7 +22,7 @@ zz_strdup(char *s)
 
     char *ss = (char*)zz_malloc(len + 1);
     if (NULL == ss) {
-        DERROR("malloc char* error!\n");
+        //DERROR("malloc char* error!\n");
         return NULL;
     }
 

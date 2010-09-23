@@ -4,12 +4,12 @@
 #include <stdio.h>
 #include "conn.h"
 
-typedef struct _thread
+/*typedef struct _thread
 {
     int                 sock;
     struct event_base   *base;
     struct event        event;
-}ThreadBase;
+}ThreadBase;*/
 
 typedef struct _wthread
 {

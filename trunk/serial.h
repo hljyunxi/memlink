@@ -2,6 +2,7 @@
 #define MEMLINK_SERIAL_H
 
 #include <stdio.h>
+//#include "hashtable.h"
 
 #define CMD_DUMP    1
 #define CMD_CLEAN   2
@@ -14,6 +15,19 @@
 #define CMD_TAG     9
 #define CMD_RANGE   10
 
+typedef struct _ht_stat
+{
+    unsigned int blocks; // all blocks
+    unsigned int data;   // all alloc data item
+    unsigned int data_used; // all data item used
+    unsigned int mem;       // all alloc mem
+    unsigned int mem_used;  // all used mem
+}HashTableStat;
+
+
+int mask_string2array(char *mask, unsigned int *result);
+int mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char masknum, char *mask);
+int mask_string2binary(unsigned char *maskformat, char *maskstr, char *mask);
 
 int cmd_dump_pack(char *data);
 int cmd_dump_unpack(char *data);
@@ -21,13 +35,13 @@ int cmd_dump_unpack(char *data);
 int cmd_clean_pack(char *data, char *key);
 int cmd_clean_unpack(char *data, char *key);
 
-int cmd_stat_pack(char *data, char *key);
-int cmd_stat_unpack(char *data, char *key);
+int cmd_stat_pack(char *data, char *key); //, HashTableStat *stat);
+int cmd_stat_unpack(char *data, char *key); //, HashTableStat *stat);
 
 int cmd_create_pack(char *data, char *key, unsigned char valuelen, 
-                    unsigned char masknum, char *maskformat);
+                    unsigned char masknum, unsigned int *maskformat);
 int cmd_create_unpack(char *data, char *key, unsigned char *valuelen, 
-                      unsigned char *masknum, char *maskformat);
+                      unsigned char *masknum, unsigned int *maskformat);
 
 int cmd_del_pack(char *data, char *key, char *value, unsigned char valuelen);
 int cmd_del_unpack(char *data, char *key, char *value, unsigned char *valuelen);

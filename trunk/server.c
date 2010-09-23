@@ -64,6 +64,7 @@ mainserver_read(int fd, short event, void *arg)
     if (NULL == conn) {
         return;
     }
+    conn->port = g_cf->read_port;
   
     int             n   = ms->lastth;
     ThreadServer    *ts = &ms->threads[n];

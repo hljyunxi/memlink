@@ -19,21 +19,26 @@ dumpfile(HashTable *ht)
     char        dumpfile[PATH_MAX];
     int         i;
     
+    DINFO("dumpfile start ...\n");
+
     snprintf(dumpfile, PATH_MAX, "%s/%s", g_cf->datadir, DUMP_FILE_NAME);
     snprintf(tmpfile, PATH_MAX, "%s/%s.tmp", g_cf->datadir, DUMP_FILE_NAME);
 
-    DINFO("dumpfile %s\n", tmpfile);
+    DINFO("dumpfile to tmp: %s\n", tmpfile);
     
     FILE    *fp = fopen(tmpfile, "wb");
 
     unsigned short formatver = DUMP_FORMAT_VERSION;
     fwrite(&formatver, sizeof(short), 1, fp);
+    DINFO("write format version ok!\n");
 
     unsigned int dumpver = g_runtime->dumpver + 1;
     fwrite(&dumpver, sizeof(int), 1, fp);
+    DINFO("write dumpfile version ok!\n");
 
     unsigned int logver = 0;
     fwrite(&logver, sizeof(int), 1, fp);
+    DINFO("write logfile version ok!\n");
 
     unsigned char keylen;
     int datalen;
@@ -42,6 +47,7 @@ dumpfile(HashTable *ht)
     for (i = 0; i < HASHTABLE_BUNKNUM; i++) {
         node = bks[i];
         while (NULL != node) {
+            DINFO("dump key: %s\n", node->key);
             keylen = strlen(node->key);
             fwrite(&keylen, sizeof(char), 1, fp);
             fwrite(&node->key, keylen, 1, fp);
@@ -72,7 +78,13 @@ dumpfile(HashTable *ht)
 
     fclose(fp);
 
-    return 0;
+    int ret = rename(tmpfile, dumpfile);
+    DINFO("rename %s to %s return: %d\n", tmpfile, dumpfile, ret);
+    if (ret == -1) {
+        DERROR("dumpfile rename error: %s\n", strerror(errno));
+    }
+
+    return ret;
 }
 
 int
@@ -172,12 +184,23 @@ loaddump(HashTable *ht)
 }
 
 void
-dumpfile_start(int fd, short event, void *arg)
+dumpfile_call_loop(int fd, short event, void *arg)
 {
+    dumpfile_call();
+}
+
+int
+dumpfile_call()
+{
+    int ret;
+
     pthread_mutex_lock(&g_runtime->mutex);
     g_runtime->indump = 1;
-    dumpfile(g_runtime->ht);
+    ret = dumpfile(g_runtime->ht);
     g_runtime->indump = 0;
     pthread_mutex_unlock(&g_runtime->mutex);
+    
+    return ret;
 }
+
 

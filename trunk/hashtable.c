@@ -5,99 +5,8 @@
 #include "zzmalloc.h"
 #include "logfile.h"
 #include "hashtable.h"
+#include "serial.h"
 
-
-/**
- * 把字符串形式的mask转换为数组形式
- */
-static int 
-mask_string2array(char *mask, unsigned int *result)
-{
-    char *m = mask;
-    int  i = 0;
-
-    while (m != NULL) {
-        char *fi  = strchr(m, ':');
-        if (m[0] == ':') {
-            result[i] = UINT_MAX;
-        }else{
-            result[i] = atoi(m); 
-        }
-        i++;
-        if (fi != NULL) {
-            m = fi + 1;
-        }else{
-            m = NULL;
-        }
-    }
-    return i;
-}
-
-static int
-mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char masknum, char *mask)
-{
-    int i;
-    int b   = 0; // 已经处理的bit
-    int idx = 0;
-    int n;
-    unsigned int v;
-    char    mf;
-    // 前两位分别表示真实删除和标记删除，跳过
-    // mask[idx] = mask[idx] & 0xfc;
-    b += 2;
-
-    for (i = 0; i < masknum; i++) {
-        /*if (b >= sizeof(char)) {
-            idx += 1;
-            b = b % sizeof(char);
-        }*/
-        mf = maskformat[i];
-        v  = maskarray[i]; 
-        if (v == UINT_MAX) {
-            b += maskformat[i];
-            continue;
-        }
-        
-        unsigned char y = (b + mf) % sizeof(char);
-
-        n = (b + mf) / sizeof(char) + y>0 ? 1: 0;
-        v = v << b;
-       
-        unsigned char m = pow(2, b) - 1;
-        unsigned char x = mask[idx] & m;
-
-        v = v | x;
-
-        m = (pow(2, sizeof(char) - y) - 1);
-        m = m << y;
-        x = mask[idx + n - 1] & m;
-
-        memcpy(&mask[idx], &v, n);
-
-        idx += n - 1;
-        
-        mask[idx] = mask[idx] | x;
-
-        b = y;
-    }
-
-    return idx; 
-}
-
-static int
-mask_string2binary(unsigned char *maskformat, char *maskstr, char *mask)
-{
-    int masknum;
-    unsigned int maskarray[HASHTABLE_MASK_MAX_LEN];
-
-    masknum = mask_string2array(maskstr, maskarray);
-    if (masknum <= 0)
-        return 0;
-
-    int ret = mask_array2binary(maskformat, maskarray, masknum, mask); 
-
-    return ret;
-}
 
 /**
  * 检查数据项中是否有数据
@@ -132,9 +41,10 @@ dataitem_lookup(HashNode *node, void *value)
     int i;
     int datalen = node->valuesize + node->masksize;
     DataBlock *root = node->data;
-    
+
     while (root) {
         char *data = root->data;
+        DINFO("data: %p\n", data);
         for (i = 0; i < g_cf->block_data_count; i++) {
             if (memcmp(value, data, node->valuesize) == 0) {
                 return data;
@@ -258,10 +168,11 @@ hashtable_add_info_mask(HashTable *ht, char *key, int valuesize, unsigned int *m
     int         keylen = strlen(key);
     unsigned    hash   = hashtable_hash(key, keylen);
     HashNode    *node  = ht->bunks[hash];
-    
+   
+    DINFO("hashtable_add_info_mask call ...\n");
     while (node) {
         if (strcmp(node->key, key) == 0) {
-            // find it
+            DWARNING("key %s is exist.\n", key);
             return -1;
         }
         node = node->next;
@@ -281,15 +192,14 @@ hashtable_add_info_mask(HashTable *ht, char *key, int valuesize, unsigned int *m
 
     int masksize = 0;
     int i;
-
     for (i = 0; i < masknum; i++) {
         masksize += maskarray[i];
     }
 
     masksize += 2; // add tag 1 bit, clear flag 1 bit
-    node->masksize = masksize / sizeof(char);
+    node->masksize = masksize / 8;
 
-    if (masksize % sizeof(char) > 0) {
+    if (masksize % 8 > 0) {
         node->masksize += 1;
     }
     node->masknum = masknum;
@@ -304,8 +214,7 @@ hashtable_add_info_mask(HashTable *ht, char *key, int valuesize, unsigned int *m
             node->maskformat[i] = maskarray[i];
         }
     }
-    
-
+    DINFO("format: %d,%d,%d\n", node->maskformat[0], node->maskformat[1], node->maskformat[2]);
     ht->bunks[hash] = node;
 
     return 0;    
@@ -381,7 +290,7 @@ hashtable_add_first_mask(HashTable *ht, char *key, void *value, unsigned int *ma
     
     ret = mask_array2binary(node->maskformat, maskarray, masknum, mask);
     if (ret <= 0) {
-        DERROR("mask_array2binary error.\n");
+        DERROR("mask_array2binary error: %d\n", ret);
         return -2;
     }
 
@@ -551,7 +460,7 @@ hashtable_add_mask(HashTable *ht, char *key, void *value, unsigned int *maskarra
     
     ret = mask_array2binary(node->maskformat, maskarray, masknum, mask);
     if (ret <= 0) {
-        DERROR("mask_array2binary error.\n");
+        DERROR("mask_array2binary error: %d\n", ret);
         return -2;
     }
 
@@ -671,7 +580,7 @@ hashtable_find_value(HashTable *ht, char *key, void *value, HashNode **node, cha
 {
     HashNode *fnode = hashtable_find(ht, key);
 
-    if (NULL == node) {
+    if (NULL == fnode) {
         DWARNING("hashtable_del error: %s\n", key);
         return -1;
     }
@@ -679,6 +588,7 @@ hashtable_find_value(HashTable *ht, char *key, void *value, HashNode **node, cha
         *node = fnode;
     }
 
+    DINFO("find dataitem ...\n");
     char *item = dataitem_lookup(fnode, value);
     if (NULL == item) {
         DWARNING("dataitem_lookup error: %s, %x\n", key, *(unsigned int*)value);
@@ -698,7 +608,9 @@ hashtable_del(HashTable *ht, char *key, void *value)
     char        *item = NULL;
     HashNode    *node = NULL;
 
+    DINFO("hashtable_find_value: %s, value: %s\n", key, (char*)value);
     int ret = hashtable_find_value(ht, key, value, &node, &item);
+    DINFO("hashtable_find_value ret: %d\n", ret);
     if (ret < 0) {
         return ret;
     }
@@ -808,7 +720,8 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum, 
 
     while (dbk) {
         char *itemdata = dbk->data;
-        for (int i = 0; i < g_cf->block_data_count; i++) {
+        int  i;
+        for (i = 0; i < g_cf->block_data_count; i++) {
             if (dataitem_have_visiable_data(itemdata, node->valuesize)) {
                 if (n >= frompos && n < endpos) {
                     memcpy(retv + idx, itemdata, datalen);
@@ -896,5 +809,46 @@ hashtable_clean(HashTable *ht, char *key)
 
     return 0;
 } 
+
+int
+hashtable_stat(HashTable *ht, char *key, HashTableStat *stat)
+{
+    HashNode    *node;
+
+    node = hashtable_find(ht, key);
+    if (NULL == node) {
+        DERROR("hashtable_stat not found key: %s\n", key);
+        return -1;
+    }
+
+    //int i;
+
+    stat->blocks    = 0;
+    stat->data      = node->all;
+    stat->data_used = node->used;
+    stat->mem       = 0;
+    stat->mem_used  = 0;
+
+    int blockmem = sizeof(HashNode) + (node->masksize + node->valuesize) * g_cf->block_data_count;
+
+    DataBlock *dbk = node->data;
+    while (dbk) {
+        stat->blocks    += 1;
+        //stat->data      += dbk->all;
+        //stat->data_used += dbk->used;
+
+        /*
+        char *dataitem = dbk->data;
+        for (i = 0; i < g_cf->block_data_count; i++) {
+            stat->data_used
+        }*/
+        dbk = dbk->next;
+    }
+
+    stat->mem = stat->blocks * blockmem;
+    stat->mem_used = stat->blocks * sizeof(HashNode) + (node->masksize + node->valuesize) * stat->data_used;
+
+    return 0;
+}
 
 

@@ -13,6 +13,7 @@
 #include "dumpfile.h"
 #include "synclog.h"
 #include "zzmalloc.h"
+#include "utils.h"
 
 static int
 truncate_file(int fd, int len)
@@ -33,6 +34,7 @@ truncate_file(int fd, int len)
     return 0;
 }
 
+/*
 ssize_t 
 readn(int fd, void *vptr, size_t n)
 {
@@ -86,7 +88,7 @@ writen(int fd, const void *vptr, size_t n)
     }
     return n;
 }
-
+*/
 
 SyncLog*
 synclog_create()
@@ -132,8 +134,12 @@ synclog_create()
 
         unsigned short format = DUMP_FORMAT_VERSION;
         unsigned int newver = g_runtime->logver + 1;
-        writen(slog->fd, &format, sizeof(short));
-        writen(slog->fd, &newver, sizeof(int));
+        if (writen(slog->fd, &format, sizeof(short)) < 0) {
+            MEMLINK_EXIT;
+        }
+        if (writen(slog->fd, &newver, sizeof(int)) < 0) {
+            MEMLINK_EXIT;
+        }
 
         g_runtime->logver = newver;
     }else if (cur < len) { // file error, clear
@@ -141,10 +147,14 @@ synclog_create()
         truncate_file(slog->fd, len);
         
         unsigned short format = 0;
-        readn(slog->fd, &format, sizeof(short));
+        if (readn(slog->fd, &format, sizeof(short)) < 0) {
+            MEMLINK_EXIT;
+        }
 
         unsigned int nowver = 0;
-        readn(slog->fd, &nowver, sizeof(int));
+        if (readn(slog->fd, &nowver, sizeof(int)) < 0) {
+            MEMLINK_EXIT;
+        }
 
         if (nowver > 0) {
             g_runtime->logver = nowver;
@@ -186,8 +196,12 @@ synclog_new(SyncLog *slog)
 
     unsigned short format = DUMP_FORMAT_VERSION;
     unsigned int newver = g_runtime->logver;
-    writen(slog->fd, &format, sizeof(short));
-    writen(slog->fd, &newver, sizeof(int));
+    if (writen(slog->fd, &format, sizeof(short)) < 0) {
+        MEMLINK_EXIT;
+    }
+    if (writen(slog->fd, &newver, sizeof(int)) < 0) {
+        MEMLINK_EXIT;
+    }
 
     slog->index = mmap(NULL, slog->len, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED, slog->fd, 0);
     if (slog->index == MAP_FAILED) {
@@ -248,7 +262,9 @@ synclog_validate(SyncLog *slog)
 
     while (1) {
         int cur = lseek(slog->fd, idx, SEEK_SET);
-        readn(slog->fd, &dlen, sizeof(short));
+        if (readn(slog->fd, &dlen, sizeof(short)) < 0) {
+            MEMLINK_EXIT;
+        }
 
 
         if (filelen - cur == dlen + sizeof(short)) {
