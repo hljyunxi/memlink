@@ -9,14 +9,18 @@
  * 把字符串形式的mask转换为数组形式
  */
 int 
-mask_string2array(char *mask, unsigned int *result)
+mask_string2array(char *maskstr, unsigned int *result)
 {
-    char *m = mask;
+    char *m = maskstr;
     int  i = 0;
+
+    if (m[0] == 0) {
+        return 0;
+    }
 
     while (m != NULL) {
         char *fi  = strchr(m, ':');
-        if (m[0] == ':') {
+        if (m[0] == ':' || m[0] == 0) {
             result[i] = UINT_MAX;
         }else{
             result[i] = atoi(m); 
@@ -42,6 +46,7 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
     char    mf;
     // 前两位分别表示真实删除和标记删除，跳过
     // mask[idx] = mask[idx] & 0xfc;
+    mask[0] = 0x01;  // 默认设置数据有效，非标记删除
     b += 2;
 
     for (i = 0; i < masknum; i++) {
@@ -104,13 +109,64 @@ mask_string2binary(unsigned char *maskformat, char *maskstr, char *mask)
     return ret;
 }
 
+int 
+mask_array2flag(unsigned char *maskformat, unsigned int *maskarray, char masknum, char *mask)
+{
+    int i, j;
+    int idx = 0;
+    int mf; // maskformat item value
+    int m;  // maskarray item value
+    int b = 0;
+    int xlen;
+    unsigned int v;
+
+    mask[0] = 0x03;
+    b = 2;
+
+    DINFO("masknum: %d\n", masknum);
+
+    for (i = 0; i < masknum; i++) {
+        mf = maskformat[i];
+        m  = maskarray[i];
+        
+        DINFO("i: %d, format: %d, array: %d\n", i, mf, m);
+        if (m == UINT_MAX) { // set to 1
+            xlen = (b + mf) / 8 + ((b + mf) % 8 > 0 ? 1:0);
+            v = pow(2, mf) - 1;
+            v = v << b;
+
+            char *cpdata = (char *)&v;
+
+            for (j = 0; j < xlen; j++) {
+                mask[idx + j] |= cpdata[j];
+            }
+            
+            idx += xlen - 1;
+            b = (b + mf) % 8;
+        }else{ // set to 0
+            b += mf;
+
+            if (b >= 8) {
+                idx++;
+                b = b % 8;
+            }
+        }
+    }
+
+    return idx + 1;
+}
+
+
+
 static int 
 unpack_string(char *s, char *v, unsigned char *vlen)
 {
     unsigned char len;
 
     memcpy(&len, s, sizeof(char));
-    memcpy(v, s + sizeof(char), len);
+    if (len > 0) {
+        memcpy(v, s + sizeof(char), len);
+    }
 
     if (vlen) {
         *vlen = len;
@@ -126,7 +182,9 @@ pack_string(char *s, char *v, unsigned char vlen)
         vlen = strlen(v);
     }
     memcpy(s, &vlen, sizeof(char));
-    memcpy(s + sizeof(char), v, vlen);
+    if (vlen > 0) {
+        memcpy(s + sizeof(char), v, vlen);
+    }
 
     return vlen + sizeof(char);
 }
@@ -138,11 +196,12 @@ unpack_mask(char *s, unsigned int *v, unsigned char *vlen)
     
     memcpy(&len, s, sizeof(char));
     int clen = len * sizeof(int);
-    //int i;
 
     printh(s, clen + sizeof(char));
-
-    memcpy(v, s + sizeof(char), clen);
+    
+    if (len > 0) {
+        memcpy(v, s + sizeof(char), clen);
+    }
 
     if (vlen) {
         *vlen = len;
@@ -162,7 +221,9 @@ pack_mask(char *s, unsigned int *v, unsigned char vlen)
     }
 
     memcpy(s, &vlen, sizeof(char));
-    memcpy(s + sizeof(char), v, clen);
+    if (vlen) {
+        memcpy(s + sizeof(char), v, clen);
+    }
 
     return clen + sizeof(char);
 }
@@ -182,11 +243,10 @@ cmd_dump_pack(char *data)
 int 
 cmd_dump_unpack(char *data)
 {
-    unsigned short len;
-    //unsigned char cmd;
+    //unsigned short len;
+    //int count = sizeof(short) + sizeof(char);
 
-    memcpy(&len, data, sizeof(short));
-    //cmd = *(data + sizeof(short)); 
+    //memcpy(&len, data + count, sizeof(short));
     return 0; 
 }
 
@@ -214,8 +274,9 @@ int
 cmd_clean_unpack(char *data, char *key)
 {
     unsigned char keylen;
+    int count = sizeof(short) + sizeof(char);
 
-    unpack_string(data, key, &keylen);
+    unpack_string(data + count, key, &keylen);
 
     return 0;
 }
@@ -244,9 +305,9 @@ int
 cmd_stat_unpack(char *data, char *key)  //, HashTableStat *stat)
 {
     unsigned char keylen;
-    int count;
+    int count = sizeof(short) + sizeof(char);
 
-    count = unpack_string(data, key, &keylen);
+    count = unpack_string(data + count, key, &keylen);
     //memcpy(stat, data + count, sizeof(HashTableStat)); 
 
     return 0;
@@ -375,7 +436,7 @@ cmd_update_pack(char *data, char *key, char *value, unsigned char valuelen, unsi
     memcpy(data + count, &pos, sizeof(int));
     count += sizeof(int);
 
-    len = count - 1;
+    len = count - sizeof(short);
     memcpy(data, &len, sizeof(short)); 
 
     return count;
@@ -412,7 +473,8 @@ cmd_mask_pack(char *data, char *key, char *value, unsigned char valuelen,
 
     len = count - sizeof(short);
     
-    memcpy(data + count, &len, sizeof(short));
+    memcpy(data, &len, sizeof(short));
+
     return count;
 }
 
@@ -485,6 +547,7 @@ cmd_range_pack(char *data, char *key, unsigned char masknum, unsigned int *maska
 
     len = count - sizeof(short);
     memcpy(data, &len, sizeof(short));
+
     return count;
 }
 

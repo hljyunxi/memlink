@@ -187,7 +187,7 @@ memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
 
     }
 
-    return ret;
+    return ret + sizeof(short);
 }
 
 static int
@@ -252,20 +252,17 @@ memlink_do_cmd(MemLink *m, int fdtype, char *data, int len, char *retdata, int r
     DINFO("memlink_read return: %d\n", ret);
 
     if (ret > 0) {
-        int i;
-        printf("data: ");
-        for (i = 0; i < ret; i++) {
-            printf("%x ", (char)retdata[i]);
-        }
-        printf("\n");
+        printh(retdata, ret);
+    
+        unsigned short retcode;
+
+        memcpy(&retcode, retdata + sizeof(short), sizeof(short));
+        DINFO("retcode: %d\n", retcode);
+        
+        return retcode;
     }
-
-    unsigned short retcode;
-
-    memcpy(&retcode, retdata + sizeof(short), sizeof(short));
-    DINFO("retcode: %d\n", retcode);
-
-    return retcode;
+    
+    return MEMLINK_ERR_NETWORK;
 }
 
 int
@@ -318,6 +315,7 @@ memlink_cmd_stat(MemLink *m, char *key)
     int  pos = sizeof(short) + sizeof(short);
 
     memcpy(&msglen, retdata + pos, sizeof(char));
+    pos += sizeof(char);
     if (msglen > 0) {
         pos += msglen;
     }
@@ -325,8 +323,8 @@ memlink_cmd_stat(MemLink *m, char *key)
     HashTableStat stat;
     memcpy(&stat, retdata + pos, sizeof(HashTableStat));
 
-    DINFO("stat blocks: %d, data: %d, data_used: %d, mem: %d, mem_used: %d\n", 
-                    stat.blocks, stat.data, stat.data_used, stat.mem, stat.mem_used);
+    DINFO("stat blocks:%d, data:%d, data_used:%d, mem:%d, mem_used:%d, valuesize:%d, masksize:%d\n", 
+                    stat.blocks, stat.data, stat.data_used, stat.mem, stat.mem_used, stat.valuesize, stat.masksize);
     
     return ret;
 }
@@ -397,15 +395,9 @@ memlink_cmd_update(MemLink *m, char *key, char *value, int valuelen, unsigned in
     int  len;
 
     len = cmd_update_pack(data, key, value, valuelen, pos);
-
-    int ret = memlink_write(m, MEMLINK_WRITER, data, len);
-    DINFO("update ret: %d, len: %d\n", ret, len);
-    
-    if (ret >= 0 && ret != len) {
-        ret = -100;
-    }
-
-    return ret;
+    DINFO("pack update len: %d\n", len);
+    char retdata[1024];
+    return memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
 }
 
 
@@ -418,18 +410,13 @@ memlink_cmd_mask(MemLink *m, char *key, char *value, int valuelen, char *maskstr
     int masknum = 0;
 
     masknum = mask_string2array(maskstr, maskarray);
-    DINFO("mask mask len:", masknum);
-
+    DINFO("mask mask len: %d\n", masknum);
+    DINFO("key: %s, valuelen: %d\n", key, valuelen);
     len = cmd_mask_pack(data, key, value, valuelen, masknum, maskarray);
-
-    int ret = memlink_write(m, MEMLINK_WRITER, data, len);
-    DINFO("mask ret: %d, len: %d\n", ret, len);
-    
-    if (ret >= 0 && ret != len) {
-        ret = -100;
-    }
-
-    return ret;
+    DINFO("pack mask len: %d\n", len);
+    printh(data, len);
+    char retdata[1024];
+    return memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
 }
 
 int
@@ -439,15 +426,9 @@ memlink_cmd_tag(MemLink *m, char *key, char *value, int valuelen, int tag)
     int  len;
 
     len = cmd_tag_pack(data, key, value, valuelen, tag);
-
-    int ret = memlink_write(m, MEMLINK_WRITER, data, len);
-    DINFO("tag ret: %d, len: %d\n", ret, len);
-    
-    if (ret >= 0 && ret != len) {
-        ret = -100;
-    }
-
-    return ret;
+    DINFO("pack tag len: %d\n", len);
+    char retdata[1024];
+    return memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
 }
 
 int 
@@ -459,15 +440,50 @@ memlink_cmd_range(MemLink *m, char *key, char *maskstr, unsigned int frompos, un
     int masknum = 0;
 
     masknum = mask_string2array(maskstr, maskarray);
-    DINFO("range mask len:", masknum);
+    DINFO("range mask len: %d\n", masknum);
 
     plen = cmd_range_pack(data, key, masknum, maskarray, frompos, len);
+    DINFO("pack range len: %d\n", plen);
 
-    int ret = memlink_write(m, MEMLINK_WRITER, data, plen);
-    DINFO("range ret: %d, len: %d\n", ret, plen);
-    
-    if (ret >= 0 && ret != plen) {
-        ret = -100;
+    printh(data, plen);
+
+    int  retlen = 256 * len + HASHTABLE_MASK_MAX_LEN * sizeof(int) * len + 32;
+    DINFO("retlen: %d\n", retlen);
+    char retdata[retlen];
+    int ret = memlink_do_cmd(m, MEMLINK_READER, data, plen, retdata, retlen);
+    DINFO("memlink_do_cmd: %d\n", ret);
+    if (ret <= 0) {
+        return ret;
+    }
+    unsigned short dlen;
+    memcpy(&dlen, retdata, sizeof(short));
+
+    char msglen;
+    int  pos = sizeof(short) + sizeof(short);
+
+    memcpy(&msglen, retdata + pos, sizeof(char));
+    pos += sizeof(char);
+    if (msglen > 0) {
+        pos += msglen;
+    }
+ 
+    unsigned char valuesize, masksize;
+    memcpy(&valuesize, retdata + pos, sizeof(char));
+    pos += sizeof(char);
+    memcpy(&masksize, retdata + pos, sizeof(char));
+    pos += sizeof(char);
+
+    DINFO("valuesize: %d, masksize: %d, pos:%d, ret:%d\n", valuesize, masksize, pos, ret);
+    int  datalen  = valuesize + masksize;
+    char *vdata   = retdata + pos;
+    char *enddata = retdata + dlen + sizeof(short);
+    DINFO("vdata: %x, enddata: %x, datalen: %d\n", vdata, enddata, datalen);
+    char buf1[128], buf2[128];
+
+    while (vdata < enddata) {
+        DINFO("value:%s, mask:%s\n", formath(vdata, valuesize, buf1, 128), 
+                            formath(vdata + valuesize, masksize, buf2, 128));
+        vdata += datalen;
     }
 
     return ret;

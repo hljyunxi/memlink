@@ -53,12 +53,14 @@ int             hashtable_add_mask_bin(HashTable *ht, char *key, void *value,
 int             hashtable_update(HashTable *ht, char *key, void *value, int pos);
 int             hashtable_del(HashTable *ht, char *key, void *value);
 int             hashtable_tag(HashTable *ht, char *key, void *value, unsigned char tag);
-int             hashtable_mask(HashTable *ht, char *key, void *value, char *newmask);
+int             hashtable_mask(HashTable *ht, char *key, void *value, unsigned int *maskarray, int masknum);
 int             hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum, 
                                 int frompos, int len,
-                                char **data, int *datanum, int *valuesize, int *masksize);
+                                char *data, int *datanum, unsigned char *valuesize, unsigned char *masksize);
 //int             hashtable_range_mask_bin(HashTable *ht, char *key, void *mask, int frompos, int len);
 int             hashtable_clean(HashTable *ht, char *key);
 int             hashtable_stat(HashTable *ht, char *key, HashTableStat *stat);
+int             hashtable_print(HashTable *ht, char *key);
+
 
 #endif

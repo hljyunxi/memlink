@@ -7,5 +7,6 @@ ssize_t readn(int fd, void *vptr, size_t n);
 ssize_t writen(int fd, const void *vptr, size_t n);
 void    printb(char *data, int datalen);
 void    printh(char *data, int datalen);
+char*   formath(char *data, int datalen, char *buf, int blen);
 
 #endif

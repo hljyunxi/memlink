@@ -11,6 +11,7 @@
 #define MEMLINK_ALL     3
 
 #define MEMLINK_ERR_TIMEOUT     -1000
+#define MEMLINK_ERR_NETWORK     -2
 #define MEMLINK_ERR             -1
 #define MEMLINK_OK              0
 

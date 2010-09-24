@@ -1,7 +1,7 @@
 cflags   = '-ggdb'
 includes = ['.', '../../', '/Developer/usr/include']
 libpath  = ['.']
-libs	 = []
+libs	 = ['m']
 comfiles = ['../../zzmalloc.c', '../../serial.c', '../../logfile.c', '../../utils.c']
 prgfiles = comfiles + Glob("*.c")
 libfiles = comfiles + ['memlink_client.c']

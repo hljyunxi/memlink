@@ -1,7 +1,7 @@
 cflags   = ['-Wall']
 includes = ['/usr/local/include', '../', '/Developer/usr/include']
 libpath  = ['/usr/local/lib', '/Developer/usr/lib']
-libs	 = ['check', 'event']
+libs	 = ['check', 'event', 'm']
 files	 = ['main.c', '../hashtable.c', '../serial.c', '../logfile.c', 
 	        '../mem.c', '../zzmalloc.c', '../myconfig.c', '../synclog.c', 
 	        '../wthread.c', '../dumpfile.c', '../utils.c', '../rthread.c',

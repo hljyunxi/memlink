@@ -5,27 +5,6 @@
 #include "logfile.h"
 #include "utils.h"
 
-/*
-void printb(char *data, int datalen)
-{
-    int i, j;
-    unsigned char c;
-
-    for (i = 0; i < datalen; i++) {
-        c = 0x80;
-        for (j = 0; j < 8; j++) {
-            if (c & data[datalen - i - 1]) {
-                printf("1");
-            }else{
-                printf("0");
-            }
-            c = c >> 1;
-        }
-        printf(" ");
-    }
-    printf("\n");
-}*/
-
 
 START_TEST(test_mask)
 {
@@ -40,9 +19,18 @@ START_TEST(test_mask)
 
     DINFO("format 4:3:1, array: 7:2:0 \n");
     ret = mask_array2binary(format, maskarray, masknum, data);
-
     DINFO("mask_array2binary ret: %d\n", ret);
+    printb(data, ret);
 
+    DINFO("==================================================\n");
+    DINFO("flag 4:3:1, array: 10:3:1\n");
+
+    maskarray[0] = 10;
+    maskarray[1] = 3;
+    maskarray[2] = 1;
+    
+    ret = mask_array2flag(format, maskarray, masknum, data);
+    DINFO("mask_array2flag ret: %d\n", ret);
     printb(data, ret);
 
 }
