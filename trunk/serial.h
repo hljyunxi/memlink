@@ -17,17 +17,20 @@
 
 typedef struct _ht_stat
 {
-    unsigned int blocks; // all blocks
-    unsigned int data;   // all alloc data item
-    unsigned int data_used; // all data item used
-    unsigned int mem;       // all alloc mem
-    unsigned int mem_used;  // all used mem
+    unsigned char   valuesize;
+    unsigned char   masksize;
+    unsigned int    blocks; // all blocks
+    unsigned int    data;   // all alloc data item
+    unsigned int    data_used; // all data item used
+    unsigned int    mem;       // all alloc mem
+    unsigned int    mem_used;  // all used mem
 }HashTableStat;
 
 
-int mask_string2array(char *mask, unsigned int *result);
+int mask_string2array(char *maskstr, unsigned int *result);
 int mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char masknum, char *mask);
 int mask_string2binary(unsigned char *maskformat, char *maskstr, char *mask);
+int mask_array2flag(unsigned char *maskformat, unsigned int *maskarray, char masknum, char *mask);
 
 int cmd_dump_pack(char *data);
 int cmd_dump_unpack(char *data);

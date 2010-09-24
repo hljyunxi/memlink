@@ -62,7 +62,8 @@ writen(int fd, const void *vptr, size_t n)
     return n;
 }
 
-void printb(char *data, int datalen)
+void 
+printb(char *data, int datalen)
 {
     int i, j;
     unsigned char c;
@@ -82,15 +83,34 @@ void printb(char *data, int datalen)
     printf("\n");
 }
 
-void printh(char *data, int datalen)
+void 
+printh(char *data, int datalen)
 {
     int i;
-    //unsigned char c;
+    unsigned char c;
 
     for (i = datalen - 1; i >= 0; i--) {
-       printf("%02x ", data[i]);
+        c = data[i];
+        printf("%02x ", c);
     }   
     printf("\n");
 }
+
+char*
+formath(char *data, int datalen, char *buf, int blen)
+{
+    int i;
+    unsigned char c;
+    int idx = 0;
+
+    for (i = datalen - 1; i >= 0; i--) {
+        c = data[i];
+        snprintf(buf + idx, blen-idx, "%02x ", c);
+        idx += 3;
+    }   
+
+    return buf;
+}
+
 
 

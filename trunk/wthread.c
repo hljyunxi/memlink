@@ -161,7 +161,7 @@ wdata_ready(Conn *conn, char *data, int datalen)
 {
     char key[1024]; 
     char value[1024];
-    char maskstr[128];
+    //char maskstr[128];
     char cmd;
     int  ret = 0;
     unsigned char   valuelen;
@@ -174,6 +174,8 @@ wdata_ready(Conn *conn, char *data, int datalen)
 
     memcpy(&cmd, data + sizeof(short), sizeof(char));
     DINFO("data ready cmd: %d\n", cmd);
+
+    printh(data, datalen);
 
     pthread_mutex_lock(&g_runtime->mutex);
     switch(cmd) {
@@ -190,8 +192,6 @@ wdata_ready(Conn *conn, char *data, int datalen)
             break;
         case CMD_CREATE:
             DINFO("<<< cmd CREATE >>>\n");
-            
-            printh(data, datalen);
 
             cmd_create_unpack(data, key, &valuelen, &masknum, maskformat);
             DINFO("unpack key: %s, valuelen: %d, masknum: %d, maskarray: %d,%d,%d\n", key, valuelen, masknum, maskformat[0], maskformat[1], maskformat[2]);
@@ -216,23 +216,35 @@ wdata_ready(Conn *conn, char *data, int datalen)
         case CMD_UPDATE:
             DINFO("<<< cmd UPDATE >>>\n");
             cmd_update_unpack(data, key, value, &valuelen, &pos);
+            DINFO("unpack update, key:%s, value:%s, pos:%d\n", key, value, pos);
             ret = hashtable_update(g_runtime->ht, key, value, pos);
+            DINFO("hashtable_update: %d\n", ret);
+            hashtable_print(g_runtime->ht, key);
             break;
         case CMD_MASK:
             DINFO("<<< cmd MASK >>>\n");
             cmd_mask_unpack(data, key, value, &valuelen, &masknum, maskarray);
-            ret = hashtable_mask(g_runtime->ht, key, value, maskstr);
+            DINFO("unpack mask key: %s, valuelen: %d, masknum: %d, maskarray: %d,%d,%d\n", key, valuelen, masknum, maskformat[0], maskformat[1], maskformat[2]);
+            ret = hashtable_mask(g_runtime->ht, key, value, maskarray, masknum);
+            DINFO("hashtable_update: %d\n", ret);
+            hashtable_print(g_runtime->ht, key);
+
             break;
         case CMD_TAG:
             DINFO("<<< cmd TAG >>>\n");
             cmd_tag_unpack(data, key, value, &valuelen, &tag);
+            DINFO("unpack update, key:%s, value:%s, tag:%d\n", key, value, tag);
             ret = hashtable_tag(g_runtime->ht, key, value, tag);
+            DINFO("hashtable_update: %d\n", ret);
+            hashtable_print(g_runtime->ht, key);
+
             break;
         default:
             ret = 300;
             goto wdata_ready_over;
     }
-   
+ 
+    
     if (ret < 0) {
         ret = 500;
     }else{
@@ -340,7 +352,7 @@ client_read(int fd, short event, void *arg)
         if (rlen == 0) {
             rlen = CONN_MAX_READ_LEN - conn->rlen;
         }
-        DINFO("read len: %d\n", rlen);
+        DINFO("try read len: %d\n", rlen);
         ret = read(fd, &conn->rbuf[conn->rlen], rlen);
         DINFO("read return: %d\n", ret);
         if (ret == -1) {
