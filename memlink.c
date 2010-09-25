@@ -34,6 +34,23 @@ int signal_install()
 }
 
 
+void master(char *pgname) 
+{
+    logfile_create("stdout", 3);
+    DINFO("logfile ok!\n");
+    master_runtime_create(pgname);
+    DINFO("master runtime ok!\n");
+
+    mainserver_loop(g_runtime->server);
+}
+
+void slave(char *pgname) 
+{
+    slave_runtime_create(pgname);
+    DINFO("slave runtime ok!\n");
+    mainserver_loop(g_runtime->server);
+}
+
 int main(int argc, char *argv[])
 {
     int ret;
@@ -41,10 +58,6 @@ int main(int argc, char *argv[])
 
     myconfig_create("memlink.conf");
     DINFO("config ok!\n");
-    logfile_create("stdout", 3);
-    DINFO("logfile ok!\n");
-    runtime_create(argv[0]);
-    DINFO("runtime ok!\n");
     
     if (g_cf->max_core) {
         struct rlimit rlim_new;
@@ -99,10 +112,11 @@ int main(int argc, char *argv[])
         }
     }
 
-    mainserver_loop(g_runtime->server);
+    if (g_cf->role == 1) 
+        master(argv[0]);
+    else 
+        slave(argv[0]);
 
     return 0;
 }
-
-
 

@@ -14,6 +14,9 @@
 #include "zzmalloc.h"
 #include "serial.h"
 
+/**
+ * conn_create - return the accepted connection.
+ */
 Conn*   
 conn_create(int svrfd)
 {

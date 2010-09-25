@@ -62,12 +62,12 @@ queue_append(Queue *q, Conn *conn)
 
     pthread_mutex_lock(&q->lock);
     
-    if (q->foot == NULL) {
-        q->foot = item;
+    if (q->tail == NULL) {
+        q->tail = item;
         q->head = item;
     }else{
-        q->foot->next = item;
-        q->foot = item;
+        q->tail->next = item;
+        q->tail = item;
     }
 //queue_append_over:
     pthread_mutex_unlock(&q->lock);
@@ -81,7 +81,7 @@ queue_get(Queue *q)
 
     pthread_mutex_lock(&q->lock);
     ret = q->head;
-    q->head = q->foot = NULL;
+    q->head = q->tail = NULL;
     pthread_mutex_unlock(&q->lock);
 
     return ret;

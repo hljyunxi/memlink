@@ -29,6 +29,7 @@ typedef struct _myconfig
     int          is_daemon; // is run with daemon
     int          role;
     int          master_addr;
+    int          sync_interval;
 }MyConfig;
 
 
@@ -51,7 +52,8 @@ extern MyConfig *g_cf;
 extern Runtime  *g_runtime;
 
 MyConfig*   myconfig_create(char *filename);
-Runtime*    runtime_create(char *pgname);
+Runtime*    master_runtime_create(char *pgname);
+Runtime*    slave_runtime_create(char *pgname);
 void        runtime_destroy(Runtime *rt);
 
 #endif

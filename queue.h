@@ -15,7 +15,7 @@ typedef struct _queue_item
 typedef struct _queue
 {
     QueueItem           *head;
-    QueueItem           *foot;
+    QueueItem           *tail;
     pthread_mutex_t     lock;
 
     QueueItem           *freelist;
