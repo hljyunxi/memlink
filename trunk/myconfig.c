@@ -99,7 +99,8 @@ myconfig_create(char *filename)
         }else if (strcmp(buffer, "timeout") == 0) {
             mcf->timeout = atoi(start);
         }else if (strcmp(buffer, "thread_num") == 0) {
-            mcf->thread_num = atoi(start);
+            int t_n = atoi(start);
+            mcf->thread_num = t_n > MEMLINK_MAX_THREADS ? MEMLINK_MAX_THREADS : t_n;
         }else if (strcmp(buffer, "max_conn") == 0) {
             mcf->max_conn = atoi(start);
         }else if (strcmp(buffer, "max_core") == 0) {
@@ -110,6 +111,8 @@ myconfig_create(char *filename)
             mcf->role = atoi(start);
         }else if (strcmp(buffer, "master_addr") == 0) {
             mcf->master_addr = atoi(start);
+        }else if (strcmp(buffer, "sync_interval") == 0) {
+            mcf->sync_interval = atoi(start);
         }
     }
 
@@ -124,12 +127,10 @@ myconfig_create(char *filename)
 
 Runtime *g_runtime;
 
-Runtime*
-runtime_create(char *pgname)
+static Runtime* 
+runtime_init(char *pgname) 
 {
-    Runtime *rt;
-
-    rt = (Runtime*)zz_malloc(sizeof(Runtime));
+    Runtime *rt = (Runtime*)zz_malloc(sizeof(Runtime));
     if (NULL == rt) {
         DERROR("malloc Runtime error!\n");
         MEMLINK_EXIT;
@@ -139,7 +140,66 @@ runtime_create(char *pgname)
     g_runtime = rt;
 
     realpath(pgname, rt->home);
-   
+    return rt;
+}
+
+int mainserver_init(Runtime *rt) 
+{
+    rt->server = mainserver_create();
+    if (NULL == rt->server) {
+        DERROR("mainserver_create error!\n");
+        MEMLINK_EXIT;
+        return -1;
+    }
+    DINFO("main thread create ok!\n");
+    return 0;
+}
+
+int hashtable_init(Runtime* rt) 
+{
+    rt->ht = hashtable_create();
+    if (NULL == rt->ht) {
+        DERROR("hashtable_create error!\n");
+        MEMLINK_EXIT;
+        return -1;
+    }
+    DINFO("hashtable create ok!\n");
+    return 0;
+}
+
+
+int mempool_init(Runtime* rt) 
+{
+    rt->mpool = mempool_create();
+    if (NULL == rt->mpool) {
+        DERROR("mempool create error!\n");
+        MEMLINK_EXIT;
+        return -1;
+    }
+    DINFO("mempool create ok!\n");
+    return 0;
+}
+
+Runtime* 
+slave_runtime_create(char *pgname) 
+{
+    Runtime * rt = runtime_init(pgname);
+    if (hashtable_init(rt) != 0)
+      return NULL;
+    if (mempool_init(rt) != 0)
+        return NULL;
+    if (mainserver_init(rt) != 0)
+        return NULL;
+    // TODO sync thread
+    DINFO("create slave runtime ok!\n");
+    return rt;
+}
+
+Runtime*
+master_runtime_create(char *pgname)
+{
+    Runtime* rt = runtime_init(pgname);
+
     int ret;
     ret = pthread_mutex_init(&rt->mutex, NULL);
     if (ret != 0) {
@@ -147,16 +207,11 @@ runtime_create(char *pgname)
         MEMLINK_EXIT;
         return NULL;
     }
-    
-    rt->ht = hashtable_create();
-    if (NULL == rt->ht) {
-        DERROR("hashtable_create error!\n");
-        MEMLINK_EXIT;
-        return NULL;
-    }
-    DINFO("hashtable create ok!\n");
-
     DINFO("mutex init ok!\n");
+
+    if (hashtable_init(rt) != 0)
+      return NULL;
+
     rt->synclog = synclog_create("bin.log");
     if (NULL == rt->synclog) {
         DERROR("synclog_create error!\n");
@@ -164,13 +219,10 @@ runtime_create(char *pgname)
         return NULL;
     }
     DINFO("synclog open ok!\n");
-    rt->mpool = mempool_create();
-    if (NULL == rt->mpool) {
-        DERROR("mempool create error!\n");
-        MEMLINK_EXIT;
+
+    if (mempool_init(rt) != 0)
         return NULL;
-    }
-    DINFO("mempool create ok!\n");
+
     rt->wthread = wthread_create();
     if (NULL == rt->wthread) {
         DERROR("wthread_create error!\n");
@@ -178,17 +230,13 @@ runtime_create(char *pgname)
         return NULL;
     }
     DINFO("write thread create ok!\n");
-    rt->server = mainserver_create();
-    if (NULL == rt->server) {
-        DERROR("mainserver_create error!\n");
-        MEMLINK_EXIT;
+    
+    if (mainserver_init(rt) != 0)
         return NULL;
-    }
-    DINFO("main thread create ok!\n");
 
+    // TODO sync thread
 
-    DINFO("create Runtime ok!\n");
-
+    DINFO("create master Runtime ok!\n");
     return rt;
 }
 
@@ -201,6 +249,3 @@ runtime_destroy(Runtime *rt)
     pthread_mutex_destroy(&rt->mutex);
     zz_free(rt);
 }
-
-
-

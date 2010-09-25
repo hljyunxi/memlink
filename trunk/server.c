@@ -25,9 +25,7 @@ mainserver_create()
     memset(ms, 0, sizeof(MainServer));
     
     int i, ret;
-    int thnum = g_cf->thread_num > MEMLINK_MAX_THREADS ? MEMLINK_MAX_THREADS : g_cf->thread_num;
-
-    for (i = 0; i < thnum; i++) {
+    for (i = 0; i < g_cf->thread_num; i++) {
         ret = thserver_init(&ms->threads[i]);
         if (ret < 0) {
             DERROR("thserver_create error! %d\n", ret);
@@ -52,8 +50,18 @@ mainserver_create()
 void 
 mainserver_destroy(MainServer *ms)
 {
+    zz_free(ms);
 }
 
+/**
+ * mainserver_read - callback for incoming client read connection event.
+ * @fd: listening socket file descriptor
+ * @event:
+ * @arg: main server
+ *
+ * Accept a client client conneciton, select a thread server and trigger an 
+ * event for the select server.
+ */
 void
 mainserver_read(int fd, short event, void *arg)
 {
@@ -86,6 +94,15 @@ mainserver_loop(MainServer *ms)
     event_base_loop(ms->base, 0);
 }
 
+/**
+  * thserver_create - callback for enqueue event
+  * @fd: file descriptor for the pipe receive end.
+  * @event:
+  * @arg: thread server
+  * 
+  * Read date from the pipe and add event for incoming data in client 
+  * connection.
+  */
 static void
 thserver_notify(int fd, short event, void *arg)
 {

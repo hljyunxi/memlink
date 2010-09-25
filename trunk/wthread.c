@@ -259,6 +259,12 @@ wdata_ready_over:
     return 0;
 }
 
+/**
+ * wthread_read - callback for incoming client write connection
+ * @fd: file descriptor for listening socket
+ * @event:
+ * @arg: thread base
+ */
 void
 wthread_read(int fd, short event, void *arg)
 {
@@ -333,7 +339,9 @@ client_buffer_read(int fd, char *data, int *dlen, func_data_ready func, void *co
     return *dlen;
 }
 */
-
+/**
+ * alled many times? QE
+ */
 void
 client_read(int fd, short event, void *arg)
 {
@@ -341,8 +349,8 @@ client_read(int fd, short event, void *arg)
     int     ret;
     unsigned short   datalen = 0;
 
-    if (conn->rlen >= 2) {
-        memcpy(&datalen, conn->rbuf, sizeof(short));
+    if (conn->rlen >= 2) { // QE
+        memcpy(&datalen, conn->rbuf, sizeof(short)); // QE 
     }
     DINFO("client read datalen: %d\n", datalen);
     DINFO("conn rlen: %d\n", conn->rlen);
