@@ -6,6 +6,6 @@
 
 START_TEST(test_hashtable)
 {
-
+    printf("====== start hashtable_test ======\n");
 }
 END_TEST

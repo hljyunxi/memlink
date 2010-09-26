@@ -173,9 +173,8 @@ wdata_ready(Conn *conn, char *data, int datalen)
     int             vnum;
 
     memcpy(&cmd, data + sizeof(short), sizeof(char));
-    DINFO("data ready cmd: %d\n", cmd);
-
-    printh(data, datalen);
+    char buf[256] = {0};
+    DINFO("data ready cmd: %d, data: %s\n", cmd, formath(data, datalen, buf, 256));
 
     pthread_mutex_lock(&g_runtime->mutex);
     switch(cmd) {
@@ -198,6 +197,9 @@ wdata_ready(Conn *conn, char *data, int datalen)
             vnum = valuelen;
             ret = hashtable_add_info_mask(g_runtime->ht, key, vnum, maskformat, masknum);
             DINFO("hashtabl_add_info return: %d\n", ret);
+            if (ret >= 0) {
+                synclog_write(g_runtime->synclog, data, datalen);
+            }
             break;
         case CMD_DEL:
             DINFO("<<< cmd DEL >>>\n");
@@ -205,13 +207,24 @@ wdata_ready(Conn *conn, char *data, int datalen)
             DINFO("unpack del, key: %s, value: %s, valuelen: %d\n", key, value, valuelen);
             ret = hashtable_del(g_runtime->ht, key, value);
             DINFO("hashtable_del: %d\n", ret);
+            if (ret >= 0) {
+                synclog_write(g_runtime->synclog, data, datalen);
+            }
+
             break;
         case CMD_INSERT:
             DINFO("<<< cmd INSERT >>>\n");
             cmd_insert_unpack(data, key, value, &valuelen, &masknum, maskarray, &pos);
             DINFO("unpak mask: %d, array:%d,%d,%d\n", masknum, maskarray[0], maskarray[1], maskarray[2]);
+            
             ret = hashtable_add_mask(g_runtime->ht, key, value, maskarray, masknum, pos);
             DINFO("hashtable_add_mask: %d\n", ret);
+
+            hashtable_print(g_runtime->ht, key);
+            if (ret >= 0) {
+                synclog_write(g_runtime->synclog, data, datalen);
+            }
+
             break;
         case CMD_UPDATE:
             DINFO("<<< cmd UPDATE >>>\n");
@@ -220,14 +233,22 @@ wdata_ready(Conn *conn, char *data, int datalen)
             ret = hashtable_update(g_runtime->ht, key, value, pos);
             DINFO("hashtable_update: %d\n", ret);
             hashtable_print(g_runtime->ht, key);
+            if (ret >= 0) {
+                synclog_write(g_runtime->synclog, data, datalen);
+            }
+
             break;
         case CMD_MASK:
             DINFO("<<< cmd MASK >>>\n");
             cmd_mask_unpack(data, key, value, &valuelen, &masknum, maskarray);
-            DINFO("unpack mask key: %s, valuelen: %d, masknum: %d, maskarray: %d,%d,%d\n", key, valuelen, masknum, maskformat[0], maskformat[1], maskformat[2]);
+            DINFO("unpack mask key: %s, valuelen: %d, masknum: %d, maskarray: %d,%d,%d\n", key, valuelen, 
+                    masknum, maskarray[0], maskarray[1], maskarray[2]);
             ret = hashtable_mask(g_runtime->ht, key, value, maskarray, masknum);
             DINFO("hashtable_update: %d\n", ret);
             hashtable_print(g_runtime->ht, key);
+            if (ret >= 0) {
+                synclog_write(g_runtime->synclog, data, datalen);
+            }
 
             break;
         case CMD_TAG:
@@ -237,6 +258,9 @@ wdata_ready(Conn *conn, char *data, int datalen)
             ret = hashtable_tag(g_runtime->ht, key, value, tag);
             DINFO("hashtable_update: %d\n", ret);
             hashtable_print(g_runtime->ht, key);
+            if (ret >= 0) {
+                synclog_write(g_runtime->synclog, data, datalen);
+            }
 
             break;
         default:

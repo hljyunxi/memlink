@@ -197,7 +197,7 @@ unpack_mask(char *s, unsigned int *v, unsigned char *vlen)
     memcpy(&len, s, sizeof(char));
     int clen = len * sizeof(int);
 
-    printh(s, clen + sizeof(char));
+    //printh(s, clen + sizeof(char));
     
     if (len > 0) {
         memcpy(v, s + sizeof(char), clen);

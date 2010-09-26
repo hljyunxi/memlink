@@ -56,9 +56,12 @@ mempool_get(MemPool *mp, int blocksize)
 
         return dbk;
     }
+        
     
     dbn = dbk->next;
     mp->freemem[i].data = dbn; 
+
+    memset(dbk, 0, sizeof(DataBlock) + g_cf->block_data_count * blocksize);
 
     return dbk;
 }
