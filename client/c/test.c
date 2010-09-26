@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
 
     //ret = memlink_cmd_del(m, "haha", "gogo", 4);
     int i;
-    for (i = 0; i < 30; i++) {
+    for (i = 0; i < 3; i++) {
         printf("=============================\n");
         sprintf(buf, "gogo%d", i);
         DINFO("INSERT haha %s\n", buf);
@@ -41,6 +41,7 @@ int main(int argc, char *argv[])
     ret = memlink_cmd_stat(m, "haha");
     DINFO("memlink_cmd_xx: %d\n", ret);
 
+    /*
     printf("=============================\n");
     ret = memlink_cmd_update(m, "haha", "gogo1", 5, 0);
     DINFO("memlink_cmd_xx: %d\n", ret);
@@ -49,7 +50,7 @@ int main(int argc, char *argv[])
     ret = memlink_cmd_mask(m, "haha", "gogo2", 5, "10:3:1");
     DINFO("memlink_cmd_xx: %d\n", ret);
 
-    /*printf("=============================\n");
+    printf("=============================\n");
     ret = memlink_cmd_tag(m, "haha", "gogo1", 5, 1);
     DINFO("memlink_cmd_xx: %d\n", ret);
 

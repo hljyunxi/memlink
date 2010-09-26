@@ -97,6 +97,42 @@ printh(char *data, int datalen)
 }
 
 char*
+formatb(char *data, int datalen, char *buf, int blen)
+{
+    int i, j;
+    unsigned char c;
+    int idx = 0;
+    int maxlen = blen - 1;
+
+    buf[maxlen] = 0;
+
+    for (i = 0; i < datalen; i++) {
+        c = 0x80;
+        for (j = 0; j < 8; j++) {
+            if (c & data[datalen - i - 1]) {
+                buf[idx] = '1';
+            }else{
+                buf[idx] = '0';
+            }   
+            idx ++;
+            if (idx >= maxlen) {
+                return buf;
+            }
+            c = c >> 1;
+        }   
+        buf[idx] = ' ';
+        idx ++;
+
+        if (idx >= maxlen) {
+            return buf;
+        }
+    }   
+
+    return buf;
+}
+
+
+char*
 formath(char *data, int datalen, char *buf, int blen)
 {
     int i;

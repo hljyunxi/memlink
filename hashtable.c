@@ -16,12 +16,13 @@
 static int 
 dataitem_have_data(HashNode *node, char *itemdata)
 {
-    unsigned char n = *(itemdata + node->valuesize);
+    char *maskdata  = itemdata + node->valuesize;
 
-    //DINFO("check mask have data:\n");
+    //char buf[128];
+    //DINFO("check mask have data: %s, %d\n", formatb(maskdata, node->masksize, buf, 128), *maskdata & (unsigned char)0x01);
     //printh(itemdata + node->valuesize, node->masksize);
 
-    if ((n & (unsigned char)0x01) == 1) {
+    if ((*maskdata & (unsigned char)0x01) == 1) {
         //DINFO("ok, have data.\n");
         return 1;
     }
@@ -78,12 +79,9 @@ dataitem_copy(HashNode *node, char *addr, void *value, void *mask)
     //char *m = mask;
     //*m = *m | (*addr & 0x03);
 
-    if (mask) {
-        memcpy(addr + node->valuesize, mask, node->masksize);
-    }else{
-        memset(addr + node->valuesize, 0, node->masksize);
-    }
+    DINFO("dataitem_copy valuesize: %d, masksize: %d\n", node->valuesize, node->masksize);
     memcpy(addr, value, node->valuesize);
+    memcpy(addr + node->valuesize, mask, node->masksize);
     
     return 0;
 }
@@ -93,18 +91,17 @@ dataitem_copy_mask(HashNode *node, char *addr, char *maskflag, char *mask)
 {
     //char *m = mask;
     //*m = *m | (*addr & 0x03);
+    int i;
+    char *maskaddr = addr + node->valuesize;
+    char buf[128];
+    DINFO("copy_mask before: %s\n", formatb(addr, node->masksize, buf, 128)); 
 
-    if (mask) {
-        int i;
-
-        for (i = 0; i < node->masksize; i++) {
-            addr[i] = (addr[i] & maskflag[i]) | mask[i];
-        }
-        //memcpy(addr + node->valuesize, mask, node->masksize);
-    }else{
-        memset(addr + node->valuesize, 0, node->masksize);
+    for (i = 0; i < node->masksize; i++) {
+        maskaddr[i] = (maskaddr[i] & maskflag[i]) | mask[i];
     }
-    
+    //memcpy(addr + node->valuesize, mask, node->masksize);
+    DINFO("copy_mask after: %s\n", formatb(addr, node->masksize, buf, 128)); 
+
     return 0;
 }
 
@@ -380,7 +377,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
     int i;
     char *posaddr  = NULL;
     char *itemdata;
-    DataBlock *last = dbk;
+    DataBlock *last = NULL;
 
     // find copy position
     while (dbk) {
@@ -412,6 +409,8 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
         MEMLINK_EXIT;
         return -2;
     }
+    DINFO("create newbk:%p, dbk:%p\n", newbk, dbk);
+
     node->all += g_cf->block_data_count;
 
     if (posaddr == NULL) { // position out of link, only create a new block
@@ -429,46 +428,62 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
     }else{ //
         char *todata  = newbk->data;
         char *enddata = todata + g_cf->block_data_count * datalen;
-
         itemdata    = dbk->data;
-        DINFO("found exist hash, newbk: %p, dbk: %p, todata:%p, enddata:%p\n", newbk, dbk, todata, enddata);
         newbk->next = dbk->next;
 
+        DINFO("found exist hash, newbk: %p, dbk: %p, todata:%p, enddata:%p\n", newbk, dbk, todata, enddata);
+
+        DataBlock   *lastnewbk = newbk;
         for (i = 0; i < g_cf->block_data_count; i++) {
-            if (dataitem_have_data(node, itemdata)) {
-                DINFO("copy data ...\n");
+            char buf[128] = {0};
+            if (dataitem_have_data(node, itemdata)) { 
                 if (itemdata == posaddr) { // position for insert
                     DINFO("insert pos, go\n");
                     dataitem_copy(node, todata, value, mask);
-                    newbk->count ++;
+                    lastnewbk->count ++;
                     todata += datalen; 
+        
+                    //hashtable_print(ht, key);
+                    DINFO("data1 %p ... %s\n", itemdata, formatb(itemdata + node->valuesize, node->masksize, buf, 128) );
+                    DINFO("data1 %p ... %s\n", itemdata, formatb(itemdata + datalen + node->valuesize, node->masksize, buf, 128) );
                 }
-                // only copy data
+
                 if (todata >= enddata) { // at the end of new datablock, must create another datablock
                     DINFO("create a new datablock.\n");
                     DataBlock *newbk2 = mempool_get(g_mpool, datalen);
                     if (NULL == newbk2) {
                         DERROR("hashtable_add error!\n");
-                        mempool_put(g_mpool, newbk, datalen);
-
+                        //mempool_put(g_mpool, newbk, datalen);
                         MEMLINK_EXIT;
                         return -3;
                     }
                     newbk2->next = newbk->next;
-                    newbk->next = newbk2;
+                    newbk->next  = newbk2;
+
+                    lastnewbk = newbk2;
 
                     node->all += g_cf->block_data_count;
 
                     todata  = newbk2->data;
                     enddata = todata + g_cf->block_data_count * datalen;
                 }
+                // only copy data
+                    
+                //DINFO("data2 %p ... %s\n", itemdata, formatb(itemdata + node->valuesize, node->masksize, buf, 128) );
+
+                DINFO("copy data ...  %s\n", formatb(itemdata + node->valuesize, node->masksize, buf, 128) );
                 memcpy(todata, itemdata, datalen);
-                newbk->count ++;
+                lastnewbk->count ++;
                 todata += datalen; 
             }
             itemdata += datalen;
         }
-        last->next = newbk;
+        if (last) {
+            last->next = newbk;
+        }else{
+            node->data = newbk;
+        }
+        DINFO("dbk %p put back to mempool.\n", dbk);
         mempool_put(g_runtime->mpool, dbk, datalen);
         node->all -= g_cf->block_data_count;
         //node->used -= dbk->count;
@@ -485,7 +500,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 int
 hashtable_add_mask(HashTable *ht, char *key, void *value, unsigned int *maskarray, char masknum, int pos)
 {
-    char mask[HASHTABLE_MASK_MAX_LEN * sizeof(int)];
+    char mask[HASHTABLE_MASK_MAX_LEN * sizeof(int)] = {0};
     int  ret;
     HashNode *node = hashtable_find(ht, key);
     if (NULL == node) {
@@ -499,7 +514,7 @@ hashtable_add_mask(HashTable *ht, char *key, void *value, unsigned int *maskarra
         return -2;
     }
 
-    printh(mask, node->masksize);
+    //printh(mask, node->masksize);
 
     return hashtable_add_mask_bin(ht, key, value, mask, pos);
 }
@@ -510,7 +525,7 @@ hashtable_add_mask(HashTable *ht, char *key, void *value, unsigned int *maskarra
 int
 hashtable_update(HashTable *ht, char *key, void *value, int pos)
 {
-    char mask[HASHTABLE_MASK_MAX_LEN * sizeof(int)];
+    char mask[HASHTABLE_MASK_MAX_LEN * sizeof(int)] = {0};
     HashNode *node = NULL;
     char     *item = NULL; 
 
@@ -606,30 +621,23 @@ hashtable_mask(HashTable *ht, char *key, void *value, unsigned int *maskarray, i
         return ret;
     }
 
-    char mask[HASHTABLE_MASK_MAX_LEN * sizeof(int)];
-    char maskflag[HASHTABLE_MASK_MAX_LEN * sizeof(int)];
-    //unsigned int maskarray[HASHTABLE_MASK_MAX_LEN];
-    //int  masknum;
-
-    /*masknum = mask_string2array(maskstr, maskarray);
-    if (masknum <= 0) {
-        DWARNING("masknum error: %d\n", masknum);
-        return -1;
-    }*/
+    char mask[HASHTABLE_MASK_MAX_LEN * sizeof(int)] = {0};
+    char maskflag[HASHTABLE_MASK_MAX_LEN * sizeof(int)] = {0};
 
     int  len = mask_array2binary(node->maskformat, maskarray, masknum, mask);
     if (len <= 0) {
         DERROR("mask array2binary error: %d\n", masknum);
         return -1;
     }
-    printb(mask, len);
+    char buf[128];
+    DINFO("array2bin: %s\n", formatb(mask, len, buf, 128));
 
     int flen = mask_array2flag(node->maskformat, maskarray, masknum, maskflag);
     if (flen <= 0) {
         DERROR("mask array2flag error: %d\n", masknum);
         return -1;
     }
-    printb(maskflag, flen);
+    DINFO("array2flag: %s\n", formatb(maskflag, flen, buf, 128));
 
     dataitem_copy_mask(node, item, maskflag, mask);
 
@@ -826,7 +834,7 @@ hashtable_print(HashTable *ht, char *key)
         return -1;
     }
 
-    DINFO("-----------------------------\nHashNode key:%s, vsize:%d, msize:%d, mnum:%d, all:%d, userd:%d\n",
+    DINFO("------ HashNode key:%s, vsize:%d, msize:%d, mnum:%d, all:%d, userd:%d\n",
                 node->key, node->valuesize, node->masksize, node->masknum, node->all, node->used);
 
     int i;
@@ -844,13 +852,13 @@ hashtable_print(HashTable *ht, char *key)
     while (dbk) {
         blocks += 1;
         char *itemdata = dbk->data; 
-        DINFO("====== dbk count: %d ======\n", dbk->count);
+        DINFO("====== dbk %p count: %d ======\n", dbk, dbk->count);
         for (i = 0; i < g_cf->block_data_count; i++) {
             if (dataitem_have_data(node, itemdata)) {
                 DINFO("i: %d, value: %s, mask: %s\n", i, formath(itemdata, node->valuesize, buf2, 128), 
                             formath(itemdata + node->valuesize, node->masksize, buf1, 128));
             }else{
-                DINFO("i: %d, no data\n", i);
+                DINFO("i: %d, no data, mask: %s\n", i, formath(itemdata + node->valuesize, node->masksize, buf1, 128));
             }
 
             itemdata += datalen;
@@ -858,7 +866,7 @@ hashtable_print(HashTable *ht, char *key)
 
         dbk = dbk->next;
     }
-    DINFO("blocks: %d\n---------------------------\n", blocks);
+    DINFO("------ blocks: %d\n", blocks);
 
     return 0;
 }

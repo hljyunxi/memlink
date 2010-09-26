@@ -26,9 +26,8 @@ rdata_ready(Conn *conn, char *data, int datalen)
     unsigned int    frompos, len;
 
     memcpy(&cmd, data + sizeof(short), sizeof(char));
-    DINFO("data ready cmd: %d\n", cmd);
-   
-    printh(data, datalen);
+    char buf[256] = {0};
+    DINFO("data ready cmd: %d, data: %s\n", cmd, formath(data, datalen, buf, 256));
 
     switch(cmd) {
         case CMD_RANGE: {
@@ -43,9 +42,10 @@ rdata_ready(Conn *conn, char *data, int datalen)
             ret = hashtable_range(g_runtime->ht, key, maskarray, masknum, frompos, len, 
                                 retrec + sizeof(char)*2, &retlen, &valuesize, &masksize); 
             DINFO("hashtable_range return: %d, retlen:%d, valuesize:%d, masksize:%d\n", ret, retlen, valuesize, masksize);
+            /*
             if (retlen > 0) {
                 printh(retrec + sizeof(char) * 2, retlen);
-            }
+            }*/
             memcpy(retrec, &valuesize, sizeof(char));
             memcpy(retrec + sizeof(char), &masksize, sizeof(char));
            

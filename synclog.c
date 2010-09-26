@@ -34,62 +34,6 @@ truncate_file(int fd, int len)
     return 0;
 }
 
-/*
-ssize_t 
-readn(int fd, void *vptr, size_t n)
-{
-    size_t  nleft;
-    ssize_t nread;
-    char    *ptr;
-
-    ptr = vptr;
-    nleft = n;
-
-    while (nleft > 0) {
-        if ((nread = read(fd, ptr, nleft)) < 0) {
-            if (errno == EINTR) {
-                nread = 0;
-            }else {
-                DERROR("readn error: %s\n", strerror(errno));
-                MEMLINK_EXIT;
-                return -1;
-            }
-        }else if (nread == 0)
-            break;
-        nleft -= nread;
-        ptr += nread;
-    }
-
-    return (n - nleft);
-}
-
-size_t
-writen(int fd, const void *vptr, size_t n)
-{
-    size_t  nleft;
-    ssize_t nwritten;
-    const char *ptr;
-
-    ptr = vptr;
-    nleft = n;
-
-    while (nleft > 0) {
-        if ((nwritten = write(fd, ptr, nleft)) <= 0) {
-            if (nwritten < 0 && errno == EINTR){
-                nwritten = 0;
-            }else{
-                DERROR("writen error: %s\n", strerror(errno));
-                MEMLINK_EXIT;
-                return -1;
-            }
-        }
-        nleft -= nwritten;
-        ptr += nwritten;
-    }
-    return n;
-}
-*/
-
 SyncLog*
 synclog_create()
 {
@@ -126,7 +70,7 @@ synclog_create()
 
     int len = sizeof(short) + sizeof(int) + sizeof(int) + SYNCLOG_INDEXNUM * sizeof(int);
     slog->len = len;
-    int cur = lseek(slog->fd, 0, SEEK_SET);
+    int cur = lseek(slog->fd, 0, SEEK_CUR);
     DINFO("synclog cur: %d\n", cur);
 
     if (cur == 0) {
@@ -287,7 +231,7 @@ synclog_write(SyncLog *slog, char *data, int datalen)
 {
     int wlen = datalen;
     int ret;
-    int pos = lseek(slog->fd, 0, SEEK_SET);
+    int pos = lseek(slog->fd, 0, SEEK_CUR);
 
     while (wlen > 0) {
         ret = write(slog->fd, data, wlen);
@@ -342,7 +286,7 @@ synclog_lastlog()
         DERROR("opendir %s error: %s\n", g_cf->datadir, strerror(errno));
         return 0;
     }
-    DINFO("readdir ...\n");
+    //DINFO("readdir ...\n");
     //while (readdir_r(mydir, nodes, &result) == 0 && nodes) {
     while ((nodes = readdir(mydir)) != NULL) {
         DINFO("name: %s\n", nodes->d_name);
