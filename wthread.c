@@ -144,7 +144,11 @@ wdata_apply(char *data, int datalen, int writelog)
             ret = hashtable_add_info_mask(g_runtime->ht, key, vnum, maskformat, masknum);
             DINFO("hashtabl_add_info return: %d\n", ret);
             if (ret >= 0 && writelog) {
-                synclog_write(g_runtime->synclog, data, datalen);
+                int sret = synclog_write(g_runtime->synclog, data, datalen);
+                if (sret < 0) {
+                    DERROR("synclog_write error: %d\n", sret);
+                    MEMLINK_EXIT;
+                }
             }
             break;
         case CMD_DEL:
@@ -154,7 +158,11 @@ wdata_apply(char *data, int datalen, int writelog)
             ret = hashtable_del(g_runtime->ht, key, value);
             DINFO("hashtable_del: %d\n", ret);
             if (ret >= 0 && writelog) {
-                synclog_write(g_runtime->synclog, data, datalen);
+                int sret = synclog_write(g_runtime->synclog, data, datalen);
+                if (sret < 0) {
+                    DERROR("synclog_write error: %d\n", sret);
+                    MEMLINK_EXIT;
+                }
             }
 
             break;
@@ -168,7 +176,11 @@ wdata_apply(char *data, int datalen, int writelog)
 
             hashtable_print(g_runtime->ht, key);
             if (ret >= 0 && writelog) {
-                synclog_write(g_runtime->synclog, data, datalen);
+                int sret = synclog_write(g_runtime->synclog, data, datalen);
+                if (sret < 0) {
+                    DERROR("synclog_write error: %d\n", sret);
+                    MEMLINK_EXIT;
+                }
             }
 
             break;
@@ -180,7 +192,11 @@ wdata_apply(char *data, int datalen, int writelog)
             DINFO("hashtable_update: %d\n", ret);
             hashtable_print(g_runtime->ht, key);
             if (ret >= 0 && writelog) {
-                synclog_write(g_runtime->synclog, data, datalen);
+                int sret = synclog_write(g_runtime->synclog, data, datalen);
+                if (sret < 0) {
+                    DERROR("synclog_write error: %d\n", sret);
+                    MEMLINK_EXIT;
+                }
             }
 
             break;
@@ -193,7 +209,11 @@ wdata_apply(char *data, int datalen, int writelog)
             DINFO("hashtable_update: %d\n", ret);
             hashtable_print(g_runtime->ht, key);
             if (ret >= 0 && writelog) {
-                synclog_write(g_runtime->synclog, data, datalen);
+                int sret = synclog_write(g_runtime->synclog, data, datalen);
+                if (sret < 0) {
+                    DERROR("synclog_write error: %d\n", sret);
+                    MEMLINK_EXIT;
+                }
             }
 
             break;
@@ -205,7 +225,11 @@ wdata_apply(char *data, int datalen, int writelog)
             DINFO("hashtable_update: %d\n", ret);
             hashtable_print(g_runtime->ht, key);
             if (ret >= 0 && writelog) {
-                synclog_write(g_runtime->synclog, data, datalen);
+                int sret = synclog_write(g_runtime->synclog, data, datalen);
+                if (sret < 0) {
+                    DERROR("synclog_write error: %d\n", sret);
+                    MEMLINK_EXIT;
+                }
             }
 
             break;
