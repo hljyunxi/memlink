@@ -52,7 +52,7 @@ extern MyConfig *g_cf;
 extern Runtime  *g_runtime;
 
 MyConfig*   myconfig_create(char *filename);
-Runtime*    master_runtime_create(char *pgname);
+Runtime*    runtime_create_master(char *pgname);
 Runtime*    slave_runtime_create(char *pgname);
 void        runtime_destroy(Runtime *rt);
 
