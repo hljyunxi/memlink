@@ -38,7 +38,7 @@ void master(char *pgname)
 {
     logfile_create("stdout", 3);
     DINFO("logfile ok!\n");
-    master_runtime_create(pgname);
+    runtime_create_master(pgname);
     DINFO("master runtime ok!\n");
 
     mainserver_loop(g_runtime->server);
@@ -112,11 +112,13 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (g_cf->role == 1) 
+    if (g_cf->role == 1) {
         master(argv[0]);
-    else 
+    }else{
         slave(argv[0]);
+    }
 
     return 0;
 }
+
 

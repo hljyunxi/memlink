@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
         printf("memlink_create error!\n");
     }
 
-    int ret;
+    int ret, i;
     //ret = memlink_cmd_dump(m);
     //DINFO("memlink_dump: %d\n", ret);
 
@@ -24,12 +24,15 @@ int main(int argc, char *argv[])
     //DINFO("memlink_cmd_xx: %d\n", ret);
 
     printf("=============================\n");
-    ret = memlink_cmd_create(m, "haha", 6, "4:3:1");
-    DINFO("memlink_cmd_xx: %d\n", ret);
+    for (i = 0; i < 10; i++) {
+        sprintf(buf, "haha%d", i);
+        ret = memlink_cmd_create(m, buf, 6, "4:3:1");
+        DINFO("memlink_cmd_xx: %d\n", ret);
+    }
 
     //ret = memlink_cmd_del(m, "haha", "gogo", 4);
-    int i;
-    for (i = 0; i < 3; i++) {
+    
+    /*for (i = 0; i < 3; i++) {
         printf("=============================\n");
         sprintf(buf, "gogo%d", i);
         DINFO("INSERT haha %s\n", buf);
@@ -40,6 +43,8 @@ int main(int argc, char *argv[])
     printf("=============================\n");
     ret = memlink_cmd_stat(m, "haha");
     DINFO("memlink_cmd_xx: %d\n", ret);
+    */
+
 
     /*
     printf("=============================\n");

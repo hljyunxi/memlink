@@ -1,12 +1,20 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include "logfile.h"
 #include "mem.h"
 #include "myconfig.h"
 #include "zzmalloc.h"
 #include "synclog.h"
 #include "server.h"
+#include "dumpfile.h"
+#include "wthread.h"
 
 MyConfig *g_cf;
 
@@ -125,6 +133,119 @@ myconfig_create(char *filename)
     return mcf;
 }
 
+int 
+compare_int ( const void *a , const void *b ) 
+{ 
+    return *(int *)a - *(int *)b; 
+} 
+
+static int
+load_data()
+{
+    int    ret;
+    struct stat stbuf;
+    char   *filename = "dump.dat";
+
+    // check dumpfile exist
+    ret = stat(filename, &stbuf);
+    if (ret == -1 && errno == ENOENT) {
+        DINFO("not found dumpfile: %s\n", filename);
+    }   
+  
+    // have dumpfile, load
+    if (ret == 0) {
+        ret = loaddump(g_runtime->ht);
+        if (ret < 0) {
+            DERROR("loaddump error: %d\n", ret);
+            MEMLINK_EXIT;
+            return -1;
+        }
+    }
+
+    // get all synclog
+    DIR     *mydir; 
+    struct  dirent *nodes;
+    int     minid = g_runtime->dumplogver;
+    int     logids[10000] = {0};
+    int     i = 0;
+
+    DINFO("try get synclog ...\n");
+    mydir = opendir(g_cf->datadir);
+    if (NULL == mydir) {
+        DERROR("opendir %s error: %s\n", g_cf->datadir, strerror(errno));
+        return -2;
+    }   
+    while ((nodes = readdir(mydir)) != NULL) {
+        DINFO("name: %s\n", nodes->d_name);
+        if (strncmp(nodes->d_name, "bin.log.", 8) == 0) {
+            int binid = atoi(&nodes->d_name[8]);
+            if (binid > minid) {
+                logids[i] = binid;
+                i++;
+            }   
+        }   
+    }   
+    closedir(mydir);    
+
+    qsort(logids, i, sizeof(int), compare_int);
+
+    int n = i;
+    int ffd, len;
+
+    for (i = 0; i < n + 1; i++) {
+        char logname[PATH_MAX];
+
+        if (i < n) {
+            snprintf(logname, PATH_MAX, "%s/data/bin.log.%d", g_runtime->home, logids[i]);
+        }else{
+            snprintf(logname, PATH_MAX, "%s/data/bin.log", g_runtime->home);
+        }
+        DINFO("load synclog: %s\n", logname);
+    
+        ffd = open(logname, O_RDONLY);
+        if (-1 == ffd) {
+            DERROR("open file %s error! %s\n", logname, strerror(errno));
+            MEMLINK_EXIT;
+        }
+        len = lseek(ffd, 0, SEEK_END);
+        
+        char *addr = mmap(NULL, len, PROT_READ, MAP_SHARED, ffd, 0);
+        if (addr == MAP_FAILED) {
+            DERROR("synclog mmap error: %s\n", strerror(errno));
+            MEMLINK_EXIT;
+        }   
+        unsigned int indexlen = *(unsigned int*)(addr + sizeof(short) + sizeof(int));
+        //unsigned int *index = (unsigned int*)(addr + sizeof(short) + sizeof(int) * 2);
+        char *data    = addr + sizeof(short) + sizeof(int) * 2 + indexlen * sizeof(int);
+        char *enddata = addr + len;
+       
+        unsigned short blen; 
+        while (data < enddata) {
+            blen = *(unsigned short*)data;  
+           
+            if (enddata < data + blen + sizeof(short)) {
+                DERROR("synclog end error: %s, skip\n", logname);
+                //MEMLINK_EXIT;
+                break;
+            }
+            ret = wdata_apply(data, blen + sizeof(short), 0);       
+            if (ret != 0) {
+                DERROR("wdata_apply log error: %d\n", ret);
+                MEMLINK_EXIT;
+            }
+
+            data += blen + sizeof(short); 
+        }
+    
+        munmap(addr, len);
+
+        close(ffd);
+    }
+
+    return 0;
+}
+
+
 Runtime *g_runtime;
 
 static Runtime* 
@@ -180,6 +301,77 @@ int mempool_init(Runtime* rt)
     return 0;
 }
 
+Runtime*
+runtime_create_common(char *pgname)
+{
+    Runtime *rt = (Runtime*)zz_malloc(sizeof(Runtime));
+    if (NULL == rt) {
+        DERROR("malloc Runtime error!\n");
+        MEMLINK_EXIT;
+        return NULL; 
+    }
+    memset(rt, 0, sizeof(Runtime));
+    g_runtime = rt;
+
+    realpath(pgname, rt->home);
+    char *last = strrchr(rt->home, '/');  
+    if (last != NULL) {
+        *last = 0;
+    }
+    DINFO("home: %s\n", rt->home);
+
+    int ret;
+    ret = pthread_mutex_init(&rt->mutex, NULL);
+    if (ret != 0) {
+        DERROR("pthread_mutex_init error: %s\n", strerror(errno));
+        MEMLINK_EXIT;
+        return NULL;
+    }
+    DINFO("mutex init ok!\n");
+
+    rt->mpool = mempool_create();
+    if (NULL == rt->mpool) {
+        DERROR("mempool create error!\n");
+        MEMLINK_EXIT;
+        return NULL;
+    }
+    DINFO("mempool create ok!\n");
+
+    rt->ht = hashtable_create();
+    if (NULL == rt->ht) {
+        DERROR("hashtable_create error!\n");
+        MEMLINK_EXIT;
+        return NULL;
+    }
+    DINFO("hashtable create ok!\n");
+
+    rt->server = mainserver_create();
+    if (NULL == rt->server) {
+        DERROR("mainserver_create error!\n");
+        MEMLINK_EXIT;
+        return NULL;
+    }
+    DINFO("main thread create ok!\n");
+
+    rt->synclog = synclog_create("bin.log");
+    if (NULL == rt->synclog) {
+        DERROR("synclog_create error!\n");
+        MEMLINK_EXIT;
+        return NULL;
+    }
+    DINFO("synclog open ok!\n");
+
+    ret = load_data();
+    if (ret < 0) {
+        DERROR("load_data error: %d\n", ret);
+        MEMLINK_EXIT;
+        return NULL;
+    }
+    DINFO("load_data ok!\n");
+
+    return rt;
+}
+
 Runtime* 
 slave_runtime_create(char *pgname) 
 {
@@ -196,11 +388,11 @@ slave_runtime_create(char *pgname)
 }
 
 Runtime*
-master_runtime_create(char *pgname)
+runtime_create_master(char *pgname)
 {
-    Runtime* rt = runtime_init(pgname);
+    Runtime* rt;// = runtime_init(pgname);
 
-    int ret;
+    /*int ret;
     ret = pthread_mutex_init(&rt->mutex, NULL);
     if (ret != 0) {
         DERROR("pthread_mutex_init error: %s\n", strerror(errno));
@@ -209,19 +401,20 @@ master_runtime_create(char *pgname)
     }
     DINFO("mutex init ok!\n");
 
-    if (hashtable_init(rt) != 0)
+    if (hashtable_init(rt) != 0) 
       return NULL;
-
-    rt->synclog = synclog_create("bin.log");
-    if (NULL == rt->synclog) {
-        DERROR("synclog_create error!\n");
-        MEMLINK_EXIT;
-        return NULL;
-    }
-    DINFO("synclog open ok!\n");
-
+    
     if (mempool_init(rt) != 0)
         return NULL;
+
+    if (mainserver_init(rt) != 0)
+        return NULL;
+    */
+
+    rt = runtime_create_common(pgname);
+    if (NULL == rt) {
+        return rt;
+    }
 
     rt->wthread = wthread_create();
     if (NULL == rt->wthread) {
@@ -230,12 +423,6 @@ master_runtime_create(char *pgname)
         return NULL;
     }
     DINFO("write thread create ok!\n");
-    
-    if (mainserver_init(rt) != 0)
-        return NULL;
-
-    // TODO sync thread
-
     DINFO("create master Runtime ok!\n");
     return rt;
 }
@@ -249,3 +436,5 @@ runtime_destroy(Runtime *rt)
     pthread_mutex_destroy(&rt->mutex);
     zz_free(rt);
 }
+
+
