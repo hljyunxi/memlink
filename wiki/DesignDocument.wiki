@@ -137,7 +137,7 @@ MemLink支持一个主，多个从的同步模式。主和从的区别：
 
 1. 从在本地没有dump文件和log文件
 
-这时需要发送sync命令，参数[0] [0]。
+这时需要发送sync命令，参数{0} {0}。
 
 2. 从本地有dump文件和log文件
 
@@ -151,7 +151,7 @@ MemLink支持一个主，多个从的同步模式。主和从的区别：
 
 具体的交互命令如下：
 
-1. sync [log version] [log line]
+1. sync {log version} {log line}
 
 描述：表示同步数据。Sync的编号为100，log version为log版本号，4字节整型，log line为行号，也是4字节整型。从节点从同步进度文件获取log version和log line。
 
@@ -185,7 +185,7 @@ MemLink支持一个主，多个从的同步模式。主和从的区别：
 
 我们可以通过tcp keep-alive来保持主从同步用的TCP连接。
 
-2. syncontinue [dumpversion] [size]
+2. syncontinue {dumpversion} {size}
 
 描述：syncontinue编号为101。Dumpversion为dump版本号，是4字节，size为已同步文件大小，为8字节。如果上回第一次同步dump文件有中断，发送此命令。如果在发生dump文件中断后，从还在运行，从直接发这个命令。如果在发生dump文件中断后，从重新启动。如果从发现这个状态为1，从也会发这个命令。
 
