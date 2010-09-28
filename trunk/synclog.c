@@ -63,7 +63,8 @@ synclog_create()
         g_runtime->logver = lastver;
     }
     DINFO("try open sync logfile ...\n");
-    slog->fd = open(slog->filename, O_RDWR|O_CREAT|O_APPEND, 0644);
+    //slog->fd = open(slog->filename, O_RDWR|O_CREAT|O_APPEND, 0644);
+    slog->fd = open(slog->filename, O_RDWR|O_CREAT, 0644);
     if (slog->fd == -1) {
         DERROR("open synclog %s error: %s\n", slog->filename, strerror(errno));
         zz_free(slog);
@@ -279,15 +280,22 @@ synclog_write(SyncLog *slog, char *data, int datalen)
     char buf[128];
         
     cur = lseek(slog->fd, slog->pos, SEEK_SET);
+	/*
+    DINFO("write synclog, cur: %u, pos: %d, %d, wlen: %d, %s\n", cur, slog->pos, 
+				(unsigned int)lseek(slog->fd, 0, SEEK_CUR),
+				wlen, formath(data, wlen, buf, 128));
+	ret = write(slog->fd, "zhaowei", 7);
+	DINFO("write test ret: %d, cur: %d\n", ret, (unsigned int)lseek(slog->fd, 0, SEEK_CUR));
+	*/	
     while (wlen > 0) {
-        DINFO("write synclog, cur: %u, pos: %d, wlen: %d, %s\n", cur, slog->pos, wlen, formath(data, wlen, buf, 128));
-
-        int old = lseek(slog->fd, 0, SEEK_CUR);
+        /*int old = lseek(slog->fd, 0, SEEK_CUR);
         char databuf[1023];
         int rsize = read(slog->fd, databuf, 23);
         DINFO("read: %s\n", formath(databuf, rsize, buf, 128)); 
         lseek(slog->fd, old, SEEK_SET);
+		*/
 
+		DINFO("write pos: %u %s\n", (unsigned int)lseek(slog->fd, 0, SEEK_CUR), formath(data+wpos, wlen, buf, 128));
         ret = write(slog->fd, data + wpos, wlen);
         DINFO("write return:%d\n", ret);
         if (ret == -1) {
@@ -296,11 +304,6 @@ synclog_write(SyncLog *slog, char *data, int datalen)
             }else{
                 DERROR("write synclog error: %s\n", strerror(errno));
                 MEMLINK_EXIT;
-                /*
-                if (lseek(slog->fd, pos, SEEK_SET) == -1) {
-                    DERROR("lseek synclog error: %s\n", strerror(errno));
-                    MEMLINK_EXIT;
-                }*/
                 return -1;
             }
         }else{
@@ -308,6 +311,8 @@ synclog_write(SyncLog *slog, char *data, int datalen)
             wpos += ret;
         }
     }
+	
+	DINFO("after write pos: %u\n", (unsigned int)lseek(slog->fd, 0, SEEK_CUR));
 
     unsigned int *idxdata = (unsigned int*)(slog->index + sizeof(short) + sizeof(int) * 2);
     DINFO("write index: %u, %u\n", slog->index_pos, slog->pos);
