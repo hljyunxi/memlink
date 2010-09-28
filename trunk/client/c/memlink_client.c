@@ -139,11 +139,12 @@ memlink_connect(MemLink *m, int fdtype)
     return ret;
 }
 
+// TODO should check the received data is not bigger than rlen
 static int
 memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
 {
     int rdlen = 0; 
-    int nleft = rlen;
+    int nleft = rlen; // TODO remove it if useless
     int datalen = 0;
     int ret;
     int fd;
@@ -235,6 +236,23 @@ memlink_write(MemLink *m, int fdtype, char *wbuf, int wlen)
     return ret;
 }
 
+/**
+ * Send a command to memlink server and recieve the response. Response format:
+ * ----------------------------------------------------
+ * | response length (2 bytes) | return code (2 bytes)|
+ * ----------------------------------------------------
+ * | message length (1 bytes) | message | data |
+ * ---------------------------------------------
+ *
+ * @param m memlink client
+ * @param fdtype read or write
+ * @param data command data
+ * @param len command length
+ * @param retdata return data
+ * @param retlen max length of return data
+ * @return return code
+ *
+ */
 static int
 memlink_do_cmd(MemLink *m, int fdtype, char *data, int len, char *retdata, int retlen)
 {
