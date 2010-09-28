@@ -281,6 +281,13 @@ synclog_write(SyncLog *slog, char *data, int datalen)
     cur = lseek(slog->fd, slog->pos, SEEK_SET);
     while (wlen > 0) {
         DINFO("write synclog, cur: %u, pos: %d, wlen: %d, %s\n", cur, slog->pos, wlen, formath(data, wlen, buf, 128));
+
+        int old = lseek(slog->fd, 0, SEEK_CUR);
+        char databuf[1023];
+        int rsize = read(slog->fd, databuf, 23);
+        DINFO("read: %s\n", formath(databuf, rsize, buf, 128)); 
+        lseek(slog->fd, old, SEEK_SET);
+
         ret = write(slog->fd, data + wpos, wlen);
         DINFO("write return:%d\n", ret);
         if (ret == -1) {
