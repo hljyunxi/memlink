@@ -11,6 +11,11 @@
 #include "mem.h"
 #include "wthread.h"
 #include "server.h"
+#include "sslave.h"
+#include "sthread.h"
+
+// TODO is there a pre-defined const for this?
+#define IP_ADDR_MAX_LEN 100
 
 typedef struct _myconfig
 {
@@ -28,7 +33,7 @@ typedef struct _myconfig
     int          max_core;  // maximize core file limit
     int          is_daemon; // is run with daemon
     int          role;
-    int          master_addr;
+    char         master_addr[IP_ADDR_MAX_LEN];
     int          sync_interval;
 }MyConfig;
 
@@ -46,6 +51,8 @@ typedef struct _runtime
     volatile int    indump;
     WThread         *wthread;
     MainServer      *server;
+    SSlave          *sslave; // sync slave
+    SThread         *sthread; // sync thread
 }Runtime;
 
 extern MyConfig *g_cf;

@@ -340,9 +340,6 @@ client_buffer_read(int fd, char *data, int *dlen, func_data_ready func, void *co
     return *dlen;
 }
 */
-/**
- * alled many times? QE
- */
 void
 client_read(int fd, short event, void *arg)
 {
@@ -350,14 +347,19 @@ client_read(int fd, short event, void *arg)
     int     ret;
     unsigned short   datalen = 0;
 
-    if (conn->rlen >= 2) { // QE
-        memcpy(&datalen, conn->rbuf, sizeof(short)); // QE 
+    /*
+     * Called more than one time for the same command and aready receive the 
+     * 2-byte command length.
+     */
+    if (conn->rlen >= 2) {
+        memcpy(&datalen, conn->rbuf, sizeof(short)); 
     }
     DINFO("client read datalen: %d\n", datalen);
     DINFO("conn rlen: %d\n", conn->rlen);
 
     while (1) {
         int rlen = datalen;
+        // If command length is unavailable, use max length.
         if (rlen == 0) {
             rlen = CONN_MAX_READ_LEN - conn->rlen;
         }

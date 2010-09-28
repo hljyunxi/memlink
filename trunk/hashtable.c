@@ -179,11 +179,12 @@ hashtable_add_info_mask(HashTable *ht, char *key, int valuesize, unsigned int *m
     HashNode        *node  = ht->bunks[hash];
   
     DINFO("hashtable_add_info_mask call ... %s, %p, hash: %d\n", key, node, hash);
+    // handle hash collisions
     while (node) {
         DINFO("node->key: %p\n", node);
         //DINFO("node->key: %p, valuesize: %d\n", node, node->valuesize);
         if (strcmp(node->key, key) == 0) {
-            DWARNING("key %s is exist.\n", key);
+            DWARNING("key %s exists.\n", key);
             return -1;
         }
         node = node->next;
