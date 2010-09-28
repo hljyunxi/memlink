@@ -272,7 +272,7 @@ hashtable_hash(char *str, int len)
     return (hash & 0x7FFFFFFF) % HASHTABLE_BUNKNUM;
 }
 
-int
+/*int
 hashtable_add_first(HashTable *ht, char *key, void *value, char *maskstr)
 {
     unsigned int maskarray[HASHTABLE_MASK_MAX_LEN];
@@ -286,11 +286,11 @@ hashtable_add_first(HashTable *ht, char *key, void *value, char *maskstr)
 
     return hashtable_add_first_mask(ht, key, value, maskarray, masknum);
 }
-
+*/
 /**
  * 在数据链的头部添加数据
  */
-int 
+/*int 
 hashtable_add_first_mask(HashTable *ht, char *key, void *value, unsigned int *maskarray, char masknum)
 {
     char mask[HASHTABLE_MASK_MAX_LEN * sizeof(int)];
@@ -347,6 +347,8 @@ hashtable_add_first_mask(HashTable *ht, char *key, void *value, unsigned int *ma
 
     return 0;
 }
+*/
+
 
 int
 hashtable_add(HashTable *ht, char *key, void *value, char *maskstr, int pos)

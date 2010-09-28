@@ -40,9 +40,9 @@ HashNode*       hashtable_find(HashTable *ht, char *key);
 int             hashtable_find_value(HashTable *ht, char *key, void *value, HashNode **node, char **data);
 unsigned int    hashtable_hash(char *key, int len);
 
-int             hashtable_add_first(HashTable *ht, char *key, void *value, char *maskstr);
-int             hashtable_add_first_mask(HashTable *ht, char *key, void *value, 
-                                         unsigned int *maskarray, char masknum);
+//int             hashtable_add_first(HashTable *ht, char *key, void *value, char *maskstr);
+//int             hashtable_add_first_mask(HashTable *ht, char *key, void *value, 
+//                                         unsigned int *maskarray, char masknum);
 
 int             hashtable_add(HashTable *ht, char *key, void *value, char *maskstr, int pos);
 int             hashtable_add_mask(HashTable *ht, char *key, void *value, 
