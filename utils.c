@@ -6,6 +6,11 @@
 #include "utils.h"
 #include "logfile.h"
 
+/**
+ * readn - try to read n bytes with the use of a loop
+ *
+ * Return the bytes read. On error, -1 is returned.
+ */
 ssize_t 
 readn(int fd, void *vptr, size_t n)
 {
@@ -34,6 +39,10 @@ readn(int fd, void *vptr, size_t n)
     return (n - nleft);
 }
 
+/**
+ * writen - write n bytes with the use of a loop
+ *
+ */
 ssize_t
 writen(int fd, const void *vptr, size_t n)
 {

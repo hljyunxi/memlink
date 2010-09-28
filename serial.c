@@ -8,7 +8,15 @@
 /**
  * 把字符串形式的mask转换为数组形式
  */
-int 
+/**
+ * Convert a mask string to an integer array. Digit characters delimited by : is 
+ * converted into the correspoding integer. : is converted into UINT_MAX.
+ *
+ * @param maskstr mask string
+ * @param result converted integer array
+ * @return the count of the converted integers
+ */
+int
 mask_string2array(char *maskstr, unsigned int *result)
 {
     char *m = maskstr;
@@ -175,6 +183,17 @@ unpack_string(char *s, char *v, unsigned char *vlen)
     return len + sizeof(char);
 }
 
+/**
+ * Pack a string into a byte array. First, a byte for the count of the bytes to 
+ * be put is put into the destination array.  Then, the vlen bytes from the 
+ * source string are put into the destination array.
+ * 
+ * @param s destination byte array
+ * @param v source string
+ * @param vlen length to be put into the destination array. If zero, the whole 
+ * string is put.
+ * @return the count of bytes which have been put into the destination array
+ */
 static int
 pack_string(char *s, char *v, unsigned char vlen)
 {
@@ -313,6 +332,23 @@ cmd_stat_unpack(char *data, char *key)  //, HashTableStat *stat)
     return 0;
 }
 
+/**
+ * Pack a CMD_CREATE command. Command format:
+ * ------------------------------------------------------------------------
+ * | command length (2 bytes) | cmd number (1 byte) | key length (1 byte) |
+ * ------------------------------------------------------------------------
+ * | key | value length (1 byte) | mask length (1 byte) | mask |
+ * -------------------------------------------------------------
+ * command length is the count of bytes following it. mask length is the length 
+ * of mask integer array.
+ * 
+ * @param data destination byte array
+ * @param key hash key
+ * @param valuelen the data value length
+ * @param masknum the length of the mask array
+ * @param maskarray mask array
+ * @param return the length of the whole command.
+ */
 int 
 cmd_create_pack(char *data, char *key, unsigned char valuelen, unsigned char masknum, unsigned int *maskarray)
 {

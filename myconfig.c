@@ -118,7 +118,7 @@ myconfig_create(char *filename)
         }else if (strcmp(buffer, "role") == 0) {
             mcf->role = atoi(start);
         }else if (strcmp(buffer, "master_addr") == 0) {
-            mcf->master_addr = atoi(start);
+          snprintf(mcf->master_addr, IP_ADDR_MAX_LEN, "%s", start);
         }else if (strcmp(buffer, "sync_interval") == 0) {
             mcf->sync_interval = atoi(start);
         }
@@ -376,13 +376,22 @@ Runtime*
 slave_runtime_create(char *pgname) 
 {
     Runtime * rt = runtime_init(pgname);
+
     if (hashtable_init(rt) != 0)
       return NULL;
     if (mempool_init(rt) != 0)
         return NULL;
     if (mainserver_init(rt) != 0)
         return NULL;
-    // TODO sync thread
+
+    /*rt->sslave = sslave_create();*/
+    /*if (NULL == rt->wthread) {*/
+    /*    DERROR("sync slave creation error!\n");*/
+    /*    MEMLINK_EXIT;*/
+    /*    return NULL;*/
+    /*}*/
+    /*DINFO("sync slave creation ok!\n");*/
+
     DINFO("create slave runtime ok!\n");
     return rt;
 }
@@ -423,6 +432,18 @@ runtime_create_master(char *pgname)
         return NULL;
     }
     DINFO("write thread create ok!\n");
+    
+    if (mainserver_init(rt) != 0)
+        return NULL;
+
+    /*rt->sthread = sthread_create();*/
+    /*if (NULL == rt->sthread) {*/
+    /*    DERROR("sthread_create error!\n");*/
+    /*    MEMLINK_EXIT;*/
+    /*    return NULL;*/
+    /*}*/
+    /*DINFO("sync thread create ok!\n");*/
+
     DINFO("create master Runtime ok!\n");
     return rt;
 }
