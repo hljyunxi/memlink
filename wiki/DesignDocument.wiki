@@ -120,7 +120,7 @@ Dump文件的格式为二进制的格式：
 
 = 4 主从同步 =
 
-MemLink支持一个主，多个从的同步模式。主和从的区别：
+!MemLink支持一个主，多个从的同步模式。主和从的区别：
 
 ||功能||主||从||
 ||读请求||yes||yes||
@@ -145,7 +145,7 @@ MemLink支持一个主，多个从的同步模式。主和从的区别：
 
 3. 从不是第一次到主来同步，但之前是第一次同步且意外中断了
 
-从发送syncontinu命令，参数为dump版本号和上次同步的大小。主发送剩下的数据给从。
+从发送syncontinu命令，参数为dump版本号和上次同步的大小。
 
 命令协议为二进制交互协议，和其他命令的方法一样。
 
@@ -179,7 +179,7 @@ MemLink支持一个主，多个从的同步模式。主和从的区别：
 
 从在接收完dump数据后，主从dump文件同步标志置为0，更新hash table, 生成新的log文件。
 
-在发送完dump文件之后，主开始向从发送log记录。如果主有新的log文件生成，log version增量为1。主没有新的log文件生成，log version增量为0。从在接收到log记录，首先更新hash table。从然后把接受到log记录追加到本地的log文件，更新同步进度文件。如果log version增量为1，log version增1，log line置0。如果log version增量为0，log line增1。
+在发送完dump文件之后，主开始向从发送log记录。如果发送的log记录来自一个新的log文件，log version增量为1。主没有新的log文件生成，log version增量为0。从在接收到log记录，首先更新hash table。从然后把接受到log记录追加到本地的log文件，更新同步进度文件。如果log version增量为1，log version增1，log line置0。如果log version增量为0，log line增1。
 
 ||log version增量（1字节）||log记录||
 
