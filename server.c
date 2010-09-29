@@ -110,30 +110,17 @@ thserver_notify(int fd, short event, void *arg)
     QueueItem       *item = queue_get(ts->cq);
     Conn            *conn;
 	int				ret;
-    //struct timeval  tm;
 
     DINFO("thserver_notify: %d\n", fd);
 
     char buf;
     read(ts->notify_recv_fd, &buf, 1);
 
-    //evutil_timerclear(&tm);
-    //tm.tv_sec = g_cf->timeout;
-
     while (item) {
         conn = item->conn; 
         DINFO("notify fd: %d\n", conn->sock);
 		conn->base = ts->base;
-		/*
-        event_set(&conn->revt, conn->sock, EV_READ|EV_PERSIST, client_read, conn);
-        event_base_set(ts->base, &conn->revt);
-        event_add(&conn->revt, &tm); 
-		*/
-
-		//event_set(&conn->evt, conn->sock, EV_READ|EV_PERSIST, client_read, conn);
-        //event_base_set(ts->base, &conn->evt);
-        //event_add(&conn->evt, &tm); 
-		
+	
 		ret = change_event(conn, EV_READ|EV_PERSIST, 1);
 		if (ret < 0) {
 			DERROR("change event error: %d, close conn\n", ret);

@@ -46,6 +46,8 @@ synclog_create()
         return NULL;
     }
     memset(slog, 0, sizeof(SyncLog));
+    
+    slog->headlen = sizeof(short) + sizeof(int) + sizeof(int);
 
     snprintf(slog->filename, PATH_MAX, "%s/%s", g_cf->datadir, SYNCLOG_NAME);
     DINFO("synclog filename: %s\n", slog->filename);
@@ -72,7 +74,7 @@ synclog_create()
         return NULL;
     }
 
-    int len = sizeof(short) + sizeof(int) + sizeof(int) + SYNCLOG_INDEXNUM * sizeof(int);
+    int len = slog->headlen + SYNCLOG_INDEXNUM * sizeof(int);
     slog->len = len;
     int end = lseek(slog->fd, 0, SEEK_END);
     DINFO("synclog end: %d\n", end);
@@ -211,8 +213,8 @@ int
 synclog_validate(SyncLog *slog)
 {
     int i;
-    int looplen = (slog->len - sizeof(short) - sizeof(int) * 2) / sizeof(int); // index zone length
-    char *data  = slog->index + sizeof(short) + sizeof(int) * 2; // skip to index
+    int looplen = (slog->len - slog->headlen) / sizeof(int); // index zone length
+    char *data  = slog->index + slog->headlen; // skip to index
     unsigned int *loopdata = (unsigned int*)data;
     unsigned int lastidx   = slog->len;
 
@@ -264,8 +266,6 @@ synclog_validate(SyncLog *slog)
         }
     }
 
-    //}
-
     return 0;
 }
 
@@ -314,7 +314,8 @@ synclog_write(SyncLog *slog, char *data, int datalen)
 	
 	DINFO("after write pos: %u\n", (unsigned int)lseek(slog->fd, 0, SEEK_CUR));
 
-    unsigned int *idxdata = (unsigned int*)(slog->index + sizeof(short) + sizeof(int) * 2);
+    //unsigned int *idxdata = (unsigned int*)(slog->index + sizeof(short) + sizeof(int) * 2);
+    unsigned int *idxdata = (unsigned int*)(slog->index + slog->headlen);
     DINFO("write index: %u, %u\n", slog->index_pos, slog->pos);
     idxdata[slog->index_pos] = slog->pos;
     slog->index_pos ++;

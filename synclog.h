@@ -17,6 +17,7 @@ typedef struct _synclog
     int     fd;     // open file descriptor
     char    *index; // mmap addr
     int     len;    // mmap len
+    int     headlen;
     unsigned int    index_pos; // last index pos
     unsigned int    pos; // last write data pos
 }SyncLog;
