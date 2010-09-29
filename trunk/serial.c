@@ -64,7 +64,7 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
             return -1;
         }
         v  = maskarray[i]; 
-        DINFO("idx:%d, b:%d, format:%d, maskvalue:%d, %x\n", idx, b, mf, v, v);
+        //DINFO("idx:%d, b:%d, format:%d, maskvalue:%d, %x\n", idx, b, mf, v, v);
 
         if (v == UINT_MAX) {
             b += maskformat[i];
@@ -73,12 +73,12 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
         
         unsigned char y = (b + mf) % 8;
         n = (b + mf) / 8 + (y>0 ? 1: 0);
-        DINFO("y: %d, n: %d\n", y, n);
+        //DINFO("y: %d, n: %d\n", y, n);
         v = v << b;
         //DINFO("v: %x %b\n", v, v); 
         unsigned char m = pow(2, b) - 1;
         unsigned char x = mask[idx] & m;
-        DINFO("m: %d, %x, x: %d, %x\n", m, m, x, x);
+        //DINFO("m: %d, %x, x: %d, %x\n", m, m, x, x);
 
         v = v | x;
 
@@ -86,7 +86,7 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
         m = m << y;
         x = mask[idx + n - 1] & m;
 
-        DINFO("copy idx:%d, v:%d, n:%d\n", idx, v, n);
+        //DINFO("copy idx:%d, v:%d, n:%d\n", idx, v, n);
         //printb((char *)&v, n);
         memcpy(&mask[idx], &v, n);
 
@@ -96,7 +96,7 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
 
         b = y;
 
-        DINFO("============================\n");
+        //DINFO("============================\n");
     }
 
     return idx + 1; 
@@ -432,6 +432,7 @@ cmd_insert_pack(char *data, char *key, char *value, unsigned char valuelen,
     //count += pack_string(data + count, maskformat, masknum);
     count += pack_mask(data + count, maskarray, masknum);
     memcpy(data + count, &pos, sizeof(int));
+    count += sizeof(int);
 
     len = count - sizeof(short);
     memcpy(data, &len, sizeof(short));

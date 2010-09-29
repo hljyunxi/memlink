@@ -23,7 +23,6 @@
 int
 change_event(Conn *conn, int newflag, int isnew)
 {
-    //struct event      *event = &conn->revt;
     struct event      *event = &conn->evt;
 
 	if (isnew == 0) {
@@ -104,11 +103,6 @@ data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
     conn->wbuf = wdata;
     conn->wlen = datalen;
   
-	/*
-    event_set(&conn->wevt, conn->sock, EV_WRITE|EV_PERSIST, client_write, conn);
-    event_base_set(conn->revt.ev_base, &conn->wevt);
-    event_add(&conn->wevt, 0);
-	*/
 	DINFO("change event to write.\n");
 	int ret = change_event(conn, EV_WRITE|EV_PERSIST, 0);
 	if (ret < 0) {
@@ -187,7 +181,7 @@ wdata_apply(char *data, int datalen, int writelog)
         case CMD_INSERT:
             DINFO("<<< cmd INSERT >>>\n");
             cmd_insert_unpack(data, key, value, &valuelen, &masknum, maskarray, &pos);
-            DINFO("unpak mask: %d, array:%d,%d,%d\n", masknum, maskarray[0], maskarray[1], maskarray[2]);
+            DINFO("unpak pos: %d, mask: %d, array:%d,%d,%d\n", pos, masknum, maskarray[0], maskarray[1], maskarray[2]);
             
             ret = hashtable_add_mask(g_runtime->ht, key, value, maskarray, masknum, pos);
             DINFO("hashtable_add_mask: %d\n", ret);
@@ -297,22 +291,7 @@ wthread_read(int fd, short event, void *arg)
         conn->port = g_cf->write_port;
 		conn->base = wt->base;
 
-        //struct timeval tm;
         DINFO("new conn: %d\n", conn->sock);
-
-        //evutil_timerclear(&tm);
-        //tm.tv_sec = g_cf->timeout;
-
-		/*
-        event_set(&conn->revt, conn->sock, EV_READ|EV_PERSIST, client_read, conn);
-        ret = event_base_set(wt->base, &conn->revt);
-        DINFO("event_base_set: %d\n", ret);
-
-        //event_add(&conn->revt, &tm);
-        ret = event_add(&conn->revt, 0);
-        DINFO("event_add: %d\n", ret);
-		*/
-		
 		DINFO("change event to read.\n");
 		ret = change_event(conn, EV_READ|EV_PERSIST, 1);
 		if (ret < 0) {
@@ -323,53 +302,7 @@ wthread_read(int fd, short event, void *arg)
     }
 }
 
-/*
-int
-client_buffer_read(int fd, char *data, int *dlen, func_data_ready func, void *conn)
-{
-    int     ret;
-    unsigned short   datalen = 0;
 
-    if (*dlen >= 2) {
-        memcpy(&datalen, data, sizeof(short));
-    }
-
-    while (1) {
-        int rlen = datalen;
-        if (rlen == 0) {
-            rlen = CONN_MAX_READ_LEN - *dlen;
-        }
-        ret = read(fd, &data[*dlen], rlen);
-        if (ret == -1) {
-            if (errno == EINTR) {
-                continue;
-            }else if (errno != EAGAIN) {
-                // maybe close conn?
-                DERROR("%d read error: %s\n", fd, strerror(errno));
-                return -1;
-            }
-        }else{
-            *dlen += ret;
-        }
-
-        break;
-    }
-
-    while (*dlen >= 2) {
-        memcpy(&datalen, data, sizeof(short));
-
-        if (*dlen >= datalen + sizeof(short)) {
-            func(conn, data, datalen);
-        
-            int mlen = datalen + sizeof(short);
-            memmove(data, data + mlen, *dlen - mlen);
-            *dlen -= mlen;
-        }
-    }
-    
-    return *dlen;
-}
-*/
 void
 client_read(int fd, short event, void *arg)
 {
@@ -456,11 +389,6 @@ client_write(int fd, short event, void *arg)
             DERROR("change event error:%d close socket\n", ret);
             conn_destroy(conn);
         }
-		/*
-        DINFO("%d write complete!\n", fd);
-        event_del(&conn->wevt);
-        conn->wlen = conn->wpos = 0;
-		*/
         return;
     }
     DINFO("client write: %d\n", conn->wlen); 

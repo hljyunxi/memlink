@@ -77,11 +77,13 @@ dataitem_lookup(HashNode *node, void *value)
  * @param visible 为1表示只查找可见的，为0表示查找可见和不可见
  */
 static int
-dataitem_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk)
+datablock_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk, DataBlock **last)
 {
     DataBlock *root = node->data;
-	int n = 0, startn = 0;
+    DataBlock *lastitem = NULL;
 
+	int n = 0, startn = 0;
+    
     while (root) {
 		startn = n;
 		if (visible) {
@@ -92,13 +94,49 @@ dataitem_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk)
 	
 		if (n >= pos) {
 			*dbk = root;
+            if (last) {
+                *last = lastitem;
+            }
 			return startn;
 		}
+        lastitem = root;
         root = root->next;
     }
+
     return -1;
 }
 
+static int
+dataitem_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk, DataBlock **last, char **data)
+{
+    int ret;
+
+    ret = datablock_lookup_pos(node, pos, visible, dbk, last);
+    if (ret < 0) {
+        *data = 0;
+        return ret;
+    }
+   
+    int         skipn = pos - ret; 
+    DataBlock   *fdbk = *dbk;
+    char        *item = fdbk->data;
+    int         datalen = node->valuesize + node->masksize;
+    int         i;
+
+    DINFO("skipn: %d\n", skipn);
+    for (i = 0; i < g_cf->block_data_count; i++) {
+        if (skipn == 0) {
+            *data = item;
+            return 0;
+        }
+        skipn -= 1;
+        item  += datalen;
+    }
+   
+    DERROR("dataitem_lookup_pos error! pos error! pos: %d\n", pos);
+
+    return 0;
+}
 
 /**
  * 复制一条数据的value, mask到指定地址
@@ -409,7 +447,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
     }
     
     DataBlock *dbk = node->data;
-    int count = 0;
+    //int count = 0;
     int datalen = node->valuesize + node->masksize;
     int i;
     char *posaddr  = NULL;
@@ -417,6 +455,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
     DataBlock *last = NULL;
 
     // find copy position
+    /*
     while (dbk) {
         itemdata = dbk->data;
 
@@ -437,14 +476,20 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 
         last = dbk;
         dbk  = dbk->next;
-    }
+    }*/
 
+    int ret = dataitem_lookup_pos(node, pos, 0, &dbk, &last, &posaddr);
+    if (ret < 0) {
+        DERROR("dataitem_lookup_pos not find pos.\n");
+        //return -2;
+    }
+    DINFO("dataitem_lookup_pos, dbk:%p, last:%p, posaddr:%p\n", dbk, last, posaddr);
     // create new block for copy item
     DataBlock *newbk = mempool_get(g_mpool, datalen);
     if (NULL == newbk) {
         DERROR("hashtable_add get new DataBlock error!\n");
         MEMLINK_EXIT;
-        return -2;
+        return -3;
     }
     DINFO("create newbk:%p, dbk:%p\n", newbk, dbk);
 
@@ -731,7 +776,7 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum, 
             dbk = dbk->next;
         }*/
 
-		startn = dataitem_lookup_pos(node, frompos, 1, &dbk);
+		startn = datablock_lookup_pos(node, frompos, 1, &dbk, NULL);
 		DINFO("startn: %d\n", startn);
 		if (startn < 0) { // out of range
 			*datanum = 0;
@@ -891,7 +936,6 @@ hashtable_print(HashTable *ht, char *key)
                 node->key, node->valuesize, node->masksize, node->masknum, node->all, node->used);
 
     int i;
-
     for (i = 0; i < node->masknum; i++) {
         DINFO("maskformat: %d, %d\n", i, node->maskformat[i]);
     }
@@ -905,7 +949,7 @@ hashtable_print(HashTable *ht, char *key)
     while (dbk) {
         blocks += 1;
         char *itemdata = dbk->data; 
-        DINFO("====== dbk %p visible_count: %d, mask_count: %d ======\n", dbk, dbk->visible_count, dbk->mask_count);
+        DINFO("====== dbk %p visible_count: %d, mask_count: %d, block: %d ======\n", dbk, dbk->visible_count, dbk->mask_count, blocks);
         for (i = 0; i < g_cf->block_data_count; i++) {
             if (dataitem_have_data(node, itemdata, 0)) {
                 DINFO("i: %d, value: %s, mask: %s\n", i, formath(itemdata, node->valuesize, buf2, 128), 
