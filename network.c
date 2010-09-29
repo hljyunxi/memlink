@@ -60,6 +60,7 @@ tcp_socket_server(int port)
     sin.sin_port = htons((short)port);
     sin.sin_addr.s_addr = htonl(INADDR_ANY);
 
+	DINFO("bind to: %d\n", port);
     ret = bind(fd, (struct sockaddr*)&sin, sizeof(sin));
     if (ret == -1) {
         DERROR("bind error: %s\n", strerror(errno));

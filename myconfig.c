@@ -433,9 +433,6 @@ runtime_create_master(char *pgname)
     }
     DINFO("write thread create ok!\n");
     
-    if (mainserver_init(rt) != 0)
-        return NULL;
-
     /*rt->sthread = sthread_create();*/
     /*if (NULL == rt->sthread) {*/
     /*    DERROR("sthread_create error!\n");*/

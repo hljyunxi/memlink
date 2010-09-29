@@ -5,7 +5,8 @@
 
 typedef struct _data_block
 {
-    unsigned short      count;
+    unsigned short      visible_count; // visible item count
+    unsigned short      mask_count;  // masked item count, invisible
     struct _data_block  *next;
     char                data[0];
 }DataBlock;

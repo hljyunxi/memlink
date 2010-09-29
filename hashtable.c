@@ -12,20 +12,24 @@
 /**
  * 检查数据项中是否有数据
  * 真实删除位为0表示无效数据，为1表示存在有效数据
+ * @param node
+ * @param itemdata
+ * @param visible 为1表示只查找可见的，为0表示查找可见和不可见的(标记删除的)
  */
 static int 
-dataitem_have_data(HashNode *node, char *itemdata)
+dataitem_have_data(HashNode *node, char *itemdata, int visible)
 {
     char *maskdata  = itemdata + node->valuesize;
 
-    //char buf[128];
-    //DINFO("check mask have data: %s, %d\n", formatb(maskdata, node->masksize, buf, 128), *maskdata & (unsigned char)0x01);
-    //printh(itemdata + node->valuesize, node->masksize);
-
-    if ((*maskdata & (unsigned char)0x01) == 1) {
-        //DINFO("ok, have data.\n");
-        return 1;
-    }
+	if (visible) {
+		if ((*maskdata & (unsigned char)0x01) == 1) {
+			return 1;
+		}
+	}else{
+		if ((*maskdata & (unsigned char)0x03) == 1) {
+			return 1;
+		}
+	}
     return 0;
 }
 
@@ -33,15 +37,16 @@ dataitem_have_data(HashNode *node, char *itemdata)
  * 检查数据项中是否有要显示的数据
  * 标记删除位为1表示数据标记为删除
  */
+/*
 static int 
-dataitem_have_visiable_data(char *itemdata, int valuelen)
+dataitem_have_visible_data(HashNode *node, char *itemdata)
 {
-    unsigned char n = *(itemdata + valuelen);
+    unsigned char n = *(itemdata + node->valuesize);
     if ((n & (unsigned char)0x03) == 0x01)
         return 1;
     return 0;
 }
-
+*/
 /**
  * 在数据链的一块中查找某一条数据
  */
@@ -65,6 +70,35 @@ dataitem_lookup(HashNode *node, void *value)
     }
     return NULL;
 }
+/**
+ * 在数据链的一块中查找某一条数据
+ * @param node 
+ * @param pos
+ * @param visible 为1表示只查找可见的，为0表示查找可见和不可见
+ */
+static int
+dataitem_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk)
+{
+    DataBlock *root = node->data;
+	int n = 0, startn = 0;
+
+    while (root) {
+		startn = n;
+		if (visible) {
+			n += root->visible_count;	
+		}else{
+			n += root->mask_count + root->visible_count;
+		}
+	
+		if (n >= pos) {
+			*dbk = root;
+			return startn;
+		}
+        root = root->next;
+    }
+    return -1;
+}
+
 
 /**
  * 复制一条数据的value, mask到指定地址
@@ -387,7 +421,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
         itemdata = dbk->data;
 
         for (i = 0; i < g_cf->block_data_count; i++) {
-            if (dataitem_have_data(node, itemdata)) {
+            if (dataitem_have_data(node, itemdata, 0)) {
                 if (count == pos) {
                     posaddr = itemdata;
                     break;
@@ -418,10 +452,10 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 
     if (posaddr == NULL) { // position out of link, only create a new block
         DINFO("not found the same hash, create new\n");
-        newbk->count = 1;
         newbk->next  = NULL;
 
         dataitem_copy(node, newbk->data, value, mask);
+        newbk->visible_count = 1;
         //node->used++;
         if (last) {
             last->next = newbk;
@@ -439,11 +473,11 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
         DataBlock   *lastnewbk = newbk;
         for (i = 0; i < g_cf->block_data_count; i++) {
             char buf[128] = {0};
-            if (dataitem_have_data(node, itemdata)) { 
+            if (dataitem_have_data(node, itemdata, 0)) { 
                 if (itemdata == posaddr) { // position for insert
                     DINFO("insert pos, go\n");
                     dataitem_copy(node, todata, value, mask);
-                    lastnewbk->count ++;
+                    lastnewbk->visible_count ++;
                     todata += datalen; 
         
                     //hashtable_print(ht, key);
@@ -473,10 +507,13 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
                 // only copy data
                     
                 //DINFO("data2 %p ... %s\n", itemdata, formatb(itemdata + node->valuesize, node->masksize, buf, 128) );
-
                 DINFO("copy data ...  %s\n", formatb(itemdata + node->valuesize, node->masksize, buf, 128) );
                 memcpy(todata, itemdata, datalen);
-                lastnewbk->count ++;
+				if (dataitem_have_data(node, itemdata, 0)) {
+					lastnewbk->visible_count += 1;	
+				}else{
+					lastnewbk->mask_count ++;
+				}
                 todata += datalen; 
             }
             itemdata += datalen;
@@ -491,7 +528,6 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
         node->all -= g_cf->block_data_count;
         //node->used -= dbk->count;
     }
-   
     node->used += 1;
 
     return 0;
@@ -518,7 +554,6 @@ hashtable_add_mask(HashTable *ht, char *key, void *value, unsigned int *maskarra
     }
 
     //printh(mask, node->masksize);
-
     return hashtable_add_mask_bin(ht, key, value, mask, pos);
 }
 
@@ -652,8 +687,8 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum, 
                 char *data, int *datanum, unsigned char *valuesize, unsigned char *masksize)
 {
     char mask[HASHTABLE_MASK_MAX_LEN * sizeof(int)];
-    //char masknum;
     HashNode    *node;
+	int			startn;
     int         masklen = 0;
 
     node = hashtable_find(ht, key);
@@ -662,7 +697,6 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum, 
         return -1;
     }
 
-    //masknum = mask_string2binary(node->maskformat, maskstr, mask);
     if (masknum > 0) {
         masklen = mask_array2binary(node->maskformat, maskarray, masknum, mask);
         if (masklen <= 0) {
@@ -673,17 +707,17 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum, 
         mask[0] = mask[0] & 0xfc;
     }
 
-    DataBlock *dbk = node->data;
-    int n = 0; 
+    //DataBlock *dbk = node->data;
+    DataBlock *dbk = NULL;
     int datalen = node->valuesize + node->masksize;
 
     *valuesize = node->valuesize;
     *masksize  = node->masksize;
 
-    int endpos = frompos + len;
-    int idx = 0;
+    //int endpos = frompos + len;
 
     if (masknum > 0) {
+		/*
         while (dbk) {
             n += dbk->count;
             if (n > frompos) {
@@ -695,25 +729,41 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum, 
             }
 
             dbk = dbk->next;
-        }
-    }
+        }*/
 
+		startn = dataitem_lookup_pos(node, frompos, 1, &dbk);
+		DINFO("startn: %d\n", startn);
+		if (startn < 0) { // out of range
+			*datanum = 0;
+			return 0;
+		}
+    }
+	
+	int skipn = frompos - startn;
+    int idx = 0;
+    int n = 0; 
+
+	DINFO("skipn: %d\n", skipn);
     while (dbk) {
         char *itemdata = dbk->data;
         int  i;
         char buf[128];
         for (i = 0; i < g_cf->block_data_count; i++) {
-            if (dataitem_have_visiable_data(itemdata, node->valuesize)) {
-                if (n >= frompos && n < endpos) {
-                    DINFO("ok, copy item ...%s\n", formath(itemdata, datalen, buf, 128));
-                    memcpy(data + idx, itemdata, datalen);
-                    idx += datalen;
-                }
-                n++;
+            if (dataitem_have_data(node, itemdata, 1)) {
+				if (skipn > 0) {
+					skipn -= 1;
+					itemdata += datalen;
+					continue;
+				}
+				
+				DINFO("ok, copy item ...%s\n", formath(itemdata, datalen, buf, 128));
+				memcpy(data + idx, itemdata, datalen);
+				idx += datalen;
+				n += 1;
 
-                if (n >= endpos) {
-                    goto hashtable_range_over;
-                }
+				if (n >= len) {
+					goto hashtable_range_over;
+				}
             }
             itemdata += datalen;
         }
@@ -766,7 +816,7 @@ hashtable_clean(HashTable *ht, char *key)
 
     while (dbk) {
         for (i = 0; i < g_cf->block_data_count; i++) {
-            if (dataitem_have_data(node, itemdata)) {
+            if (dataitem_have_data(node, itemdata, 0)) {
                 memcpy(newdbk_pos, itemdata, dlen);
                 newdbk_pos += dlen;
                 if (newdbk_pos >= newdbk_end) {
@@ -855,9 +905,9 @@ hashtable_print(HashTable *ht, char *key)
     while (dbk) {
         blocks += 1;
         char *itemdata = dbk->data; 
-        DINFO("====== dbk %p count: %d ======\n", dbk, dbk->count);
+        DINFO("====== dbk %p visible_count: %d, mask_count: %d ======\n", dbk, dbk->visible_count, dbk->mask_count);
         for (i = 0; i < g_cf->block_data_count; i++) {
-            if (dataitem_have_data(node, itemdata)) {
+            if (dataitem_have_data(node, itemdata, 0)) {
                 DINFO("i: %d, value: %s, mask: %s\n", i, formath(itemdata, node->valuesize, buf2, 128), 
                             formath(itemdata + node->valuesize, node->masksize, buf1, 128));
             }else{
