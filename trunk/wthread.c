@@ -21,23 +21,33 @@
 #include "utils.h"
 
 int
-change_event(Conn *conn, int newflag)
+change_event(Conn *conn, int newflag, int isnew)
 {
-    struct event      *event = &conn->revt;
-    struct event_base *base  = event->ev_base;
+    //struct event      *event = &conn->revt;
+    struct event      *event = &conn->evt;
 
-    if (event->ev_flags == newflag)
-        return 0;
+	if (isnew == 0) {
+	    if (event->ev_flags == newflag)
+			return 0;
 
-    if (event_del(event) == -1) {
-        DERROR("event del error.\n");
-        return -1;
-    }
+		if (event_del(event) == -1) {
+			DERROR("event del error.\n");
+			return -1;
+		}
+	}
 
-    event_set(event, conn->sock, newflag, client_read, (void *)conn);
-    event_base_set(base, event);
+	if (newflag & EV_READ) {
+		event_set(event, conn->sock, newflag, client_read, (void *)conn);
+	}else if (newflag & EV_WRITE) {
+		event_set(event, conn->sock, newflag, client_write, (void *)conn);
+	}
+    event_base_set(conn->base, event);
     
-    if (event_add(event, 0) == -1) {
+    struct timeval  tm;
+	evutil_timerclear(&tm);
+    tm.tv_sec = g_cf->timeout;
+
+    if (event_add(event, &tm) == -1) {
         DERROR("event add error.\n");
         return -3;
     }
@@ -93,10 +103,18 @@ data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
     }
     conn->wbuf = wdata;
     conn->wlen = datalen;
-   
+  
+	/*
     event_set(&conn->wevt, conn->sock, EV_WRITE|EV_PERSIST, client_write, conn);
     event_base_set(conn->revt.ev_base, &conn->wevt);
     event_add(&conn->wevt, 0);
+	*/
+	DINFO("change event to write.\n");
+	int ret = change_event(conn, EV_WRITE|EV_PERSIST, 0);
+	if (ret < 0) {
+		DERROR("change_event error: %d, close conn.\n", ret);
+		conn_destroy(conn);
+	}
 
     return 0;
 }
@@ -277,12 +295,15 @@ wthread_read(int fd, short event, void *arg)
     if (conn) {
         int ret = 0;
         conn->port = g_cf->write_port;
+		conn->base = wt->base;
+
         //struct timeval tm;
         DINFO("new conn: %d\n", conn->sock);
 
         //evutil_timerclear(&tm);
         //tm.tv_sec = g_cf->timeout;
 
+		/*
         event_set(&conn->revt, conn->sock, EV_READ|EV_PERSIST, client_read, conn);
         ret = event_base_set(wt->base, &conn->revt);
         DINFO("event_base_set: %d\n", ret);
@@ -290,6 +311,15 @@ wthread_read(int fd, short event, void *arg)
         //event_add(&conn->revt, &tm);
         ret = event_add(&conn->revt, 0);
         DINFO("event_add: %d\n", ret);
+		*/
+		
+		DINFO("change event to read.\n");
+		ret = change_event(conn, EV_READ|EV_PERSIST, 1);
+		if (ret < 0) {
+			DERROR("change_event error: %d, close conn.\n", ret);
+			conn_destroy(conn);
+		}
+
     }
 }
 
@@ -416,19 +446,24 @@ void
 client_write(int fd, short event, void *arg)
 {
     Conn  *conn = (Conn*)arg;
+    int ret;
     
     if (conn->wpos == conn->wlen) {
-        /*if (change_event(conn, EV_READ|EV_PERSIST) < 0) {
-            DERROR("change event error! close socket\n");
-            wrconn_destroy(conn);
-        }*/
+        conn->wlen = conn->wpos = 0;
+		DINFO("change event to read.\n");
+        ret = change_event(conn, EV_READ|EV_PERSIST, 0);
+        if (ret < 0) {
+            DERROR("change event error:%d close socket\n", ret);
+            conn_destroy(conn);
+        }
+		/*
         DINFO("%d write complete!\n", fd);
         event_del(&conn->wevt);
         conn->wlen = conn->wpos = 0;
+		*/
         return;
     }
     DINFO("client write: %d\n", conn->wlen); 
-    int ret;
 
     while (1) {
         ret = write(fd, &conn->wbuf[conn->wpos], conn->wlen - conn->wpos);

@@ -22,23 +22,25 @@ sthread_loop(void *arg)
 
 static void 
 sthread_read(int fd, short event, void *arg) {
-    SThread *st = (SThread*) arg;
+    //SThread *st = (SThread*) arg;
     Conn *conn;
 
     DINFO("sthread_read...\n");
     conn = conn_create(fd);
 
     if (conn) {
-        int ret = 0;
+        //int ret = 0;
         conn->port = g_cf->sync_port;
         DINFO("new conn: %d\n", conn->sock);
-
+	
+		/*
         event_set(&conn->revt, conn->sock, EV_READ | EV_PERSIST, client_read, conn);
         ret = event_base_set(st->base, &conn->revt);
         DINFO("event_base_set: %d\n", ret);
 
         ret = event_add(&conn->revt, 0);
         DINFO("event_add: %d\n", ret);
+		*/
     }
 }
 

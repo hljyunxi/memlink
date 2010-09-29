@@ -19,8 +19,10 @@ typedef struct _conn
     int     wpos;
     int     port; // server port
 
-    struct event revt;
-    struct event wevt;
+    //struct event revt;
+    //struct event wevt;
+	struct event		evt;
+    struct event_base   *base;
 }Conn;
 
 Conn*   conn_create(int svrfd);

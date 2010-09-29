@@ -495,7 +495,7 @@ memlink_cmd_range(MemLink *m, char *key, char *maskstr, unsigned int frompos, un
     int  datalen  = valuesize + masksize;
     char *vdata   = retdata + pos;
     char *enddata = retdata + dlen + sizeof(short);
-    DINFO("vdata: %x, enddata: %x, datalen: %d\n", vdata, enddata, datalen);
+    DINFO("vdata: %p, enddata: %p, datalen: %d\n", vdata, enddata, datalen);
     char buf1[128], buf2[128];
 
     while (vdata < enddata) {
