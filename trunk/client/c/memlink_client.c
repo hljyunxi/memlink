@@ -115,7 +115,7 @@ memlink_connect(MemLink *m, int fdtype)
         return -2;
     }
 
-    if (m->host == NULL) {
+    if (m->host[0] == 0) {
         sin.sin_addr.s_addr = htonl(INADDR_ANY);
     }else{
         sin.sin_addr.s_addr = inet_addr(m->host);
@@ -185,7 +185,6 @@ memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
         }else{
             m->writefd = 0;
         }
-
     }
 
     return ret + sizeof(short);
@@ -261,26 +260,25 @@ memlink_do_cmd(MemLink *m, int fdtype, char *data, int len, char *retdata, int r
     DINFO("memlink_write ret: %d, len: %d\n", ret, len);
     
     if (ret >= 0 && ret != len) {
-        ret = -100;
+        ret = MEMLINK_ERR_SEND;
     }
     
-    //char buf[retlen];
-
     ret = memlink_read(m, fdtype, retdata, retlen);
     DINFO("memlink_read return: %d\n", ret);
 
     if (ret > 0) {
-        printh(retdata, ret);
-    
+        //printh(retdata, ret);
         unsigned short retcode;
 
         memcpy(&retcode, retdata + sizeof(short), sizeof(short));
         DINFO("retcode: %d\n", retcode);
         
         return retcode;
-    }
+    }else{
+		ret = MEMLINK_ERR_RECV;
+	}
     
-    return MEMLINK_ERR_NETWORK;
+    //return MEMLINK_ERR_NETWORK;
 }
 
 int
@@ -293,7 +291,6 @@ memlink_cmd_dump(MemLink *m)
     DINFO("pack dump len: %d\n", len); 
 
     char retdata[1024];
-
     return memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
 }
 
@@ -519,7 +516,6 @@ memlink_close(MemLink *m)
         close(m->writefd);
         m->writefd = 0;
     }
-
 }
 
 
