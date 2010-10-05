@@ -1,6 +1,8 @@
 import sys, os, subprocess
 
-x = subprocess.Popen('/opt/php/bin/php-config --includes', stdout=subprocess.PIPE, shell=True)
+php_home = '/opt/php'
+
+x = subprocess.Popen(php_home + '/bin/php-config --includes', stdout=subprocess.PIPE, shell=True)
 php_includes = x.stdout.read().strip().split()
 
 os.system('swig -php -o memlink_client_php.c ../c/memlink_client.i')
