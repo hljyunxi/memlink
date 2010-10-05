@@ -260,7 +260,7 @@ memlink_do_cmd(MemLink *m, int fdtype, char *data, int len, char *retdata, int r
     DINFO("memlink_write ret: %d, len: %d\n", ret, len);
     
     if (ret >= 0 && ret != len) {
-        ret = MEMLINK_ERR_SEND;
+        return MEMLINK_ERR_SEND;
     }
     
     ret = memlink_read(m, fdtype, retdata, retlen);
@@ -270,15 +270,31 @@ memlink_do_cmd(MemLink *m, int fdtype, char *data, int len, char *retdata, int r
         //printh(retdata, ret);
         unsigned short retcode;
 
+        char buf[10240];
+
+        DINFO("read: %s\n", formath(retdata, ret, buf, 10240));
+
         memcpy(&retcode, retdata + sizeof(short), sizeof(short));
         DINFO("retcode: %d\n", retcode);
+
+        if (retcode == 200) {
+            //return MEMLINK_OK;
+            return ret;
+        }
+        if (retcode >= 300 && retcode < 400) {
+            return MEMLINK_ERR_CLIENT;
+        }
+        if (retcode >= 400 && retcode < 500) {
+            return MEMLINK_ERR_SERVER_TEMP;
+        }
+        if (retcode >= 500) {
+            return MEMLINK_ERR_SERVER;
+        }
         
-        return retcode;
+        return MEMLINK_ERR_RETCODE;
     }else{
-		ret = MEMLINK_ERR_RECV;
+		return MEMLINK_ERR_RECV;
 	}
-    
-    //return MEMLINK_ERR_NETWORK;
 }
 
 int
@@ -311,7 +327,7 @@ memlink_cmd_clean(MemLink *m, char *key)
 }
 
 int 
-memlink_cmd_stat(MemLink *m, char *key)
+memlink_cmd_stat(MemLink *m, char *key, MemLinkStat *stat)
 {
     char data[1024];
     int  len;
@@ -335,13 +351,16 @@ memlink_cmd_stat(MemLink *m, char *key)
         pos += msglen;
     }
     
-    HashTableStat stat;
-    memcpy(&stat, retdata + pos, sizeof(HashTableStat));
+    //HashTableStat stat;
+    memcpy(stat, retdata + pos, sizeof(MemLinkStat));
+    char buf[512] = {0};
+    DINFO("stat buf: %s\n", formath((char *)stat, sizeof(MemLinkStat), buf, 512));
 
     DINFO("stat blocks:%d, data:%d, data_used:%d, mem:%d, mem_used:%d, valuesize:%d, masksize:%d\n", 
-                    stat.blocks, stat.data, stat.data_used, stat.mem, stat.mem_used, stat.valuesize, stat.masksize);
+                    stat->blocks, stat->data, stat->data_used, 
+                    stat->mem, stat->mem_used, stat->valuesize, stat->masksize);
     
-    return ret;
+    return MEMLINK_OK;
 }
 
 int
@@ -447,7 +466,7 @@ memlink_cmd_tag(MemLink *m, char *key, char *value, int valuelen, int tag)
 }
 
 int 
-memlink_cmd_range(MemLink *m, char *key, char *maskstr, unsigned int frompos, unsigned int len)
+memlink_cmd_range(MemLink *m, char *key, char *maskstr, unsigned int frompos, unsigned int len, MemLinkResult *result)
 {
     char data[1024];
     int  plen;
@@ -495,13 +514,62 @@ memlink_cmd_range(MemLink *m, char *key, char *maskstr, unsigned int frompos, un
     DINFO("vdata: %p, enddata: %p, datalen: %d\n", vdata, enddata, datalen);
     char buf1[128], buf2[128];
 
+    
+    //MemLinkResult   *mret;
+    MemLinkItem     *root = NULL, *cur = NULL;
+
+    /*mret = (MemLinkResult*)zz_malloc(sizeof(MemLinkResult));
+    if (NULL == mret) {
+        return MEMLINK_ERR_CLIENT;
+    }
+    memset(mret, 0, sizeof(MemLinkResult));
+    
+    mret->valuesize = valuesize;
+    mret->masksize  = masksize;
+    */
+
+    int count = 0;
     while (vdata < enddata) {
         DINFO("value:%s, mask:%s\n", formath(vdata, valuesize, buf1, 128), 
                             formath(vdata + valuesize, masksize, buf2, 128));
+
+        MemLinkItem     *item;
+        item = (MemLinkItem*)zz_malloc(sizeof(MemLinkItem));
+        if (NULL == item) {
+            MemLinkItem *tmp;
+
+            while (root) {
+                tmp = root;
+                root = root->next;
+                zz_free(tmp);
+            }
+            return MEMLINK_ERR_CLIENT;
+        }
+        memset(item, 0, sizeof(MemLinkItem));
+        
+        if (root == NULL) {
+            root = item;
+        }
+
+        if (cur == NULL) {
+            cur = item;
+        }else{
+            cur->next = item;
+            cur = item;
+        }
+       
+        memcpy(item->value, vdata, valuesize);
+        memcpy(item->mask, vdata + valuesize, masksize);
+
+        count += 1;
         vdata += datalen;
     }
+    result->count     = count;
+    result->valuesize = valuesize;
+    result->masksize  = masksize;
+    result->root      = root;
 
-    return ret;
+    return MEMLINK_OK;
 }
 
 
@@ -528,5 +596,24 @@ memlink_destroy(MemLink *m)
 }
 
 
+void
+memlink_result_free(MemLinkResult *result)
+{
+    MemLinkItem *item, *tmp;
+
+    DINFO("free result ...\n");
+    if (NULL == result)
+        return;
+
+    item = result->root;
+    
+    while (item) {
+        tmp = item;
+        item = item->next;
+        zz_free(tmp);
+    }
+
+    result->root = NULL;
+}
 
 

@@ -55,6 +55,9 @@ change_event(Conn *conn, int newflag, int isnew)
 
 /**
  * 回复数据
+ * -----------------------------------------------------------------
+ * | length (2B)| retcode (2B) | message len (1B) | message | data |
+ * -----------------------------------------------------------------
  */
 int
 data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
@@ -102,7 +105,10 @@ data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
     }
     conn->wbuf = wdata;
     conn->wlen = datalen;
-  
+ 
+    char buf[10240] = {0};
+    DINFO("reply %s\n", formath(conn->wbuf, conn->wlen, buf, 10240));
+
 	DINFO("change event to write.\n");
 	int ret = change_event(conn, EV_WRITE|EV_PERSIST, 0);
 	if (ret < 0) {

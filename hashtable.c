@@ -728,8 +728,10 @@ hashtable_mask(HashTable *ht, char *key, void *value, unsigned int *maskarray, i
 }
 
 int
-hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum, int frompos, int len, 
-                char *data, int *datanum, unsigned char *valuesize, unsigned char *masksize)
+hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum, 
+                int frompos, int len, 
+                char *data, int *datanum, 
+                unsigned char *valuesize, unsigned char *masksize)
 {
     char mask[HASHTABLE_MASK_MAX_LEN * sizeof(int)];
     HashNode    *node;
@@ -748,34 +750,16 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum, 
             DERROR("mask_string2array error\n");
             return -2;
         }
-
         mask[0] = mask[0] & 0xfc;
     }
 
-    //DataBlock *dbk = node->data;
     DataBlock *dbk = NULL;
     int datalen = node->valuesize + node->masksize;
 
     *valuesize = node->valuesize;
     *masksize  = node->masksize;
 
-    //int endpos = frompos + len;
-
     if (masknum > 0) {
-		/*
-        while (dbk) {
-            n += dbk->count;
-            if (n > frompos) {
-                n -= dbk->count;
-                break;
-            }else if (n == frompos) {
-                dbk = dbk->next;
-                break;
-            }
-
-            dbk = dbk->next;
-        }*/
-
 		startn = datablock_lookup_pos(node, frompos, 1, &dbk, NULL);
 		DINFO("startn: %d\n", startn);
 		if (startn < 0) { // out of range
@@ -785,8 +769,8 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum, 
     }
 	
 	int skipn = frompos - startn;
-    int idx = 0;
-    int n = 0; 
+    int idx   = 0;
+    int n     = 0; 
 
 	DINFO("skipn: %d\n", skipn);
     while (dbk) {
@@ -917,6 +901,10 @@ hashtable_stat(HashTable *ht, char *key, HashTableStat *stat)
 
     stat->mem = stat->blocks * blockmem;
     stat->mem_used = stat->blocks * sizeof(HashNode) + (node->masksize + node->valuesize) * stat->data_used;
+    
+    DINFO("valuesize:%d, masksize:%d, blocks:%d, data:%d, data_used:%d, mem:%d, mem_used:%d\n", 
+            stat->valuesize, stat->masksize, stat->blocks, stat->data, stat->data_used,
+            stat->mem, stat->mem_used);
 
     return 0;
 }
