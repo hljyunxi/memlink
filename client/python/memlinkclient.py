@@ -7,10 +7,13 @@ class MemLinkClient:
         self.client = memlink_create(host, readport, writeport, timeout)
 
     def close(self):
-        memlink_close(self.client)
+        if self.client:
+            memlink_close(self.client)
 
     def destroy(self):
-        memlink_destroy(self.client)
+        if self.client:
+            memlink_destroy(self.client)
+            self.client = None
 
     def dump(self):
         return memlink_cmd_dump(self.client)
