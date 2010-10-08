@@ -1,5 +1,5 @@
 bin      = "memlink"
-defs     = []
+defs     = ['DEBUG']
 includes = ['/Developer/usr/include', '.']
 libpath  = ['/Developer/usr/lib']
 libs     = ['event', 'm']
@@ -9,4 +9,5 @@ env = Environment(CFLAGS=cflags, CPPDEFINES=defs, CPPPATH=includes, LIBPATH=libp
 files = Glob("*.c")
 env.Program(bin, files)
 #env.StaticLibrary(bin, files)
+
 

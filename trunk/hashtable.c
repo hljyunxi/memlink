@@ -7,7 +7,7 @@
 #include "hashtable.h"
 #include "serial.h"
 #include "utils.h"
-
+#include "common.h"
 
 /**
  * 检查数据项中是否有数据
@@ -23,14 +23,14 @@ dataitem_have_data(HashNode *node, char *itemdata, int visible)
 
 	if (visible) {
 		if ((*maskdata & (unsigned char)0x01) == 1) {
-			return 1;
+			return MEMLINK_TRUE;
 		}
 	}else{
 		if ((*maskdata & (unsigned char)0x03) == 1) {
-			return 1;
+			return MEMLINK_TRUE;
 		}
 	}
-    return 0;
+    return MEMLINK_FALSE;
 }
 
 /**
@@ -44,7 +44,7 @@ dataitem_have_visible_data(HashNode *node, char *itemdata)
     unsigned char n = *(itemdata + node->valuesize);
     if ((n & (unsigned char)0x03) == 0x01)
         return 1;
-    return 0;
+    return MEMLINK_OK;
 }
 */
 /**
@@ -127,7 +127,7 @@ dataitem_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk, DataB
     for (i = 0; i < g_cf->block_data_count; i++) {
         if (skipn == 0) {
             *data = item;
-            return 0;
+            return MEMLINK_OK;
         }
         skipn -= 1;
         item  += datalen;
@@ -135,7 +135,7 @@ dataitem_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk, DataB
    
     DERROR("dataitem_lookup_pos error! pos error! pos: %d\n", pos);
 
-    return 0;
+    return MEMLINK_OK;
 }
 
 /**
@@ -155,7 +155,7 @@ dataitem_copy(HashNode *node, char *addr, void *value, void *mask)
     memcpy(addr, value, node->valuesize);
     memcpy(addr + node->valuesize, mask, node->masksize);
     
-    return 0;
+    return MEMLINK_OK;
 }
 
 static int
@@ -174,7 +174,7 @@ dataitem_copy_mask(HashNode *node, char *addr, char *maskflag, char *mask)
     //memcpy(addr + node->valuesize, mask, node->masksize);
     DINFO("copy_mask after: %s\n", formatb(addr, node->masksize, buf, 128)); 
 
-    return 0;
+    return MEMLINK_OK;
 }
 
 /**
@@ -236,7 +236,7 @@ hashtable_add_info(HashTable *ht, char *key, int valuesize, char *maskstr)
     for (i = 0; i < masknum; i++) {
         if (format[i] == UINT_MAX) {
             DERROR("maskformat error: %s\n", maskstr);
-            return -3;
+            return MEMLINK_ERR_MASK;
         }
     }
 
@@ -257,7 +257,7 @@ hashtable_add_info_mask(HashTable *ht, char *key, int valuesize, unsigned int *m
         //DINFO("node->key: %p, valuesize: %d\n", node, node->valuesize);
         if (strcmp(node->key, key) == 0) {
             DWARNING("key %s exists.\n", key);
-            return -1;
+            return MEMLINK_ERR_EKEY;
         }
         node = node->next;
     }
@@ -265,7 +265,7 @@ hashtable_add_info_mask(HashTable *ht, char *key, int valuesize, unsigned int *m
     node = (HashNode*)zz_malloc(sizeof(HashNode));
     if (NULL == node) {
         DERROR("malloc HashNode error!\n");
-        return -2;
+        return MEMLINK_ERR_MEM;
     }
     memset(node, 0, sizeof(HashNode));
     
@@ -302,7 +302,7 @@ hashtable_add_info_mask(HashTable *ht, char *key, int valuesize, unsigned int *m
     ht->bunks[hash] = node;
     DINFO("ht key:%s, hash:%d\n", ht->bunks[hash]->key, hash);
 
-    return 0;    
+    return MEMLINK_OK;    
 }
 
 
@@ -417,7 +417,7 @@ hashtable_add_first_mask(HashTable *ht, char *key, void *value, unsigned int *ma
         node->data = newbk;
     }
 
-    return 0;
+    return MEMLINK_OK;
 }
 */
 
@@ -431,7 +431,7 @@ hashtable_add(HashTable *ht, char *key, void *value, char *maskstr, int pos)
     masknum = mask_string2array(maskstr, maskarray);
     if (masknum <= 0) {
         DERROR("mask_string2array error: %s\n", maskstr);
-        return -1;
+        return MEMLINK_ERR_MASK;
     }
 
     return hashtable_add_mask(ht, key, value, maskarray, masknum, pos);
@@ -443,7 +443,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
     HashNode *node = hashtable_find(ht, key);
     if (NULL == node) {
         DERROR("hashtable_add not found node\n");
-        return -1;
+        return MEMLINK_ERR_NOKEY;
     }
     
     DataBlock *dbk = node->data;
@@ -489,7 +489,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
     if (NULL == newbk) {
         DERROR("hashtable_add get new DataBlock error!\n");
         MEMLINK_EXIT;
-        return -3;
+        return MEMLINK_ERR_MEM;
     }
     DINFO("create newbk:%p, dbk:%p\n", newbk, dbk);
 
@@ -537,7 +537,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
                         DERROR("hashtable_add error!\n");
                         //mempool_put(g_mpool, newbk, datalen);
                         MEMLINK_EXIT;
-                        return -3;
+                        return MEMLINK_ERR_MEM;
                     }
                     newbk2->next = newbk->next;
                     newbk->next  = newbk2;
@@ -575,7 +575,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
     }
     node->used += 1;
 
-    return 0;
+    return MEMLINK_OK;
 }
 
 /**
@@ -589,13 +589,13 @@ hashtable_add_mask(HashTable *ht, char *key, void *value, unsigned int *maskarra
     HashNode *node = hashtable_find(ht, key);
     if (NULL == node) {
         DERROR("hashtable_add not found node\n");
-        return -1;
+        return MEMLINK_ERR_NOKEY;
     }
     
     ret = mask_array2binary(node->maskformat, maskarray, masknum, mask);
     if (ret <= 0) {
         DERROR("mask_array2binary error: %d\n", ret);
-        return -2;
+        return MEMLINK_ERR_MASK;
     }
 
     //printh(mask, node->masksize);
@@ -615,7 +615,7 @@ hashtable_update(HashTable *ht, char *key, void *value, int pos)
     char ret = hashtable_find_value(ht, key, value, &node, &item);
     if (ret < 0) {
         DWARNING("not found value: %d, %s\n", ret, key);
-        return -1;
+        return ret;
     }
 
     memcpy(mask, item + node->valuesize, node->masksize);  
@@ -633,7 +633,7 @@ hashtable_find_value(HashTable *ht, char *key, void *value, HashNode **node, cha
 
     if (NULL == fnode) {
         DWARNING("hashtable_del error: %s\n", key);
-        return -1;
+        return MEMLINK_ERR_NOKEY;
     }
     if (node) {
         *node = fnode;
@@ -643,11 +643,11 @@ hashtable_find_value(HashTable *ht, char *key, void *value, HashNode **node, cha
     char *item = dataitem_lookup(fnode, value);
     if (NULL == item) {
         DWARNING("dataitem_lookup error: %s, %x\n", key, *(unsigned int*)value);
-        return -2;
+        return MEMLINK_ERR_NOVAL;
     }
     *data = item;
 
-    return 0; 
+    return MEMLINK_OK; 
 }
 
 /**
@@ -667,7 +667,7 @@ hashtable_del(HashTable *ht, char *key, void *value)
     }
     *(item + node->valuesize) |= 0x01; 
 
-    return 0;
+    return MEMLINK_OK;
 }
 
 /**
@@ -687,7 +687,7 @@ hashtable_tag(HashTable *ht, char *key, void *value, unsigned char tag)
     DINFO("tag: %d, %d\n", tag, tag<<1);
     *(item + node->valuesize) |= tag << 1; 
 
-    return 0;
+    return MEMLINK_OK;
 }
 
 /**
@@ -710,7 +710,7 @@ hashtable_mask(HashTable *ht, char *key, void *value, unsigned int *maskarray, i
     int  len = mask_array2binary(node->maskformat, maskarray, masknum, mask);
     if (len <= 0) {
         DERROR("mask array2binary error: %d\n", masknum);
-        return -1;
+        return MEMLINK_ERR_MASK;
     }
     char buf[128];
     DINFO("array2bin: %s\n", formatb(mask, len, buf, 128));
@@ -718,13 +718,13 @@ hashtable_mask(HashTable *ht, char *key, void *value, unsigned int *maskarray, i
     int flen = mask_array2flag(node->maskformat, maskarray, masknum, maskflag);
     if (flen <= 0) {
         DERROR("mask array2flag error: %d\n", masknum);
-        return -1;
+        return MEMLINK_ERR_MASK;
     }
     DINFO("array2flag: %s\n", formatb(maskflag, flen, buf, 128));
 
     dataitem_copy_mask(node, item, maskflag, mask);
 
-    return 0;
+    return MEMLINK_OK;
 }
 
 int
@@ -741,7 +741,7 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
     node = hashtable_find(ht, key);
     if (NULL == node) {
         DERROR("hashtable_add not found node\n");
-        return -1;
+        return MEMLINK_ERR_NOKEY;
     }
 
     if (masknum > 0) {
@@ -764,7 +764,7 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
 		DINFO("startn: %d\n", startn);
 		if (startn < 0) { // out of range
 			*datanum = 0;
-			return 0;
+			return MEMLINK_OK;
 		}
     }
 	
@@ -803,7 +803,7 @@ hashtable_range_over:
     //*data = retv;
     *datanum = idx;
 
-    return 0;
+    return MEMLINK_OK;
 }
 
 int
@@ -811,13 +811,13 @@ hashtable_clean(HashTable *ht, char *key)
 {
     HashNode    *node = hashtable_find(ht, key); 
     if (NULL == node)
-        return 0;
+        return MEMLINK_OK;
 
     DataBlock   *dbk = node->data;
     int         dlen = node->valuesize + node->masksize;
 
     if (NULL == dbk)
-        return 0;
+        return MEMLINK_OK;
 
     if (node->used == 0) {
         DataBlock *tmp;
@@ -828,7 +828,7 @@ hashtable_clean(HashTable *ht, char *key)
         }
         node->all  = 0;
         node->data = NULL;
-        return 0;
+        return MEMLINK_OK;
     }
 
     DataBlock   *newdbk = NULL, *newroot = NULL, *newlast = NULL;
@@ -868,7 +868,7 @@ hashtable_clean(HashTable *ht, char *key)
 
     node->data = newroot;
 
-    return 0;
+    return MEMLINK_OK;
 } 
 
 int
@@ -879,7 +879,7 @@ hashtable_stat(HashTable *ht, char *key, HashTableStat *stat)
     node = hashtable_find(ht, key);
     if (NULL == node) {
         DERROR("hashtable_stat not found key: %s\n", key);
-        return -1;
+        return MEMLINK_ERR_NOKEY;
     }
 
     DINFO("node all: %d, used: %d\n", node->all, node->used);
@@ -906,7 +906,7 @@ hashtable_stat(HashTable *ht, char *key, HashTableStat *stat)
             stat->valuesize, stat->masksize, stat->blocks, stat->data, stat->data_used,
             stat->mem, stat->mem_used);
 
-    return 0;
+    return MEMLINK_OK;
 }
 
 int 
@@ -917,7 +917,7 @@ hashtable_print(HashTable *ht, char *key)
     node = hashtable_find(ht, key);
     if (NULL == node) {
         DERROR("not found key: %s\n", key);
-        return -1;
+        return MEMLINK_ERR_NOKEY;
     }
 
     DINFO("------ HashNode key:%s, vsize:%d, msize:%d, mnum:%d, all:%d, userd:%d\n",
@@ -953,5 +953,5 @@ hashtable_print(HashTable *ht, char *key)
     }
     DINFO("------ blocks: %d\n", blocks);
 
-    return 0;
+    return MEMLINK_OK;
 }

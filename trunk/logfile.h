@@ -21,6 +21,8 @@ extern LogFile *g_log;
 #define MEMLINK_EXIT \
     abort()
 
+#ifdef DEBUG
+
 #define DERROR(format,args...) do{\
         if (!g_log) {\
             fprintf(stderr, format, ##args);\
@@ -44,6 +46,15 @@ extern LogFile *g_log;
             logfile_write(g_log, "INFO", __FILE__, __LINE__, format, ##args);\
         }\
     }while(0)
+
+#else
+
+#define DERROR(format,args...) 
+#define DWARNING(format,args...) 
+#define DINFO(format,args...) 
+
+#endif
+
 
 
 #endif

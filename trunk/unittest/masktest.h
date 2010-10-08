@@ -18,11 +18,17 @@ START_TEST(test_mask)
     printf("====== start masktest ======\n");
     printb((char*)&v, 4);
 
-    DINFO("format 4:3:1, array: 7:2:0 \n");
+    DINFO("format 4:3:1, array: 7:2:1 \n");
     ret = mask_array2binary(format, maskarray, masknum, data);
     DINFO("mask_array2binary ret: %d\n", ret);
+
     printb(data, ret);
     fail_if(ret != 2, "mask length error: %d\n", ret);
+
+	char result[256] = {0};
+
+	mask_binary2string(format, 3, data, ret, result);
+	printf("to string: %s\n", result);
 
     DINFO("==================================================\n");
     DINFO("flag 4:3:1, array: 10:3:1\n");
