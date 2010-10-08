@@ -158,8 +158,9 @@ mask_binary2string(unsigned char *maskformat, int masknum, char *mask, int maskl
 			n = fs + n;
 		}
 	}
+    maskstr[widx] = 0;
 
-	return 0;
+	return widx;
 }
 
 int 

@@ -771,6 +771,8 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
 	int skipn = frompos - startn;
     int idx   = 0;
     int n     = 0; 
+    char      maskstr[256];
+    unsigned char mlen;
 
 	DINFO("skipn: %d\n", skipn);
     while (dbk) {
@@ -785,9 +787,16 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
 					continue;
 				}
 				
-				DINFO("ok, copy item ...%s\n", formath(itemdata, datalen, buf, 128));
-				memcpy(data + idx, itemdata, datalen);
-				idx += datalen;
+                mlen = mask_binary2string(node->maskformat, node->masknum, itemdata + node->valuesize, node->masksize, maskstr);
+				DINFO("ok, copy item ... %s mlen:%d\n", formath(itemdata, datalen, buf, 128), mlen);
+				memcpy(data + idx, itemdata, node->valuesize);
+                idx += node->valuesize;
+                memcpy(data + idx, &mlen, sizeof(char));
+                idx += sizeof(char);
+                memcpy(data + idx, maskstr, mlen);
+                idx += mlen;
+				//memcpy(data + idx, itemdata, datalen);
+				//idx += datalen;
 				n += 1;
 
 				if (n >= len) {
