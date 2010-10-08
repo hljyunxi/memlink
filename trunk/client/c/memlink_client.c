@@ -535,6 +535,8 @@ memlink_cmd_range(MemLink *m, char *key, char *maskstr, unsigned int frompos, un
     */
 
     int count = 0;
+    unsigned char mlen;
+
     while (vdata < enddata) {
         DINFO("value:%s, mask:%s\n", formath(vdata, valuesize, buf1, 128), 
                             formath(vdata + valuesize, masksize, buf2, 128));
@@ -565,7 +567,8 @@ memlink_cmd_range(MemLink *m, char *key, char *maskstr, unsigned int frompos, un
         }
        
         memcpy(item->value, vdata, valuesize);
-        memcpy(item->mask, vdata + valuesize, masksize);
+        memcpy(&mlen, vdata + valuesize, sizeof(char));
+        memcpy(item->mask, vdata + valuesize + sizeof(char), mlen);
 
         count += 1;
         vdata += datalen;
