@@ -1,4 +1,4 @@
-cflags   = ['-Wall']
+cflags   = ['-Wall', '-DDEBUG']
 includes = ['/usr/local/include', '../', '/Developer/usr/include']
 libpath  = ['/usr/local/lib', '/Developer/usr/lib']
 libs	 = ['check', 'event', 'm']

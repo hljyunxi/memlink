@@ -1,0 +1,11 @@
+cflags   = '-ggdb -DDEBUG'
+includes = ['../client/c', '../']
+ldflags  = []
+libpath  = ['../client/c']
+libs	 = ['memlink']
+
+env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
+
+files = Glob("*.c")
+for fn in files:
+	env.Program(fn)

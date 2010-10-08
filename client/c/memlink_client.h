@@ -5,37 +5,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include "common.h"
 
 #define MEMLINK_READER  1
 #define MEMLINK_WRITER  2
 #define MEMLINK_ALL     3
-
-// 命令执行超时
-#define MEMLINK_ERR_TIMEOUT			-1000
-// 发送数据错误
-#define MEMLINK_ERR_SEND			-100
-// 接收数据错误
-#define MEMLINK_ERR_RECV			-200
-// 客户端错误
-#define MEMLINK_ERR_CLIENT			-10
-// 服务器端错误
-#define	MEMLINK_ERR_SERVER			-11
-// 服务器端临时错误
-#define MEMLINK_ERR_SERVER_TEMP		-12
-// 客户端发送的命令号错误
-#define MEMLINK_ERR_CLIENT_CMD		-13
-// key不存在
-#define MEMLINK_ERR_NOKEY			-14	
-// key已经存在
-#define MEMLINK_ERR_EKEY			-15
-// 网络错误
-#define MEMLINK_ERR_CONNECT			-16
-// 返回代码错误
-#define MEMLINK_ERR_RETCODE         -17
-// 其他错误
-#define MEMLINK_ERR					-1
-// 执行成功
-#define MEMLINK_OK					0
 
 typedef struct _memlink_client
 {

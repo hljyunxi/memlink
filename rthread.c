@@ -8,6 +8,7 @@
 #include "myconfig.h"
 #include "wthread.h"
 #include "utils.h"
+#include "common.h"
 
 int
 rdata_ready(Conn *conn, char *data, int datalen)
@@ -51,12 +52,6 @@ rdata_ready(Conn *conn, char *data, int datalen)
            
             retlen += sizeof(char) * 2;
 
-            if (ret < 0) {
-                ret = 500;
-            }else{
-                ret = 200;
-            }
-            
             ret = data_reply(conn, ret, msg, retrec, retlen);
             DINFO("data_reply return: %d\n", ret);
 
@@ -77,36 +72,19 @@ rdata_ready(Conn *conn, char *data, int datalen)
 
             DINFO("data_reply return: %d\n", ret);
 
-            if (ret < 0) {
-                ret = 500;
-            }else{
-                ret = 200;
-            }
-
             ret = data_reply(conn, ret, msg, retdata, retlen);
             DINFO("data_reply return: %d\n", ret);
 
             break;
         }
         default: {
-            ret = 300;
+            ret = MEMLINK_ERR_CLIENT_CMD;
 
             ret = data_reply(conn, ret, msg, retdata, retlen);
             DINFO("data_reply return: %d\n", ret);
 
         }
     }
-
-    /*if (ret < 0) {
-        ret = 500;
-    }else{
-        ret = 200;
-    }
-
-rdata_ready_over:
-    ret = data_reply(conn, ret, msg, retdata, retlen);
-    DINFO("data_reply return: %d\n", ret);
-    */
 
     return 0;
 }

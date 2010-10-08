@@ -30,6 +30,7 @@ typedef struct _ht_stat
 int mask_string2array(char *maskstr, unsigned int *result);
 int mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char masknum, char *mask);
 int mask_string2binary(unsigned char *maskformat, char *maskstr, char *mask);
+int mask_binary2string(unsigned char *maskformat, int masknum, char *mask, int masklen, char *maskstr);
 int mask_array2flag(unsigned char *maskformat, unsigned int *maskarray, char masknum, char *mask);
 
 int cmd_dump_pack(char *data);

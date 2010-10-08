@@ -268,7 +268,7 @@ memlink_do_cmd(MemLink *m, int fdtype, char *data, int len, char *retdata, int r
 
     if (ret > 0) {
         //printh(retdata, ret);
-        unsigned short retcode;
+        short retcode;
 
         char buf[10240];
 
@@ -276,7 +276,13 @@ memlink_do_cmd(MemLink *m, int fdtype, char *data, int len, char *retdata, int r
 
         memcpy(&retcode, retdata + sizeof(short), sizeof(short));
         DINFO("retcode: %d\n", retcode);
+		
+		if (retcode != 0) {
+			return retcode;
+		}
+		return ret;
 
+		/*
         if (retcode == 200) {
             //return MEMLINK_OK;
             return ret;
@@ -290,8 +296,8 @@ memlink_do_cmd(MemLink *m, int fdtype, char *data, int len, char *retdata, int r
         if (retcode >= 500) {
             return MEMLINK_ERR_SERVER;
         }
-        
-        return MEMLINK_ERR_RETCODE;
+        */
+        //return MEMLINK_ERR_RETCODE;
     }else{
 		return MEMLINK_ERR_RECV;
 	}

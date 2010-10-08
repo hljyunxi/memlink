@@ -19,6 +19,7 @@
 #include "rthread.h"
 #include "zzmalloc.h"
 #include "utils.h"
+#include "common.h"
 
 int
 change_event(Conn *conn, int newflag, int isnew)
@@ -252,7 +253,7 @@ wdata_apply(char *data, int datalen, int writelog)
 
             break;
         default:
-            ret = 300;
+            ret = MEMLINK_ERR_CLIENT_CMD;
             break;
     }
 
@@ -266,11 +267,12 @@ wdata_ready(Conn *conn, char *data, int datalen)
     int ret = wdata_apply(data, datalen, 1);
     pthread_mutex_unlock(&g_runtime->mutex);
 
+	/*
     if (ret < 0) {
         ret = 500;
     }else  if (ret == 0){
         ret = 200;
-    }
+    }*/
 
     ret = data_reply(conn, ret, NULL, NULL, 0);
     DINFO("data_reply return: %d\n", ret);

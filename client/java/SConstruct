@@ -1,6 +1,7 @@
 import sys, os, subprocess, glob
 
-java_home		= '/usr/lib/jvm/java-1.6.0-openjdk-1.6.0.0'
+#java_home		= '/usr/lib/jvm/java-1.6.0-openjdk-1.6.0.0'
+java_home		= '/usr/lib/jvm/java-1.6.0-openjdk'
 java_includes	= [os.path.join(java_home, 'include'), os.path.join(java_home, 'include/linux')]
 #java_libs		= os.path.join(java_home, 'lib')
 

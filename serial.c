@@ -118,6 +118,51 @@ mask_string2binary(unsigned char *maskformat, char *maskstr, char *mask)
 }
 
 int 
+mask_binary2string(unsigned char *maskformat, int masknum, char *mask, int masklen, char *maskstr)
+{
+	int n	= 2;
+	int idx = 0;
+	unsigned int val;
+	int i;
+	int widx = 0;
+
+	for (i = 0; i < masknum; i++) {
+		int fs = maskformat[i];
+		int yu = ((fs + n) % 8) > 0 ? 1: 0;
+		int cs = (fs + n) / 8 + yu;
+		
+		val = 0;
+		
+		//DINFO("idx:%d, cs:%d, n:%d, yu:%d\n", idx, cs, n, yu);
+		memcpy(&val, &mask[idx], cs);
+		val <<= 32 - fs - n;
+		val >>= 32 - fs;
+
+		//DINFO("i:%d, val:%d\n", i, val);
+		if (widx != 0) {
+			maskstr[widx] = ':';	
+			widx ++;
+		}
+		int len = sprintf(&maskstr[widx], "%d", val);
+		widx += len;
+		//maskstr[widx] = val;
+
+		idx += cs - 1;
+
+		if (yu == 0) {
+			idx += 1;
+		}
+		if (fs + n > 8) {
+			n = yu;
+		}else{
+			n = fs + n;
+		}
+	}
+
+	return 0;
+}
+
+int 
 mask_array2flag(unsigned char *maskformat, unsigned int *maskarray, char masknum, char *mask)
 {
     int i, j;

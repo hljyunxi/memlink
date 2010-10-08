@@ -8,6 +8,7 @@
 #include "myconfig.h"
 #include "logfile.h"
 #include "dumpfile.h"
+#include "common.h"
 
 int 
 dumpfile(HashTable *ht)
