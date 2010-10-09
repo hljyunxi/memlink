@@ -2,9 +2,57 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <sys/select.h>
 #include <unistd.h>
 #include "utils.h"
 #include "logfile.h"
+#include "common.h"
+
+int 
+timeout_wait(int fd, int timeout, int writing)
+{
+    if (timeout <= 0)
+        return MEMLINK_TRUE;
+
+    if (fd < 0) {
+        return MEMLINK_ERR;
+    }
+
+    fd_set fds; 
+    struct timeval tv;
+    int n;
+
+    tv.tv_sec  = (int)timeout;
+    tv.tv_usec = (int)((timeout - tv.tv_sec) * 1e6);
+
+    FD_ZERO(&fds);
+    FD_SET(fd, &fds);
+
+    if (writing)
+        n = select(fd+1, NULL, &fds, NULL, &tv);
+    else 
+        n = select(fd+1, &fds, NULL, NULL, &tv);
+
+    if (n < 0) 
+        return MEMLINK_ERR;
+
+    if (n == 0)
+        return MEMLINK_FALSE;
+
+    return MEMLINK_TRUE; 
+}
+
+int
+timeout_wait_read(int fd, int timeout)
+{
+	return timeout_wait(fd, timeout, 0);
+}
+
+int
+timeout_wait_write(int fd, int timeout)
+{
+	return timeout_wait(fd, timeout, 1);
+}
 
 /**
  * readn - try to read n bytes with the use of a loop
@@ -12,7 +60,7 @@
  * Return the bytes read. On error, -1 is returned.
  */
 ssize_t 
-readn(int fd, void *vptr, size_t n)
+readn(int fd, void *vptr, size_t n, int timeout)
 {
     size_t  nleft;
     ssize_t nread;
@@ -22,6 +70,9 @@ readn(int fd, void *vptr, size_t n)
     nleft = n;
 
     while (nleft > 0) {
+		if (timeout > 0 && timeout_wait_read(fd, timeout) != MEMLINK_TRUE) {
+			break;
+		}
         if ((nread = read(fd, ptr, nleft)) < 0) {
             if (errno == EINTR) {
                 nread = 0;
@@ -44,7 +95,7 @@ readn(int fd, void *vptr, size_t n)
  *
  */
 ssize_t
-writen(int fd, const void *vptr, size_t n)
+writen(int fd, const void *vptr, size_t n, int timeout)
 {
     size_t  nleft;
     ssize_t nwritten;
@@ -54,7 +105,11 @@ writen(int fd, const void *vptr, size_t n)
     nleft = n;
 
     while (nleft > 0) {
-        DINFO("try write %d via fd %d\n", (int)nleft, fd);
+        //DINFO("try write %d via fd %d\n", (int)nleft, fd);
+		if (timeout > 0 && timeout_wait_write(fd, timeout) != MEMLINK_TRUE) {
+			break;
+		}
+
         if ((nwritten = write(fd, ptr, nleft)) <= 0) {
             if (nwritten < 0 && errno == EINTR){
                 nwritten = 0;
@@ -64,7 +119,7 @@ writen(int fd, const void *vptr, size_t n)
                 return -1;
             }
         }
-        DINFO("nwritten: %d\n", (int)nwritten);
+        //DINFO("nwritten: %d\n", (int)nwritten);
         nleft -= nwritten;
         ptr += nwritten;
     }

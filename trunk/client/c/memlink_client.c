@@ -37,48 +37,6 @@ memlink_create(char *host, int readport, int writeport, int timeout)
     return m;
 }
 
-static int memlink_wait(MemLink *m, int fdtype, int writing)
-{
-    if (m->timeout <= 0)
-        return 1;
-
-    int fd;
-
-    if (fdtype == MEMLINK_READER) {
-        fd = m->readfd;
-    }else if (fdtype == MEMLINK_WRITER) {
-        fd = m->writefd;
-    }else{
-        return -100;
-    }
-
-    if (fd <= 0) {
-        return -200;
-    }
-
-    fd_set fds; 
-    struct timeval tv;
-    int n;
-
-    tv.tv_sec  = (int)m->timeout;
-    tv.tv_usec = (int)((m->timeout - tv.tv_sec) * 1e6);
-
-    FD_ZERO(&fds);
-    FD_SET(fd, &fds);
-
-    if (writing)
-        n = select(fd+1, NULL, &fds, NULL, &tv);
-    else 
-        n = select(fd+1, &fds, NULL, NULL, &tv);
-
-    if (n < 0) 
-        return -1;
-
-    if (n == 0)
-        return 1;
-
-    return 0; 
-}
 
 static int
 memlink_connect(MemLink *m, int fdtype)
@@ -156,7 +114,7 @@ memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
     }else{
         return -1;
     }
-    DINFO("fd: %d\n", fd);
+    //DINFO("fd: %d\n", fd);
     
     if (fd <= 0) {
         DINFO("read fd connect ...\n");
@@ -164,8 +122,8 @@ memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
         if (ret < 0)
             return ret;
     }
-
-    ret = readn(fd, rbuf, sizeof(short));
+	
+    ret = readn(fd, rbuf, sizeof(short), m->timeout);
     DINFO("read head: %d\n", ret);
     if (ret != sizeof(short)) {
         DERROR("read head error!\n");
@@ -174,10 +132,10 @@ memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
     memcpy(&datalen, rbuf, sizeof(short));
     DINFO("read body: %d\n", datalen);
 
-    ret = readn(fd, rbuf + sizeof(short), datalen);
-    DINFO("readn return: %d\n", ret);
+    ret = readn(fd, rbuf + sizeof(short), datalen, m->timeout);
+    //DINFO("readn return: %d\n", ret);
     if (ret != datalen) {
-        DERROR("read data error!\n");
+        DERROR("read data error! ret:%d\n", ret);
         close(fd);
 
         if (fd == m->readfd) {
@@ -205,9 +163,9 @@ memlink_write(MemLink *m, int fdtype, char *wbuf, int wlen)
     }else{
         return -100;
     }
-    DINFO("fd: %d\n", fd);
+    //DINFO("fd: %d\n", fd);
     if (fd <= 0) {
-        DINFO("write fd connect ...\n");
+        //DINFO("write fd connect ...\n");
         ret = memlink_connect(m, fdtype);
         DINFO("memlink_connect return: %d\n", ret);
         if (ret < 0)
@@ -220,8 +178,8 @@ memlink_write(MemLink *m, int fdtype, char *wbuf, int wlen)
         }
     }
 
-    ret = writen(fd, wbuf, wlen);
-    DINFO("writen: %d\n", ret);
+    ret = writen(fd, wbuf, wlen, m->timeout);
+    //DINFO("writen: %d\n", ret);
     if (ret < 0) {
         close(fd);
         if (fd == m->readfd) {
@@ -256,13 +214,14 @@ static int
 memlink_do_cmd(MemLink *m, int fdtype, char *data, int len, char *retdata, int retlen)
 {
     int ret;
+	DINFO("write to server ...\n");
     ret = memlink_write(m, fdtype, data, len);
     DINFO("memlink_write ret: %d, len: %d\n", ret, len);
     
     if (ret >= 0 && ret != len) {
         return MEMLINK_ERR_SEND;
     }
-    
+	DINFO("read from server ...\n"); 
     ret = memlink_read(m, fdtype, retdata, retlen);
     DINFO("memlink_read return: %d\n", ret);
 
@@ -281,23 +240,6 @@ memlink_do_cmd(MemLink *m, int fdtype, char *data, int len, char *retdata, int r
 			return retcode;
 		}
 		return ret;
-
-		/*
-        if (retcode == 200) {
-            //return MEMLINK_OK;
-            return ret;
-        }
-        if (retcode >= 300 && retcode < 400) {
-            return MEMLINK_ERR_CLIENT;
-        }
-        if (retcode >= 400 && retcode < 500) {
-            return MEMLINK_ERR_SERVER_TEMP;
-        }
-        if (retcode >= 500) {
-            return MEMLINK_ERR_SERVER;
-        }
-        */
-        //return MEMLINK_ERR_RETCODE;
     }else{
 		return MEMLINK_ERR_RECV;
 	}
@@ -313,7 +255,11 @@ memlink_cmd_dump(MemLink *m)
     DINFO("pack dump len: %d\n", len); 
 
     char retdata[1024];
-    return memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
+    ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
+
+	if (ret < 0) 
+		return ret;
+	return MEMLINK_OK;
 }
 
 int
@@ -329,7 +275,10 @@ memlink_cmd_clean(MemLink *m, char *key)
     DINFO("pack clean len: %d\n", len);
 
     char retdata[1024];
-    return memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
+    int ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
+	if (ret < 0) 
+		return ret;
+	return MEMLINK_OK;
 }
 
 int 
@@ -385,7 +334,11 @@ memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr)
 
     printh(data, len); 
     char retdata[1024];
-    return memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
+    int ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
+	if (ret < 0) 
+		return ret;
+	return MEMLINK_OK;
+
 }
 
 int
@@ -406,7 +359,11 @@ memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen)
     DINFO("pkglen: %d, cmd: %d\n", pkglen, cmd);
 
     char retdata[1024];
-    return memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
+    int ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
+
+	if (ret < 0) 
+		return ret;
+	return MEMLINK_OK;
 }
 
 int
@@ -424,8 +381,11 @@ memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen, char *masks
     DINFO("pack del len: %d\n", len);
 
     char retdata[1024];
-    return memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
+    int ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
 
+	if (ret < 0) 
+		return ret;
+	return MEMLINK_OK;
 }
 
 int 
@@ -437,7 +397,11 @@ memlink_cmd_update(MemLink *m, char *key, char *value, int valuelen, unsigned in
     len = cmd_update_pack(data, key, value, valuelen, pos);
     DINFO("pack update len: %d\n", len);
     char retdata[1024];
-    return memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
+    int ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
+
+	if (ret < 0) 
+		return ret;
+	return MEMLINK_OK;
 }
 
 
@@ -456,7 +420,11 @@ memlink_cmd_mask(MemLink *m, char *key, char *value, int valuelen, char *maskstr
     DINFO("pack mask len: %d\n", len);
     printh(data, len);
     char retdata[1024];
-    return memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
+    int ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
+
+	if (ret < 0) 
+		return ret;
+	return MEMLINK_OK;
 }
 
 int
@@ -468,7 +436,11 @@ memlink_cmd_tag(MemLink *m, char *key, char *value, int valuelen, int tag)
     len = cmd_tag_pack(data, key, value, valuelen, tag);
     DINFO("pack tag len: %d\n", len);
     char retdata[1024];
-    return memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
+    int ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
+	if (ret < 0) 
+		return ret;
+	return MEMLINK_OK;
+
 }
 
 int 

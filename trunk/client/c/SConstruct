@@ -1,4 +1,4 @@
-cflags   = '-ggdb'
+cflags   = '-ggdb -DDEBUG'
 includes = ['.', '../../', '/Developer/usr/include']
 libpath  = ['.']
 libs	 = ['m']

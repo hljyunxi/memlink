@@ -71,16 +71,18 @@ dataitem_lookup(HashNode *node, void *value)
     return NULL;
 }
 /**
- * 在数据链的一块中查找某一条数据
+ * 在数据链中找到某位置所在数据块
  * @param node 
  * @param pos
  * @param visible 为1表示只查找可见的，为0表示查找可见和不可见
+ * @param dbk 指定位置所在数据块
+ * @param prev 指定位置所在数据块的前一块
  */
 static int
-datablock_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk, DataBlock **last)
+datablock_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk, DataBlock **prev)
 {
     DataBlock *root = node->data;
-    DataBlock *lastitem = NULL;
+    DataBlock *previtem = NULL;
 
 	int n = 0, startn = 0;
     
@@ -94,12 +96,12 @@ datablock_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk, Data
 	
 		if (n >= pos) {
 			*dbk = root;
-            if (last) {
-                *last = lastitem;
+            if (prev) {
+                *prev = previtem;
             }
 			return startn;
 		}
-        lastitem = root;
+        previtem = root;
         root = root->next;
     }
 
@@ -454,30 +456,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
     char *itemdata;
     DataBlock *last = NULL;
 
-    // find copy position
-    /*
-    while (dbk) {
-        itemdata = dbk->data;
-
-        for (i = 0; i < g_cf->block_data_count; i++) {
-            if (dataitem_have_data(node, itemdata, 0)) {
-                if (count == pos) {
-                    posaddr = itemdata;
-                    break;
-                }
-                count += 1;
-            }
-            itemdata += datalen;
-        }
-
-        if (posaddr != NULL) {
-            break;
-        }
-
-        last = dbk;
-        dbk  = dbk->next;
-    }*/
-
+	DINFO("lookup pos, pos:%d, dbk:%p\n", pos, dbk);
     int ret = dataitem_lookup_pos(node, pos, 0, &dbk, &last, &posaddr);
     if (ret < 0) {
         DERROR("dataitem_lookup_pos not find pos.\n");
@@ -941,7 +920,8 @@ hashtable_print(HashTable *ht, char *key)
 
     int blocks = 0;
     int datalen = node->valuesize + node->masksize;
-    char buf1[128], buf2[128];
+    char buf1[128];
+	char buf2[128];
 
     while (dbk) {
         blocks += 1;
@@ -949,8 +929,13 @@ hashtable_print(HashTable *ht, char *key)
         DINFO("====== dbk %p visible_count: %d, mask_count: %d, block: %d ======\n", dbk, dbk->visible_count, dbk->mask_count, blocks);
         for (i = 0; i < g_cf->block_data_count; i++) {
             if (dataitem_have_data(node, itemdata, 0)) {
-                DINFO("i: %d, value: %s, mask: %s\n", i, formath(itemdata, node->valuesize, buf2, 128), 
+                //DINFO("i: %d, value: %s, mask: %s\n", i, formath(itemdata, node->valuesize, buf2, 128), 
+                //            formath(itemdata + node->valuesize, node->masksize, buf1, 128));
+				memcpy(buf2, itemdata, node->valuesize);
+				buf2[node->valuesize] = 0;
+                DINFO("i: %d, value: %s, mask: %s\n", i, buf2, 
                             formath(itemdata + node->valuesize, node->masksize, buf1, 128));
+
             }else{
                 DINFO("i: %d, no data, mask: %s\n", i, formath(itemdata + node->valuesize, node->masksize, buf1, 128));
             }

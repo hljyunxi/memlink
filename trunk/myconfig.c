@@ -40,14 +40,15 @@ myconfig_create(char *filename)
     snprintf(mcf->datadir, PATH_MAX, "data");
 
     FILE    *fp;
-    char    filepath[PATH_MAX];
+    //char    filepath[PATH_MAX];
 
     // FIXME: must absolute path
-    snprintf(filepath, PATH_MAX, "etc/%s", filename);
+    //snprintf(filepath, PATH_MAX, "etc/%s", filename);
 
-    fp = fopen(filepath, "r");
+    //fp = fopen(filepath, "r");
+    fp = fopen(filename, "r");
     if (NULL == fp) {
-        DERROR("open config file error: %s\n", filepath);
+        DERROR("open config file error: %s\n", filename);
         MEMLINK_EXIT;
     }
 

@@ -52,10 +52,11 @@ synclog_create()
     snprintf(slog->filename, PATH_MAX, "%s/%s", g_cf->datadir, SYNCLOG_NAME);
     DINFO("synclog filename: %s\n", slog->filename);
 
-    int ret;
-    struct stat stbuf;
+    //int ret;
+    //struct stat stbuf;
 
     // check file exist
+	/*
     ret = stat(slog->filename, &stbuf);
     //DINFO("stat: %d, err: %s\n", ret, strerror(errno));
     if (ret == -1 && errno == ENOENT) { // not found file, check last log id from disk filename
@@ -63,7 +64,9 @@ synclog_create()
         unsigned int lastver = synclog_lastlog();
         DINFO("synclog_lastlog: %d\n", lastver);
         g_runtime->logver = lastver;
-    }
+    }*/
+
+
     DINFO("try open sync logfile ...\n");
     //slog->fd = open(slog->filename, O_RDWR|O_CREAT|O_APPEND, 0644);
     slog->fd = open(slog->filename, O_RDWR|O_CREAT, 0644);
@@ -81,27 +84,29 @@ synclog_create()
     lseek(slog->fd, 0, SEEK_SET);
 
     if (end == 0 || end < len) { // new file
-        if (end > 0 && end < len) {
+        g_runtime->logver = synclog_lastlog();
+
+        /*if (end > 0 && end < len) {
             //truncate_file(slog->fd, 0);
 
             g_runtime->logver = synclog_lastlog();
             DINFO("end < len, synclog_lastlog: %d\n", g_runtime->logver);
-        }
+        }*/
 
         unsigned short format = DUMP_FORMAT_VERSION;
         unsigned int   newver = g_runtime->logver + 1;
         unsigned int   synlen = SYNCLOG_INDEXNUM;
 
         DINFO("synclog new ver: %d, %x, synlen: %d, %x\n", newver, newver, synlen, synlen);
-        if (writen(slog->fd, &format, sizeof(short)) < 0) {
+        if (writen(slog->fd, &format, sizeof(short), 0) < 0) {
             DERROR("write synclog format error: %d\n", format);
             MEMLINK_EXIT;
         }
-        if (writen(slog->fd, &newver, sizeof(int)) < 0) {
+        if (writen(slog->fd, &newver, sizeof(int), 0) < 0) {
             DERROR("write synclog newver error: %d\n", newver);
             MEMLINK_EXIT;
         }
-        if (writen(slog->fd, &synlen, sizeof(int)) < 0) {
+        if (writen(slog->fd, &synlen, sizeof(int), 0) < 0) {
             DERROR("write synclog synlen error: %d\n", synlen);
             MEMLINK_EXIT;
         }
@@ -152,15 +157,15 @@ synclog_new(SyncLog *slog)
     unsigned int   synlen = SYNCLOG_INDEXNUM;
     
     DINFO("synclog new ver: %d, %x, synlen: %d, %x\n", newver, newver, synlen, synlen);
-    if (writen(slog->fd, &format, sizeof(short)) < 0) {
+    if (writen(slog->fd, &format, sizeof(short), 0) < 0) {
         DERROR("write synclog format error: %d\n", format);
         MEMLINK_EXIT;
     }
-    if (writen(slog->fd, &newver, sizeof(int)) < 0) {
+    if (writen(slog->fd, &newver, sizeof(int), 0) < 0) {
         DERROR("write synclog newver error: %d\n", newver);
         MEMLINK_EXIT;
     }
-    if (writen(slog->fd, &synlen, sizeof(int)) < 0) {
+    if (writen(slog->fd, &synlen, sizeof(int), 0) < 0) {
         DERROR("write synclog synlen error: %d\n", synlen);
         MEMLINK_EXIT;
     }
@@ -237,7 +242,7 @@ synclog_validate(SyncLog *slog)
     while (lastidx < filelen) {
         int cur = lseek(slog->fd, lastidx, SEEK_SET);
         DINFO("check offset: %d\n", lastidx);
-        if (readn(slog->fd, &dlen, sizeof(short)) != sizeof(short)) {
+        if (readn(slog->fd, &dlen, sizeof(short), 0) != sizeof(short)) {
             DERROR("synclog readn error, lastidx: %u, cur: %u\n", lastidx, cur);
             MEMLINK_EXIT;
         }

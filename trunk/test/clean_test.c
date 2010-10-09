@@ -25,6 +25,7 @@ int main()
 		DERROR("1 memlink_cmd_create %s error: %d\n", key, ret);
 		return -2;
 	}
+	DINFO("create %s ok!\n", key);
 
 	int		i;
 	char	val[64];
@@ -32,32 +33,35 @@ int main()
 
 	for (i = 0; i < 100; i++) {
 		sprintf(val, "%06d", i);
-		ret = memlink_cmd_insert(m, key, val, strlen(val), maskstr, i*3);
+		DINFO("====== try insert %s %s %d======\n", key, val, i);
+		ret = memlink_cmd_insert(m, key, val, strlen(val), maskstr, i);
 		if (ret != MEMLINK_OK) {
-			DERROR("insert error, key:%s, val:%s, mask:%s, i:%d\n", key, val, maskstr, i);
+			DERROR("insert error, key:%s, val:%s, mask:%s, i:%d, ret:%d\n", key, val, maskstr, i, ret);
 
 			return -3;
 		}
 	}
+
+	DINFO("insert ok!\n");
 	
 	MemLinkStat	stat;
 
 	ret = memlink_cmd_stat(m, key, &stat);
 	if (ret != MEMLINK_OK) {
-		DERROR("stat error, key:%s\n", key);
+		DERROR("stat error, key:%s, ret:%d\n", key, ret);
 		return -4;
 	}
 
 	ret = memlink_cmd_clean(m, key);
 	if (ret != MEMLINK_OK) {
-		DERROR("clean error, key:%s\n", key);
+		DERROR("clean error, key:%s, ret:%d\n", key, ret);
 		return -5;
 	}
 
 	MemLinkStat	stat2;
 	ret = memlink_cmd_stat(m, key, &stat2);
 	if (ret != MEMLINK_OK) {
-		DERROR("stat error, key:%s\n", key);
+		DERROR("stat error, key:%s, ret:%d\n", key, ret);
 		return -6;
 	}
 
