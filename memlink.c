@@ -55,8 +55,16 @@ int main(int argc, char *argv[])
 {
     int ret;
     struct rlimit rlim;
+	char *conffile;
 
-    myconfig_create("memlink.conf");
+	if (argc == 2) {
+		conffile = argv[1];
+	}else{
+		conffile = "etc/memlink.conf";
+	}
+	
+	DINFO("config file: %s\n", conffile);
+    myconfig_create(conffile);
     DINFO("config ok!\n");
     
     if (g_cf->max_core) {
