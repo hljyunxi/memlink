@@ -1,0 +1,12 @@
+cflags   = '-ggdb'
+includes = ['.', '../../', '/Developer/usr/include']
+libpath  = ['.']
+libs	 = ['m']
+comfiles = ['../../zzmalloc.c', '../../serial.c', '../../logfile.c', '../../utils.c']
+prgfiles = comfiles + ['memlink_client.c', 'test.c']
+libfiles = comfiles + ['memlink_client.c']
+
+env = Environment(CCFLAGS=cflags, CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
+env.SharedLibrary("memlink", libfiles)
+
+env.Program("client", prgfiles)
