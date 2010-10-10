@@ -213,5 +213,10 @@ formath(char *data, int datalen, char *buf, int blen)
 }
 
 
+int
+timediff(struct timeval *start, struct timeval *end)
+{
+    return 0;
+}
 
 

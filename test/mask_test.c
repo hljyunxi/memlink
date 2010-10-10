@@ -57,8 +57,8 @@ int main()
 		return -6;
 	}
 	
-	if (strcmp(item->mask, maskstr) != 0) {
-		DERROR("mask set error, mask:%s\n", item->mask);	
+	if (strcmp(item->mask, newmask) != 0) {
+		DERROR("mask set error, mask:%s, client maskstr:%s\n", item->mask, newmask);	
 		return -7;
 	}
 	

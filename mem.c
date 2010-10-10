@@ -18,7 +18,7 @@ mempool_create()
     }
     memset(mp, 0, sizeof(MemPool));
 
-    mp->idxnum = 100;
+    mp->idxnum = MEMLINK_MEM_NUM;
     mp->freemem = (MemItem*)zz_malloc(sizeof(MemItem) * mp->idxnum);
     if (NULL == mp) {
         DERROR("malloc MemItem error!\n");

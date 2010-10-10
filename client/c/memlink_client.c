@@ -219,6 +219,7 @@ memlink_do_cmd(MemLink *m, int fdtype, char *data, int len, char *retdata, int r
     DINFO("memlink_write ret: %d, len: %d\n", ret, len);
     
     if (ret >= 0 && ret != len) {
+        DERROR("memlink write data error! ret:%d, len:%d\n", ret, len);
         return MEMLINK_ERR_SEND;
     }
 	DINFO("read from server ...\n"); 
@@ -239,8 +240,10 @@ memlink_do_cmd(MemLink *m, int fdtype, char *data, int len, char *retdata, int r
 		if (retcode != 0) {
 			return retcode;
 		}
-		return ret;
+        DINFO("ret: %d\n", ret);
+		return ret;  // return read data len
     }else{
+        DERROR("memlink recv data error! ret:%d\n", ret);
 		return MEMLINK_ERR_RECV;
 	}
 }

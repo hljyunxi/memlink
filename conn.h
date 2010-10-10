@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <event.h>
+#include <sys/time.h>
 
 #define CONN_MAX_READ_LEN   1024
 #define CONN_READ   1
@@ -21,6 +22,8 @@ typedef struct _conn
 
 	struct event		evt;
     struct event_base   *base;
+
+    struct timeval      ctime;
 }Conn;
 
 Conn*   conn_create(int svrfd);

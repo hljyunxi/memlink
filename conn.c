@@ -45,6 +45,8 @@ conn_create(int svrfd)
     }
     memset(conn, 0, sizeof(Conn)); 
     conn->sock = newfd;
+    
+    gettimeofday(&conn->ctime, NULL);
 
     return conn;
 }

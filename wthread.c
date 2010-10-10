@@ -9,6 +9,7 @@
 #include <sys/un.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/time.h>
 #include <netdb.h>
 #include "wthread.h"
 #include "serial.h"
@@ -151,8 +152,11 @@ wdata_apply(char *data, int datalen, int writelog)
         case CMD_CLEAN:
             DINFO("<<< cmd CLEAN >>>\n");
             cmd_clean_unpack(data, key);
+            hashtable_print(g_runtime->ht, key);
             DINFO("clean unpack key: %s\n", key);
             ret = hashtable_clean(g_runtime->ht, key); 
+            DINFO("clean return:%d\n", ret); 
+            hashtable_print(g_runtime->ht, key);
             break;
         case CMD_CREATE:
             DINFO("<<< cmd CREATE >>>\n");
@@ -176,6 +180,8 @@ wdata_apply(char *data, int datalen, int writelog)
             DINFO("unpack del, key: %s, value: %s, valuelen: %d\n", key, value, valuelen);
             ret = hashtable_del(g_runtime->ht, key, value);
             DINFO("hashtable_del: %d\n", ret);
+
+            hashtable_print(g_runtime->ht, key);
             if (ret >= 0 && writelog) {
                 int sret = synclog_write(g_runtime->synclog, data, datalen);
                 if (sret < 0) {
@@ -189,7 +195,6 @@ wdata_apply(char *data, int datalen, int writelog)
             DINFO("<<< cmd INSERT >>>\n");
             cmd_insert_unpack(data, key, value, &valuelen, &masknum, maskarray, &pos);
             DINFO("unpak pos: %d, mask: %d, array:%d,%d,%d\n", pos, masknum, maskarray[0], maskarray[1], maskarray[2]);
-            
             ret = hashtable_add_mask(g_runtime->ht, key, value, maskarray, masknum, pos);
             DINFO("hashtable_add_mask: %d\n", ret);
 
@@ -225,7 +230,7 @@ wdata_apply(char *data, int datalen, int writelog)
             DINFO("unpack mask key: %s, valuelen: %d, masknum: %d, maskarray: %d,%d,%d\n", key, valuelen, 
                     masknum, maskarray[0], maskarray[1], maskarray[2]);
             ret = hashtable_mask(g_runtime->ht, key, value, maskarray, masknum);
-            DINFO("hashtable_update: %d\n", ret);
+            DINFO("hashtable_mask: %d\n", ret);
             hashtable_print(g_runtime->ht, key);
             if (ret >= 0 && writelog) {
                 int sret = synclog_write(g_runtime->synclog, data, datalen);
@@ -239,9 +244,10 @@ wdata_apply(char *data, int datalen, int writelog)
         case CMD_TAG:
             DINFO("<<< cmd TAG >>>\n");
             cmd_tag_unpack(data, key, value, &valuelen, &tag);
-            DINFO("unpack update, key:%s, value:%s, tag:%d\n", key, value, tag);
+            DINFO("unpack tag, key:%s, value:%s, tag:%d\n", key, value, tag);
             ret = hashtable_tag(g_runtime->ht, key, value, tag);
-            DINFO("hashtable_update: %d\n", ret);
+            DINFO("hashtable_tag: %d\n", ret);
+
             hashtable_print(g_runtime->ht, key);
             if (ret >= 0 && writelog) {
                 int sret = synclog_write(g_runtime->synclog, data, datalen);
@@ -263,18 +269,15 @@ wdata_apply(char *data, int datalen, int writelog)
 static int
 wdata_ready(Conn *conn, char *data, int datalen)
 {
+    struct timeval start, end;
+
+    gettimeofday(&start, NULL);
     pthread_mutex_lock(&g_runtime->mutex);
     int ret = wdata_apply(data, datalen, 1);
     pthread_mutex_unlock(&g_runtime->mutex);
 
-	/*
-    if (ret < 0) {
-        ret = 500;
-    }else  if (ret == 0){
-        ret = 200;
-    }*/
-
     ret = data_reply(conn, ret, NULL, NULL, 0);
+    gettimeofday(&end, NULL);
     DINFO("data_reply return: %d\n", ret);
 
     return 0;

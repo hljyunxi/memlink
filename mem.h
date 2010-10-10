@@ -3,6 +3,8 @@
 
 #include <stdio.h>
 
+#define MEMLINK_MEM_NUM     100
+
 typedef struct _data_block
 {
     unsigned short      visible_count; // visible item count
