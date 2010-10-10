@@ -37,7 +37,8 @@ int             hashtable_add_info(HashTable *ht, char *key, int valuesize, char
 int             hashtable_add_info_mask(HashTable *ht, char *key, int valuesize, 
                                         unsigned int *maskarray, char masknum);
 HashNode*       hashtable_find(HashTable *ht, char *key);
-int             hashtable_find_value(HashTable *ht, char *key, void *value, HashNode **node, char **data);
+int             hashtable_find_value(HashTable *ht, char *key, void *value, 
+                                     HashNode **node, DataBlock **dbk, char **data);
 unsigned int    hashtable_hash(char *key, int len);
 
 //int             hashtable_add_first(HashTable *ht, char *key, void *value, char *maskstr);

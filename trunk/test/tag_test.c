@@ -30,9 +30,11 @@ int main()
 	int i;
 	char val[64];
 	char *maskstr = "6:3:1";
+    int  insertnum = 10;
 
-	for (i = 0; i < 200; i++) {
+	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
+        DINFO("====== insert:%s ======\n", val);
 		ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr, 0);
 		if (ret != MEMLINK_OK) {
 			DERROR("insert error, key:%s,val:%s, ret:%d\n", buf, val, ret);
@@ -40,8 +42,8 @@ int main()
 		}
 	}
 
-	sprintf(val, "%06d", 6);
-	ret = memlink_cmd_tag(m, buf, val, strlen(val), 1);
+	sprintf(val, "%06d", insertnum / 2);
+	ret = memlink_cmd_tag(m, buf, val, strlen(val), MEMLINK_TAG_DEL);
 	if (ret != MEMLINK_OK) {
 		DERROR("tag error, ret:%d\n", ret);
 		return -4;
@@ -67,7 +69,7 @@ int main()
 	
 	memlink_result_free(&result);
 
-	ret = memlink_cmd_tag(m, buf, val, strlen(val), 0);
+	ret = memlink_cmd_tag(m, buf, val, strlen(val), MEMLINK_TAG_RESTORE);
 	if (ret != MEMLINK_OK) {
 		DERROR("tag error, ret:%d\n", ret);
 		return -7;
@@ -95,7 +97,6 @@ int main()
 	}
 	
 	memlink_result_free(&result);
-
 
 	memlink_destroy(m);
 

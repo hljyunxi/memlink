@@ -31,6 +31,8 @@
 #define MEMLINK_ERR_MASK			-20
 // 包错误
 #define MEMLINK_ERR_PACKAGE			-21
+// 该项已删除
+#define MEMLINK_ERR_REMOVED         -22
 // 其他错误
 #define MEMLINK_ERR                 -1
 // 操作失败

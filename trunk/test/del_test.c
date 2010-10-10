@@ -49,8 +49,16 @@ int main()
 		return -4;
 	}
 
-	for (i = 0; i < 100; i++) {
-		sprintf(val, "%06d", i);
+    ret = memlink_cmd_del(m, "xxxxxx", "xxxx", 4);
+	if (ret != MEMLINK_ERR_NOKEY) {
+		DERROR("del error, must nokey, key:%s\n", buf);
+		return -4;
+	}
+
+    //goto memlink_over;
+
+	for (i = 0; i < 10; i++) {
+		sprintf(val, "%06d", i*2);
 		
 		ret = memlink_cmd_del(m, buf, val, strlen(val));
 		if (ret != MEMLINK_OK) {
@@ -64,12 +72,14 @@ int main()
 		if (ret != MEMLINK_OK) {
 			DERROR("stat error, key:%s\n", buf);
 		}
-	
+        
+        DINFO("stat.data_used:%d, i:%d, v:%d\n", stat.data_used, i, 100-i-1);
 		if (stat.data_used != 100 - i - 1) {
 			DERROR("del not remove item! key:%s, val:%s\n", buf, val);
 		}
 	}
 
+memlink_over:
 	memlink_destroy(m);
 
 	return 0;
