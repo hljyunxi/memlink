@@ -129,10 +129,6 @@ Dump文件的格式为二进制的格式：
 ||更新log||yes||yes||
 ||同步||同步线程监听从的同步请求||同步线程和主建立连接，接收同步数据||
 
-从用一个同步进度文件保存和最近一次和主同步的log version，log line和主从dump同步状态。主从dump同步状态为1表示主和从正在进行dump文件同步。0表示没有为完成的主从dump文件同步。
-
-||log version（4字节）||log line（4字节）||主从dump文件同步状态（1个字节）||
-
 同步有几种情况：
 
 1. 从在本地没有dump文件和log文件
@@ -141,7 +137,10 @@ Dump文件的格式为二进制的格式：
 
 2. 从本地有dump文件和log文件
 
-如果从有主从同步进度文件，直接使用这个文件。如果从没有同步进度文件，这说明本地的dump文件和log文件是从主拷过来的，并且还没和主做过任何同步。此时从要根据dump文件和log文件生成一个同步进度文件。然后，从发送带参数的sync命令，log version和log line参数来自主从同步进度文件。
+ # 读取本地log文件的最后一条记录。
+ # 验证记录的正确性。如果正确，到第4步。如果错误，到第3步。
+ # 删除最后一条记录, 到第1步。
+ # 从记录中读取log verion和log line，发送sync命令，参数{log version} {log line}。
 
 3. 从不是第一次到主来同步，但之前是第一次同步且意外中断了
 
@@ -179,9 +178,9 @@ Dump文件的格式为二进制的格式：
 
 从在接收完dump数据后，主从dump文件同步标志置为0，更新hash table, 生成新的log文件。
 
-在发送完dump文件之后，主开始向从发送log记录。如果发送的log记录来自一个新的log文件，log version增量为1。主没有新的log文件生成，log version增量为0。从在接收到log记录，首先更新hash table。从然后把接受到log记录追加到本地的log文件，更新同步进度文件。如果log version增量为1，log version增1，log line置0。如果log version增量为0，log line增1。
+在发送完dump文件之后，主开始向从发送log记录。从把接收的log记录应用到hash table上，然后把log记录保存到本地的log文件。从的log文件的每条记录前都保存主的log version和log line。
 
-||log version增量（1字节）||log记录||
+||master log version（4字节）||master log line（4字节）||
 
 我们可以通过tcp keep-alive来保持主从同步用的TCP连接。
 
