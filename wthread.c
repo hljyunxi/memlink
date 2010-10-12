@@ -22,6 +22,12 @@
 #include "utils.h"
 #include "common.h"
 
+/**
+ *
+ * @param conn
+ * @param newflag EV_READ or EV_WRITE
+ * @param isnew
+ */
 int
 change_event(Conn *conn, int newflag, int isnew)
 {
@@ -57,6 +63,15 @@ change_event(Conn *conn, int newflag, int isnew)
 
 /**
  * 回复数据
+ *
+ * Send respose to client.
+ *
+ * @param conn
+ * @param retcode return code
+ * @param msg message
+ * @param return return data length
+ * @param data return data
+ *
  * -----------------------------------------------------------------
  * | length (2B)| retcode (2B) | message len (1B) | message | data |
  * -----------------------------------------------------------------
@@ -121,6 +136,14 @@ data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
     return 0;
 }
 
+/**
+ * Execute the write command.
+ *
+ * @param data command data
+ * @param datalen command data length
+ * @param writelog non-zero to write sync long; otherwise, not to write sync 
+ * log.
+ */
 int 
 wdata_apply(char *data, int datalen, int writelog)
 {
@@ -266,6 +289,13 @@ wdata_apply(char *data, int datalen, int writelog)
     return ret;
 }
 
+/**
+ * Execute the write command and send response to client.
+ *
+ * @param conn
+ * @param data command data
+ * @param datalen command data length 
+ */
 static int
 wdata_ready(Conn *conn, char *data, int datalen)
 {
@@ -284,10 +314,11 @@ wdata_ready(Conn *conn, char *data, int datalen)
 }
 
 /**
- * wthread_read - callback for incoming client write connection
- * @fd: file descriptor for listening socket
- * @event:
- * @arg: thread base
+ * Callback for incoming client write connection.
+ *
+ * @param fd file descriptor for listening socket
+ * @param event
+ * @param arg thread base
  */
 void
 wthread_read(int fd, short event, void *arg)
@@ -313,7 +344,13 @@ wthread_read(int fd, short event, void *arg)
     }
 }
 
-
+/**
+ * Read client request, execute the command and send response. 
+ *
+ * @param fd
+ * @param event
+ * @param arg connection
+ */
 void
 client_read(int fd, short event, void *arg)
 {
@@ -386,6 +423,13 @@ client_read(int fd, short event, void *arg)
     }
 }
 
+/**
+ * Send data to client.
+ *
+ * @param fd
+ * @param event
+ * @param arg connection
+ */
 void
 client_write(int fd, short event, void *arg)
 {

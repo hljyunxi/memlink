@@ -12,13 +12,13 @@
 
 typedef struct _conn
 {
-    int     sock;
-    char    rbuf[CONN_MAX_READ_LEN];
-    int     rlen;
-    char    *wbuf;
-    int     wlen;
-    int     wpos;
-    int     port; // server port
+    int     sock;                    // socket file descriptor
+    char    rbuf[CONN_MAX_READ_LEN]; // read buffer
+    int     rlen;                    // length of data which have been read
+    char    *wbuf;                   // write buffer
+    int     wlen;                    // write buffer length
+    int     wpos;                    // write buffer position
+    int     port;                    // server port
 
 	struct event		evt;
     struct event_base   *base;
