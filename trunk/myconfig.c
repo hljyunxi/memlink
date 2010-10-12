@@ -385,13 +385,13 @@ slave_runtime_create(char *pgname)
     if (mainserver_init(rt) != 0)
         return NULL;
 
-    /*rt->sslave = sslave_create();*/
-    /*if (NULL == rt->wthread) {*/
-    /*    DERROR("sync slave creation error!\n");*/
-    /*    MEMLINK_EXIT;*/
-    /*    return NULL;*/
-    /*}*/
-    /*DINFO("sync slave creation ok!\n");*/
+    rt->sslave = sslave_create();
+    if (NULL == rt->wthread) {
+       DERROR("sync slave creation error!\n");
+       MEMLINK_EXIT;
+       return NULL;
+    }
+    DINFO("sync slave creation ok!\n");
 
     DINFO("create slave runtime ok!\n");
     return rt;
@@ -401,25 +401,6 @@ Runtime*
 runtime_create_master(char *pgname)
 {
     Runtime* rt;// = runtime_init(pgname);
-
-    /*int ret;
-    ret = pthread_mutex_init(&rt->mutex, NULL);
-    if (ret != 0) {
-        DERROR("pthread_mutex_init error: %s\n", strerror(errno));
-        MEMLINK_EXIT;
-        return NULL;
-    }
-    DINFO("mutex init ok!\n");
-
-    if (hashtable_init(rt) != 0) 
-      return NULL;
-    
-    if (mempool_init(rt) != 0)
-        return NULL;
-
-    if (mainserver_init(rt) != 0)
-        return NULL;
-    */
 
     rt = runtime_create_common(pgname);
     if (NULL == rt) {
@@ -434,13 +415,13 @@ runtime_create_master(char *pgname)
     }
     DINFO("write thread create ok!\n");
     
-    /*rt->sthread = sthread_create();*/
-    /*if (NULL == rt->sthread) {*/
-    /*    DERROR("sthread_create error!\n");*/
-    /*    MEMLINK_EXIT;*/
-    /*    return NULL;*/
-    /*}*/
-    /*DINFO("sync thread create ok!\n");*/
+    rt->sthread = sthread_create();
+    if (NULL == rt->sthread) {
+       DERROR("sthread_create error!\n");
+       MEMLINK_EXIT;
+       return NULL;
+    }
+    DINFO("sync thread create ok!\n");
 
     DINFO("create master Runtime ok!\n");
     return rt;

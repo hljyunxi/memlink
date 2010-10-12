@@ -10,6 +10,9 @@
 #include "utils.h"
 #include "common.h"
 
+/**
+ * Execute the read command and send response.
+ */
 int
 rdata_ready(Conn *conn, char *data, int datalen)
 {

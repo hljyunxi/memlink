@@ -95,13 +95,12 @@ mainserver_loop(MainServer *ms)
 }
 
 /**
-  * thserver_create - callback for enqueue event
-  * @fd: file descriptor for the pipe receive end.
-  * @event:
-  * @arg: thread server
-  * 
-  * Read date from the pipe and add event for incoming data in client 
-  * connection.
+  * Callback for enqueue event. Read date from the pipe and add event for 
+  * incoming data in client connection.
+  *
+  * @param fd file descriptor for the pipe receive end.
+  * @param event
+  * @param arg thread server
   */
 static void
 thserver_notify(int fd, short event, void *arg)
