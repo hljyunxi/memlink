@@ -27,6 +27,7 @@ typedef struct _myconfig
     int          sync_port;
     char         datadir[PATH_MAX];
     int          log_level;
+    char         log_name[PATH_MAX];
     int          timeout;
     int          thread_num; 
     int          max_conn;  // max connection

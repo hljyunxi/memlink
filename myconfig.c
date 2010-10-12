@@ -55,7 +55,7 @@ myconfig_create(char *filename)
     char buffer[2048];
     while (1) {
         if (fgets(buffer, 2048, fp) == NULL) {
-            DINFO("config file read complete!\n");
+            //DINFO("config file read complete!\n");
             break;
         }
         //DINFO("buffer: %s\n", buffer);
@@ -105,6 +105,8 @@ myconfig_create(char *filename)
             snprintf(mcf->datadir, PATH_MAX, "%s", start);
         }else if (strcmp(buffer, "log_level") == 0) {
             mcf->log_level = atoi(start);
+        }else if (strcmp(buffer, "log_name") == 0) {
+            snprintf(mcf->log_name, PATH_MAX, "%s", start);    
         }else if (strcmp(buffer, "timeout") == 0) {
             mcf->timeout = atoi(start);
         }else if (strcmp(buffer, "thread_num") == 0) {
@@ -119,7 +121,7 @@ myconfig_create(char *filename)
         }else if (strcmp(buffer, "role") == 0) {
             mcf->role = atoi(start);
         }else if (strcmp(buffer, "master_addr") == 0) {
-          snprintf(mcf->master_addr, IP_ADDR_MAX_LEN, "%s", start);
+            snprintf(mcf->master_addr, IP_ADDR_MAX_LEN, "%s", start);
         }else if (strcmp(buffer, "sync_interval") == 0) {
             mcf->sync_interval = atoi(start);
         }
@@ -128,8 +130,7 @@ myconfig_create(char *filename)
     fclose(fp);
 
     g_cf = mcf;
-
-    DINFO("create MyConfig ok!\n");
+    //DINFO("create MyConfig ok!\n");
 
     return mcf;
 }
