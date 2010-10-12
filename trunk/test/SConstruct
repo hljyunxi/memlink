@@ -1,7 +1,8 @@
 cflags   = '-ggdb -DDEBUG'
-includes = ['../client/c', '../']
+#cflags   = '-ggdb'
+includes = ['/Developer/usr/include', '../client/c', '../']
 ldflags  = []
-libpath  = ['../client/c']
+libpath  = ['/Developer/usr/lib', '../client/c']
 libs	 = ['memlink']
 
 env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)

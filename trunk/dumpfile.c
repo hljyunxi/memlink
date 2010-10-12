@@ -84,6 +84,9 @@ dumpfile(HashTable *ht)
     if (ret == -1) {
         DERROR("dumpfile rename error: %s\n", strerror(errno));
     }
+    
+    // start a new sync log
+    synclog_rotate(g_runtime->synclog);
 
     return ret;
 }
@@ -196,9 +199,9 @@ dumpfile_call()
     int ret;
 
     pthread_mutex_lock(&g_runtime->mutex);
-    g_runtime->indump = 1;
+    //g_runtime->indump = 1;
     ret = dumpfile(g_runtime->ht);
-    g_runtime->indump = 0;
+    //g_runtime->indump = 0;
     pthread_mutex_unlock(&g_runtime->mutex);
     
     return ret;

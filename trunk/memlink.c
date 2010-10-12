@@ -36,7 +36,7 @@ int signal_install()
 
 void master(char *pgname) 
 {
-    logfile_create("stdout", 3);
+    logfile_create(g_cf->log_name, 3);
     DINFO("logfile ok!\n");
     runtime_create_master(pgname);
     DINFO("master runtime ok!\n");
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 	
 	DINFO("config file: %s\n", conffile);
     myconfig_create(conffile);
-    DINFO("config ok!\n");
+    //DINFO("config ok!\n");
     
     if (g_cf->max_core) {
         struct rlimit rlim_new;
@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
     }
 
     signal_install();
-    DINFO("signal ok!\n");
+    //DINFO("signal ok!\n");
 
     if (g_cf->is_daemon) {
         ret = daemonize(g_cf->max_core, 0);

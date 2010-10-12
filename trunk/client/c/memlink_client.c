@@ -335,7 +335,7 @@ memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr)
     len = cmd_create_pack(data, key, valuelen, masknum, maskarray);
     DINFO("pack create len: %d\n", len);
 
-    printh(data, len); 
+    //printh(data, len); 
     char retdata[1024];
     int ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
 	if (ret < 0) 
@@ -421,7 +421,7 @@ memlink_cmd_mask(MemLink *m, char *key, char *value, int valuelen, char *maskstr
     DINFO("key: %s, valuelen: %d\n", key, valuelen);
     len = cmd_mask_pack(data, key, value, valuelen, masknum, maskarray);
     DINFO("pack mask len: %d\n", len);
-    printh(data, len);
+    //printh(data, len);
     char retdata[1024];
     int ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
 
@@ -460,7 +460,7 @@ memlink_cmd_range(MemLink *m, char *key, char *maskstr, unsigned int frompos, un
     plen = cmd_range_pack(data, key, masknum, maskarray, frompos, len);
     DINFO("pack range len: %d\n", plen);
 
-    printh(data, plen);
+    //printh(data, plen);
 
     int  retlen = 256 * len + HASHTABLE_MASK_MAX_LEN * sizeof(int) * len + 32;
     DINFO("retlen: %d\n", retlen);

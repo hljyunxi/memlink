@@ -20,41 +20,62 @@ def test():
         print 'not found memlink'
         return
 
+    memlinkstart = memlinkfile + ' test/memlink.conf'
+
+    result = {}
     for fn in files:
         fpath = os.path.join(home, 'test', fn)
  
-        cmd = "killall -9 memlink"
-        os.system(cmd)
+        #cmd = "killall -9 memlink"
+        #os.system(cmd)
        
-        cmd = "rm -rf data/bin.log*"
-        os.system(cmd)
+        #cmd = "rm -rf data/bin.log*"
+        #os.system(cmd)
+        binfiles = glob.glob('data/bin.log*')
+        for bf in binfiles:
+            print 'remove', bf
+            os.remove(bf)
 
-        cmd = "rm -rf data/dump.dat*"
-        os.system(cmd)
+        #cmd = "rm -rf data/dump.dat*"
+        #os.system(cmd)
+        binfiles = glob.glob('data/dump.dat*')
+        for bf in binfiles:
+            print 'remove', bf
+            os.remove(bf)
 
-        print 'open memlink:', memlinkfile
-        x = subprocess.Popen(memlinkfile, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, env=os.environ, universal_newlines=True) 
-        print 'go ..' 
-        
-        time.sleep(2)
+        #print 'open memlink:', memlinkstart
+        x = subprocess.Popen(memlinkstart, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
+                             shell=True, env=os.environ, universal_newlines=True) 
+        time.sleep(1)
 
         print 'run test:', fpath
         ret = os.system(fpath)
 
-        print 'kill memlink ...'
+        #print 'kill memlink ...'
         x.kill()
-        print 'kill complete!'
+        #print 'kill complete!'
 
         #print x.stderr.read()
         #print x.stdout.read()
 
         if ret != 0:
-            print fn, '\t\t\33[31mfailed!\33[0m'
+            result[fn] = 1
+            #print fn, '\t\t\33[31mfailed!\33[0m'
         else:
-            print fn, '\t\t\33[32failed!\33[0m'
+            result[fn] = 0
+            #print fn, '\t\t\33[32msuccess!\33[0m'
             
-        break
+        #break
 
+    print '=' * 60
+    for k,v in result.iteritems():
+        if v:
+            print k, '\t\t\33[31mfailed!\33[0m' 
+        else:
+            print k, '\t\t\33[32mfailed!\33[0m' 
+
+
+    return result
 
 if __name__ == '__main__':
     test()
