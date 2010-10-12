@@ -1,5 +1,7 @@
 #summary MemLink详细设计文档
 
+<wiki:toc max_depth="2" />
+
 = 1 工作方式 =
 
 !MemLink是一个独立的服务程序，类似于memcached，不同的是它并不是提供key-value数据的存储，而是在内存中存储的是列表数据。
