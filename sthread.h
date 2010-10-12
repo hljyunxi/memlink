@@ -1,6 +1,8 @@
 #ifndef MEMLINK_STHREAD_H
 #define MEMLINK_STHREAD_H
 
+#include <event.h>
+
 typedef struct _sthread 
 {
     int sock;
