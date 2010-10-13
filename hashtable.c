@@ -154,6 +154,53 @@ datablock_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk)
     return -1;
 }
 
+
+static int
+dataitem_lookup_pos_mask(HashNode *node, int pos, int visible, char *maskval, char *maskflag, DataBlock **dbk, char **addr)
+{
+    DataBlock *root = node->data;
+
+	int n = 0, startn = 0;
+	int i, k;
+	int datalen = node->valuesize + node->masksize;
+    
+    while (root) {
+		startn = n;
+		char *itemdata = root->data;
+
+		for (i = 0; i < g_cf->block_data_count; i++) {
+			if (dataitem_have_data(node, itemdata, visible)) {
+				char *maskdata = itemdata + node->valuesize;	
+				for (k = 0; k < node->masksize; k++) {
+					if ((maskdata[k] & maskflag[k]) != maskval[k]) {
+						break;
+					}
+				}
+				if (k < node->masksize) { // not equal
+					continue;
+				}
+
+				n += 1;
+				if (n >= pos) {
+					*dbk  = root;
+					*addr = itemdata;
+					return startn;
+				}
+			}
+			itemdata += datalen;
+		}
+		/*
+		if (n >= pos) {
+			*dbk = root;
+			return startn;
+		}*/
+
+        root = root->next;
+    }
+
+    return -1;
+}
+
 /**
  * find a insert pos in DataBlock link
  */
@@ -896,10 +943,12 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
                 char *data, int *datanum, 
                 unsigned char *valuesize, unsigned char *masksize)
 {
-    char mask[HASHTABLE_MASK_MAX_LEN * sizeof(int)];
+    char maskval[HASHTABLE_MASK_MAX_LEN * sizeof(int)];
+	char maskflag[HASHTABLE_MASK_MAX_LEN * sizeof(int)];
     HashNode    *node;
 	int			startn;
     int         masklen = 0;
+	int			havemask = 0;
 
     node = hashtable_find(ht, key);
     if (NULL == node) {
@@ -908,28 +957,45 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
     }
 
     if (masknum > 0) {
-        masklen = mask_array2binary(node->maskformat, maskarray, masknum, mask);
+        masklen = mask_array2binary(node->maskformat, maskarray, masknum, maskval);
         if (masklen <= 0) {
             DERROR("mask_string2array error\n");
             return -2;
         }
-        mask[0] = mask[0] & 0xfc;
+        maskval[0] = maskval[0] & 0xfc;
+		
+		int j;
+		for (j = 0; j < masknum; j++) {
+			havemask += maskval[j];
+		}
+
+		mask_array2flag(node->maskformat, maskarray, masknum, maskflag);
+		maskflag[0] = maskflag[0] & 0xfc;
     }
 
     DataBlock *dbk = NULL;
     int datalen = node->valuesize + node->masksize;
+	char *addr  = NULL;
 
     *valuesize = node->valuesize;
     *masksize  = node->masksize;
 
-    if (masknum > 0) {
+	DINFO("havemask: %d\n", havemask);
+    if (havemask) {
+		startn = dataitem_lookup_pos_mask(node, frompos, 1, maskval, maskflag, &dbk, &addr);
+		DINFO("startn: %d\n", startn);
+		if (startn < 0) { // out of range
+			*datanum = 0;
+			return MEMLINK_OK;
+		}
+    }else{
 		startn = datablock_lookup_pos(node, frompos, 1, &dbk);
 		DINFO("startn: %d\n", startn);
 		if (startn < 0) { // out of range
 			*datanum = 0;
 			return MEMLINK_OK;
 		}
-    }
+	}
 	
 	int skipn = frompos - startn;
     int idx   = 0;
@@ -943,6 +1009,13 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
         int  i;
         char buf[128];
         for (i = 0; i < g_cf->block_data_count; i++) {
+			if (addr) {
+				if (itemdata != addr) {
+					continue;
+				}else{
+					addr = NULL;
+				}
+			}
             if (dataitem_have_data(node, itemdata, 1)) {
 				if (skipn > 0) {
 					skipn -= 1;
@@ -951,7 +1024,9 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
 				}
 				
                 mlen = mask_binary2string(node->maskformat, node->masknum, itemdata + node->valuesize, node->masksize, maskstr);
-				DINFO("ok, copy item ... %s mlen:%d\n", formath(itemdata, datalen, buf, 128), mlen);
+				snprintf(buf, node->valuesize, "%s", itemdata);
+
+				DINFO("ok, copy item ... i:%d, value:%s maskstr:%s, mlen:%d\n", i, buf, maskstr, mlen);
 				memcpy(data + idx, itemdata, node->valuesize);
                 idx += node->valuesize;
                 memcpy(data + idx, &mlen, sizeof(char));
@@ -972,6 +1047,7 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
     }
 
 hashtable_range_over:
+	DINFO("count: %d\n", n);
     //*data = retv;
     *datanum = idx;
 
@@ -983,7 +1059,7 @@ hashtable_clean(HashTable *ht, char *key)
 {
     HashNode    *node = hashtable_find(ht, key); 
     if (NULL == node)
-        return MEMLINK_OK;
+        return MEMLINK_ERR_NOKEY;
 
     DataBlock   *dbk = node->data;
     int         dlen = node->valuesize + node->masksize;
@@ -1035,13 +1111,11 @@ hashtable_clean(HashTable *ht, char *key)
                     newdbk_end = newdbk->data + g_cf->block_data_count * dlen;
                     newdbk_pos = newdbk->data;
 
-                    newdbk->next = NULL;
-                    
+                    newdbk->next  = NULL;
                     newlast->next = newdbk; 
 
                     dataall += g_cf->block_data_count;
                 }
-
 
                 unsigned char v = *(itemdata + node->valuesize) & 0x02;
                 memcpy(newdbk_pos, itemdata, dlen);
@@ -1052,8 +1126,6 @@ hashtable_clean(HashTable *ht, char *key)
                 }else{
                     newdbk->visible_count++;
                 }
-
-
             }
             itemdata += dlen;
         }

@@ -26,8 +26,8 @@ def test():
     for fn in files:
         fpath = os.path.join(home, 'test', fn)
  
-        #cmd = "killall -9 memlink"
-        #os.system(cmd)
+        cmd = "killall -9 memlink"
+        os.system(cmd)
        
         #cmd = "rm -rf data/bin.log*"
         #os.system(cmd)
@@ -59,10 +59,10 @@ def test():
         #print x.stdout.read()
 
         if ret != 0:
-            result[fn] = 1
+            result[fn] = 0
             #print fn, '\t\t\33[31mfailed!\33[0m'
         else:
-            result[fn] = 0
+            result[fn] = 1
             #print fn, '\t\t\33[32msuccess!\33[0m'
             
         #break
@@ -70,9 +70,9 @@ def test():
     print '=' * 60
     for k,v in result.iteritems():
         if v:
-            print k, '\t\t\33[31mfailed!\33[0m' 
+            print k, '\t\t\33[32msuccess!\33[0m' 
         else:
-            print k, '\t\t\33[32mfailed!\33[0m' 
+            print k, '\t\t\33[31mfailed!\33[0m' 
 
 
     return result
