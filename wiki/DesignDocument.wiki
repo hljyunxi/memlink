@@ -131,7 +131,7 @@ Dump文件的格式为二进制的格式：
 ||更新log||yes||yes||
 ||同步||同步线程监听从的同步请求||同步线程和主建立连接，接收同步数据||
 
-同步有几种情况：
+从在启动后，向主发送同步请求。从根据3种不同的情况发送3种不同的请求：
 
 1. 从在本地没有dump文件和log文件
 
@@ -148,25 +148,7 @@ Dump文件的格式为二进制的格式：
 
 从发送syncontinu命令，参数为dump版本号和上次同步的大小。
 
-命令协议为二进制交互协议，和其他命令的方法一样。
-
-具体的交互命令如下：
-
-1. sync {log version} {log line}
-
-描述：表示同步数据。Sync的编号为100，log version为log版本号，4字节整型，log line为行号，也是4字节整型。从节点从同步进度文件获取log version和log line。
-
-返回：
-
-||状态（1字节）||
-
-1表示主要发送dump，0表示主要发送log。
-
-如果以下任意条件成立，状态为1：
- # 如果log version和log line都为0。
- # 如果sync带非零参数，但是主上找不到指定log verison的log文件。
-
-如果log version和log line不同时为零并且主上能够找到指定log version的log文件，状态为0。主把从log line开始之后的所有log发送给从。
+主的同步线程在接到同步请求后，给从发一个响应。如果需要发送dump文件，主开始发送dump文件。
 
 在dump文件期前，主工作的流程：
  # 打开dump文件。
@@ -178,7 +160,7 @@ Dump文件的格式为二进制的格式：
  # 创建一个dump文件。
  # 不断把从主接收到的数据写入dump文件。
 
-从在接收完dump数据后，主从dump文件同步标志置为0，更新hash table, 生成新的log文件。
+从在接收完dump数据后，更新hash table, 生成新的log文件。
 
 在发送完dump文件之后，主开始向从发送log记录。从把接收的log记录应用到hash table上，然后把log记录保存到本地的log文件。从的log文件的每条记录前都保存主的log version和log line。
 
@@ -186,9 +168,25 @@ Dump文件的格式为二进制的格式：
 
 我们可以通过tcp keep-alive来保持主从同步用的TCP连接。
 
+命令协议为二进制交互协议，和其他命令的方法一样。
+
+具体的交互命令如下：
+
+1. sync {log version} {log line}
+
+描述：表示同步数据。Sync的命令编号为100，log version为log版本号，4字节整型，log line为行号，也是4字节整型。
+
+返回：
+
+| 状态（1字节）|。1表示主要发送dump，0表示主要发送log。
+
+如果以下任意条件成立，状态为1：
+ # 如果log version和log line都为0。
+ # 如果sync带非零参数，但是主上找不到指定log verison的log文件。
+
 2. syncontinue {dumpversion} {size}
 
-描述：syncontinue编号为101。Dumpversion为dump版本号，是4字节，size为已同步文件大小，为8字节。如果上回第一次同步dump文件有中断，发送此命令。如果在发生dump文件中断后，从还在运行，从直接发这个命令。如果在发生dump文件中断后，从重新启动。如果从发现这个状态为1，从也会发这个命令。
+描述：syncontinue命令编号为101。Dumpversion为dump版本号，是4字节，size为已同步文件大小，为8字节。如果上回第一次同步dump文件有中断，发送此命令。如果在发生dump文件中断后，
 
 返回：是否是原dump文件，1表示是，0表示不是，需要1字节。如果为1，主接着发送原dump文件。如果为0，主开始发送新的dump文件。以后主从的工作流程和sync命令一样。
 
