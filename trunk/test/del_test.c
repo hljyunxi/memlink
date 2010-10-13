@@ -9,7 +9,6 @@ int main()
 #ifdef DEBUG
 	logfile_create("stdout", 3);
 #endif
-
 	
 	m = memlink_create("127.0.0.1", 11001, 11002, 30);
 	if (NULL == m) {
@@ -73,10 +72,35 @@ int main()
 			DERROR("stat error, key:%s\n", buf);
 		}
         
-        DINFO("stat.data_used:%d, i:%d, v:%d\n", stat.data_used, i, 100-i-1);
+        //DINFO("stat.data_used:%d, i:%d, v:%d\n", stat.data_used, i, 100-i-1);
 		if (stat.data_used != 100 - i - 1) {
 			DERROR("del not remove item! key:%s, val:%s\n", buf, val);
 		}
+
+		MemLinkResult	result;
+
+		ret = memlink_cmd_range(m, buf, "::", 0, 100, &result);
+		if (ret != MEMLINK_OK) {
+			DERROR("range error, ret:%d\n", ret);
+			return -6;
+		}
+		
+		MemLinkItem		*item = result.root;
+
+		if (NULL == item) {
+			DERROR("range result must not null.\n");
+			return -7;
+		}
+
+		while (item) {
+			if (strcmp(item->value, val) == 0) {
+				DERROR("found delete item!, del error. val:%s\n", val);
+				return -8;
+			}
+			item = item->next;
+		}
+	
+		memlink_result_free(&result);
 	}
 
 memlink_over:

@@ -25,7 +25,7 @@ int main()
 		DERROR("1 memlink_cmd_create %s error: %d\n", key, ret);
 		return -2;
 	}
-	DINFO("create %s ok!\n", key);
+	//DINFO("create %s ok!\n", key);
 
 	int		i;
 	char	val[64];
@@ -33,7 +33,7 @@ int main()
     int     insertnum = 200;
 	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
-		DINFO("====== try insert %s %s %d======\n", key, val, i);
+		//DINFO("====== try insert %s %s %d======\n", key, val, i);
 		ret = memlink_cmd_insert(m, key, val, strlen(val), maskstr, i*2);
 		if (ret != MEMLINK_OK) {
 			DERROR("insert error, key:%s, val:%s, mask:%s, i:%d, ret:%d\n", key, val, maskstr, i, ret);
@@ -42,11 +42,11 @@ int main()
 		}
 	}
 
-	DINFO("insert ok!\n");
+	//DINFO("insert ok!\n");
 
     for (i = 0; i < insertnum/2; i++) {
         sprintf(val, "%06d", i);
-		DINFO("====== try del %s %s %d======\n", key, val, i);
+		//DINFO("====== try del %s %s %d======\n", key, val, i);
 		ret = memlink_cmd_del(m, key, val, strlen(val));
 		if (ret != MEMLINK_OK) {
 			DERROR("del error, key:%s, val:%s, i:%d, ret:%d\n", key, val, i, ret);
@@ -59,6 +59,12 @@ int main()
 	ret = memlink_cmd_stat(m, key, &stat);
 	if (ret != MEMLINK_OK) {
 		DERROR("stat error, key:%s, ret:%d\n", key, ret);
+		return -4;
+	}
+
+	ret = memlink_cmd_clean(m, "HAHAHAH");
+	if (ret == MEMLINK_OK) {
+		DERROR("must not clean not exist key. ret:%d\n", ret);
 		return -4;
 	}
 
@@ -75,12 +81,12 @@ int main()
 		return -6;
 	}
 
-	if (stat2.data_used != stat.data_used) {
+	if (stat2.data_used != stat.data_used || stat.data_used != insertnum/2) {
 		DERROR("stat data_used error, must equal. %d, %d\n", stat.data_used, stat2.data_used);
 		return -7;
 	}
 
-	DINFO("stat.data: %d, stat2.data: %d\n", stat.data, stat2.data);
+	//DINFO("stat.data: %d, stat2.data: %d\n", stat.data, stat2.data);
 	if (stat2.data >= stat.data) {
 		DERROR("stat data error! stat2 must smaller than stat.\n");
 		return -8;

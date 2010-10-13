@@ -29,10 +29,11 @@ int main()
 	int  i;
 	char val[64];
 	char *maskstr = "8:3:1";
+	int	 insertnum = 200;
 
-	for (i = 0; i < 1000; i++) {
+	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
-		ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr, i*2);	
+		ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr, 0);	
 		if (ret != MEMLINK_OK) {
 			DERROR("insert error, key:%s, val:%s, mask:%s, i:%d\n", buf, val, maskstr, i);
 			return -3;
@@ -46,10 +47,85 @@ int main()
 		return -4;
 	}
 	
-	if (stat.data_used != 1000) {
+	if (stat.data_used != insertnum) {
 		DERROR("insert num error, data_used:%d\n", stat.data_used);
 		return -5;
 	}
+
+	MemLinkResult   result;
+
+	ret = memlink_cmd_range(m, buf, "::", 0, insertnum, &result);
+	if (ret != MEMLINK_OK) {
+		DERROR("range error, ret:%d\n", ret);
+		return -6;
+	}
+
+	MemLinkItem		*item = result.root;
+
+	if (NULL == item) {
+		DERROR("range must not null\n");
+		return -7;
+	}
+
+	i = 200;
+	while (item) {
+		i--;
+		sprintf(val, "%06d", i);
+		if (strcmp(item->value, val) != 0) {
+			DERROR("range value error, value:%s\n", val);
+			return -8;
+		}
+		item = item->next;
+	}
+	
+	memlink_result_free(&result);
+
+	sprintf(val, "%06d", 300);
+
+	ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr, 100);	
+	if (ret != MEMLINK_OK) {
+		DERROR("insert error, ret:%d\n", ret);
+		return -9;
+	}
+
+	MemLinkResult   result2;
+
+	ret = memlink_cmd_range(m, buf, "::", 0, insertnum + 1, &result2);
+	if (ret != MEMLINK_OK) {
+		DERROR("range error, ret:%d\n", ret);
+		return -6;
+	}
+
+	item = result2.root;
+
+	if (NULL == item) {
+		DERROR("range must not null\n");
+		return -7;
+	}
+
+	i = 200;
+	while (item) {
+		i--;
+		if (i == 98) {
+			sprintf(val, "%06d", 300);
+			if (strcmp(item->value, val) != 0) {
+				DERROR("range value error, item->value:%s, value:%s\n", item->value, val);
+				return -8;
+			}
+			item = item->next;
+		}
+
+		sprintf(val, "%06d", i);
+		if (strcmp(item->value, val) != 0) {
+			DERROR("range value error, value:%s\n", val);
+			return -8;
+		}
+		item = item->next;
+	}
+	
+	memlink_result_free(&result2);
+
+
 
 	memlink_destroy(m);
 

@@ -8,7 +8,7 @@ int main()
 {
 	MemLink	*m;
 #ifdef DEBUG
-	logfile_create("stdout", 1);
+	logfile_create("stdout", 3);
 #endif
 	m = memlink_create("127.0.0.1", 11001, 11002, 30);
 	if (NULL == m) {
@@ -30,8 +30,9 @@ int main()
 	int i;
 	char val[64];
 	char *maskstr = "7:1:1";
+	int  insertnum = 100;
 
-	for (i = 0; i < 1000; i++) {
+	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
 		ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr, i);
 		if (ret != MEMLINK_OK) {
@@ -42,14 +43,17 @@ int main()
 
 	MemLinkResult	result;
 	int				reterr = 0;
+	int				range_start = insertnum - 20;
+	int				range_count = 10;
 
-	ret = memlink_cmd_range(m, buf, "::", 800, 100, &result);
+	ret = memlink_cmd_range(m, buf, "::", range_start, range_count, &result);
 	if (ret != MEMLINK_OK) {
 		DERROR("range error, key:%s, ret:%d\n", buf, ret);
 		return -4;
 	}
 
-	if (result.count != 100) {
+	DINFO("range return count: %d\n", result.count);
+	if (result.count != range_count) {
 		DERROR("range count error, count:%d, key:%s\n", result.count, buf);
 		reterr++;
 	}
@@ -66,10 +70,11 @@ int main()
 		
 	MemLinkItem	*item = result.root;
 	char testbuf[64];
-	int  testi = 800;
+	int  testi = range_start;
 
 	while (item) {
 		sprintf(testbuf, "%06d", testi);
+		DINFO("range item, value:%s, mask:%s\n", item->value, item->mask);
 		if (strcmp(item->value, testbuf) != 0) {
 			DERROR("range value error, value:%s, testvalue:%s\n", item->value, testbuf);
 		}
