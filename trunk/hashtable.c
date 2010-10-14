@@ -16,7 +16,7 @@
  * @param itemdata
  * @param visible 为1表示只查找可见的，为0表示查找可见和不可见的(标记删除的)
  */
-static int 
+int 
 dataitem_have_data(HashNode *node, char *itemdata, int visible)
 {
     char *maskdata  = itemdata + node->valuesize;
@@ -187,12 +187,17 @@ dataitem_lookup_pos_mask(HashNode *node, int pos, int visible, char *maskval, ch
 		for (i = 0; i < g_cf->block_data_count; i++) {
 			if (dataitem_have_data(node, itemdata, visible)) {
 				char *maskdata = itemdata + node->valuesize;	
+				
+				char buf[64];
+				DINFO("i: %d, maskdata: %s\n", i, formatb(maskdata, node->masksize, buf, 64));
 				for (k = 0; k < node->masksize; k++) {
+					//DINFO("check k:%d, maskdata:%x, maskflag:%x, maskval:%x\n", k, maskdata[k], maskflag[k], maskval[k]);
 					if ((maskdata[k] & maskflag[k]) != maskval[k]) {
 						break;
 					}
 				}
 				if (k < node->masksize) { // not equal
+					DINFO("not equal.\n");
 					continue;
 				}
 
@@ -407,6 +412,7 @@ hashtable_destroy(HashTable *ht)
     zz_free(ht);
 }
 
+
 /**
  * 创建HashTable中一个key的结构信息
  */
@@ -487,6 +493,41 @@ hashtable_add_info_mask(HashTable *ht, char *key, int valuesize, unsigned int *m
     DINFO("ht key:%s, hash:%d\n", ht->bunks[hash]->key, hash);
 
     return MEMLINK_OK;    
+}
+
+int
+hashtable_remove_key(HashTable *ht, char *key)
+{
+	//int				ret;
+    int             keylen = strlen(key);
+    unsigned int    hash   = hashtable_hash(key, keylen);
+    HashNode        *node  = ht->bunks[hash];
+	HashNode		*last  = NULL;
+
+    while (node) {
+        if (strcmp(key, node->key) == 0) {
+			break;
+        }
+		last = node;
+        node = node->next;
+    }
+	
+	if (NULL == node) {
+		return MEMLINK_ERR_NOKEY;
+	}
+	
+	DataBlock	*dbk = node->data;
+	DataBlock	*tmp;
+	int			datalen = node->valuesize + node->masksize;
+	zz_free(node->key);		
+	zz_free(node);
+	
+	while (dbk) {
+		tmp = dbk;
+		dbk = dbk->next;
+		mempool_put(g_runtime->mpool, tmp, datalen);	
+	}
+	return MEMLINK_OK;
 }
 
 
@@ -1013,8 +1054,21 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
 			havemask += maskval[j];
 		}
 
-		mask_array2flag(node->maskformat, maskarray, masknum, maskflag);
+		masklen = mask_array2flag(node->maskformat, maskarray, masknum, maskflag);
+		if (masklen <= 0) {
+            DERROR("mask_array2flag error\n");
+            return -2;
+        }
+
+		for (j = 0; j < masknum; j++) {
+			maskflag[j] = ~maskflag[j];
+		}
 		maskflag[0] = maskflag[0] & 0xfc;
+
+		char buf[64];
+
+		DINFO("maskval:  %s\n", formatb(maskval, node->masksize, buf, 64));
+		DINFO("maskflag: %s\n", formatb(maskflag, node->masksize, buf, 64));
     }
 
     DataBlock *dbk = NULL;
@@ -1027,14 +1081,14 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
 	DINFO("havemask: %d\n", havemask);
     if (havemask) {
 		startn = dataitem_lookup_pos_mask(node, frompos, 1, maskval, maskflag, &dbk, &addr);
-		DINFO("startn: %d\n", startn);
+		DINFO("dataitem_lookup_pos_mask startn: %d\n", startn);
 		if (startn < 0) { // out of range
 			*datanum = 0;
 			return MEMLINK_OK;
 		}
     }else{
 		startn = datablock_lookup_pos(node, frompos, 1, &dbk);
-		DINFO("startn: %d\n", startn);
+		DINFO("datablock_lookup_pos startn: %d\n", startn);
 		if (startn < 0) { // out of range
 			*datanum = 0;
 			return MEMLINK_OK;
@@ -1061,6 +1115,21 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
 				}
 			}
             if (dataitem_have_data(node, itemdata, 1)) {
+				if (havemask) {
+					int k;
+					char *maskdata = itemdata + node->valuesize;
+
+					for (k = 0; k < node->masksize; k++) {
+						if ((maskdata[k] & maskflag[k]) != maskval[k]) {
+							break;
+						}
+					}
+					if (k < node->masksize) { // not equal
+						//DINFO("not equal.\n");
+						continue;
+					}
+
+				}
 				if (skipn > 0) {
 					skipn -= 1;
 					itemdata += datalen;

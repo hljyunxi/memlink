@@ -146,7 +146,7 @@ load_data()
 {
     int    ret;
     struct stat stbuf;
-    char   *filename = "dump.dat";
+    char   *filename = "data/dump.dat";
 
     // check dumpfile exist
     ret = stat(filename, &stbuf);
@@ -156,6 +156,7 @@ load_data()
   
     // have dumpfile, load
     if (ret == 0) {
+		DINFO("try load dumpfile ...\n");
         ret = loaddump(g_runtime->ht);
         if (ret < 0) {
             DERROR("loaddump error: %d\n", ret);

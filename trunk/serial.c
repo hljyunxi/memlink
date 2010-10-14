@@ -279,7 +279,7 @@ pack_mask(char *s, unsigned int *v, unsigned char vlen)
 {
     int clen = vlen * sizeof(int);
 
-    if (vlen <= 0) {
+    if (vlen < 0) {
         DERROR("vlen must not <= 0\n");
         MEMLINK_EXIT;
         return 0;
@@ -347,9 +347,9 @@ cmd_clean_unpack(char *data, char *key)
 }
 
 int 
-cmd_removeall_pack(char *data, char *key)
+cmd_removekey_pack(char *data, char *key)
 {
-    unsigned char  cmd = CMD_REMOVEALL;
+    unsigned char  cmd = CMD_REMOVE_KEY;
     unsigned short  len;
     int count = sizeof(short);
     int ret;
@@ -367,7 +367,7 @@ cmd_removeall_pack(char *data, char *key)
 }
 
 int 
-cmd_removeall_unpack(char *data, char *key)
+cmd_removekey_unpack(char *data, char *key)
 {
     unsigned char keylen;
     int count = sizeof(short) + sizeof(char);
@@ -379,7 +379,7 @@ cmd_removeall_unpack(char *data, char *key)
 
 
 int 
-cmd_count_pack(char *data, char *key)
+cmd_count_pack(char *data, char *key, unsigned char masknum, unsigned int *maskarray)
 {
     unsigned char  cmd = CMD_COUNT;
     unsigned short  len;
@@ -391,20 +391,22 @@ cmd_count_pack(char *data, char *key)
 
     ret = pack_string(data + count, key, 0);
     count += ret;
+	count += pack_mask(data + count, maskarray, masknum);
+
     len = count - sizeof(short);
-    DINFO("clean len: %d, count: %d\n", len, count);
     memcpy(data, &len, sizeof(short));
     
     return count;
 }
 
 int 
-cmd_count_unpack(char *data, char *key)
+cmd_count_unpack(char *data, char *key, unsigned char *masknum, unsigned int *maskarray)
 {
     unsigned char keylen;
     int count = sizeof(short) + sizeof(char);
 
-    unpack_string(data + count, key, &keylen);
+    count += unpack_string(data + count, key, &keylen);
+	unpack_mask(data + count, maskarray, masknum);
 
     return 0;
 }

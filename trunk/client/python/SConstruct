@@ -13,7 +13,8 @@ os.system('swig -python -o memlink_client_python.c ../c/memlink_client.i')
 
 cflags   = '-ggdb'
 includes = ['.', '../../', '../c/', '/Developer/usr/include'] + python_includes
-ldflags  = python_ldflags
+#ldflags  = python_ldflags
+ldflags  = ''
 libpath  = ['.']
 libs	 = python_libs
 files    = ['../../zzmalloc.c', '../../serial.c', '../../logfile.c', '../../utils.c', 
