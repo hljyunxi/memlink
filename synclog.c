@@ -203,7 +203,7 @@ synclog_rotate(SyncLog *slog)
     close(slog->fd);
     slog->fd = -1;
     
-    snprintf(newfile, PATH_MAX, "%s.%d", newfile, newver);
+    snprintf(newfile, PATH_MAX, "%s.%d", slog->filename, newver);
     if (rename(slog->filename, newfile) == -1) {
         DERROR("rename error: %s\n", newfile);
     }

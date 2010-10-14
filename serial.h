@@ -4,18 +4,18 @@
 #include <stdio.h>
 //#include "hashtable.h"
 
-#define CMD_DUMP    1
-#define CMD_CLEAN   2
-#define CMD_STAT    3
-#define CMD_CREATE  4
-#define CMD_DEL     5
-#define CMD_INSERT  6
-#define CMD_UPDATE  7
-#define CMD_MASK    8
-#define CMD_TAG     9
-#define CMD_RANGE   10
-#define CMD_REMOVEALL   11
-#define CMD_COUNT   12
+#define CMD_DUMP		1
+#define CMD_CLEAN		2
+#define CMD_STAT		3
+#define CMD_CREATE		4
+#define CMD_DEL			5
+#define CMD_INSERT		6
+#define CMD_UPDATE		7
+#define CMD_MASK		8
+#define CMD_TAG			9
+#define CMD_RANGE		10
+#define CMD_REMOVE_KEY  11
+#define CMD_COUNT		12
 
 typedef struct _ht_stat
 {
@@ -41,11 +41,11 @@ int cmd_dump_unpack(char *data);
 int cmd_clean_pack(char *data, char *key);
 int cmd_clean_unpack(char *data, char *key);
 
-int cmd_removeall_pack(char *data, char *key);
-int cmd_removeall_unpack(char *data, char *key);
+int cmd_removekey_pack(char *data, char *key);
+int cmd_removekey_unpack(char *data, char *key);
 
-int cmd_count_pack(char *data, char *key);
-int cmd_count_unpack(char *data, char *key);
+int cmd_count_pack(char *data, char *key, unsigned char masknum, unsigned int *maskarray);
+int cmd_count_unpack(char *data, char *key, unsigned char *masknum, unsigned int *maskarray);
 
 int cmd_stat_pack(char *data, char *key); //, HashTableStat *stat);
 int cmd_stat_unpack(char *data, char *key); //, HashTableStat *stat);

@@ -48,10 +48,11 @@ dumpfile(HashTable *ht)
     for (i = 0; i < HASHTABLE_BUNKNUM; i++) {
         node = bks[i];
         while (NULL != node) {
-            DINFO("dump key: %s\n", node->key);
+            DINFO("start dump key: %s\n", node->key);
             keylen = strlen(node->key);
             fwrite(&keylen, sizeof(char), 1, fp);
-            fwrite(&node->key, keylen, 1, fp);
+			DINFO("dump keylen: %d\n", keylen);
+            fwrite(node->key, keylen, 1, fp);
             fwrite(&node->valuesize, sizeof(char), 1, fp);
             //fwrite(&node->valuetype, sizeof(char), 1, fp);
             fwrite(&node->masksize, sizeof(char), 1, fp);
@@ -66,8 +67,10 @@ dumpfile(HashTable *ht)
                 char *itemdata = dbk->data;
 
                 for (n = 0; n < g_cf->block_data_count; n++) {
-                    fwrite(itemdata, node->valuesize, 1, fp);
-                    fwrite(itemdata + node->valuesize, node->masksize, 1, fp);
+					if (dataitem_have_data(node, itemdata, 0)) {	
+						fwrite(itemdata, node->valuesize, 1, fp);
+						fwrite(itemdata + node->valuesize, node->masksize, 1, fp);
+					}
 
                     itemdata += datalen;
                 }
@@ -86,6 +89,7 @@ dumpfile(HashTable *ht)
     }
     
     // start a new sync log
+	DINFO("start a new synclog.\n");
     synclog_rotate(g_runtime->synclog);
 
     return ret;
@@ -106,6 +110,7 @@ loaddump(HashTable *ht)
     
     unsigned short dumpfver;
     fread(&dumpfver, sizeof(short), 1, fp);
+	DINFO("load format ver: %d\n", dumpfver);
 
     if (dumpfver != DUMP_FORMAT_VERSION) {
         DERROR("dumpfile format version error: %d, %d\n", dumpfver, DUMP_FORMAT_VERSION);
@@ -142,11 +147,16 @@ loaddump(HashTable *ht)
         DINFO("key: %s\n", key);
         
         fread(&valuelen, sizeof(unsigned char), 1, fp);
+		DINFO("valuelen: %d\n", valuelen);
         //fread(&valuetype, sizeof(unsigned char), 1, fp);
         fread(&masklen, sizeof(unsigned char), 1, fp);
+		DINFO("masklen: %d\n", masklen);
         fread(&masknum, sizeof(char), 1, fp);
-        fread(&maskformat, sizeof(char) * masknum, 1, fp);
+		DINFO("masknum: %d\n", masknum);
+        fread(&maskformat, masknum, 1, fp);
+		maskformat[masklen] = 0;
         fread(&itemnum, sizeof(unsigned int), 1, fp);
+		DINFO("itemnum: %d\n", itemnum);
 
         datalen = valuelen + masklen;
         

@@ -30,7 +30,7 @@ int main()
 	int i;
 	char val[64];
 	char *maskstr = "7:1:1";
-	int  insertnum = 100;
+	int  insertnum = 200;
 
 	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
@@ -41,18 +41,20 @@ int main()
 		}
 	}
 
-	MemLinkResult	result;
 	int				reterr = 0;
+	
+	
+	MemLinkResult	result;
 	int				range_start = insertnum - 20;
 	int				range_count = 10;
 
-	ret = memlink_cmd_range(m, buf, "::", range_start, range_count, &result);
+	ret = memlink_cmd_range(m, buf, "", range_start, range_count, &result);
 	if (ret != MEMLINK_OK) {
 		DERROR("range error, key:%s, ret:%d\n", buf, ret);
 		return -4;
 	}
 
-	DINFO("range return count: %d\n", result.count);
+	//DINFO("range return count: %d\n", result.count);
 	if (result.count != range_count) {
 		DERROR("range count error, count:%d, key:%s\n", result.count, buf);
 		reterr++;
@@ -74,7 +76,7 @@ int main()
 
 	while (item) {
 		sprintf(testbuf, "%06d", testi);
-		DINFO("range item, value:%s, mask:%s\n", item->value, item->mask);
+		//DINFO("range item, value:%s, mask:%s\n", item->value, item->mask);
 		if (strcmp(item->value, testbuf) != 0) {
 			DERROR("range value error, value:%s, testvalue:%s\n", item->value, testbuf);
 		}
@@ -88,6 +90,75 @@ int main()
 	}
 
 	memlink_result_free(&result);
+	
+	char *masktest[] = {"7:1:1", "7::1", "7:1:", ":1:1", "::1", ":1:"};
+
+	for (i = 0; i < 6; i++) {
+		MemLinkResult	result2;
+
+		ret = memlink_cmd_range(m, buf, masktest[i], 0, insertnum, &result2);
+		if (ret != MEMLINK_OK) {
+			DERROR("range error, ret:%d\n", ret);
+			return -8;
+		}
+		if (result2.count != insertnum) {
+			DERROR("range return count error, mask:%s, count:%d\n", masktest[i], result2.count);
+			reterr++;
+			return -8;
+		}
+
+		memlink_result_free(&result2);
+	}
+	
+	char *masktest2[] = {"8:0:", "7:1:0"};
+
+	for (i = 0; i < 2; i++) {
+		MemLinkResult	result2;
+
+		ret = memlink_cmd_range(m, buf, masktest2[i], 0, insertnum, &result2);
+		if (ret != MEMLINK_OK) {
+			DERROR("range error, ret:%d\n", ret);
+			return -8;
+		}
+		if (result2.count != 0) {
+			DERROR("range return count error, mask:%s, count:%d\n", masktest2[i], result2.count);
+			reterr++;
+			return -8;
+		}
+
+		memlink_result_free(&result2);
+
+	}
+
+	char *newmask = "8:2:0";
+	for (i = 0; i < 3; i++) {
+		sprintf(val, "%06d", i);
+		ret = memlink_cmd_mask(m, buf, val, strlen(val), newmask);
+		if (ret != MEMLINK_OK) {
+			DERROR("change mask error, i:%d, ret:%d\n", i, ret);	
+			return -9;
+		}
+	}
+
+	char *masktest3[] = {"8::", "8:2:"};
+
+	for (i = 0; i < 2; i++) {
+		MemLinkResult	result2;
+
+		ret = memlink_cmd_range(m, buf, masktest3[i], 0, insertnum, &result2);
+		if (ret != MEMLINK_OK) {
+			DERROR("range error, ret:%d\n", ret);
+			return -8;
+		}
+		if (result2.count != 3) {
+			DERROR("range return count error, mask:%s, count:%d\n", masktest3[i], result2.count);
+			reterr++;
+			return -8;
+		}
+
+		memlink_result_free(&result2);
+	}
+
 	memlink_destroy(m);
 
 	return reterr;

@@ -22,6 +22,7 @@ def test():
 
     memlinkstart = memlinkfile + ' test/memlink.conf'
 
+    files.append('dump_test.py')
     result = {}
     for fn in files:
         fpath = os.path.join(home, 'test', fn)

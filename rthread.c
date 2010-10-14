@@ -82,7 +82,10 @@ rdata_ready(Conn *conn, char *data, int datalen)
         }
         case CMD_COUNT: {
             DINFO("<<< cmd COUNT >>>\n");
-            ret = cmd_count_unpack(data, key);
+			unsigned char masknum;
+			unsigned int  maskarray[HASHTABLE_MASK_MAX_LEN * sizeof(int)];
+
+            ret = cmd_count_unpack(data, key, &masknum, maskarray);
             DINFO("unpack count return: %d, key: %s\n", ret, key);
            
             int vcount = 0, mcount = 0;

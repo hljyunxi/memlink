@@ -186,16 +186,22 @@ wdata_apply(char *data, int datalen, int writelog)
 
             cmd_create_unpack(data, key, &valuelen, &masknum, maskformat);
             DINFO("unpack key: %s, valuelen: %d, masknum: %d, maskarray: %d,%d,%d\n", key, valuelen, masknum, maskformat[0], maskformat[1], maskformat[2]);
-            vnum = valuelen;
-            ret = hashtable_add_info_mask(g_runtime->ht, key, vnum, maskformat, masknum);
-            DINFO("hashtabl_add_info return: %d\n", ret);
-            if (ret >= 0 && writelog) {
-                int sret = synclog_write(g_runtime->synclog, data, datalen);
-                if (sret < 0) {
-                    DERROR("synclog_write error: %d\n", sret);
-                    MEMLINK_EXIT;
-                }
-            }
+			if (masknum > HASHTABLE_MASK_MAX_LEN) {
+				DERROR("create mask too long: %d, max:%d\n", masknum, HASHTABLE_MASK_MAX_LEN);
+				ret = MEMLINK_ERR_MASK;
+			}else{
+				vnum = valuelen;
+				ret = hashtable_add_info_mask(g_runtime->ht, key, vnum, maskformat, masknum);
+				DINFO("hashtabl_add_info return: %d\n", ret);
+				if (ret >= 0 && writelog) {
+					int sret = synclog_write(g_runtime->synclog, data, datalen);
+					if (sret < 0) {
+						DERROR("synclog_write error: %d\n", sret);
+						MEMLINK_EXIT;
+					}
+				}
+
+			}
             break;
         case CMD_DEL:
             DINFO("<<< cmd DEL >>>\n");

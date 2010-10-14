@@ -38,6 +38,7 @@ typedef struct _hashtable
 
 HashTable*      hashtable_create();
 void            hashtable_destroy(HashTable *ht);
+int				hashtable_remove_key(HashTable *ht, char *key);
 int             hashtable_add_info(HashTable *ht, char *key, int valuesize, char *maskstr);
 int             hashtable_add_info_mask(HashTable *ht, char *key, int valuesize, 
                                         unsigned int *maskarray, char masknum);
@@ -69,5 +70,6 @@ int             hashtable_stat(HashTable *ht, char *key, HashTableStat *stat);
 int             hashtable_count(HashTable *ht, char *key, int *visible_count, int *mask_count);
 int             hashtable_print(HashTable *ht, char *key);
 
+int				dataitem_have_data(HashNode *node, char *itemdata, int visible);
 
 #endif

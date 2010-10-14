@@ -43,5 +43,16 @@ START_TEST(test_mask)
     
     fail_if(ret != 2, "flag length error: %d\n", ret);
 
+	maskarray[0] = 10;
+    maskarray[1] = UINT_MAX;
+    maskarray[2] = 0;
+    
+    ret = mask_array2flag(format, maskarray, masknum, data);
+    DINFO("mask_array2flag ret: %d\n", ret);
+    printb(data, ret);
+    
+    fail_if(ret != 2, "flag length error: %d\n", ret);
+
+
 }
 END_TEST

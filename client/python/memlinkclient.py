@@ -2,9 +2,14 @@
 import os, sys
 from memlink import *
 
+class MemLinkClietException (Exception):
+    pass
+
 class MemLinkClient:
     def __init__(self, host, readport, writeport, timeout):
         self.client = memlink_create(host, readport, writeport, timeout)
+        if not self.client:
+            raise MemLinkClietException
 
     def close(self):
         if self.client:
@@ -20,6 +25,9 @@ class MemLinkClient:
 
     def clean(self, key):
         return memlink_cmd_clean(self.client, key)
+
+    def create(self, key, valuesize, maskstr):
+        return memlink_cmd_create(self.client, key, valuesize, maskstr)
 
     def stat(self, key):
         mstat = MemLinkStat()

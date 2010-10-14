@@ -60,7 +60,7 @@ int main()
 		return -6;
 	}
 
-	MemLinkItem		*item = result.root;
+	MemLinkItem	*item = result.root;
 
 	if (NULL == item) {
 		DERROR("range must not null\n");
@@ -125,10 +125,72 @@ int main()
 	
 	memlink_result_free(&result2);
 
+	for (i = 0; i < insertnum; i++) {
+		sprintf(val, "%06d", i);
+		ret = memlink_cmd_del(m, buf, val, strlen(val));
+		if (ret != MEMLINK_OK) {
+			DERROR("del error, val:%s, ret:%d\n", val, ret);
+			return -9;
+		}
+	}
+
+	// =======================================================
+
+	for (i = 0; i < insertnum; i++) {
+		sprintf(val, "%06d", i);
+		ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr, i*2 + 1);	
+		if (ret != MEMLINK_OK) {
+			DERROR("insert error, key:%s, val:%s, mask:%s, i:%d\n", buf, val, maskstr, i);
+			return -3;
+		}
+	}
+
+	ret = memlink_cmd_stat(m, buf, &stat);
+	if (ret != MEMLINK_OK) {
+		DERROR("stat error, key:%s\n", buf);
+		return -4;
+	}
+	
+	if (stat.data_used != insertnum + 1) {
+		DERROR("insert num error, data_used:%d\n", stat.data_used);
+		return -5;
+	}
 
 
+	MemLinkResult   result3;
 
+	ret = memlink_cmd_range(m, buf, "::", 0, insertnum + 1, &result3);
+	if (ret != MEMLINK_OK) {
+		DERROR("range error, ret:%d\n", ret);
+		return -6;
+	}
+	//DINFO("result3 count: %d\n", result3.count);
+	item = result3.root;
 
+	if (NULL == item) {
+		DERROR("range must not null\n");
+		return -7;
+	}
+
+	sprintf(val, "%06d", 300);
+	if (strcmp(item->value, val) != 0) {
+		DERROR("first value error, item->value:%s, val:%s\n", item->value, val);
+		return -8;
+	}
+	item = item->next;
+
+	i = 0;
+	while (item) {
+		sprintf(val, "%06d", i);
+		if (strcmp(item->value, val) != 0) {
+			DERROR("range value error, item->value:%s, value:%s\n", item->value, val);
+			return -8;
+		}
+		i++;
+		item = item->next;
+	}
+	
+	memlink_result_free(&result3);
 
 	memlink_destroy(m);
 
