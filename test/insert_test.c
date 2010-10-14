@@ -106,7 +106,7 @@ int main()
 	i = 200;
 	while (item) {
 		i--;
-		if (i == 98) {
+		if (i == 99) {
 			sprintf(val, "%06d", 300);
 			if (strcmp(item->value, val) != 0) {
 				DERROR("range value error, item->value:%s, value:%s\n", item->value, val);
@@ -124,6 +124,9 @@ int main()
 	}
 	
 	memlink_result_free(&result2);
+
+
+
 
 
 

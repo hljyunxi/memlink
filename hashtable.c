@@ -33,6 +33,22 @@ dataitem_have_data(HashNode *node, char *itemdata, int visible)
     return MEMLINK_FALSE;
 }
 
+static int
+dataitem_check_data(HashNode *node, char *itemdata)
+{
+    char *maskdata  = itemdata + node->valuesize;
+    int  delm = *maskdata & (unsigned char)0x01;
+    int  tagm = *maskdata & (unsigned char)0x02;
+   
+    if (delm == 0)
+        return MEMLINK_ITEM_REMOVED;
+
+    if (tagm == 1)
+        return MEMLINK_ITEM_TAGDEL;
+
+    return MEMLINK_ITEM_VISIBLE;
+}
+
 /*
 static int
 dataitem_have_visible_data(HashNode *node, char *itemdata)
@@ -220,7 +236,8 @@ datablock_lookup_valid_pos(HashNode *node, int pos, int visible, DataBlock **dbk
 			n += root->mask_count + root->visible_count;
 		}
 	
-		if (n >= pos) {
+		//if (n >= pos) {
+		if (n > pos) {
 			*dbk = root;
             if (prev) {
                 *prev = previtem;
@@ -663,7 +680,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
         for (i = 0; i < g_cf->block_data_count; i++) {
             char buf[128] = {0};
 
-            if (itemdata == posaddr) { // position for insert
+            if (itemdata == posaddr) { // position for insert, if last position, may be null
                 DINFO("insert pos, go\n");
                 dataitem_copy(node, todata, value, mask);
                 lastnewbk->visible_count ++;
@@ -720,6 +737,33 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
             }
             itemdata += datalen;
         }
+    
+        if (dbk->next != newbk->next) { // create two datablock
+            DataBlock   *nextbk = dbk->next; 
+            DataBlock   *new_nextbk = newbk->next;
+            itemdata = nextbk->data;
+
+            if (nextbk && nextbk->visible_count + nextbk->mask_count < g_cf->block_data_count) {
+                for (i = 0; i < g_cf->block_data_count; i++) {
+                    ret = dataitem_check_data(node, itemdata);
+                    //if (dataitem_have_data(node, itemdata, 0)) { 
+                    if (ret != MEMLINK_ITEM_REMOVED) {
+                        memcpy(todata, itemdata, datalen); 
+                        todata += datalen;
+                        if (ret == MEMLINK_ITEM_TAGDEL) {
+                            new_nextbk->mask_count ++; 
+                        }else{
+                            new_nextbk->visible_count ++; 
+                        }
+                    }
+                    itemdata += datalen;
+                }
+
+                new_nextbk->next = nextbk->next;
+                mempool_put(g_runtime->mpool, nextbk, datalen);
+            }
+        }
+
         if (last) {
             last->next = newbk;
         }else{
@@ -1024,7 +1068,7 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
 				}
 				
                 mlen = mask_binary2string(node->maskformat, node->masknum, itemdata + node->valuesize, node->masksize, maskstr);
-				snprintf(buf, node->valuesize, "%s", itemdata);
+				snprintf(buf, node->valuesize + 1, "%s", itemdata);
 
 				DINFO("ok, copy item ... i:%d, value:%s maskstr:%s, mlen:%d\n", i, buf, maskstr, mlen);
 				memcpy(data + idx, itemdata, node->valuesize);
@@ -1175,6 +1219,33 @@ hashtable_stat(HashTable *ht, char *key, HashTableStat *stat)
 
     return MEMLINK_OK;
 }
+
+int
+hashtable_count(HashTable *ht, char *key, int *visible_count, int *mask_count)
+{
+    HashNode    *node;
+
+    node = hashtable_find(ht, key);
+    if (NULL == node) {
+        DERROR("hashtable_stat not found key: %s\n", key);
+        return MEMLINK_ERR_NOKEY;
+    }
+
+    int vcount = 0, mcount = 0;
+
+    DataBlock *dbk = node->data;
+    while (dbk) {
+        vcount += dbk->visible_count;
+        mcount += dbk->mask_count;
+        dbk = dbk->next;
+    }
+
+    *visible_count = vcount;
+    *mask_count    = mcount;
+
+    return MEMLINK_OK;
+}
+
 
 int 
 hashtable_print(HashTable *ht, char *key)
