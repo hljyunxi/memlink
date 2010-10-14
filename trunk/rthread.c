@@ -80,6 +80,23 @@ rdata_ready(Conn *conn, char *data, int datalen)
 
             break;
         }
+        case CMD_COUNT: {
+            DINFO("<<< cmd COUNT >>>\n");
+            ret = cmd_count_unpack(data, key);
+            DINFO("unpack count return: %d, key: %s\n", ret, key);
+           
+            int vcount = 0, mcount = 0;
+            retlen = sizeof(int) * 2;
+            char retrec[retlen];
+
+            ret = hashtable_count(g_runtime->ht, key, &vcount, &mcount);
+            DINFO("hashtable count: %d\n", ret);
+            memcpy(retrec, &vcount, sizeof(int));
+            memcpy(retrec + sizeof(int), &mcount, sizeof(int));
+
+            ret = data_reply(conn, ret, msg, retdata, retlen);
+            DINFO("data_reply return: %d\n", ret);
+        }
         default: {
             ret = MEMLINK_ERR_CLIENT_CMD;
 

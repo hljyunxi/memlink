@@ -347,6 +347,70 @@ cmd_clean_unpack(char *data, char *key)
 }
 
 int 
+cmd_removeall_pack(char *data, char *key)
+{
+    unsigned char  cmd = CMD_REMOVEALL;
+    unsigned short  len;
+    int count = sizeof(short);
+    int ret;
+
+    memcpy(data + count, &cmd, sizeof(char)); 
+    count += sizeof(char);
+
+    ret = pack_string(data + count, key, 0);
+    count += ret;
+    len = count - sizeof(short);
+    DINFO("clean len: %d, count: %d\n", len, count);
+    memcpy(data, &len, sizeof(short));
+    
+    return count;
+}
+
+int 
+cmd_removeall_unpack(char *data, char *key)
+{
+    unsigned char keylen;
+    int count = sizeof(short) + sizeof(char);
+
+    unpack_string(data + count, key, &keylen);
+
+    return 0;
+}
+
+
+int 
+cmd_count_pack(char *data, char *key)
+{
+    unsigned char  cmd = CMD_COUNT;
+    unsigned short  len;
+    int count = sizeof(short);
+    int ret;
+
+    memcpy(data + count, &cmd, sizeof(char)); 
+    count += sizeof(char);
+
+    ret = pack_string(data + count, key, 0);
+    count += ret;
+    len = count - sizeof(short);
+    DINFO("clean len: %d, count: %d\n", len, count);
+    memcpy(data, &len, sizeof(short));
+    
+    return count;
+}
+
+int 
+cmd_count_unpack(char *data, char *key)
+{
+    unsigned char keylen;
+    int count = sizeof(short) + sizeof(char);
+
+    unpack_string(data + count, key, &keylen);
+
+    return 0;
+}
+
+
+int 
 cmd_stat_pack(char *data, char *key)  //, HashTableStat  *stat)
 {
     unsigned char  cmd = CMD_STAT;

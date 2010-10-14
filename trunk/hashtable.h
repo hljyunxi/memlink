@@ -10,6 +10,11 @@
 /// 最大允许的mask项数
 #define HASHTABLE_MASK_MAX_LEN      16
 
+#define MEMLINK_ITEM_REMOVED        1
+#define MEMLINK_ITEM_TAGDEL         2
+#define MEMLINK_ITEM_VISIBLE        3
+
+
 typedef struct _hashnode
 {
     char            *key;
@@ -61,6 +66,7 @@ int             hashtable_range(HashTable *ht, char *key, unsigned int *maskarra
 //int             hashtable_range_mask_bin(HashTable *ht, char *key, void *mask, int frompos, int len);
 int             hashtable_clean(HashTable *ht, char *key);
 int             hashtable_stat(HashTable *ht, char *key, HashTableStat *stat);
+int             hashtable_count(HashTable *ht, char *key, int *visible_count, int *mask_count);
 int             hashtable_print(HashTable *ht, char *key);
 
 
