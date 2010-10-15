@@ -647,6 +647,18 @@ memlink_cmd_range(MemLink *m, char *key, char *maskstr, unsigned int frompos, un
     return MEMLINK_OK;
 }
 
+int
+memlink_cmd_count(MemLink *m, char *key, char *maskstr, MemLinkCount *count)
+{
+	unsigned int maskarray[128];
+    int masknum = 0;
+
+    masknum = mask_string2array(maskstr, maskarray);
+    DINFO("range mask len: %d\n", masknum);
+
+
+	return MEMLINK_OK;
+}
 
 void
 memlink_close(MemLink *m)

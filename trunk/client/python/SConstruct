@@ -1,6 +1,6 @@
 import sys, os, subprocess
 
-python_config = '/usr/local/bin/python2.5-config'
+python_config = '/usr/bin/python2.6-config'
 
 x = subprocess.Popen(python_config + ' --includes', stdout=subprocess.PIPE, shell=True)
 python_includes = x.stdout.read().strip().split()

@@ -72,5 +72,6 @@ int             hashtable_count(HashTable *ht, char *key, unsigned int *maskarra
 int             hashtable_print(HashTable *ht, char *key);
 
 int				dataitem_have_data(HashNode *node, char *itemdata, int visible);
+int				dataitem_check_data(HashNode *node, char *itemdata);
 
 #endif

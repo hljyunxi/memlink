@@ -33,7 +33,7 @@ dataitem_have_data(HashNode *node, char *itemdata, int visible)
     return MEMLINK_FALSE;
 }
 
-static int
+int
 dataitem_check_data(HashNode *node, char *itemdata)
 {
     char *maskdata  = itemdata + node->valuesize;
