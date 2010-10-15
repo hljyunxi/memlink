@@ -146,6 +146,7 @@ load_data()
 {
     int    ret;
     struct stat stbuf;
+    int    havedump = 0;
     char   *filename = "data/dump.dat";
 
     // check dumpfile exist
@@ -156,7 +157,9 @@ load_data()
   
     // have dumpfile, load
     if (ret == 0) {
-		DINFO("try load dumpfile ...\n");
+        havedump = 1;
+    
+        DINFO("try load dumpfile ...\n");
         ret = loaddump(g_runtime->ht);
         if (ret < 0) {
             DERROR("loaddump error: %d\n", ret);
@@ -164,6 +167,7 @@ load_data()
             return -1;
         }
     }
+
 
     // get all synclog
     DIR     *mydir; 
@@ -195,7 +199,7 @@ load_data()
     int n = i;
     int ffd, len;
 
-    for (i = 0; i < n + 1; i++) {
+    for (i = g_runtime->dumplogver; i < n + 1; i++) {
         char logname[PATH_MAX];
 
         if (i < n) {
@@ -231,6 +235,7 @@ load_data()
                 //MEMLINK_EXIT;
                 break;
             }
+            DINFO("command, len:%d\n", blen);
             ret = wdata_apply(data, blen + sizeof(short), 0);       
             if (ret != 0) {
                 DERROR("wdata_apply log error: %d\n", ret);
@@ -243,6 +248,10 @@ load_data()
         munmap(addr, len);
 
         close(ffd);
+    }
+
+    if (havedump == 0) {
+        dumpfile(g_runtime->ht);
     }
 
     return 0;

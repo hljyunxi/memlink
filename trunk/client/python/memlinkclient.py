@@ -31,9 +31,9 @@ class MemLinkClient:
 
     def stat(self, key):
         mstat = MemLinkStat()
-
         ret = memlink_cmd_stat(self.client, key, mstat)
-
+        if ret != MEMLINK_OK:
+            mstat = None
         return mstat
 
     def delete(self, key, value):
@@ -53,9 +53,9 @@ class MemLinkClient:
 
     def range(self, key, maskstr, frompos, len):
         result = MemLinkResult()
-
         ret = memlink_cmd_range(self.client, key, maskstr, frompos, len, result)
-        
+        if ret != MEMLINK_OK:
+            result = None
         return result
 
 def memlinkresult_free(self):

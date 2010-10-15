@@ -92,7 +92,7 @@ rdata_ready(Conn *conn, char *data, int datalen)
             retlen = sizeof(int) * 2;
             char retrec[retlen];
 
-            ret = hashtable_count(g_runtime->ht, key, &vcount, &mcount);
+            ret = hashtable_count(g_runtime->ht, key, maskarray, masknum, &vcount, &mcount);
             DINFO("hashtable count: %d\n", ret);
             memcpy(retrec, &vcount, sizeof(int));
             memcpy(retrec + sizeof(int), &mcount, sizeof(int));

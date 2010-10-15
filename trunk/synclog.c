@@ -97,7 +97,7 @@ synclog_create()
         unsigned int   newver = g_runtime->logver + 1;
         unsigned int   synlen = SYNCLOG_INDEXNUM;
 
-        DINFO("synclog new ver: %d, %x, synlen: %d, %x\n", newver, newver, synlen, synlen);
+        //DINFO("synclog new ver: %d, %x, synlen: %d, %x\n", newver, newver, synlen, synlen);
         if (writen(slog->fd, &format, sizeof(short), 0) < 0) {
             DERROR("write synclog format error: %d\n", format);
             MEMLINK_EXIT;
@@ -152,6 +152,7 @@ synclog_new(SyncLog *slog)
         return -1;
     }
 
+    g_runtime->logver += 1;
     unsigned short format = DUMP_FORMAT_VERSION;
     unsigned int   newver = g_runtime->logver;
     unsigned int   synlen = SYNCLOG_INDEXNUM;
@@ -192,6 +193,11 @@ synclog_rotate(SyncLog *slog)
     unsigned int    newver; 
     char            newfile[PATH_MAX];
     int             ret;
+    
+    if (slog->index_pos == 0) {
+        DWARNING("rotate cancle, no data!\n");
+        return 0;
+    }
 
     memcpy(&newver, slog->index + sizeof(short), sizeof(int));
 
@@ -204,10 +210,11 @@ synclog_rotate(SyncLog *slog)
     slog->fd = -1;
     
     snprintf(newfile, PATH_MAX, "%s.%d", slog->filename, newver);
+    DINFO("rotate to: %s\n", newfile);
     if (rename(slog->filename, newfile) == -1) {
         DERROR("rename error: %s\n", newfile);
     }
-    g_runtime->logver += 1;
+    //g_runtime->logver += 1;
 
     synclog_new(slog);
     

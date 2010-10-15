@@ -1,12 +1,14 @@
 import sys, os, subprocess
 
-x = subprocess.Popen('/usr/bin/python2.6-config --includes', stdout=subprocess.PIPE, shell=True)
+python_config = '/usr/local/bin/python2.5-config'
+
+x = subprocess.Popen(python_config + ' --includes', stdout=subprocess.PIPE, shell=True)
 python_includes = x.stdout.read().strip().split()
 
-x = subprocess.Popen('/usr/bin/python2.6-config --libs', stdout=subprocess.PIPE, shell=True)
+x = subprocess.Popen(python_config + ' --libs', stdout=subprocess.PIPE, shell=True)
 python_libs = x.stdout.read().strip().split()
 
-x = subprocess.Popen('/usr/bin/python2.6-config --ldflags', stdout=subprocess.PIPE, shell=True)
+x = subprocess.Popen(python_config + ' --ldflags', stdout=subprocess.PIPE, shell=True)
 python_ldflags = x.stdout.read()
 
 os.system('swig -python -o memlink_client_python.c ../c/memlink_client.i')
@@ -16,7 +18,7 @@ includes = ['.', '../../', '../c/', '/Developer/usr/include'] + python_includes
 #ldflags  = python_ldflags
 ldflags  = ''
 libpath  = ['.']
-libs	 = python_libs
+libs	 = python_libs + ['c', 'm']
 files    = ['../../zzmalloc.c', '../../serial.c', '../../logfile.c', '../../utils.c', 
 			'../c/memlink_client.c', 'memlink_client_python.c']
 

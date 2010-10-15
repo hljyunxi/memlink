@@ -220,12 +220,19 @@ wdata_apply(char *data, int datalen, int writelog)
             }
 
             break;
-        case CMD_INSERT:
+        case CMD_INSERT: {
             DINFO("<<< cmd INSERT >>>\n");
             cmd_insert_unpack(data, key, value, &valuelen, &masknum, maskarray, &pos);
             DINFO("unpak pos: %d, mask: %d, array:%d,%d,%d\n", pos, masknum, maskarray[0], maskarray[1], maskarray[2]);
+
             ret = hashtable_add_mask(g_runtime->ht, key, value, maskarray, masknum, pos);
             DINFO("hashtable_add_mask: %d\n", ret);
+            
+            int i;
+
+            for (i = 0; i < masknum; i++) {
+                DINFO("mask, i:%d, mask:%d\n", i, maskarray[i]);
+            }
 
             hashtable_print(g_runtime->ht, key);
             if (ret >= 0 && writelog) {
@@ -237,6 +244,7 @@ wdata_apply(char *data, int datalen, int writelog)
             }
 
             break;
+        }
         case CMD_UPDATE:
             DINFO("<<< cmd UPDATE >>>\n");
             cmd_update_unpack(data, key, value, &valuelen, &pos);

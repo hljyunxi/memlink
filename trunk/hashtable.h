@@ -67,7 +67,8 @@ int             hashtable_range(HashTable *ht, char *key, unsigned int *maskarra
 //int             hashtable_range_mask_bin(HashTable *ht, char *key, void *mask, int frompos, int len);
 int             hashtable_clean(HashTable *ht, char *key);
 int             hashtable_stat(HashTable *ht, char *key, HashTableStat *stat);
-int             hashtable_count(HashTable *ht, char *key, int *visible_count, int *mask_count);
+int             hashtable_count(HashTable *ht, char *key, unsigned int *maskarray, int masknum, 
+                                int *visible_count, int *mask_count);
 int             hashtable_print(HashTable *ht, char *key);
 
 int				dataitem_have_data(HashNode *node, char *itemdata, int visible);
