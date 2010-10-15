@@ -34,8 +34,6 @@ def test():
     
     m.destroy()
 
-    return 0
-
     cmd = "killall memlink"
     print cmd
     os.system(cmd)
@@ -51,19 +49,19 @@ def test():
     m = MemLinkClient('127.0.0.1', 11001, 11002, 30);
     
     stat = m.stat(key)
-    print 'stat:', stat
+    #print 'stat:', stat
     if stat:
         if stat.data_used != 200:
-            print 'stat data_used error!', stat.data_used
+            print 'stat data_used error!', stat
             return -3
 
 
     result = m.range(key, "", 0, 1000)
     if not result or result.count == 0:
-        print 'range error!'
+        print 'range error!', result
         return -4;
 
-    print 'count:', result.count
+    #print 'count:', result.count
     item = result.root;
 
     c = 200

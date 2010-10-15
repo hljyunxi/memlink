@@ -204,12 +204,21 @@ loaddump(HashTable *ht)
                     dbk->next = newdbk;
                 }
                 dbk = newdbk;
+				node->all += g_cf->block_data_count;
 
                 itemdata = dbk->data;
             }
 
             fread(itemdata, datalen, 1, fp);
-            
+           
+			ret = dataitem_check_data(node, itemdata);
+			if (ret == MEMLINK_ITEM_VISIBLE) {
+				dbk->visible_count++;
+			}else{
+				dbk->mask_count++;
+			}
+			node->used++;
+
             char buf[256] = {0};
             memcpy(buf, itemdata, node->valuesize);
             DINFO("load value: %s\n", buf);

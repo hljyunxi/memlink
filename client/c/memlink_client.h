@@ -35,6 +35,12 @@ typedef struct _memlink_stat
     unsigned int    mem_used;  // all used mem
 }MemLinkStat;
 
+typedef struct _memlink_count
+{
+	unsigned int	visible_count;
+	unsigned int	tagdel_count;
+}MemLinkCount;
+
 typedef struct _memlink_item
 {
     struct _memlink_item    *next;
