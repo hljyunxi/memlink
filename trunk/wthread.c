@@ -123,8 +123,8 @@ data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
     conn->wbuf = wdata;
     conn->wlen = datalen;
  
-    char buf[10240] = {0};
-    DINFO("reply %s\n", formath(conn->wbuf, conn->wlen, buf, 10240));
+    //char buf[10240] = {0};
+    //DINFO("reply %s\n", formath(conn->wbuf, conn->wlen, buf, 10240));
 
 	DINFO("change event to write.\n");
 	int ret = change_event(conn, EV_WRITE|EV_PERSIST, 0);
@@ -227,14 +227,15 @@ wdata_apply(char *data, int datalen, int writelog)
 
             ret = hashtable_add_mask(g_runtime->ht, key, value, maskarray, masknum, pos);
             DINFO("hashtable_add_mask: %d\n", ret);
-            
+           
+			/*
             int i;
 
             for (i = 0; i < masknum; i++) {
                 DINFO("mask, i:%d, mask:%d\n", i, maskarray[i]);
-            }
+            }*/
 
-            hashtable_print(g_runtime->ht, key);
+            //hashtable_print(g_runtime->ht, key);
             if (ret >= 0 && writelog) {
                 int sret = synclog_write(g_runtime->synclog, data, datalen);
                 if (sret < 0) {

@@ -50,8 +50,20 @@ rdata_ready(Conn *conn, char *data, int datalen)
             if (retlen > 0) {
                 printh(retrec + sizeof(char) * 2, retlen);
             }*/
+			//int count = 0;
+			/*memcpy(retrec, &node->masknum, sizeof(char));
+			count += sizeof(char);
+			memcpy(retrec + count, node->maskformat, node->masknum);
+			count += node->masknum;
+			*/
             memcpy(retrec, &valuesize, sizeof(char));
             memcpy(retrec + sizeof(char), &masksize, sizeof(char));
+			/*
+			int count = 0;
+            memcpy(retrec + count, &valuesize, sizeof(char));
+			count += sizeof(char);
+            memcpy(retrec + count, &masksize, sizeof(char));
+			*/
            
             retlen += sizeof(char) * 2;
 

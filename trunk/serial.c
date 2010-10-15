@@ -127,7 +127,7 @@ mask_binary2string(unsigned char *maskformat, int masknum, char *mask, int maskl
 	int widx = 0;
 
 	for (i = 0; i < masknum; i++) {
-        DINFO("i: %d\n", i);
+        //DINFO("i: %d\n", i);
 		int fs = maskformat[i];
 		int yu = ((fs + n) % 8) > 0 ? 1: 0;
 		int cs = (fs + n) / 8 + yu;

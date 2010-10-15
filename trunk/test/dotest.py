@@ -29,26 +29,32 @@ def test():
  
         cmd = "killall -9 memlink"
         os.system(cmd)
-       
+
+        logfile = os.path.join(home, 'memlink.log')
+        if os.path.isfile(logfile):
+            print 'remove log:', logfile
+            os.remove(logfile)
         #cmd = "rm -rf data/bin.log*"
         #os.system(cmd)
         binfiles = glob.glob('data/bin.log*')
         for bf in binfiles:
-            print 'remove', bf
+            print 'remove binlog:', bf
             os.remove(bf)
 
         #cmd = "rm -rf data/dump.dat*"
         #os.system(cmd)
         binfiles = glob.glob('data/dump.dat*')
         for bf in binfiles:
-            print 'remove', bf
+            print 'remove dump:', bf
             os.remove(bf)
 
         #print 'open memlink:', memlinkstart
         x = subprocess.Popen(memlinkstart, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
                              shell=True, env=os.environ, universal_newlines=True) 
         time.sleep(1)
-
+       
+        if fpath.endswith('.py'):
+            fpath = 'python ' + fpath
         print 'run test:', fpath
         ret = os.system(fpath)
 
