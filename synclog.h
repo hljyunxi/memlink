@@ -11,6 +11,8 @@
 
 #define SYNCLOG_NAME "bin.log"
 
+#define SYNCLOG_HEADER_LEN  (sizeof(short)+sizeof(int)+sizeof(int))
+
 typedef struct _synclog
 {
     char    filename[PATH_MAX]; // file path

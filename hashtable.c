@@ -726,25 +726,9 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
                 dataitem_copy(node, todata, value, mask);
                 lastnewbk->visible_count ++;
                 todata += datalen; 
-    
-                //hashtable_print(ht, key);
-                //DINFO("data1 %p ... %s\n", itemdata, formatb(itemdata + node->valuesize, node->masksize, buf, 128) );
-                //DINFO("data1 %p ... %s\n", itemdata, formatb(itemdata + datalen + node->valuesize, node->masksize, buf, 128) );
             }
 
             if (dataitem_have_data(node, itemdata, 0)) { 
-                /*
-                if (itemdata == posaddr) { // position for insert
-                    DINFO("insert pos, go\n");
-                    dataitem_copy(node, todata, value, mask);
-                    lastnewbk->visible_count ++;
-                    todata += datalen; 
-        
-                    //hashtable_print(ht, key);
-                    DINFO("data1 %p ... %s\n", itemdata, formatb(itemdata + node->valuesize, node->masksize, buf, 128) );
-                    DINFO("data1 %p ... %s\n", itemdata, formatb(itemdata + datalen + node->valuesize, node->masksize, buf, 128) );
-                }
-                */
                 if (todata >= enddata) { // at the end of new datablock, must create another datablock
                     DINFO("create a new datablock.\n");
                     DataBlock *newbk2 = mempool_get(g_mpool, datalen);
@@ -787,7 +771,6 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
             if (nextbk && nextbk->visible_count + nextbk->mask_count < g_cf->block_data_count) {
                 for (i = 0; i < g_cf->block_data_count; i++) {
                     ret = dataitem_check_data(node, itemdata);
-                    //if (dataitem_have_data(node, itemdata, 0)) { 
                     if (ret != MEMLINK_ITEM_REMOVED) {
                         memcpy(todata, itemdata, datalen); 
                         todata += datalen;
@@ -1115,10 +1098,10 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
 				}
 			}
             if (dataitem_have_data(node, itemdata, 1)) {
+				char *maskdata = itemdata + node->valuesize;
+
 				if (havemask) {
 					int k;
-					char *maskdata = itemdata + node->valuesize;
-
 					for (k = 0; k < node->masksize; k++) {
 						if ((maskdata[k] & maskflag[k]) != maskval[k]) {
 							break;
@@ -1136,7 +1119,7 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
 					continue;
 				}
 				
-                mlen = mask_binary2string(node->maskformat, node->masknum, itemdata + node->valuesize, node->masksize, maskstr);
+                mlen = mask_binary2string(node->maskformat, node->masknum, maskdata, node->masksize, maskstr);
 				snprintf(buf, node->valuesize + 1, "%s", itemdata);
 
 				DINFO("ok, copy item ... i:%d, value:%s maskstr:%s, mlen:%d\n", i, buf, maskstr, mlen);
@@ -1290,23 +1273,94 @@ hashtable_stat(HashTable *ht, char *key, HashTableStat *stat)
 }
 
 int
-hashtable_count(HashTable *ht, char *key, int *visible_count, int *mask_count)
+hashtable_count(HashTable *ht, char *key, unsigned int *maskarray, int masknum, int *visible_count, int *mask_count)
 {
+    char maskval[HASHTABLE_MASK_MAX_LEN * sizeof(int)];
+	char maskflag[HASHTABLE_MASK_MAX_LEN * sizeof(int)];
     HashNode    *node;
+    int         masklen = 0;
+	int			havemask = 0;
+    int         vcount = 0, mcount = 0;
 
     node = hashtable_find(ht, key);
     if (NULL == node) {
-        DERROR("hashtable_stat not found key: %s\n", key);
+        DERROR("hashtable_add not found node\n");
         return MEMLINK_ERR_NOKEY;
     }
 
-    int vcount = 0, mcount = 0;
+    if (masknum > 0) {
+        masklen = mask_array2binary(node->maskformat, maskarray, masknum, maskval);
+        if (masklen <= 0) {
+            DERROR("mask_string2array error\n");
+            return -2;
+        }
+        maskval[0] = maskval[0] & 0xfc;
+		
+		int j;
+		for (j = 0; j < masknum; j++) {
+			havemask += maskval[j];
+		}
 
-    DataBlock *dbk = node->data;
-    while (dbk) {
-        vcount += dbk->visible_count;
-        mcount += dbk->mask_count;
-        dbk = dbk->next;
+		masklen = mask_array2flag(node->maskformat, maskarray, masknum, maskflag);
+		if (masklen <= 0) {
+            DERROR("mask_array2flag error\n");
+            return -2;
+        }
+
+		for (j = 0; j < masknum; j++) {
+			maskflag[j] = ~maskflag[j];
+		}
+		maskflag[0] = maskflag[0] & 0xfc;
+
+		char buf[64];
+
+		DINFO("maskval:  %s\n", formatb(maskval, node->masksize, buf, 64));
+		DINFO("maskflag: %s\n", formatb(maskflag, node->masksize, buf, 64));
+       
+        int i, ret;
+        int datalen = node->valuesize + node->masksize;
+        DataBlock *dbk = node->data;
+        while (dbk) {
+            dbk = dbk->next;
+            char *itemdata = dbk->data;
+            for (i = 0; i < g_cf->block_data_count; i++) {
+                ret = dataitem_check_data(node, itemdata);
+                //if (dataitem_have_data(node, itemdata, 1)) {
+                if (ret != MEMLINK_ITEM_REMOVED) {
+                    char *maskdata = itemdata + node->valuesize;
+
+                    if (havemask) {
+                        int k;
+                        for (k = 0; k < node->masksize; k++) {
+                            if ((maskdata[k] & maskflag[k]) != maskval[k]) {
+                                break;
+                            }
+                        }
+                        if (k < node->masksize) { // not equal
+                            //DINFO("not equal.\n");
+                            continue;
+                        }
+
+                    }
+                    if (ret == MEMLINK_ITEM_VISIBLE) {
+                        vcount ++;
+                    }else{
+                        mcount ++;
+                    }
+                }
+
+                itemdata += datalen;
+            }
+        }
+
+
+    }else{
+        DataBlock *dbk = node->data;
+        while (dbk) {
+            vcount += dbk->visible_count;
+            mcount += dbk->mask_count;
+            dbk = dbk->next;
+        }
     }
 
     *visible_count = vcount;

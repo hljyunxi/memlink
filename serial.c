@@ -127,10 +127,12 @@ mask_binary2string(unsigned char *maskformat, int masknum, char *mask, int maskl
 	int widx = 0;
 
 	for (i = 0; i < masknum; i++) {
+        DINFO("i: %d\n", i);
 		int fs = maskformat[i];
 		int yu = ((fs + n) % 8) > 0 ? 1: 0;
 		int cs = (fs + n) / 8 + yu;
-		
+	    
+        //DINFO("fs:%d, yu: %d, cs: %d\n", fs, yu, cs);
 		val = 0;
 		
 		//DINFO("idx:%d, cs:%d, n:%d, yu:%d\n", idx, cs, n, yu);
@@ -139,6 +141,7 @@ mask_binary2string(unsigned char *maskformat, int masknum, char *mask, int maskl
 		val >>= 32 - fs;
 
 		//DINFO("i:%d, val:%d\n", i, val);
+        //DINFO("i: %d, widx: %d\n", i, widx);
 		if (widx != 0) {
 			maskstr[widx] = ':';	
 			widx ++;
@@ -279,11 +282,12 @@ pack_mask(char *s, unsigned int *v, unsigned char vlen)
 {
     int clen = vlen * sizeof(int);
 
+    /*
     if (vlen < 0) {
         DERROR("vlen must not <= 0\n");
         MEMLINK_EXIT;
         return 0;
-    }
+    }*/
 
     memcpy(s, &vlen, sizeof(char));
     if (vlen) {

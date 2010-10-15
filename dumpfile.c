@@ -31,19 +31,26 @@ dumpfile(HashTable *ht)
 
     unsigned short formatver = DUMP_FORMAT_VERSION;
     fwrite(&formatver, sizeof(short), 1, fp);
-    DINFO("write format version ok!\n");
+    DINFO("write format version %d\n", formatver);
 
-    unsigned int dumpver = g_runtime->dumpver + 1;
+    g_runtime->dumpver += 1;
+    unsigned int dumpver = g_runtime->dumpver;
     fwrite(&dumpver, sizeof(int), 1, fp);
-    DINFO("write dumpfile version ok!\n");
+    DINFO("write dumpfile version %d\n", dumpver);
 
-    unsigned int logver = 0;
+    unsigned int logver;
+    if (g_runtime->synclog->index_pos > 0) {
+        logver = g_runtime->logver + 1;
+    }else{
+        logver = g_runtime->logver;
+    }
     fwrite(&logver, sizeof(int), 1, fp);
-    DINFO("write logfile version ok!\n");
+    DINFO("write logfile version %d\n", logver);
 
     unsigned char keylen;
     int datalen;
     int n;
+    int dump_count = 0;
 
     for (i = 0; i < HASHTABLE_BUNKNUM; i++) {
         node = bks[i];
@@ -54,10 +61,12 @@ dumpfile(HashTable *ht)
 			DINFO("dump keylen: %d\n", keylen);
             fwrite(node->key, keylen, 1, fp);
             fwrite(&node->valuesize, sizeof(char), 1, fp);
-            //fwrite(&node->valuetype, sizeof(char), 1, fp);
             fwrite(&node->masksize, sizeof(char), 1, fp);
             fwrite(&node->masknum, sizeof(char), 1, fp);
-            fwrite(&node->maskformat, sizeof(char) * node->masknum, 1, fp);
+            fwrite(node->maskformat, sizeof(char) * node->masknum, 1, fp);
+            /*for (k = 0; k < node->masknum; k++) {
+                DINFO("dump mask, k:%d, mask:%d\n", k, node->maskformat[k]);
+            }*/
             fwrite(&node->used, sizeof(int), 1, fp);
             datalen = node->valuesize + node->masksize;
 
@@ -68,10 +77,11 @@ dumpfile(HashTable *ht)
 
                 for (n = 0; n < g_cf->block_data_count; n++) {
 					if (dataitem_have_data(node, itemdata, 0)) {	
-						fwrite(itemdata, node->valuesize, 1, fp);
-						fwrite(itemdata + node->valuesize, node->masksize, 1, fp);
+						//fwrite(itemdata, node->valuesize, 1, fp);
+						//fwrite(itemdata + node->valuesize, node->masksize, 1, fp);
+                        fwrite(itemdata, datalen, 1, fp);
+                        dump_count += 1;
 					}
-
                     itemdata += datalen;
                 }
                 dbk = dbk->next;
@@ -79,7 +89,8 @@ dumpfile(HashTable *ht)
             node = node->next;
         }
     }
-
+    
+    DINFO("dump count: %d\n", dump_count);
     fclose(fp);
 
     int ret = rename(tmpfile, dumpfile);
@@ -100,6 +111,7 @@ loaddump(HashTable *ht)
 {
     FILE    *fp;
     char    filename[PATH_MAX];
+    int     filelen;
     
     snprintf(filename, PATH_MAX, "%s/%s", g_cf->datadir, DUMP_FILE_NAME);
     fp = fopen(filename, "r");
@@ -107,7 +119,11 @@ loaddump(HashTable *ht)
         DERROR("open dumpfile %s error: %s\n", filename, strerror(errno));
         return -1;
     }
-    
+   
+    fseek(fp, 0, SEEK_END);
+    filelen = ftell(fp);
+    DINFO("filelen: %d\n", filelen);
+    fseek(fp, 0, SEEK_SET);
     unsigned short dumpfver;
     fread(&dumpfver, sizeof(short), 1, fp);
 	DINFO("load format ver: %d\n", dumpfver);
@@ -124,53 +140,58 @@ loaddump(HashTable *ht)
     fread(&g_runtime->dumplogver, sizeof(int), 1, fp);
     DINFO("load dumpfile log ver: %u\n", g_runtime->dumplogver);
 
-    /*unsigned long long datale?n;
-    fread(&datalen, sizeof(long long), 1, fp);
-    DINFO("dumpfile datalen: %u\n", datalen);*/
-
     unsigned char keylen;
     unsigned char masklen;
     unsigned char masknum;
     unsigned char maskformat[HASHTABLE_MASK_MAX_LEN];
     unsigned char valuelen;
-    //unsigned char valuetype;
     unsigned int  itemnum;
     char          key[256];
     int           i;
     int           datalen;
+    int           ret;
+    int           load_count = 0;
 
-    while (!feof(fp)) {
-        fread(&keylen, sizeof(unsigned char), 1, fp);
+    while (ftell(fp) < filelen) {
+        DINFO("cur: %d, filelen: %d, %d\n", (int)ftell(fp), filelen, feof(fp));
+        ret = fread(&keylen, sizeof(unsigned char), 1, fp);
         DINFO("keylen: %d\n", keylen);
-        fread(&key, keylen, 1, fp);
+        fread(key, keylen, 1, fp);
         key[keylen] = 0;
         DINFO("key: %s\n", key);
         
         fread(&valuelen, sizeof(unsigned char), 1, fp);
 		DINFO("valuelen: %d\n", valuelen);
-        //fread(&valuetype, sizeof(unsigned char), 1, fp);
         fread(&masklen, sizeof(unsigned char), 1, fp);
 		DINFO("masklen: %d\n", masklen);
         fread(&masknum, sizeof(char), 1, fp);
 		DINFO("masknum: %d\n", masknum);
-        fread(&maskformat, masknum, 1, fp);
-		maskformat[masklen] = 0;
+        fread(maskformat, sizeof(char) * masknum, 1, fp);
+        /*for (i = 0; i < masknum; i++) {
+            DINFO("maskformat, i:%d, mask:%d\n", i, maskformat[i]);
+        }*/
         fread(&itemnum, sizeof(unsigned int), 1, fp);
-		DINFO("itemnum: %d\n", itemnum);
-
         datalen = valuelen + masklen;
-        
+		DINFO("itemnum: %d, datalen: %d\n", itemnum, datalen);
+
         unsigned int maskarray[HASHTABLE_MASK_MAX_LEN];
         for (i = 0; i < masknum; i++) {
             maskarray[i] = maskformat[i];
         }
-        hashtable_add_info_mask(ht, key, valuelen, maskarray, masknum);
+        DINFO("create info, key:%s, valuelen:%d, masknum:%d\n", key, valuelen, masknum);
+        ret = hashtable_add_info_mask(ht, key, valuelen, maskarray, masknum);
+        if (ret != MEMLINK_OK) {
+            DERROR("hashtable_add_info_mask error, ret:%d\n", ret);
+            return -2;
+        }
         HashNode    *node = hashtable_find(ht, key);
         DataBlock   *dbk = NULL;
         char        *itemdata = NULL;
 
         for (i = 0; i < itemnum; i++) {
+            DINFO("i: %d\n", i);
             if (i % g_cf->block_data_count == 0) {
+                DINFO("create new datablock ...\n");
                 DataBlock *newdbk = mempool_get(g_runtime->mpool, datalen); 
                 if (NULL == newdbk) {
                     DERROR("mempool_get NULL!\n");
@@ -187,12 +208,19 @@ loaddump(HashTable *ht)
                 itemdata = dbk->data;
             }
 
-            fread(&itemdata, datalen, 1, fp);
+            fread(itemdata, datalen, 1, fp);
+            
+            char buf[256] = {0};
+            memcpy(buf, itemdata, node->valuesize);
+            DINFO("load value: %s\n", buf);
+
             itemdata += datalen;
+            load_count += 1;
         }
     }
     
     fclose(fp);
+    DINFO("load count: %d\n", load_count);
 
     return 0;
 }
