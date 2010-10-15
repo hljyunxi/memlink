@@ -36,7 +36,7 @@ int signal_install()
 
 void master(char *pgname) 
 {
-    logfile_create(g_cf->log_name, 3);
+    logfile_create(g_cf->log_name, g_cf->log_level);
     DINFO("logfile ok!\n");
     runtime_create_master(pgname);
     DINFO("master runtime ok!\n");

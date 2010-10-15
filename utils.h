@@ -15,6 +15,6 @@ void    printh(char *data, int datalen);
 char*   formatb(char *data, int datalen, char *buf, int blen);
 char*   formath(char *data, int datalen, char *buf, int blen);
 
-int     timediff(struct timeval *start, struct timeval *end);
+unsigned int timediff(struct timeval *start, struct timeval *end);
 
 #endif

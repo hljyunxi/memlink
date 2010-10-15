@@ -213,10 +213,10 @@ formath(char *data, int datalen, char *buf, int blen)
 }
 
 
-int
-timediff(struct timeval *start, struct timeval *end)
+unsigned int timediff(struct timeval *start, struct timeval *end)
 {
-    return 0;
+	return 1000000 * (end->tv_sec - start->tv_sec) + (end->tv_usec - start->tv_usec);
 }
+
 
 

@@ -1,0 +1,17 @@
+cflags   = '-ggdb -DDEBUG -pg'
+#cflags   = '-ggdb'
+includes = ['/Developer/usr/include', '../client/c', '../']
+ldflags  = ['-pg']
+libpath  = ['/Developer/usr/lib', '../client/c']
+libs	 = ['memlink']
+
+env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
+
+#files = Glob("*.c")
+#for fn in files:
+#	env.Program(fn)
+
+env.Program("test.c")
+
+env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=['m'])
+env.Program('testmask', ["testmask.c", '../utils.c', '../logfile.c', '../serial.c', '../zzmalloc.c'])

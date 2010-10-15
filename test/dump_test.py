@@ -6,6 +6,41 @@ import subprocess
 #import memlinkclient
 from memlinkclient import *
 
+def test_result():
+    key = 'haha'
+    m = MemLinkClient('127.0.0.1', 11001, 11002, 30);
+    
+    stat = m.stat(key)
+    if stat:
+        if stat.data_used != 200:
+            print 'stat data_used error!', stat
+            return -3
+    else:
+        print 'stat error:', stat
+
+    result = m.range(key, "", 0, 1000)
+    if not result or result.count == 0:
+        print 'range error!', result
+        return -4;
+
+    #print 'count:', result.count
+    item = result.root;
+
+    c = 200
+    while item:
+        c -= 1
+        v = '%06d' % c
+        if v != item.value:
+            print 'range item error!', item.value, v
+            return -5
+        item = item.next
+
+    m.destroy()
+
+    return 0
+
+
+
 def test():
     home = os.path.dirname(os.getcwd())
     os.chdir(home)
@@ -43,42 +78,10 @@ def test():
     x = subprocess.Popen(memlinkstart, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
                              shell=True, env=os.environ, universal_newlines=True) 
      
-    time.sleep(3)
-     
-
-    m = MemLinkClient('127.0.0.1', 11001, 11002, 30);
-    
-    stat = m.stat(key)
-    #print 'stat:', stat
-    if stat:
-        if stat.data_used != 200:
-            print 'stat data_used error!', stat
-            return -3
-
-
-    result = m.range(key, "", 0, 1000)
-    if not result or result.count == 0:
-        print 'range error!', result
-        return -4;
-
-    #print 'count:', result.count
-    item = result.root;
-
-    c = 200
-    while item:
-        c -= 1
-        v = '%06d' % c
-        
-        if v != item.value:
-            print 'range item error!', item.value, v
-            return -5
-        item = item.next
-
-    m.destroy()
+    time.sleep(5)
+    test_result()
 
     x.kill()
-
-    return 0
 
 
 if __name__ == '__main__':
