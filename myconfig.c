@@ -141,6 +141,11 @@ compare_int ( const void *a , const void *b )
     return *(int *)a - *(int *)b; 
 } 
 
+/**
+ * Apply log records to hash table.
+ *
+ * @param logname sync log file pathname
+ */
 static int 
 load_synclog(char *logname)
 {
@@ -417,7 +422,7 @@ runtime_create_common(char *pgname)
     }
     DINFO("main thread create ok!\n");
 
-    rt->synclog = synclog_create("bin.log");
+    rt->synclog = synclog_create();
     if (NULL == rt->synclog) {
         DERROR("synclog_create error!\n");
         MEMLINK_EXIT;
@@ -480,9 +485,9 @@ runtime_create_master(char *pgname)
     
     /*rt->sthread = sthread_create();*/
     /*if (NULL == rt->sthread) {*/
-    /*   DERROR("sthread_create error!\n");*/
-    /*   MEMLINK_EXIT;*/
-    /*   return NULL;*/
+    /*  DERROR("sthread_create error!\n");*/
+    /*  MEMLINK_EXIT;*/
+    /*  return NULL;*/
     /*}*/
     /*DINFO("sync thread create ok!\n");*/
 

@@ -187,6 +187,12 @@ synclog_new(SyncLog *slog)
     return 0;
 }
 
+/**
+ * Rotate sync log if the current sync log is not empty. The current sync log 
+ * is renamed to bin.log.xxx.
+ *
+ * @param slog sync log
+ */
 int
 synclog_rotate(SyncLog *slog)
 {

@@ -1,7 +1,7 @@
 #ifndef MEMLINK_STHREAD_H
 #define MEMLINK_STHREAD_H
 
-#include <event.h>
+#include "conn.h"
 
 typedef struct _sthread 
 {

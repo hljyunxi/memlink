@@ -12,6 +12,10 @@
 
 /**
  * Execute the read command and send response.
+ *
+ * @param conn connection
+ * @param data command data
+ * @param datalen the length of data parameter
  */
 int
 rdata_ready(Conn *conn, char *data, int datalen)

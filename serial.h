@@ -16,6 +16,8 @@
 #define CMD_RANGE		10
 #define CMD_RMKEY       11
 #define CMD_COUNT		12
+#define CMD_SYNC        13
+#define CMD_SYNC_DUMP   14
 
 typedef struct _ht_stat
 {
@@ -79,6 +81,7 @@ int cmd_range_pack(char *data, char *key, unsigned char masknum, unsigned int *m
 int cmd_range_unpack(char *data, char *key, unsigned char *masknum, unsigned int*maskarray, 
                      unsigned int *frompos, unsigned int *len);
 
+int cmd_sync_unpack(char *data, unsigned int *logver, unsigned int *logpos);
+int cmd_sync_dump_unpack(char *data, unsigned int *dumpver, unsigned int *size);
 
 #endif
-

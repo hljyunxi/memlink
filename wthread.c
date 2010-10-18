@@ -75,6 +75,7 @@ change_event(Conn *conn, int newflag, int isnew)
  * -----------------------------------------------------------------
  * | length (2B)| retcode (2B) | message len (1B) | message | data |
  * -----------------------------------------------------------------
+ * Length is the count of bytes following it.
  */
 int
 data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
@@ -157,7 +158,7 @@ data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
  *
  * @param data command data
  * @param datalen command data length
- * @param writelog non-zero to write sync long; otherwise, not to write sync 
+ * @param writelog non-zero to write sync log; otherwise, not to write sync 
  * log.
  */
 int 
@@ -339,7 +340,7 @@ wdata_apply(char *data, int datalen, int writelog)
  *
  * @param conn
  * @param data command data
- * @param datalen command data length 
+ * @param datalen the length of data parameter
  */
 static int
 wdata_ready(Conn *conn, char *data, int datalen)
@@ -454,6 +455,8 @@ client_read(int fd, short event, void *arg)
                 wdata_ready(conn, conn->rbuf, mlen);
             }else if (conn->port == g_cf->read_port) {
                 rdata_ready(conn, conn->rbuf, mlen);
+            }else if (conn->port == g_cf->sync_port) {
+                /*sdata_ready(conn, conn->rbuf, mlen);*/
             }else{
                 DERROR("conn port error: %d\n", conn->port);
                 conn_destroy(conn);

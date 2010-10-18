@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <event.h>
 #include <network.h>
 #include <string.h>
 #include <errno.h>
@@ -9,6 +8,8 @@
 #include "logfile.h"
 #include "myconfig.h"
 #include "zzmalloc.h"
+#include "utils.h"
+#include "common.h"
 
 void*
 sthread_loop(void *arg) 
@@ -16,31 +17,30 @@ sthread_loop(void *arg)
     SThread *st = (SThread*) arg;
     DINFO("sthread_loop...\n");
     event_base_loop(st->base, 0);
-
     return NULL;
 }
 
 static void 
-sthread_read(int fd, short event, void *arg) {
-    //SThread *st = (SThread*) arg;
+sthread_read(int fd, short event, void *arg) 
+{
+    SThread *st = (SThread*) arg;
     Conn *conn;
 
     DINFO("sthread_read...\n");
     conn = conn_create(fd);
 
     if (conn) {
-        //int ret = 0;
+        int ret;
         conn->port = g_cf->sync_port;
-        DINFO("new conn: %d\n", conn->sock);
-	
-		/*
-        event_set(&conn->revt, conn->sock, EV_READ | EV_PERSIST, client_read, conn);
-        ret = event_base_set(st->base, &conn->revt);
-        DINFO("event_base_set: %d\n", ret);
+        conn->base = st->base;
 
-        ret = event_add(&conn->revt, 0);
-        DINFO("event_add: %d\n", ret);
-		*/
+        DINFO("new conn: %d\n", conn->sock);
+        DINFO("change event to read.");
+        ret = change_event(conn, EV_READ | EV_PERSIST, 1);
+        if (ret < 0) {
+            DERROR("change_event error: %d, close conn.\n", ret);
+            conn_destroy(conn);
+        }
     }
 }
 
@@ -63,11 +63,11 @@ sthread_create()
     DINFO("sync thread socket creation ok!\n");
 
     st->base = event_base_new();
+
     event_set(&st->event, st->sock, EV_READ | EV_PERSIST, sthread_read, st);
     event_base_set(st->base, &st->event);
     event_add(&st->event, 0);
 
-    // TODO Timeout event
     g_runtime->sthread = st;
 
     pthread_t threadid;
@@ -79,16 +79,36 @@ sthread_create()
         DERROR("pthread_attr_init error: %s\n", strerror(errno));
         MEMLINK_EXIT;
     }
-
     ret = pthread_create(&threadid, &attr, sthread_loop, st);
     if (ret != 0) {
         DERROR("pthread_create error: %s\n", strerror(errno));
         MEMLINK_EXIT;
     }
-
     DINFO("create sync thread ok\n");
-    
+
     return st;
+}
+
+int
+sdata_ready(Conn *conn, char *data, int datalen) 
+{
+    int ret = 0;
+    char cmd;
+
+    memcpy(&cmd, data + sizeof(short), sizeof(char));
+    char buf[256] = {0};
+    DINFO("data ready cmd: %d, data: %s\n", cmd, formath(data, datalen, buf, 256));
+    switch (cmd) {
+        case CMD_SYNC:
+
+            break;
+        case CMD_SYNC_DUMP:
+
+            break;
+        default:
+            ret = MEMLINK_ERR_CLIENT_CMD;
+            break;
+    }
 }
 
 void sthread_destroy(SThread *st) 
