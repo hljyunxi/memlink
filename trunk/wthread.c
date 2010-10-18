@@ -83,6 +83,7 @@ data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
     unsigned short datalen = 0;
     char *wdata;
 
+    DINFO("retcode:%d, retlen:%d, retdata:%p\n", retcode, retlen, retdata);
     if (msg) {
         mlen = strlen(msg);
     }
@@ -90,12 +91,24 @@ data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
     // package length + retcode + msg len + msg + retdata
     datalen = sizeof(short) + sizeof(short) + sizeof(char) + mlen + retlen;
     DINFO("datalen: %d, retcode: %d\n", datalen, retcode); 
-    wdata = (char*)malloc(datalen);
-    if (NULL == wdata) {
-        DERROR("datareply malloc error: %s\n", strerror(errno));
-        MEMLINK_EXIT;
-        return -1;
+    
+    if (conn->wsize >= datalen) {
+        wdata = conn->wbuf;
+    }else{
+        wdata = (char*)zz_malloc(datalen);
+        if (NULL == wdata) {
+            DERROR("datareply malloc error: %s\n", strerror(errno));
+            MEMLINK_EXIT;
+            return -1;
+        }
+        if (conn->wbuf) {
+            zz_free(conn->wbuf);
+        }
+        conn->wbuf = wdata;
+        conn->wsize = datalen;
     }
+    conn->wlen = conn->wpos = 0;
+
     int count = 0; 
 
     unsigned short dlen = datalen - sizeof(short);
@@ -111,20 +124,23 @@ data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
         memcpy(wdata + count, msg, msglen);
         count += msglen;
     }
+    DINFO("retlen: %d, retdata:%p\n", retlen, retdata);
     if (retlen > 0) {
         memcpy(wdata + count, retdata, retlen);
         count += retlen;
     }
 
+    /*
     if (conn->wbuf) {
         zz_free(conn->wbuf);
         conn->wlen = conn->wpos = 0;
     }
     conn->wbuf = wdata;
+    */
     conn->wlen = datalen;
  
-    //char buf[10240] = {0};
-    //DINFO("reply %s\n", formath(conn->wbuf, conn->wlen, buf, 10240));
+    char buf[10240] = {0};
+    DINFO("reply %s\n", formath(conn->wbuf, conn->wlen, buf, 10240));
 
 	DINFO("change event to write.\n");
 	int ret = change_event(conn, EV_WRITE|EV_PERSIST, 0);
@@ -230,7 +246,6 @@ wdata_apply(char *data, int datalen, int writelog)
            
 			/*
             int i;
-
             for (i = 0; i < masknum; i++) {
                 DINFO("mask, i:%d, mask:%d\n", i, maskarray[i]);
             }*/
@@ -295,6 +310,21 @@ wdata_apply(char *data, int datalen, int writelog)
                 }
             }
 
+            break;
+        case CMD_RMKEY:
+            DINFO("<<< cmd RMKEY >>>\n");
+            cmd_rmkey_unpack(data, key);
+            DINFO("unpack rmkey, key:%s\n", key);
+            
+            ret = hashtable_remove_key(g_runtime->ht, key);
+            DINFO("hashtable_remove_key ret: %d\n", ret);
+            if (ret >= 0 && writelog) {
+                int sret = synclog_write(g_runtime->synclog, data, datalen);
+                if (sret < 0) {
+                    DERROR("synclog_write error: %d\n", sret);
+                    MEMLINK_EXIT;
+                }
+            }
             break;
         default:
             ret = MEMLINK_ERR_CLIENT_CMD;
@@ -380,7 +410,7 @@ client_read(int fd, short event, void *arg)
     if (conn->rlen >= 2) {
         memcpy(&datalen, conn->rbuf, sizeof(short)); 
     }
-    DINFO("client read datalen: %d\n", datalen);
+    DINFO("client read datalen: %d, fd: %d\n", datalen, fd);
     DINFO("conn rlen: %d\n", conn->rlen);
 
     while (1) {
@@ -402,7 +432,7 @@ client_read(int fd, short event, void *arg)
                 return;
             }
         }else if (ret == 0) {
-            DINFO("read 0, close conn.\n");
+            DINFO("read 0, close conn %d.\n", fd);
             conn_destroy(conn);
             return;
         }else{

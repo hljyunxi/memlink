@@ -44,6 +44,7 @@ int main()
 
 	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
+        DINFO("====== insert i:%d\n", i);
 		ret = memlink_cmd_update(m, buf, val, strlen(val), 0);
 		if (ret != MEMLINK_OK) {
 			DERROR("update error, key:%s, val:%s, ret:%d\n", buf, val, ret);
@@ -52,7 +53,7 @@ int main()
 
 		MemLinkResult result;
 
-		ret = memlink_cmd_range(m, buf, "::", 0, 1, &result);
+		ret = memlink_cmd_range(m, buf, "", 0, 1, &result);
 		if (ret != MEMLINK_OK) {
 			DERROR("range error, key:%s, ret:%d\n", buf, ret);
 			return -5;
@@ -63,7 +64,7 @@ int main()
 			DERROR("item is null, key:%s\n", buf);
 			return -6;
 		}
-
+        DINFO("item value: %s\n", item->value);
 		if (strcmp(item->value, val) != 0) {
 			DERROR("after update, first line error! item->value:%s value:%s\n", item->value, val);
 			return -7;

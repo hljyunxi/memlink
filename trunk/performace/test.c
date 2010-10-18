@@ -9,6 +9,9 @@
 int test_insert(int count)
 {
 	MemLink	*m;
+	struct timeval start, end;
+
+	gettimeofday(&start, NULL);
 	m = memlink_create("127.0.0.1", 11001, 11002, 30);
 	if (NULL == m) {
 		DERROR("memlink_create error!\n");
@@ -30,10 +33,8 @@ int test_insert(int count)
 	char *maskstr = "6:2:1";
 
 	int i;
-	struct timeval start, end;
 
 	DINFO("start insert ...\n");
-	gettimeofday(&start, NULL);
 	for (i = 0; i < count; i++) {
 		sprintf(val, "%020d", i);
 		ret = memlink_cmd_insert(m, key, val, strlen(val), maskstr, 0);

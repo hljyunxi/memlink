@@ -10,7 +10,7 @@ def test_insert(count):
     global key
     vals = []
     for i in xrange(0, count):
-        val = '%020d' % i
+        val = '%012d' % i
         vals.append(val)
 
     starttm = time.time()

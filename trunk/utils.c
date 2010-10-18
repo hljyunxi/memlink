@@ -15,6 +15,7 @@ timeout_wait(int fd, int timeout, int writing)
         return MEMLINK_TRUE;
 
     if (fd < 0) {
+        DERROR("fd error: %d\n", fd);
         return MEMLINK_ERR;
     }
 
@@ -22,19 +23,27 @@ timeout_wait(int fd, int timeout, int writing)
     struct timeval tv;
     int n;
 
-    tv.tv_sec  = (int)timeout;
-    tv.tv_usec = (int)((timeout - tv.tv_sec) * 1e6);
+    while (1) {
+        tv.tv_sec  = (int)timeout;
+        tv.tv_usec = (int)((timeout - tv.tv_sec) * 1e6);
 
-    FD_ZERO(&fds);
-    FD_SET(fd, &fds);
+        FD_ZERO(&fds);
+        FD_SET(fd, &fds);
 
-    if (writing)
-        n = select(fd+1, NULL, &fds, NULL, &tv);
-    else 
-        n = select(fd+1, &fds, NULL, NULL, &tv);
-
-    if (n < 0) 
-        return MEMLINK_ERR;
+        if (writing)
+            n = select(fd+1, NULL, &fds, NULL, &tv);
+        else 
+            n = select(fd+1, &fds, NULL, NULL, &tv);
+        //DINFO("select return: %d\n", n);
+        if (n < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            DWARNING("select error: %d, %s\n", n, strerror(errno));
+            return MEMLINK_ERR;
+        }
+        break;
+    }
 
     if (n == 0)
         return MEMLINK_FALSE;
@@ -71,9 +80,11 @@ readn(int fd, void *vptr, size_t n, int timeout)
 
     while (nleft > 0) {
 		if (timeout > 0 && timeout_wait_read(fd, timeout) != MEMLINK_TRUE) {
+            DERROR("read timeout.\n");
 			break;
 		}
         if ((nread = read(fd, ptr, nleft)) < 0) {
+            //DERROR("nread: %d, error: %s\n", nread, strerror(errno));
             if (errno == EINTR) {
                 nread = 0;
             }else {
@@ -81,8 +92,10 @@ readn(int fd, void *vptr, size_t n, int timeout)
                 //MEMLINK_EXIT;
                 return -1;
             }
-        }else if (nread == 0)
+        }else if (nread == 0) {
+            //DERROR("read 0, conn close.\n");
             break;
+        }
         nleft -= nread;
         ptr += nread;
     }
@@ -191,6 +204,7 @@ formatb(char *data, int datalen, char *buf, int blen)
             return buf;
         }
     }   
+    buf[idx] = 0;
 
     return buf;
 }
@@ -208,6 +222,7 @@ formath(char *data, int datalen, char *buf, int blen)
         snprintf(buf + idx, blen-idx, "%02x ", c);
         idx += 3;
     }   
+    buf[idx] = 0;
 
     return buf;
 }

@@ -1,5 +1,7 @@
-#cflags   = '-ggdb -DDEBUG'
-cflags   = '-ggdb'
+#cflags   = '-ggdb -DRANGE_MASK_STR'
+#cflags   = '-ggdb -DDEBUG -DRANGE_MASK_STR'
+cflags   = '-ggdb -Wall'
+#cflags   = '-ggdb -DDEBUG -Wall'
 includes = ['.', '../../', '/Developer/usr/include']
 libpath  = ['.']
 libs	 = ['m']
@@ -9,5 +11,6 @@ libfiles = comfiles + ['memlink_client.c']
 
 env = Environment(CCFLAGS=cflags, CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
 env.SharedLibrary("memlink", libfiles)
+env.StaticLibrary("memlink", libfiles)
 
 env.Program("client", prgfiles)

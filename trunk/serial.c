@@ -86,7 +86,7 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
         m = m << y;
         x = mask[idx + n - 1] & m;
 
-        //DINFO("copy idx:%d, v:%d, n:%d\n", idx, v, n);
+        DINFO("copy idx:%d, v:%d, n:%d\n", idx, v, n);
         //printb((char *)&v, n);
         memcpy(&mask[idx], &v, n);
 
@@ -98,6 +98,16 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
 
         //DINFO("============================\n");
     }
+    n = b / 8;
+    if (n > 0) {
+        idx += n;
+        b = b % 8;
+    }
+
+    if (b > 0) {
+        mask[idx] = mask[idx] & (char)(pow(2, b) - 1);
+    }
+
 
     return idx + 1; 
 }
@@ -210,6 +220,11 @@ mask_array2flag(unsigned char *maskformat, unsigned int *maskarray, char masknum
         }
     }
 
+    if (b > 0) {
+        //mask[idx] = mask[idx] & (char)(pow(2, b) - 1);
+        mask[idx] = mask[idx] & (char)(UCHAR_MAX >> (8 - b));
+    }
+
     return idx + 1;
 }
 
@@ -224,6 +239,7 @@ unpack_string(char *s, char *v, unsigned char *vlen)
     if (len > 0) {
         memcpy(v, s + sizeof(char), len);
     }
+    v[len] = 0;
 
     if (vlen) {
         *vlen = len;
@@ -333,7 +349,7 @@ cmd_clean_pack(char *data, char *key)
     ret = pack_string(data + count, key, 0);
     count += ret;
     len = count - sizeof(short);
-    DINFO("clean len: %d, count: %d\n", len, count);
+    //DINFO("clean len: %d, count: %d\n", len, count);
     memcpy(data, &len, sizeof(short));
     
     return count;
@@ -351,9 +367,9 @@ cmd_clean_unpack(char *data, char *key)
 }
 
 int 
-cmd_removekey_pack(char *data, char *key)
+cmd_rmkey_pack(char *data, char *key)
 {
-    unsigned char  cmd = CMD_REMOVE_KEY;
+    unsigned char  cmd = CMD_RMKEY;
     unsigned short  len;
     int count = sizeof(short);
     int ret;
@@ -364,14 +380,14 @@ cmd_removekey_pack(char *data, char *key)
     ret = pack_string(data + count, key, 0);
     count += ret;
     len = count - sizeof(short);
-    DINFO("clean len: %d, count: %d\n", len, count);
+    //DINFO("clean len: %d, count: %d\n", len, count);
     memcpy(data, &len, sizeof(short));
     
     return count;
 }
 
 int 
-cmd_removekey_unpack(char *data, char *key)
+cmd_rmkey_unpack(char *data, char *key)
 {
     unsigned char keylen;
     int count = sizeof(short) + sizeof(char);

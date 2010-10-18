@@ -17,6 +17,7 @@ def test_result():
             return -3
     else:
         print 'stat error:', stat
+        return -3
 
     result = m.range(key, "", 0, 1000)
     if not result or result.count == 0:
@@ -85,5 +86,6 @@ def test():
 
 
 if __name__ == '__main__':
+    #sys.exit(test_result())
     sys.exit(test())
 
