@@ -54,6 +54,9 @@ conn_create(int svrfd)
 void
 conn_destroy(Conn *conn)
 {
+    if (conn->wbuf) {
+        zz_free(conn->wbuf);
+    }
 	event_del(&conn->evt);
     close(conn->sock);
     zz_free(conn);

@@ -58,6 +58,16 @@ class MemLinkClient:
             result = None
         return result
 
+    def rmkey(self, key):
+        return memlink_cmd_rmkey(self.client, key)
+
+    def count(self, key, maskstr):
+        result = MemLinkCount()
+        ret = memlink_cmd_count(self.client, key, maskstr, result)
+        if ret != MEMLINK_OK:
+            return None
+        return result
+
 def memlinkresult_free(self):
     memlink_result_free(self)
 

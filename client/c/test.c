@@ -75,8 +75,6 @@ int main(int argc, char *argv[])
                 result.count);
     }
     
-
-over:
     memlink_destroy(m);
 
     return 0;

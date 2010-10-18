@@ -16,6 +16,7 @@ typedef struct _conn
     char    rbuf[CONN_MAX_READ_LEN]; // read buffer
     int     rlen;                    // length of data which have been read
     char    *wbuf;                   // write buffer
+    int     wsize;                   // write buffer mem size
     int     wlen;                    // write buffer length
     int     wpos;                    // write buffer position
     int     port;                    // server port

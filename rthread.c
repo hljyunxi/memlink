@@ -38,6 +38,10 @@ rdata_ready(Conn *conn, char *data, int datalen)
             DINFO("<<< cmd RANGE >>>\n");
             ret = cmd_range_unpack(data, key, &masknum, maskarray, &frompos, &len);
             DINFO("unpack range return:%d, key:%s, masknum:%d, frompos:%d, len:%d\n", ret, key, masknum, frompos, len);
+            int i;
+            for (i = 0; i < masknum; i++) {
+                DINFO("mask i:%d, m:%d\n", i, maskarray[i]);
+            }
             unsigned char masksize = 0, valuesize = 0;
             int rlen = sizeof(char) * 2 + 256 * len + HASHTABLE_MASK_MAX_LEN * sizeof(int) * len;
             DINFO("ret buffer len: %d\n", rlen);
@@ -50,20 +54,8 @@ rdata_ready(Conn *conn, char *data, int datalen)
             if (retlen > 0) {
                 printh(retrec + sizeof(char) * 2, retlen);
             }*/
-			//int count = 0;
-			/*memcpy(retrec, &node->masknum, sizeof(char));
-			count += sizeof(char);
-			memcpy(retrec + count, node->maskformat, node->masknum);
-			count += node->masknum;
-			*/
             memcpy(retrec, &valuesize, sizeof(char));
             memcpy(retrec + sizeof(char), &masksize, sizeof(char));
-			/*
-			int count = 0;
-            memcpy(retrec + count, &valuesize, sizeof(char));
-			count += sizeof(char);
-            memcpy(retrec + count, &masksize, sizeof(char));
-			*/
            
             retlen += sizeof(char) * 2;
 
@@ -98,19 +90,21 @@ rdata_ready(Conn *conn, char *data, int datalen)
 			unsigned int  maskarray[HASHTABLE_MASK_MAX_LEN * sizeof(int)];
 
             ret = cmd_count_unpack(data, key, &masknum, maskarray);
-            DINFO("unpack count return: %d, key: %s\n", ret, key);
+            DINFO("unpack count return: %d, key: %s, mask:%d:%d:%d\n", ret, key, maskarray[0], maskarray[1], maskarray[2]);
            
             int vcount = 0, mcount = 0;
             retlen = sizeof(int) * 2;
             char retrec[retlen];
 
             ret = hashtable_count(g_runtime->ht, key, maskarray, masknum, &vcount, &mcount);
-            DINFO("hashtable count: %d\n", ret);
+            DINFO("hashtable count, ret:%d, visible_count:%d, mask_count:%d\n", ret, vcount, mcount);
             memcpy(retrec, &vcount, sizeof(int));
             memcpy(retrec + sizeof(int), &mcount, sizeof(int));
+            //retlen = sizeof(int) + sizeof(int);
 
-            ret = data_reply(conn, ret, msg, retdata, retlen);
+            ret = data_reply(conn, ret, msg, retrec, retlen);
             DINFO("data_reply return: %d\n", ret);
+            break;
         }
         default: {
             ret = MEMLINK_ERR_CLIENT_CMD;

@@ -141,6 +141,54 @@ compare_int ( const void *a , const void *b )
     return *(int *)a - *(int *)b; 
 } 
 
+static int 
+load_synclog(char *logname)
+{
+    int ret;
+
+    int ffd = open(logname, O_RDONLY);
+    if (-1 == ffd) {
+        DERROR("open file %s error! %s\n", logname, strerror(errno));
+        MEMLINK_EXIT;
+    }
+    int len = lseek(ffd, 0, SEEK_END);
+
+    char *addr = mmap(NULL, len, PROT_READ, MAP_SHARED, ffd, 0);
+    if (addr == MAP_FAILED) {
+        DERROR("synclog mmap error: %s\n", strerror(errno));
+        MEMLINK_EXIT;
+    }   
+    unsigned int indexlen = *(unsigned int*)(addr + sizeof(short) + sizeof(int));
+    //unsigned int *index = (unsigned int*)(addr + sizeof(short) + sizeof(int) * 2);
+    char *data    = addr + sizeof(short) + sizeof(int) * 2 + indexlen * sizeof(int);
+    char *enddata = addr + len;
+
+    unsigned short blen; 
+    while (data < enddata) {
+        blen = *(unsigned short*)data;  
+
+        if (enddata < data + blen + sizeof(short)) {
+            DERROR("synclog end error: %s, skip\n", logname);
+            //MEMLINK_EXIT;
+            break;
+        }
+        DINFO("command, len:%d\n", blen);
+        ret = wdata_apply(data, blen + sizeof(short), 0);       
+        if (ret != 0) {
+            DERROR("wdata_apply log error: %d\n", ret);
+            MEMLINK_EXIT;
+        }
+
+        data += blen + sizeof(short); 
+    }
+
+    munmap(addr, len);
+
+    close(ffd);
+
+    return 0;
+}
+
 static int
 load_data()
 {
@@ -197,18 +245,17 @@ load_data()
     qsort(logids, i, sizeof(int), compare_int);
 
     int n = i;
-    int ffd, len;
+    //int ffd, len;
+    char logname[PATH_MAX];
 
-    for (i = g_runtime->dumplogver; i < n + 1; i++) {
-        char logname[PATH_MAX];
-
-        if (i < n) {
-            snprintf(logname, PATH_MAX, "%s/data/bin.log.%d", g_runtime->home, logids[i]);
-        }else{
-            snprintf(logname, PATH_MAX, "%s/data/bin.log", g_runtime->home);
-        }
+    DINFO("dumplogver: %d, n: %d\n", g_runtime->dumplogver, n);
+    for (i = g_runtime->dumplogver; i < n; i++) {
+        snprintf(logname, PATH_MAX, "%s/data/bin.log.%d", g_runtime->home, logids[i]);
         DINFO("load synclog: %s\n", logname);
-    
+
+        load_synclog(logname);
+
+        /* 
         ffd = open(logname, O_RDONLY);
         if (-1 == ffd) {
             DERROR("open file %s error! %s\n", logname, strerror(errno));
@@ -248,7 +295,12 @@ load_data()
         munmap(addr, len);
 
         close(ffd);
+        */
     }
+
+    snprintf(logname, PATH_MAX, "%s/data/bin.log", g_runtime->home);
+    DINFO("load synclog: %s\n", logname);
+    load_synclog(logname);
 
     if (havedump == 0) {
         dumpfile(g_runtime->ht);

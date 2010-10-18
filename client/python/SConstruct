@@ -1,7 +1,7 @@
 import sys, os, subprocess
 
-#python_config = '/usr/bin/python2.6-config'
-python_config = '/usr/local/bin/python2.6-config'
+python_config = '/usr/bin/python2.6-config'
+#python_config = '/usr/local/bin/python2.6-config'
 
 x = subprocess.Popen(python_config + ' --includes', stdout=subprocess.PIPE, shell=True)
 python_includes = x.stdout.read().strip().split()
@@ -14,6 +14,7 @@ python_ldflags = x.stdout.read()
 
 os.system('swig -python -o memlink_client_python.c ../c/memlink_client.i')
 
+#cflags   = '-ggdb -DRANGE_MASK_STR'
 cflags   = '-ggdb'
 includes = ['.', '../../', '../c/', '/Developer/usr/include'] + python_includes
 #ldflags  = python_ldflags

@@ -77,6 +77,8 @@ int			memlink_cmd_tag(MemLink *m, char *key, char *value, int valuelen, int tag)
 int			memlink_cmd_range(MemLink *m, char *key, char *maskstr, 
                               unsigned int frompos, unsigned int len,
                               MemLinkResult *result);
+int         memlink_cmd_rmkey(MemLink *m, char *key);
+int         memlink_cmd_count(MemLink *m, char *key, char *maskstr, MemLinkCount *count);
 
 #endif
 
