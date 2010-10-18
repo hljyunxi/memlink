@@ -13,15 +13,15 @@ def test_insert(count):
         val = '%012d' % i
         vals.append(val)
 
-    starttm = time.time()
     m = MemLinkClient('127.0.0.1', 11001, 11002, 30)
  
-    ret = m.create(key, 20, "4:3:1")
+    ret = m.create(key, 12, "4:3:1")
     if ret != MEMLINK_OK:
         print 'create error!', ret
         return
 
     maskstr = "8:3:1"
+    starttm = time.time()
     for val in vals:
         #print 'insert:', val
         ret = m.insert(key, val, maskstr, 0)
@@ -42,12 +42,12 @@ def test_range(frompos, dlen, testcount):
     global key
 
     ss = range(0, testcount)
-    starttm = time.time()
     m = MemLinkClient('127.0.0.1', 11001, 11002, 30)
 
+    starttm = time.time()
     for i in ss:
         result = m.range(key, "", frompos, dlen)
-        if not result:
+        if not result or result.count != dlen:
             print 'result error!'
             return
          
@@ -58,8 +58,12 @@ def test_range(frompos, dlen, testcount):
     m.destroy()
 
 def dotest():
-    test_insert(100000)
-    test_range(90000, 100, 1000)
+    if len(sys.argv) != 2:
+        print 'usage: test.py count'
+        sys.exit()
+    count = int(sys.argv[1])
+    test_insert(count)
+    test_range(0, 100, 10000)
 
 
 if __name__ == '__main__':

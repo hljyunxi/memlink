@@ -11,6 +11,7 @@ int test_insert(int count)
 	MemLink	*m;
 	struct timeval start, end;
 
+	DINFO("====== test_insert ======\n");
 	gettimeofday(&start, NULL);
 	m = memlink_create("127.0.0.1", 11001, 11002, 30);
 	if (NULL == m) {
@@ -25,7 +26,7 @@ int test_insert(int count)
 	ret = memlink_cmd_create(m, key, 6, "4:3:1");
 	
 	if (ret != MEMLINK_OK) {
-		DERROR("1 memlink_cmd_create %s error: %d\n", key, ret);
+		DERROR("create %s error: %d\n", key, ret);
 		return -2;
 	}
 	
@@ -55,12 +56,63 @@ int test_insert(int count)
 }
 
 
-int main()
+int test_range(int frompos, int rlen, int count)
+{
+	MemLink	*m;
+	struct timeval start, end;
+	DINFO("====== test_range ======\n");
+
+	m = memlink_create("127.0.0.1", 11001, 11002, 30);
+	if (NULL == m) {
+		DERROR("memlink_create error!\n");
+		return -1;
+	}
+
+	int  ret;
+	char key[32];
+	char val[32];
+
+	sprintf(key, "haha");
+	int i;
+
+	DINFO("start range ...\n");
+	gettimeofday(&start, NULL);
+	for (i = 0; i < count; i++) {
+		sprintf(val, "%020d", i);
+		MemLinkResult	result;
+		ret = memlink_cmd_range(m, key, "", frompos, rlen, &result);
+		if (ret != MEMLINK_OK) {
+			DERROR("insert error, i:%d, val:%d, ret:%d\n", i, val, ret);
+			return -3;
+		}
+		memlink_result_free(&result);
+	}
+	gettimeofday(&end, NULL);
+	DINFO("end range ... %d\n", i);
+
+	unsigned int tmd = timediff(&start, &end);
+	DINFO("use time: %u\n", tmd);
+	DINFO("speed: %.2f\n", ((double)count / tmd) * 1000000);
+	
+	memlink_destroy(m);
+
+	return 0;
+}
+
+int main(int argc, char *argv[])
 {
 #ifdef DEBUG
 	logfile_create("stdout", 3);
 #endif
-	test_insert(10000);
+
+	if (argc != 2) {
+		printf("usage: test count\n");
+		return 0;
+	}
+	int count = atoi(argv[1]);
+
+	test_insert(count);
+	test_range(0, 100, 1000);
 
 	return 0;
 }

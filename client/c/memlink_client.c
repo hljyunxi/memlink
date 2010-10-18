@@ -701,8 +701,8 @@ memlink_cmd_range(MemLink *m, char *key, char *maskstr, unsigned int frompos, un
         //vdata += datalen;
 		vdata += valuesize + sizeof(char) + mlen;
 #else
-        int  mlen;
-        mlen = mask_binary2string(maskformat, masknum, vdata + valuesize, masksize, item->mask);
+        //int  mlen;
+        //mlen = mask_binary2string(maskformat, masknum, vdata + valuesize, masksize, item->mask);
         vdata += valuesize + masksize;
 #endif
 

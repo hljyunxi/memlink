@@ -27,6 +27,11 @@ class MemLinkClient
         $this->client = null;
     }
 
+	function create($key, $valuesize, $maskformat)
+	{
+		return memlink_cmd_create($this->client, $key, $valuesize, $maskformat);
+	}
+
     function dump()
     {
         return memlink_cmd_dump($this->client);
@@ -42,8 +47,10 @@ class MemLinkClient
         $mstat = new MemLinkStat();
 
         $ret = memlink_cmd_stat($this->client, $key, $mstat);
-
-        return $mstat;
+		if ($ret == MEMLINK_OK) {
+			return $mstat;
+		}
+		return NULL;
     }
 
     function delete($key, $value, $valuelen)
@@ -77,11 +84,27 @@ class MemLinkClient
         $result = new MemLinkResult();
         
         $ret = memlink_cmd_range($this->client, $key, $maskstr, $frompos, $len, $result);
-
-        return $result;
-
+		if ($ret == MEMLINK_OK) {
+			return $result;
+		}
+		return NULL;
     }
 
+	function rmkey($key)
+	{
+		return memlink_cmd_rmkey($this->client, $key);
+	}
+
+	function count($key, $maskstr)
+	{
+		$count = new MemLinkCount();
+		$ret = memlink_cmd_range($this->client, $key, $maskstr, $result);
+		if ($ret == MEMLINK_OK) {
+			return $count;
+		}
+		return NULL;
+	}
+	
 }
 
 ?>

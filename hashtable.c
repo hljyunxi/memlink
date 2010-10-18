@@ -1073,7 +1073,7 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
     }
 
     if (masknum > 0) {
-        /*
+		/* 
         int j;
 		for (j = 0; j < masknum; j++) {
             if (maskarray[j] != UINT_MAX)
@@ -1082,7 +1082,7 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
         DINFO("j: %d, masknum: %d\n", j, masknum);
         
         if (j < masknum) {
-            masklen = mask_array2binary(node->maskformat, maskarray, masknum, maskval);
+            int masklen = mask_array2binary(node->maskformat, maskarray, masknum, maskval);
             if (masklen <= 0) {
                 DERROR("mask_string2array error\n");
                 return -2;
@@ -1108,7 +1108,7 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
         }else{
             masknum = 0;
         }
-        */
+		*/        
 
         masknum = mask_array2_binary_flag(node->maskformat, maskarray, masknum, maskval, maskflag);
     }

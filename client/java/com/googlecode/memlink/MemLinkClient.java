@@ -43,6 +43,10 @@ public class MemLinkClient
 		}
 	}
 
+	public int create(String key, int valuesize, String maskstr)
+	{
+		return memlink.memlink_cmd_create(client, key, valuesize, maskstr);
+	}
 	public int dump()
 	{
 		return memlink.memlink_cmd_dump(client);
@@ -57,8 +61,11 @@ public class MemLinkClient
 	{
 		MemLinkStat ms = new MemLinkStat();
 		int ret = memlink.memlink_cmd_stat(client, key, ms);
+		if (ret == memlink.MEMLINK_OK) {
+			return ms;
+		}
 
-		return ms;
+		return null;
 	}
 
 	public int delete(String key, String value)
@@ -91,8 +98,27 @@ public class MemLinkClient
 		MemLinkResult result = new MemLinkResult();
 
 		int ret = memlink.memlink_cmd_range(client, key, maskstr, frompos, len, result);
+		if (ret == memlink.MEMLINK_OK) {
+			return result;
+		}
 
-		return result;
+		return null;;
 	}
+
+	public int rmkey(String key)
+	{
+		return memlink.memlink_cmd_rmkey(client, key);
+	}
+
+	public MemLinkCount count(String key, String maskstr) 
+	{
+		MemLinkCount count = new MemLinkCount();
+
+		int ret = memlink.memlink_cmd_count(client, key, maskstr, count);
+		if (ret == memlink.MEMLINK_OK) {
+			return count;
+		}
+		return null;
+	}	
 
 }
