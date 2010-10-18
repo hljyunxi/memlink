@@ -10,6 +10,11 @@
 #include "dumpfile.h"
 #include "common.h"
 
+/**
+ * Creates a dump file from the hash table. Sync log is also rotated.
+ *
+ * @param ht hash table
+ */
 int 
 dumpfile(HashTable *ht)
 {

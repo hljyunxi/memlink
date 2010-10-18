@@ -13,15 +13,18 @@
 
 #define SYNCLOG_HEADER_LEN  (sizeof(short)+sizeof(int)+sizeof(int))
 
+/**
+ * header and index area are mapped in memory address space.
+ */
 typedef struct _synclog
 {
     char    filename[PATH_MAX]; // file path
-    int     fd;     // open file descriptor
-    char    *index; // mmap addr
-    int     len;    // mmap len
-    int     headlen;
-    unsigned int    index_pos; // last index pos
-    unsigned int    pos; // last write data pos
+    int     fd;                 // open file descriptor
+    char    *index;             // mmap addr
+    int     len;                // mmap len
+    int     headlen;            // header length
+    unsigned int    index_pos;  // last index pos
+    unsigned int    pos;        // last write data pos
 }SyncLog;
 
 //SyncLog*    synclog_create(char *filename);
