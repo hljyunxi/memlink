@@ -22,7 +22,7 @@ def test_result():
     result = m.range(key, "", 0, 1000)
     if not result or result.count == 0:
         print 'range error!', result
-        return -4;
+        return -4
 
     #print 'count:', result.count
     item = result.root;
@@ -80,12 +80,13 @@ def test():
                              shell=True, env=os.environ, universal_newlines=True) 
      
     time.sleep(5)
-    test_result()
+    ret = test_result()
 
     x.kill()
 
+    return ret
 
 if __name__ == '__main__':
-    #sys.exit(test_result())
-    sys.exit(test())
+    sys.exit(test_result())
+    #sys.exit(test())
 

@@ -1,9 +1,9 @@
-cflags   = '-ggdb -DDEBUG -pg'
+cflags   = '-ggdb -DDEBUG -O2'
 #cflags   = '-ggdb'
 includes = ['/Developer/usr/include', '../client/c', '../']
-ldflags  = ['-pg']
+ldflags  = ['']
 libpath  = ['/Developer/usr/lib', '../client/c']
-libs	 = ['memlink']
+libs	 = ['m']
 
 env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
 
@@ -11,7 +11,7 @@ env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=l
 #for fn in files:
 #	env.Program(fn)
 
-env.Program("test.c")
+env.Program("test", ["test.c", "../client/c/libmemlink.a"])
 
 env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=['m'])
 env.Program('testmask', ["testmask.c", '../utils.c', '../logfile.c', '../serial.c', '../zzmalloc.c'])

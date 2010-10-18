@@ -42,10 +42,11 @@ rdata_ready(Conn *conn, char *data, int datalen)
             DINFO("<<< cmd RANGE >>>\n");
             ret = cmd_range_unpack(data, key, &masknum, maskarray, &frompos, &len);
             DINFO("unpack range return:%d, key:%s, masknum:%d, frompos:%d, len:%d\n", ret, key, masknum, frompos, len);
+			/*
             int i;
             for (i = 0; i < masknum; i++) {
                 DINFO("mask i:%d, m:%d\n", i, maskarray[i]);
-            }
+            }*/
             unsigned char masksize = 0, valuesize = 0;
             int rlen = sizeof(char) * 2 + 256 * len + HASHTABLE_MASK_MAX_LEN * sizeof(int) * len;
             DINFO("ret buffer len: %d\n", rlen);
