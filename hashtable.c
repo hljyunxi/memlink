@@ -1073,7 +1073,7 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
     }
 
     if (masknum > 0) {
-		/* 
+		/*
         int j;
 		for (j = 0; j < masknum; j++) {
             if (maskarray[j] != UINT_MAX)
@@ -1108,8 +1108,7 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
         }else{
             masknum = 0;
         }
-		*/        
-
+		*/
         masknum = mask_array2_binary_flag(node->maskformat, maskarray, masknum, maskval, maskflag);
     }
 
@@ -1196,10 +1195,10 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
                 memcpy(data + idx, maskstr, mlen);
                 idx += mlen;
 #else
-                char buf[128];
+                /*char buf[128];
 				snprintf(buf, node->valuesize + 1, "%s", itemdata);
 				DINFO("ok, copy item ... i:%d, value:%s\n", i, buf);
-
+				*/
 				memcpy(data + idx, itemdata, datalen);
 				idx += datalen;
 #endif
