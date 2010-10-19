@@ -287,6 +287,13 @@ synclog_validate(SyncLog *slog)
     return 0;
 }
 
+/**
+ * Write a record to sync log
+ *
+ * @param slog sync log
+ * @param data log record
+ * @param datalen log record length
+ */
 int
 synclog_write(SyncLog *slog, char *data, int datalen)
 {

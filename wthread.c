@@ -456,7 +456,7 @@ client_read(int fd, short event, void *arg)
             }else if (conn->port == g_cf->read_port) {
                 rdata_ready(conn, conn->rbuf, mlen);
             }else if (conn->port == g_cf->sync_port) {
-                /*sdata_ready(conn, conn->rbuf, mlen);*/
+                sdata_ready(conn, conn->rbuf, mlen);
             }else{
                 DERROR("conn port error: %d\n", conn->port);
                 conn_destroy(conn);
