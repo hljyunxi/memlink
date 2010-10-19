@@ -519,12 +519,12 @@ cmd_create_unpack(char *data, char *key, unsigned char *valuelen, unsigned char 
 }
 
 int
-cmd_sync_unpack(char *data, unsigned int *logver, unsigned int *logpos) 
+cmd_sync_unpack(char *data, unsigned int *logver, unsigned int *log_index_pos) 
 {
     int count = sizeof(short) + sizeof(char);
     memcpy(logver, data + count, sizeof(int));
     count += sizeof(int);
-    memcpy(logver, data + count, sizeof(int));
+    memcpy(log_index_pos, data + count, sizeof(int));
     return 0;
 }
 
