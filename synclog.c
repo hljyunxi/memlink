@@ -303,7 +303,11 @@ synclog_write(SyncLog *slog, char *data, int datalen)
     int cur;
     //int pos = lseek(slog->fd, 0, SEEK_CUR);
     //char buf[128];
-    
+	
+	if (slog->index_pos == SYNCLOG_INDEXNUM) {
+		synclog_rotate(slog);
+	}
+
 	DINFO("datalen: %d, wlen: %d, pos:%d\n", datalen, wlen, slog->pos);
     cur = lseek(slog->fd, slog->pos, SEEK_SET);
 	/*
