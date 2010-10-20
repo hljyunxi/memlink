@@ -1,4 +1,4 @@
-<?
+<?php
 include_once("memlink.php");
 
 class MemLinkClient

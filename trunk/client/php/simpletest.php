@@ -1,4 +1,4 @@
-<?
+<?php
 include_once("memlinkclient.php");
 /*
 $class = new ReflectionClass("MemLink");
@@ -13,8 +13,9 @@ $m = new MemLinkClient("127.0.0.1", 11001, 11002, 10);
 //echo "host:".$m->readport;
 $key = "haha4";
 
+
 $ret = $m->create($key, 12, "4:3:1");
-if ($ret != MEMLNK_OK) {
+if ($ret != MEMLINK_OK) {
 	echo "create error: $key\n";
 	exit(-1);
 }
