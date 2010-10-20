@@ -33,6 +33,8 @@
 #define MEMLINK_ERR_PACKAGE			-21
 // 该项已删除
 #define MEMLINK_ERR_REMOVED         -22
+// 
+#define MEMLINK_ERR_RANGE_SIZE		-23
 // 其他错误
 #define MEMLINK_ERR                 -1
 // 操作失败

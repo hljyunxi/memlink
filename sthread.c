@@ -228,6 +228,8 @@ sdata_ready(Conn *conn, char *data, int datalen)
             ret = MEMLINK_ERR_CLIENT_CMD;
             break;
     }
+
+	return 0;
 }
 
 void sthread_destroy(SThread *st) 

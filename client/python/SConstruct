@@ -15,7 +15,7 @@ python_ldflags = x.stdout.read()
 os.system('swig -python -o memlink_client_python.c ../c/memlink_client.i')
 
 #cflags   = '-ggdb -DRANGE_MASK_STR'
-cflags   = '-ggdb'
+cflags   = '-ggdb -O2'
 includes = ['.', '../../', '../c/', '/Developer/usr/include'] + python_includes
 #ldflags  = python_ldflags
 ldflags  = ''
@@ -27,3 +27,4 @@ files    = ['../../zzmalloc.c', '../../serial.c', '../../logfile.c', '../../util
 env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
 env.SharedLibrary("memlink", files)
 
+Command('_memlink.so', 'libmemlink.so', [Move('$TARGET', '$SOURCE')])

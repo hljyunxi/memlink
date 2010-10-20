@@ -1,6 +1,6 @@
 #cflags   = '-ggdb -DRANGE_MASK_STR'
 #cflags   = '-ggdb -DDEBUG -DRANGE_MASK_STR'
-cflags   = '-ggdb -Wall'
+cflags   = '-ggdb -Wall -O2'
 #cflags   = '-ggdb -DDEBUG -Wall'
 includes = ['.', '../../', '/Developer/usr/include']
 libpath  = ['.']

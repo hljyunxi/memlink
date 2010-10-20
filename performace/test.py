@@ -46,9 +46,9 @@ def test_range(frompos, dlen, testcount):
 
     starttm = time.time()
     for i in ss:
-        result = m.range(key, "", frompos, dlen)
+        ret, result = m.range(key, "", frompos, dlen)
         if not result or result.count != dlen:
-            print 'result error!'
+            print 'result error!', ret
             return
          
     endtm = time.time()
@@ -58,12 +58,15 @@ def test_range(frompos, dlen, testcount):
     m.destroy()
 
 def dotest():
-    if len(sys.argv) != 2:
-        print 'usage: test.py count'
+    if len(sys.argv) != 4:
+        print 'usage: test.py count range_start range_len'
         sys.exit()
     count = int(sys.argv[1])
+    range_start = int(sys.argv[2])
+    range_len = int(sys.argv[3])
+
     test_insert(count)
-    test_range(0, 100, 10000)
+    test_range(range_start, range_len, 1000)
 
 
 if __name__ == '__main__':

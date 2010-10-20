@@ -73,7 +73,7 @@ change_event(Conn *conn, int newflag, int isnew)
  * @param data return data
  *
  * -----------------------------------------------------------------
- * | length (2B)| retcode (2B) | message len (1B) | message | data |
+ * | length (4B)| retcode (2B) | message len (1B) | message | data |
  * -----------------------------------------------------------------
  * Length is the count of bytes following it.
  */
@@ -81,7 +81,7 @@ int
 data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
 {
     int mlen = 0;  // msg string len
-    unsigned short datalen = 0;
+    unsigned int datalen = 0;
     char *wdata;
 
     DINFO("retcode:%d, retlen:%d, retdata:%p\n", retcode, retlen, retdata);
@@ -90,7 +90,7 @@ data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
     }
 
     // package length + retcode + msg len + msg + retdata
-    datalen = sizeof(short) + sizeof(short) + sizeof(char) + mlen + retlen;
+    datalen = sizeof(int) + sizeof(short) + sizeof(char) + mlen + retlen;
     DINFO("datalen: %d, retcode: %d\n", datalen, retcode); 
     
     if (conn->wsize >= datalen) {
@@ -112,9 +112,10 @@ data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
 
     int count = 0; 
 
-    unsigned short dlen = datalen - sizeof(short);
-    memcpy(wdata, &dlen, sizeof(short));
-    count += sizeof(short);
+    unsigned int dlen = datalen - sizeof(int);
+    memcpy(wdata, &dlen, sizeof(int));
+    count += sizeof(int);
+
     memcpy(wdata + count, &retcode, sizeof(short));
     count += sizeof(short);
    
@@ -139,7 +140,7 @@ data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
     conn->wbuf = wdata;
     */
     conn->wlen = datalen;
- 
+
     char buf[10240] = {0};
     DINFO("reply %s\n", formath(conn->wbuf, conn->wlen, buf, 10240));
 

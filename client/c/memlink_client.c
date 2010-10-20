@@ -17,6 +17,9 @@
 #include "zzmalloc.h"
 #include "utils.h"
 
+#define RECV_HEAD_LEN		(sizeof(int)+sizeof(short))
+#define RECV_PKG_SIZE_LEN	sizeof(int)
+
 MemLink*    
 memlink_create(char *host, int readport, int writeport, int timeout)
 {
@@ -103,7 +106,7 @@ memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
 {
     //int rdlen = 0; 
     //int nleft = rlen; // TODO remove it if useless
-    int datalen = 0;
+    unsigned int datalen = 0;
     int ret;
     int fd;
    
@@ -123,16 +126,16 @@ memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
             return ret;
     }
 	
-    ret = readn(fd, rbuf, sizeof(short), m->timeout);
+    ret = readn(fd, rbuf, RECV_PKG_SIZE_LEN, m->timeout);
     DINFO("read head: %d\n", ret);
-    if (ret != sizeof(short)) {
+    if (ret != RECV_PKG_SIZE_LEN) {
         DERROR("read head error!\n");
         return -2;
     }
-    memcpy(&datalen, rbuf, sizeof(short));
+    memcpy(&datalen, rbuf, RECV_PKG_SIZE_LEN);
     DINFO("read body: %d\n", datalen);
 
-    ret = readn(fd, rbuf + sizeof(short), datalen, m->timeout);
+    ret = readn(fd, rbuf + RECV_PKG_SIZE_LEN, datalen, m->timeout);
     //DINFO("readn return: %d\n", ret);
     if (ret != datalen) {
         DERROR("read data error! ret:%d\n", ret);
@@ -145,7 +148,7 @@ memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
         }
     }
 
-    return ret + sizeof(short);
+    return ret + RECV_PKG_SIZE_LEN;
 }
 
 static int
@@ -227,15 +230,12 @@ memlink_do_cmd(MemLink *m, int fdtype, char *data, int len, char *retdata, int r
     DINFO("memlink_read return: %d\n", ret);
 
     if (ret > 0) {
-        //printh(retdata, ret);
         short retcode;
-
 #ifdef DEBUG
         char buf[10240];
+        DINFO("ret:%d, read: %s\n", ret, formath(retdata, ret, buf, 10240));
 #endif
-        DINFO("read: %s\n", formath(retdata, ret, buf, 10240));
-
-        memcpy(&retcode, retdata + sizeof(short), sizeof(short));
+        memcpy(&retcode, retdata + RECV_PKG_SIZE_LEN, sizeof(short));
         DINFO("retcode: %d\n", retcode);
 		
 		if (retcode != 0) {
@@ -302,7 +302,7 @@ memlink_cmd_stat(MemLink *m, char *key, MemLinkStat *stat)
     }
 
     char msglen;
-    int  pos = sizeof(short) + sizeof(short);
+    int  pos = RECV_HEAD_LEN;
 
     memcpy(&msglen, retdata + pos, sizeof(char));
     pos += sizeof(char);
@@ -310,17 +310,16 @@ memlink_cmd_stat(MemLink *m, char *key, MemLinkStat *stat)
         pos += msglen;
     }
     
-    //HashTableStat stat;
     memcpy(stat, retdata + pos, sizeof(MemLinkStat));
 #ifdef DEBUG
     char buf[512] = {0};
-#endif
     DINFO("stat buf: %s\n", formath((char *)stat, sizeof(MemLinkStat), buf, 512));
 
     DINFO("stat blocks:%d, data:%d, data_used:%d, mem:%d, mem_used:%d, valuesize:%d, masksize:%d\n", 
                     stat->blocks, stat->data, stat->data_used, 
                     stat->mem, stat->mem_used, stat->valuesize, stat->masksize);
     
+#endif
     return MEMLINK_OK;
 }
 
@@ -484,7 +483,7 @@ memlink_cmd_count(MemLink *m, char *key, char *maskstr, MemLinkCount *count)
 		return ret;
 
     char msglen;
-    int  pos = sizeof(short) + sizeof(short);
+    int  pos = RECV_HEAD_LEN;
 
     memcpy(&msglen, retdata + pos, sizeof(char));
     pos += sizeof(char);
@@ -615,21 +614,29 @@ memlink_cmd_range(MemLink *m, char *key, char *maskstr, unsigned int frompos, un
 
     //printh(data, plen);
 
-    int  retlen = 256 * len + HASHTABLE_MASK_MAX_LEN * sizeof(int) * len + 32;
+    //int  retlen = 256 * len + HASHTABLE_MASK_MAX_LEN * sizeof(int) * len + 32;
+	// valuesize + masksize + 1 + maskformat+ max valuesize + max mask size + head size + max message size
+    int  retlen = 3 + maskn + 256 * len + maskn * sizeof(int) * len + RECV_HEAD_LEN + 257;
     DINFO("retlen: %d\n", retlen);
+	if (retlen > 1024000) { // do not more than 1M
+		return MEMLINK_ERR_RANGE_SIZE;
+	}
     char retdata[retlen];
+
     int ret = memlink_do_cmd(m, MEMLINK_READER, data, plen, retdata, retlen);
     DINFO("memlink_do_cmd: %d\n", ret);
     if (ret <= 0) {
         return ret;
     }
-    unsigned short dlen;
-    memcpy(&dlen, retdata, sizeof(short));
+    unsigned int dlen;
+    //memcpy(&dlen, retdata, sizeof(int));
+	dlen = *(unsigned int*)(retdata);
 
     char msglen;
-    int  pos = sizeof(short) + sizeof(short);
+    int  pos = RECV_HEAD_LEN;
 
-    memcpy(&msglen, retdata + pos, sizeof(char));
+    //memcpy(&msglen, retdata + pos, sizeof(char));
+	msglen = *(char*)(retdata + pos);
     pos += sizeof(char);
     if (msglen > 0) {
         pos += msglen;
@@ -637,24 +644,25 @@ memlink_cmd_range(MemLink *m, char *key, char *maskstr, unsigned int frompos, un
  
     unsigned char valuesize, masksize, masknum;
     unsigned char maskformat[1024];
-    memcpy(&valuesize, retdata + pos, sizeof(char));
+    //memcpy(&valuesize, retdata + pos, sizeof(char));
+	valuesize = *(char*)(retdata + pos);
     pos += sizeof(char);
-    memcpy(&masksize, retdata + pos, sizeof(char));
+    //memcpy(&masksize, retdata + pos, sizeof(char));
+	masksize = *(char*)(retdata + pos);
     pos += sizeof(char);
-    memcpy(&masknum, retdata + pos, sizeof(char));
+    //memcpy(&masknum, retdata + pos, sizeof(char));
+	masknum = *(char*)(retdata + pos);
     pos += sizeof(char);
     memcpy(maskformat, retdata + pos, masknum);
     pos += masknum;
 
     DINFO("valuesize: %d, masksize: %d, pos:%d, ret:%d\n", valuesize, masksize, pos, ret);
     char *vdata   = retdata + pos;
-    char *enddata = retdata + dlen + sizeof(short);
+    char *enddata = retdata + dlen + sizeof(int);
 #ifdef DEBUG
     int  datalen  = valuesize + masksize;
-#endif
 
     DINFO("vdata: %p, enddata: %p, datalen: %d\n", vdata, enddata, datalen);
-#ifdef DEBUG
     char buf1[128], buf2[128];
 #endif
     //MemLinkResult   *mret;
@@ -692,20 +700,18 @@ memlink_cmd_range(MemLink *m, char *key, char *maskstr, unsigned int frompos, un
         }
        
         memcpy(item->value, vdata, valuesize);
-        item->value[valuesize] = 0;
+        //item->value[valuesize] = 0;
 #ifdef RANGE_MASK_STR
         unsigned char mlen;
         memcpy(&mlen, vdata + valuesize, sizeof(char));
         memcpy(item->mask, vdata + valuesize + sizeof(char), mlen);
-        item->mask[mlen] = 0;
+        //item->mask[mlen] = 0;
         //vdata += datalen;
 		vdata += valuesize + sizeof(char) + mlen;
 #else
-        //int  mlen;
-        //mlen = mask_binary2string(maskformat, masknum, vdata + valuesize, masksize, item->mask);
+        int mlen = mask_binary2string(maskformat, masknum, vdata + valuesize, masksize, item->mask);
         vdata += valuesize + masksize;
 #endif
-
         count += 1;
     }
     result->count     = count;
