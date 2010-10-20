@@ -31,7 +31,7 @@ sthread_loop(void *arg)
     return NULL;
 }
 
-static SThread*
+static SThread* 
 create_thread(SThread* st) 
 {
     pthread_t threadid;
@@ -109,7 +109,7 @@ ERROR:
     MEMLINK_EXIT;    
 }
 
-int
+static int
 find_synclog(unsigned int logver, unsigned int logpos) 
 {
     DIR *data_dir;
@@ -145,6 +145,43 @@ find_synclog(unsigned int logver, unsigned int logpos)
         if ((pos = check_ver_pos(logids[j], logver, logpos)) > 0) 
             return pos;
     return -1;
+}
+
+static int
+cmd_sync(Conn* conn, char *data, int datalen) 
+{
+    int ret;
+    unsigned int logver;
+    unsigned int log_index_pos;
+    cmd_sync_unpack(data, &logver, &log_index_pos);
+    DINFO("log version: %d, log index position: %d\n", logver, log_index_pos);
+    if ((find_synclog(logver, log_index_pos)) >= 0) {
+        ret = data_reply(conn, 0, NULL, NULL, 0);
+        DINFO("Found sync log file (version = %d)\n", logver);
+    } else { 
+        ret = data_reply(conn, 1, NULL, (char *)&(g_runtime->dumpver), sizeof(int));
+        DINFO("Not found syn log file with version %d\n", logver);
+    }
+
+    // TODO if requested log exists, send log
+    return ret;
+}
+
+static int
+cmd_sync_dump(Conn* conn, char *data, int datalen)
+{
+    int ret;
+    unsigned int dumpver;
+    unsigned int size;
+    int retcode;
+
+    cmd_sync_dump_unpack(data, &dumpver, &size);
+    DINFO("dump version: %d, synchronized data size: %d\n", dumpver, size);
+    retcode = g_runtime->dumpver == dumpver ? 1 : 0;
+    ret = data_reply(conn, retcode, NULL, NULL, 0);
+
+    // TODO send dump file
+    return ret;
 }
 
 static void 
@@ -202,34 +239,23 @@ sdata_ready(Conn *conn, char *data, int datalen)
 {
     int ret;
     char cmd;
-    unsigned int logver;
-    unsigned int log_index_pos;
 
     memcpy(&cmd, data + sizeof(short), sizeof(char));
     char buf[256] = {0};
     DINFO("data ready cmd: %d, data: %s\n", cmd, formath(data, datalen, buf, 256));
     switch (cmd) {
         case CMD_SYNC:
-            cmd_sync_unpack(data, &logver, &log_index_pos);
-            DINFO("log version: %d, log index position: %d\n", logver, log_index_pos);
-            if ((find_synclog(logver, log_index_pos)) >= 0) {
-                ret = data_reply(conn, 0, NULL, NULL, 0);
-                DINFO("Found sync log file (version = %d)\n", logver);
-            } else { 
-                ret = data_reply(conn, 1, NULL, (char*)&(g_runtime->dumpver), sizeof(int));
-                DINFO("Not found syn log file with version %d\n", logver);
-            }
-            DINFO("data_reply return: %d\n", ret);
-            // if log exists, send log
+            ret = cmd_sync(conn, data, datalen);
             break;
         case CMD_SYNC_DUMP:
+            ret = cmd_sync_dump(conn, data, datalen);
             break;
         default:
             ret = MEMLINK_ERR_CLIENT_CMD;
             break;
-    }
-
-	return 0;
+    } 
+    DINFO("data_reply return: %d\n", ret);
+    return 0;
 }
 
 void sthread_destroy(SThread *st) 
