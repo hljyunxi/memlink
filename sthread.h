@@ -12,6 +12,6 @@ typedef struct _sthread
 
 SThread* sthread_create();
 void sthread_destroy(SThread *st);
-
+int  sdata_ready(Conn *conn, char *data, int datalen);
 
 #endif
