@@ -31,7 +31,7 @@ sthread_loop(void *arg)
     return NULL;
 }
 
-static int 
+static SThread*
 create_thread(SThread* st) 
 {
     pthread_t threadid;
@@ -216,7 +216,7 @@ sdata_ready(Conn *conn, char *data, int datalen)
                 ret = data_reply(conn, 0, NULL, NULL, 0);
                 DINFO("Found sync log file (version = %d)\n", logver);
             } else { 
-                ret = data_reply(conn, 1, NULL, &(g_runtime->dumpver), sizeof(int));
+                ret = data_reply(conn, 1, NULL, (char*)&(g_runtime->dumpver), sizeof(int));
                 DINFO("Not found syn log file with version %d\n", logver);
             }
             DINFO("data_reply return: %d\n", ret);

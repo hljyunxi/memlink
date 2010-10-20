@@ -18,6 +18,7 @@
 #include "logfile.h"
 #include "dumpfile.h"
 #include "rthread.h"
+#include "sthread.h"
 #include "zzmalloc.h"
 #include "utils.h"
 #include "common.h"
