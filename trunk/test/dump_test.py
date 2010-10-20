@@ -10,18 +10,18 @@ def test_result():
     key = 'haha'
     m = MemLinkClient('127.0.0.1', 11001, 11002, 30);
     
-    stat = m.stat(key)
+    ret, stat = m.stat(key)
     if stat:
         if stat.data_used != 200:
             print 'stat data_used error!', stat
             return -3
     else:
-        print 'stat error:', stat
+        print 'stat error:', stat, ret
         return -3
 
-    result = m.range(key, "", 0, 1000)
+    ret, result = m.range(key, "", 0, 1000)
     if not result or result.count == 0:
-        print 'range error!', result
+        print 'range error!', result, ret
         return -4
 
     #print 'count:', result.count
@@ -73,7 +73,9 @@ def test():
     cmd = "killall memlink"
     print cmd
     os.system(cmd)
-    
+   
+    time.sleep(1)
+
     print memlinkstart
 
     x = subprocess.Popen(memlinkstart, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
@@ -87,6 +89,6 @@ def test():
     return ret
 
 if __name__ == '__main__':
-    sys.exit(test_result())
-    #sys.exit(test())
+    #sys.exit(test_result())
+    sys.exit(test())
 

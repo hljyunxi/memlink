@@ -44,7 +44,7 @@ int main()
 
 	ret = memlink_cmd_del(m, buf, "xxxx", 4);
 	if (ret != MEMLINK_ERR_NOVAL) {
-		DERROR("del error, must novalue, key:%s, val:%s\n", buf, "xxxx");
+		DERROR("del error, must novalue, key:%s, val:%s, ret:%d\n", buf, "xxxx", ret);
 		return -4;
 	}
 

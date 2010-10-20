@@ -127,6 +127,31 @@ mask_string2binary(unsigned char *maskformat, char *maskstr, char *mask)
     return ret;
 }
 
+static int 
+int2string(char *s, unsigned int val)
+{
+    unsigned int v = val;
+    int yu;
+    int ret, i = 0, j = 0;
+    char ss[32];
+
+    while (v > 0) {
+        yu = v % 10;
+        v  = v / 10;
+
+        ss[i] = yu + 48;
+        i++;
+    }
+    ret = i;
+
+    for (i = i - 1; i >= 0; i--) {
+        s[j] = ss[i];
+        j++;
+    }
+
+    return ret;
+}
+
 int 
 mask_binary2string(unsigned char *maskformat, int masknum, char *mask, int masklen, char *maskstr)
 {
@@ -156,7 +181,8 @@ mask_binary2string(unsigned char *maskformat, int masknum, char *mask, int maskl
 			maskstr[widx] = ':';	
 			widx ++;
 		}
-		int len = sprintf(&maskstr[widx], "%d", val);
+		//int len = sprintf(&maskstr[widx], "%d", val);
+		int len = int2string(&maskstr[widx], val);
 		widx += len;
 		//maskstr[widx] = val;
 

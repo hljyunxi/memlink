@@ -56,9 +56,8 @@ int main()
 		DERROR("range not return data, error!, key:%s\n", buf);
 		return -6;
 	}
-	
 	if (strcmp(item->mask, newmask) != 0) {
-		DERROR("mask set error, mask:%s, client maskstr:%s\n", item->mask, newmask);	
+		DERROR("mask set error, item->mask:%s, newmask:%s\n", item->mask, newmask);	
 		return -7;
 	}
 	

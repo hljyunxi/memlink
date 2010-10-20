@@ -1,6 +1,8 @@
 <?
 include "memlinkclient.php";
 
+date_default_timezone_set("Asia/Shanghai");
+
 function timediff($starttm, $endtm)
 {
 	return ($endtm['sec'] - $starttm['sec']) * 1000000 + ($endtm['usec'] - $starttm['usec']);
@@ -9,7 +11,7 @@ function timediff($starttm, $endtm)
 function test_insert($count)
 {
 	echo "====== test_insert ======\n";
-	$m = MemLinkClient('127.0.0.1', 11001, 11002, 30);
+	$m = new MemLinkClient('127.0.0.1', 11001, 11002, 30);
 
 	$key = "testmyhaha";
 	$ret = $m->create($key, 12, "4:3:1");
@@ -23,6 +25,7 @@ function test_insert($count)
 	
 	for ($i = 0; $i < $count; $i++) {
 		$val = sprintf("%012d", $i);
+		//echo "insert $val\n";
 		$ret = $m->insert($key, $val, strlen($val), $maskstr, 0);
 		if (ret != MEMLINK_OK) {
 			echo "insert error $ret\n";
@@ -31,8 +34,8 @@ function test_insert($count)
 	}
 
 	$endtm = gettimeofday();
-	echo "use time: ".timediff($starttm, $endtm);
-	echo "speed: ". $count / (timediff($starttm, $endtm) / 1000000);
+	echo "use time: ".timediff($starttm, $endtm)."\n";
+	echo "speed: ". $count / (timediff($starttm, $endtm) / 1000000)."\n";
 
 	$m->destroy();
 }
@@ -42,7 +45,7 @@ function test_range($frompos, $dlen, $count)
 {
 	echo "====== test_range ======\n";
 	$key = "testmyhaha";
-	$m = MemLinkClient('127.0.0.1', 11001, 11002, 30);
+	$m = new MemLinkClient('127.0.0.1', 11001, 11002, 30);
 	
 	$starttm = gettimeofday();
 	for ($i = 0; $i < $count; $i++) {
@@ -53,14 +56,21 @@ function test_range($frompos, $dlen, $count)
 		}
 	}
 	$endtm = gettimeofday();
-	echo "use time: ".timediff($starttm, $endtm);
-	echo "speed: ". $count / (timediff($starttm, $endtm) / 1000000);
+	echo "use time: ".timediff($starttm, $endtm)."\n";
+	echo "speed: ". $count / (timediff($starttm, $endtm) / 1000000)."\n";
 
 	$m->destroy();
 }
 
-$count = 100000;
+if ($argc != 4) {
+	echo "test.php count range_start range_len\n";
+	exit(0);
+}
+$count = intval($argv[1]);
+$range_start = intval($argv[2]);
+$range_len   = intval($argv[3]);
+
 test_insert($count);
-test_range(0, 100, 1000);
+test_range($range_start, $range_len, 1000);
 
 ?>
