@@ -58,12 +58,16 @@ memlink_connect(MemLink *m, int fdtype)
     ret = setsockopt(sock, SOL_SOCKET, SO_LINGER, (void *)&ling, sizeof(ling));
     if (ret != 0) {
         DERROR("setsockopt LINGER error: %s\n", strerror(errno));
-    }   
+    }
+
     int flags = 1;
     ret = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (void *)&flags, sizeof(flags));
     if (ret != 0) {
         DERROR("setsockopt NODELAY error: %s\n", strerror(errno));
     }
+
+    flags = 1;
+    setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (void *)&flags, sizeof(flags));
 
     struct sockaddr_in  sin; 
 
@@ -94,6 +98,7 @@ memlink_connect(MemLink *m, int fdtype)
             m->writefd = sock;
         }
     }else{
+        DINFO("connect error: %s\n", strerror(errno));
         close(sock);
     }
 
@@ -184,6 +189,7 @@ memlink_write(MemLink *m, int fdtype, char *wbuf, int wlen)
     ret = writen(fd, wbuf, wlen, m->timeout);
     //DINFO("writen: %d\n", ret);
     if (ret < 0) {
+        DERROR("write data error, ret: %d\n", ret);
         close(fd);
         if (fd == m->readfd) {
             m->readfd = 0;
@@ -217,7 +223,7 @@ static int
 memlink_do_cmd(MemLink *m, int fdtype, char *data, int len, char *retdata, int retlen)
 {
     int ret;
-	DINFO("write to server ...\n");
+	DINFO("======= write to server ...\n");
     ret = memlink_write(m, fdtype, data, len);
     DINFO("memlink_write ret: %d, len: %d\n", ret, len);
     

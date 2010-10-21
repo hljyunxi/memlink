@@ -98,7 +98,7 @@ data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
 
     // package length + retcode + msg len + msg + retdata
     datalen = sizeof(int) + sizeof(short) + sizeof(char) + mlen + retlen;
-    DINFO("datalen: %d, retcode: %d\n", datalen, retcode); 
+    DINFO("datalen: %d, retcode: %d, conn->wsize:%d\n", datalen, retcode, conn->wsize); 
     
     if (conn->wsize >= datalen) {
         wdata = conn->wbuf;
@@ -133,7 +133,7 @@ data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
         memcpy(wdata + count, msg, msglen);
         count += msglen;
     }
-    DINFO("retlen: %d, retdata:%p\n", retlen, retdata);
+    DINFO("retlen: %d, retdata:%p, count:%d\n", retlen, retdata, count);
     if (retlen > 0) {
         memcpy(wdata + count, retdata, retlen);
         count += retlen;

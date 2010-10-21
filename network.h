@@ -4,5 +4,6 @@
 #include <stdio.h>
 
 int tcp_socket_server(int port);
+int tcp_setopt(int fd);
 
 #endif
