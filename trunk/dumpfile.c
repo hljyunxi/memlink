@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <event.h>
+#include <sys/time.h>
 #include "myconfig.h"
 #include "logfile.h"
 #include "dumpfile.h"
@@ -244,6 +246,13 @@ void
 dumpfile_call_loop(int fd, short event, void *arg)
 {
     dumpfile_call();
+	
+	struct timeval	tv;
+	struct event *timeout = arg;
+
+	evutil_timerclear(&tv);
+    tv.tv_sec = g_cf->dump_interval * 60; 
+	event_add(timeout, &tv);
 }
 
 int

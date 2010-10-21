@@ -31,6 +31,7 @@ mainserver_create()
             DERROR("thserver_create error! %d\n", ret);
             MEMLINK_EXIT;
         }
+
     }
     
     ms->sock = tcp_socket_server(g_cf->read_port);  
@@ -184,6 +185,11 @@ thserver_init(ThreadServer *ts)
         MEMLINK_EXIT;
     }
 
+	ret = pthread_detach(ts->threadid);
+	if (ret != 0) {
+		DERROR("pthread_detach error: %s\n", strerror(errno));
+		MEMLINK_EXIT;
+	}
 
     return 0;
 }

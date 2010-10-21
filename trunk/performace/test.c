@@ -193,6 +193,35 @@ int test_range_short_conn(int frompos, int rlen, int count)
 	return 0;
 }
 
+
+
+void* thread_start (void *args)
+{
+
+}
+
+int multi_client(int num)
+{
+	pthread_t	threads[num];
+	int			ret, i;
+	char		*args;
+
+	for (i = 0; i < num; i++) {
+		ret = pthread_create(&threads[i], NULL, mytest, args);
+		if (ret != 0) {
+			DERROR("pthread_create error! %s\n", strerror(errno));
+			return -1;
+		}
+	}
+	
+
+	for (i = 0; i < num; i++) {
+		pthread_join(threads[i], NULL);
+	}
+		
+	DINFO("thread all complete!\n");
+}
+	
 int main(int argc, char *argv[])
 {
 #ifdef DEBUG

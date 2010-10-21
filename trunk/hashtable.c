@@ -271,8 +271,7 @@ datablock_lookup_valid_pos(HashNode *node, int pos, int visible, DataBlock **dbk
         root = root->next;
     }
     
-    DERROR("must not run. pos:%d\n", pos);
-
+    //DERROR("must not run. pos:%d\n", pos);
     return -2;
 }
 

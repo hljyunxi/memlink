@@ -16,8 +16,18 @@
 #define CMD_RANGE		10
 #define CMD_RMKEY       11
 #define CMD_COUNT		12
+
+/*
+#define CMD_LPUSH		13
+#define CMD_LPOP		14
+#define CMD_RPUSH		15
+#define CMD_RPOP		16
+*/
+
 #define CMD_SYNC        100 
 #define CMD_SYNC_DUMP   101
+
+
 
 typedef struct _ht_stat
 {
