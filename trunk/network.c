@@ -5,7 +5,7 @@
 #include <errno.h>
 #include <netdb.h>
 #include <netinet/tcp.h>
-#include <arpa/inet.h>
+#include<arpa/inet.h>
 #include <sys/types.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -18,7 +18,8 @@ int
 tcp_socket_server(int port)
 {
     int fd;
-    int flags;
+    //int flags;
+    int ret;
 
     fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1) {
@@ -26,6 +27,8 @@ tcp_socket_server(int port)
         return -1;
     }
 
+    tcp_setopt(fd);
+    /*
     if ((flags = fcntl(fd, F_GETFL, 0)) < 0 || fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) {
         DERROR("setting O_NONBLOCK error: %s\n", strerror(errno));
         close(fd);
@@ -35,7 +38,6 @@ tcp_socket_server(int port)
     flags = 1;
     setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void *)&flags, sizeof(flags));
 
-    int ret;
 
     ret = setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (void *)&flags, sizeof(flags));
     if (ret != 0) {
@@ -53,7 +55,7 @@ tcp_socket_server(int port)
     if (ret != 0) {
         DERROR("setsockopt NODELAY error: %s\n", strerror(errno));
     }
-
+    */
     struct sockaddr_in  sin;
 
     sin.sin_family = AF_INET;
@@ -76,4 +78,41 @@ tcp_socket_server(int port)
     }
 
     return fd;
+}
+
+
+int
+tcp_setopt(int fd)
+{
+    int ret;
+    int flags;
+
+    if ((flags = fcntl(fd, F_GETFL, 0)) < 0 || fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) {
+        DERROR("setting O_NONBLOCK error: %s\n", strerror(errno));
+        close(fd);
+        return -2;
+    }
+    
+    flags = 1;
+    setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void *)&flags, sizeof(flags));
+
+
+    ret = setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (void *)&flags, sizeof(flags));
+    if (ret != 0) {
+        DERROR("setsockopt KEEPALIVE error: %s\n", strerror(errno));
+    }
+
+    struct linger ling = {0, 0};
+    ret = setsockopt(fd, SOL_SOCKET, SO_LINGER, (void *)&ling, sizeof(ling));
+    if (ret != 0) {
+        DERROR("setsockopt LINGER error: %s\n", strerror(errno));
+        perror("setsockopt");
+    }
+
+    ret = setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (void *)&flags, sizeof(flags));
+    if (ret != 0) {
+        DERROR("setsockopt NODELAY error: %s\n", strerror(errno));
+    }
+
+    return 0;
 }

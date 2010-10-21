@@ -256,6 +256,8 @@ sdata_ready(Conn *conn, char *data, int datalen)
     } 
     DINFO("data_reply return: %d\n", ret);
     return 0;
+
+    return 0;
 }
 
 void sthread_destroy(SThread *st) 

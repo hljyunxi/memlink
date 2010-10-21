@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/ioctl.h>
+#include <fcntl.h>
 #include <sys/socket.h>
 #ifdef __linux
 #include <linux/if.h>
@@ -13,6 +14,7 @@
 #include "logfile.h"
 #include "zzmalloc.h"
 #include "serial.h"
+#include "network.h"
 
 /**
  * conn_create - return the accepted connection.
@@ -38,6 +40,16 @@ conn_create(int svrfd)
         break;
     }
     DINFO("accept newfd: %d\n", newfd);
+
+    /*int flags;
+    if ((flags = fcntl(newfd, F_GETFL, 0)) < 0 || fcntl(newfd, F_SETFL, flags | O_NONBLOCK) < 0) {
+        DERROR("setting O_NONBLOCK error: %s\n", strerror(errno));
+        close(newfd);
+        return NULL;
+    }*/
+
+    tcp_setopt(newfd);
+
     conn = (Conn*)zz_malloc(sizeof(Conn));
     if (conn == NULL) {
         DERROR("wr_read malloc error.\n");

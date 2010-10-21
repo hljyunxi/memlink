@@ -1,9 +1,9 @@
-cflags   = '-ggdb -DDEBUG -O2'
+cflags   = '-ggdb -DDEBUG -O2 -pthread'
 #cflags   = '-ggdb'
 includes = ['/Developer/usr/include', '../client/c', '../']
 ldflags  = ['']
 libpath  = ['/Developer/usr/lib', '../client/c']
-libs	 = ['m']
+libs	 = ['m', 'pthread']
 
 env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
 
@@ -13,5 +13,5 @@ env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=l
 
 env.Program("test", ["test.c", "../client/c/libmemlink.a"])
 
-env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=['m'])
-env.Program('testmask', ["testmask.c", '../utils.c', '../logfile.c', '../serial.c', '../zzmalloc.c'])
+#env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=['m'])
+#env.Program('testmask', ["testmask.c", '../utils.c', '../logfile.c', '../serial.c', '../zzmalloc.c'])

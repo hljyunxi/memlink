@@ -39,7 +39,7 @@ timeout_wait(int fd, int timeout, int writing)
             if (errno == EINTR) {
                 continue;
             }
-            DWARNING("select error: %d, %s\n", n, strerror(errno));
+            DERROR("select error: %d, %s\n", n, strerror(errno));
             return MEMLINK_ERR;
         }
         break;

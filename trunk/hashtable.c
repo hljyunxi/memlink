@@ -1169,7 +1169,6 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
 						//DINFO("not equal.\n");
 						continue;
 					}
-
 				}
 				if (skipn > 0) {
 					skipn -= 1;
@@ -1183,9 +1182,11 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
 
                 mlen = mask_binary2string(node->maskformat, node->masknum, maskdata, node->masksize, maskstr);
 
+                /*
 				char buf[128];
 				snprintf(buf, node->valuesize + 1, "%s", itemdata);
 				DINFO("ok, copy item ... i:%d, value:%s maskstr:%s, mlen:%d\n", i, buf, maskstr, mlen);
+                */
 
 				memcpy(data + idx, itemdata, node->valuesize);
                 idx += node->valuesize;
