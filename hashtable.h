@@ -9,6 +9,10 @@
 #define HASHTABLE_BUNKNUM           1000000
 /// 最大允许的mask项数
 #define HASHTABLE_MASK_MAX_LEN      16
+// key最大长度
+#define HASHTABLE_KEY_MAX			512
+// value最大长度
+#define HASHTABLE_VALUE_MAX			512
 
 #define MEMLINK_ITEM_REMOVED        1
 #define MEMLINK_ITEM_TAGDEL         2

@@ -17,8 +17,18 @@ $key = "haha4";
 $ret = $m->create($key, 12, "4:3:1");
 if ($ret != MEMLINK_OK) {
 	echo "create error: $key\n";
-	exit(-1);
+	//exit(-1);
 }
+
+for ($i = 0; $i < 100; $i++) {
+	$val = sprintf("%012d", $i);
+	$ret = $m->insert($key, $val, strlen($val), "8:1:1", 0);
+	if ($ret != MEMLINK_OK) {
+		echo "insert error!", ret;
+	}
+}
+
+
 $ret = $m->stat($key);
 if (is_null($ret)) {
 	echo "stat error: $key\n";
@@ -33,6 +43,12 @@ if (is_null($ret)) {
 }
 
 echo "range, count: $ret->count\n";
+
+$item = $ret->root;
+while ($item) {
+	echo "value: $item->value\n";
+	$item = $item->next;
+}
 
 $m->destroy();
 

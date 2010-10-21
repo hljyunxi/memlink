@@ -62,6 +62,12 @@ change_event(Conn *conn, int newflag, int isnew)
     return 0;
 }
 
+void
+wdata_check_clean(int fd, short event, void *arg)
+{
+
+}
+
 /**
  * 回复数据
  *
@@ -166,7 +172,7 @@ data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
 int 
 wdata_apply(char *data, int datalen, int writelog)
 {
-    char key[1024]; 
+    char key[512] = {0}; 
     char value[1024];
     //char maskstr[128];
     char cmd;
@@ -193,7 +199,11 @@ wdata_apply(char *data, int datalen, int writelog)
             break;
         case CMD_CLEAN:
             DINFO("<<< cmd CLEAN >>>\n");
-            cmd_clean_unpack(data, key);
+            ret = cmd_clean_unpack(data, key);
+			if (ret != 0) {
+				DERROR("unpack clean error! ret: %d\n", ret);
+				break;
+			}
             hashtable_print(g_runtime->ht, key);
             DINFO("clean unpack key: %s\n", key);
             ret = hashtable_clean(g_runtime->ht, key); 
@@ -203,7 +213,12 @@ wdata_apply(char *data, int datalen, int writelog)
         case CMD_CREATE:
             DINFO("<<< cmd CREATE >>>\n");
 
-            cmd_create_unpack(data, key, &valuelen, &masknum, maskformat);
+            ret = cmd_create_unpack(data, key, &valuelen, &masknum, maskformat);
+			if (ret != 0) {
+				DERROR("unpack create error! ret: %d\n", ret);
+				break;
+			}
+
             DINFO("unpack key: %s, valuelen: %d, masknum: %d, maskarray: %d,%d,%d\n", key, valuelen, masknum, maskformat[0], maskformat[1], maskformat[2]);
 			if (masknum > HASHTABLE_MASK_MAX_LEN) {
 				DERROR("create mask too long: %d, max:%d\n", masknum, HASHTABLE_MASK_MAX_LEN);
@@ -224,7 +239,12 @@ wdata_apply(char *data, int datalen, int writelog)
             break;
         case CMD_DEL:
             DINFO("<<< cmd DEL >>>\n");
-            cmd_del_unpack(data, key, value, &valuelen);
+            ret = cmd_del_unpack(data, key, value, &valuelen);
+			if (ret != 0) {
+				DERROR("unpack del error! ret: %d\n", ret);
+				break;
+			}
+
             DINFO("unpack del, key: %s, value: %s, valuelen: %d\n", key, value, valuelen);
             ret = hashtable_del(g_runtime->ht, key, value);
             DINFO("hashtable_del: %d\n", ret);
@@ -241,7 +261,13 @@ wdata_apply(char *data, int datalen, int writelog)
             break;
         case CMD_INSERT: {
             DINFO("<<< cmd INSERT >>>\n");
-            cmd_insert_unpack(data, key, value, &valuelen, &masknum, maskarray, &pos);
+            ret = cmd_insert_unpack(data, key, value, &valuelen, &masknum, maskarray, &pos);
+			if (ret != 0) {
+				DERROR("unpack insert error! ret: %d\n", ret);
+				break;
+			}
+
+
             DINFO("unpak pos: %d, mask: %d, array:%d,%d,%d\n", pos, masknum, maskarray[0], maskarray[1], maskarray[2]);
 
             ret = hashtable_add_mask(g_runtime->ht, key, value, maskarray, masknum, pos);
@@ -266,7 +292,12 @@ wdata_apply(char *data, int datalen, int writelog)
         }
         case CMD_UPDATE:
             DINFO("<<< cmd UPDATE >>>\n");
-            cmd_update_unpack(data, key, value, &valuelen, &pos);
+            ret = cmd_update_unpack(data, key, value, &valuelen, &pos);
+			if (ret != 0) {
+				DERROR("unpack update error! ret: %d\n", ret);
+				break;
+			}
+
             DINFO("unpack update, key:%s, value:%s, pos:%d\n", key, value, pos);
             ret = hashtable_update(g_runtime->ht, key, value, pos);
             DINFO("hashtable_update: %d\n", ret);
@@ -282,7 +313,12 @@ wdata_apply(char *data, int datalen, int writelog)
             break;
         case CMD_MASK:
             DINFO("<<< cmd MASK >>>\n");
-            cmd_mask_unpack(data, key, value, &valuelen, &masknum, maskarray);
+            ret = cmd_mask_unpack(data, key, value, &valuelen, &masknum, maskarray);
+			if (ret != 0) {
+				DERROR("unpack mask error! ret: %d\n", ret);
+				break;
+			}
+
             DINFO("unpack mask key: %s, valuelen: %d, masknum: %d, maskarray: %d,%d,%d\n", key, valuelen, 
                     masknum, maskarray[0], maskarray[1], maskarray[2]);
             ret = hashtable_mask(g_runtime->ht, key, value, maskarray, masknum);
@@ -300,6 +336,11 @@ wdata_apply(char *data, int datalen, int writelog)
         case CMD_TAG:
             DINFO("<<< cmd TAG >>>\n");
             cmd_tag_unpack(data, key, value, &valuelen, &tag);
+			if (ret != 0) {
+				DERROR("unpack tag error! ret: %d\n", ret);
+				break;
+			}
+
             DINFO("unpack tag, key:%s, value:%s, tag:%d\n", key, value, tag);
             ret = hashtable_tag(g_runtime->ht, key, value, tag);
             DINFO("hashtable_tag: %d\n", ret);
@@ -316,7 +357,13 @@ wdata_apply(char *data, int datalen, int writelog)
             break;
         case CMD_RMKEY:
             DINFO("<<< cmd RMKEY >>>\n");
-            cmd_rmkey_unpack(data, key);
+            ret = cmd_rmkey_unpack(data, key);
+			if (ret != 0) {
+				DERROR("unpack tag error! ret: %d\n", ret);
+				break;
+			}
+
+
             DINFO("unpack rmkey, key:%s\n", key);
             
             ret = hashtable_remove_key(g_runtime->ht, key);
@@ -568,6 +615,12 @@ wthread_create()
         DERROR("pthread_create error: %s\n", strerror(errno));
         MEMLINK_EXIT;
     }
+
+	ret = pthread_detach(threadid);
+	if (ret != 0) {
+		DERROR("pthread_detach error; %s\n", strerror(errno));
+		MEMLINK_EXIT;
+	}
 
     DINFO("create WThread ok!\n");
 
