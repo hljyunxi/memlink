@@ -31,10 +31,43 @@ def test_insert(count):
             return
 
     endtm = time.time()
-    print 'use time:', endtm - starttm
-    print 'speed:', count / (endtm - starttm)
+    print 'use time:', endtm - starttm, 'speed:', count / (endtm - starttm)
 
     m.destroy()
+
+
+def test_insert_short(count):
+    print '====== test_insert ======'
+    global key
+    vals = []
+    for i in xrange(0, count):
+        val = '%012d' % i
+        vals.append(val)
+
+    maskstr = "8:3:1"
+    iscreate = 0
+
+    starttm = time.time()
+    for val in vals:
+        m = MemLinkClient('127.0.0.1', 11001, 11002, 30)
+
+        if iscreate == 0:
+            ret = m.create(key, 12, "4:3:1")
+            if ret != MEMLINK_OK:
+                print 'create error!', ret
+                return
+            iscreate = 1
+
+        ret = m.insert(key, val, maskstr, 0)
+        if ret != MEMLINK_OK:
+            print 'insert error!', val, ret
+            return
+        m.destroy()
+
+    endtm = time.time()
+    print 'use time:', endtm - starttm, 'speed:', count / (endtm - starttm)
+
+
 
 
 
