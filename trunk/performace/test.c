@@ -8,6 +8,8 @@
 #include "logfile.h"
 #include "utils.h"
 
+int have_create = 0;
+
 int clearkey()
 {
 	MemLink	*m;
@@ -38,6 +40,30 @@ int clearkey()
         return -2;
     }
 
+    memlink_destroy(m);
+
+    return 0;
+}
+
+int create_key(char *key)
+{
+	MemLink	*m;
+    
+    //DINFO("=== rmkey ===\n");
+    m = memlink_create("127.0.0.1", 11001, 11002, 30);
+	if (NULL == m) {
+		DERROR("memlink_create error!\n");
+		return -1;
+	}
+
+	int  ret;
+   
+    ret = memlink_cmd_create(m, key, 12, "4:3:1");
+    if (ret != MEMLINK_OK) {
+        DERROR("create error! ret:%d\n", ret);
+        return -1;
+    }
+    
     memlink_destroy(m);
 
     return 0;
@@ -78,7 +104,7 @@ int test_insert_long_conn(int count)
 		sprintf(val, "%020d", i);
 		ret = memlink_cmd_insert(m, key, val, strlen(val), maskstr, 0);
 		if (ret != MEMLINK_OK) {
-			DERROR("insert error, i:%d, val:%d, ret:%d\n", i, val, ret);
+			DERROR("insert error, i:%d, val:%s, ret:%d\n", i, val, ret);
 			return -3;
 		}
 	}
@@ -132,7 +158,7 @@ int test_insert_short_conn(int count)
 		sprintf(val, "%020d", i);
 		ret = memlink_cmd_insert(m, key, val, strlen(val), maskstr, 0);
 		if (ret != MEMLINK_OK) {
-			DERROR("insert error, i:%d, val:%d, ret:%d\n", i, val, ret);
+			DERROR("insert error, i:%d, val:%s, ret:%d\n", i, val, ret);
 			return -3;
 		}
 		memlink_destroy(m);
@@ -175,7 +201,7 @@ int test_range_long_conn(int frompos, int rlen, int count)
 		MemLinkResult	result;
 		ret = memlink_cmd_range(m, key, "", frompos, rlen, &result);
 		if (ret != MEMLINK_OK) {
-			DERROR("insert error, i:%d, val:%d, ret:%d\n", i, val, ret);
+			DERROR("insert error, i:%d, val:%s, ret:%d\n", i, val, ret);
 			return -3;
 		}
 		memlink_result_free(&result);
@@ -216,7 +242,7 @@ int test_range_short_conn(int frompos, int rlen, int count)
 		MemLinkResult	result;
 		ret = memlink_cmd_range(m, key, "", frompos, rlen, &result);
 		if (ret != MEMLINK_OK) {
-			DERROR("insert error, i:%d, val:%d, ret:%d\n", i, val, ret);
+			DERROR("insert error, i:%d, val:%s, ret:%d\n", i, val, ret);
 			return -3;
 		}
 		memlink_result_free(&result);
@@ -234,11 +260,7 @@ int test_range_short_conn(int frompos, int rlen, int count)
 
 
 
-void* thread_start (void *args)
-{
-    return NULL;
-}
-
+/*
 int multi_client(int num)
 {
 	pthread_t	threads[num];
@@ -260,7 +282,7 @@ int multi_client(int num)
 		
 	DINFO("thread all complete!\n");
 }
-
+*/
 
 #define TESTN   4
 #define INSERT_TESTS   4
@@ -335,7 +357,7 @@ int alltest()
     int insertmem[TESTN] = {0};
 
     // test insert
-	/*
+	
     for (f = 0; f < 2; f++) {
         for (i = 0; i < TESTN - 2; i++) {
             for (n = 0; n < INSERT_TESTS; n++) {
@@ -372,7 +394,7 @@ int alltest()
 
         }
     }
-	*/ 
+	 
     int rangetest[RANGEN] = {100, 200, 1000};
     //int rangeret[TESTN][RANGEN*2] = {0};
     int rangeret[RANGE_TESTS] = {0};
@@ -430,6 +452,42 @@ int alltest()
 }
 
 #define TEST_THREAD_NUM 10
+int thread_create_count = 0;
+pthread_mutex_t	lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t	cond = PTHREAD_COND_INITIALIZER;
+
+typedef struct {
+	int		type;
+	void	*func;
+	int		startpos;
+	int		slen;
+	int		count;
+}ThreadArgs;
+
+void* thread_start (void *args)
+{
+	ThreadArgs	*a = (ThreadArgs*)args;
+	int			ret;
+
+	pthread_mutex_lock(&lock);
+	while (thread_create_count < TEST_THREAD_NUM) {
+		pthread_cond_wait(&cond, &lock);
+	}
+
+	pthread_mutex_unlock(&lock);
+	
+	DINFO("thread run %u\n", (unsigned int)pthread_self());
+
+	if (a->type == 1) {  //insert
+		insert_func	func = a->func;	
+		ret = func(a->count);
+	}else{ // range
+		range_func	func = a->func;	
+		ret = func(a->startpos, a->slen, a->count);
+	}
+
+    return (void*)ret;
+}
 
 int alltest_thread()
 {
@@ -454,13 +512,22 @@ int alltest_thread()
         for (i = 0; i < TESTN; i++) {
             for (n = 0; n < INSERT_TESTS; n++) {
                 DINFO("====== insert %d test: %d ======\n", testnum[i], n);
-                
+				
+				int thnum = testnum[i] / TEST_THREAD_NUM;
+
                 for (t = 0; t < TEST_THREAD_NUM; t++) {
-                    ret = pthread_create(&threads[t], NULL, thread_start, NULL);
+					ThreadArgs *ta = (ThreadArgs*)malloc(sizeof(ThreadArgs));
+					memset(ta, 0, sizeof(ThreadArgs));
+					ta->type = 1;
+					ta->func = ifuncs[f];
+					ta->count = thnum;
+
+                    ret = pthread_create(&threads[t], NULL, thread_start, ta);
                     if (ret != 0) {
                         DERROR("pthread_create error! %s\n", strerror(errno));
                         return -1;
                     }
+					thread_create_count += 1;
                 }
 
                 gettimeofday(&start, NULL);
@@ -500,7 +567,9 @@ int alltest_thread()
 
         }
     }
-      
+   
+	return 0;
+
     int rangetest[RANGEN] = {100, 200, 1000};
     //int rangeret[TESTN][RANGEN*2] = {0};
     int rangeret[RANGE_TESTS] = {0};
@@ -553,19 +622,6 @@ int alltest_thread()
         }
     }
 
-    /*
-    printf("============================================================\n");
-    printf("start mem: %d\n", startmem);
-
-    for (i = 0; i < TESTN; i++) {
-        printf("insert %d\tspeed:%d, mem:%d\n", testret[i], insertmem[i]);
-    }
-
-    for (i = 0; i < TESTN; i++) {
-    }
-    printf("============================================================\n");
-    */
-
     return 0;
 }
 
@@ -576,7 +632,7 @@ int main(int argc, char *argv[])
 	logfile_create("stdout", 3);
 #endif
     if (argc == 1) {
-        alltest();
+        alltest_thread();
         return 0;
     }
 
