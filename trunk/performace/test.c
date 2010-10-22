@@ -335,7 +335,8 @@ int alltest()
     int insertmem[TESTN] = {0};
 
     // test insert
-    for (f = 1; f < 2; f++) {
+	/*
+    for (f = 0; f < 2; f++) {
         for (i = 0; i < TESTN - 2; i++) {
             for (n = 0; n < INSERT_TESTS; n++) {
                 DINFO("====== insert %d test: %d ======\n", testnum[i], n);
@@ -371,9 +372,7 @@ int alltest()
 
         }
     }
-     
-    return 0;
-
+	*/ 
     int rangetest[RANGEN] = {100, 200, 1000};
     //int rangeret[TESTN][RANGEN*2] = {0};
     int rangeret[RANGE_TESTS] = {0};
@@ -404,7 +403,6 @@ int alltest()
                         rangeret[n] = ret;
                     }
 
-                    clearkey();
 
                     qsort(rangeret, RANGE_TESTS, sizeof(int), compare_int);
 
@@ -423,6 +421,8 @@ int alltest()
                     DINFO("====== sum: %d, ave: %.2f ======\n", sum, av);
                 }
             }
+
+            clearkey();
         }
     }
 
