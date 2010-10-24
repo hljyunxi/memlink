@@ -59,6 +59,11 @@ myconfig_create(char *filename)
             break;
         }
         //DINFO("buffer: %s\n", buffer);
+        
+        if (buffer[0] == '#') { // skip comment
+            continue;
+        }
+
         char *sp = strchr(buffer, '=');
         if (sp == NULL) {
             DERROR("config file error: %s\n", buffer);

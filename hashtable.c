@@ -1311,7 +1311,7 @@ hashtable_stat(HashTable *ht, char *key, HashTableStat *stat)
 
     node = hashtable_find(ht, key);
     if (NULL == node) {
-        DERROR("hashtable_stat not found key: %s\n", key);
+        DWARNING("hashtable_stat not found key: %s\n", key);
         return MEMLINK_ERR_NOKEY;
     }
 
