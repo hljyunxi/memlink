@@ -41,13 +41,6 @@ conn_create(int svrfd)
     }
     DINFO("accept newfd: %d\n", newfd);
 
-    /*int flags;
-    if ((flags = fcntl(newfd, F_GETFL, 0)) < 0 || fcntl(newfd, F_SETFL, flags | O_NONBLOCK) < 0) {
-        DERROR("setting O_NONBLOCK error: %s\n", strerror(errno));
-        close(newfd);
-        return NULL;
-    }*/
-
     tcp_setopt(newfd);
 
     conn = (Conn*)zz_malloc(sizeof(Conn));
