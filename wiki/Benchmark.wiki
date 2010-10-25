@@ -33,7 +33,9 @@ insert为插入操作，range为获取列表某个范围的操作。插入的列
 || *操作* || 1w || 10w || 100w || 1000w ||
 || insert || c:16296<br/> py:12558<br/> php:12153 || c:14125<br/> py:12565<br/> php:12144 || c:13868<br/> py: 13096<br/> php: 12521 || c:13187<br/> py:12611<br/> php:12124 ||
 || range first100 || c:10874<br/> py:8275<br/> php:9185 || c:11429<br/> py:8273<br/> php:9171 || c:10994<br/> py:8068<br/> php:9136 || c:11663<br/> py:8256<br/> php:10071 || 
-
+|| range first200 || c:8045<br/> py:6015<br/> php:6544 || c:8041<br/> py:6017<br/> php:6545 || c:7863<br/> py:5941<br/> php:6542 || c:7970<br/> py:6024<br/> php:7010 ||
+|| range first1000 || c:1362<br/> py:1446<br/> php:1466 || c:1362<br/> py:1448<br/> php:1468 || c:1354<br/> py:1440<br/> php:1462 || c:1362<br/> py:1444<br/> php:1492 ||
+|| range last100 || c:11153<br/> py:8137<br/> php:8996 || c:10318<br/> py:7526<br/> php:8263 || c:5519<br/> py:4410<br/> php:4691 || c:112<br/> py:97<br/> php:97 ||
 
 
 
