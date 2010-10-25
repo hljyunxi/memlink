@@ -7,7 +7,11 @@ Memlink用于持久化存储论坛中forum=>thread list,thread=>post list数据�
 
 = Details =
 硬件
-Dell 2950 16G Mem SATA Disk
+OS: CentOS release 4.6 (Final)
+内存：4G
+CPU：Intel(R) Xeon(R) CPU E5405  @ 2.00GHz （四核）
+硬盘：250G SATA
+
 
 数据模型
 {{{
