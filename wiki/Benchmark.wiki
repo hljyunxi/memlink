@@ -43,6 +43,14 @@ memlink
 || range last1000 || c:1358<br/> py:1442<br/> php:1458 || c:1345<br/> py:1421<br/> php:1440 || c:1209<br/> py:1251<br/> php:1272 || c:103<br/> py:91<br/> php:91 ||
 
 
+*2. 一个客户端， 全部是短连接。一次请求一个连接。*
+
+memlink
+|| *操作* || 1w || 10w || 100w || 1000w ||
+|| insert || c:6560<br/> py:6138<br/> php:6064<br/> mem:5108K || c:6466<br/> py:5990<br/> php:5986<br/> mem:6704K || c:6675<br/> py:6092<br/> php:6010<br/> mem:18M || c:6719<br/> py:6012<br/> php:6003<br/> mem:139M ||
+|| range first100 || c:5467<br/> py:4535<br/> php:5064 || c:5472<br/> py:4450<br/> php:4944 || c:5662<br/> py:4495<br/> php:4712 || c:5484<br/> py:4475<br/> php:4779 ||
+|| range first200 || c:4533<br/> py:3746<br/> php:4124 || c:4563<br/> py:3693<br/> php:4049 || c:4709<br/> py:3724<br/> php:3893 || c:4567<br/> py:3708<br/> php:3931 ||
+|| range first1000 || c:1206<br/> py:1254<br/> php:1291 || c:1200<br/> py:1249<br/> php:1285 || c:1215<br/> py:1253<br/> php:1263 || c:1202<br/> py:1250<br/> php:1266 ||
 
 
 
