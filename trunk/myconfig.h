@@ -34,7 +34,8 @@ typedef struct _myconfig
     int          max_core;  // maximize core file limit
     int          is_daemon; // is run with daemon
     int          role;
-    char         master_addr[IP_ADDR_MAX_LEN];
+    char         master_sync_host[IP_ADDR_MAX_LEN];
+	int			 master_sync_port;
     int          sync_interval;
 }MyConfig;
 

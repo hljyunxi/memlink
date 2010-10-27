@@ -1,6 +1,6 @@
 import sys, os, subprocess
 
-php_home = '/opt/php'
+php_home = '/www/zhaowei/php'
 
 x = subprocess.Popen(php_home + '/bin/php-config --includes', stdout=subprocess.PIPE, shell=True)
 php_includes = x.stdout.read().strip().split()

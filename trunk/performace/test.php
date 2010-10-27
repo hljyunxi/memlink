@@ -242,7 +242,7 @@ $count = intval($argv[1]);
 $range_start = intval($argv[2]);
 $range_len   = intval($argv[3]);
 
-test_insert($count);
-test_range($range_start, $range_len, 1000);
+test_insert_short($count);
+test_range_short($range_start, $range_len, 1000);
 
 ?>
