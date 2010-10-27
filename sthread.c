@@ -175,7 +175,8 @@ cmd_sync_dump(Conn* conn, char *data, int datalen)
     unsigned int size;
     int retcode;
 
-    cmd_sync_dump_unpack(data, &dumpver, &size);
+    //cmd_sync_dump_unpack(data, &dumpver, &size);
+    cmd_getdump_unpack(data, &dumpver, &size);
     DINFO("dump version: %d, synchronized data size: %d\n", dumpver, size);
     retcode = g_runtime->dumpver == dumpver ? 1 : 0;
     ret = data_reply(conn, retcode, NULL, NULL, 0);
@@ -247,7 +248,7 @@ sdata_ready(Conn *conn, char *data, int datalen)
         case CMD_SYNC:
             ret = cmd_sync(conn, data, datalen);
             break;
-        case CMD_SYNC_DUMP:
+        case CMD_GETDUMP:
             ret = cmd_sync_dump(conn, data, datalen);
             break;
         default:

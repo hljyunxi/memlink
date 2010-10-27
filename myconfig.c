@@ -125,8 +125,10 @@ myconfig_create(char *filename)
             mcf->is_daemon = atoi(start);
         }else if (strcmp(buffer, "role") == 0) {
             mcf->role = atoi(start);
-        }else if (strcmp(buffer, "master_addr") == 0) {
-            snprintf(mcf->master_addr, IP_ADDR_MAX_LEN, "%s", start);
+        }else if (strcmp(buffer, "master_sync_host") == 0) {
+            snprintf(mcf->master_sync_host, IP_ADDR_MAX_LEN, "%s", start);
+		}else if (strcmp(buffer, "master_sync_port") == 0) {
+			mcf->master_sync_port = atoi(start);
         }else if (strcmp(buffer, "sync_interval") == 0) {
             mcf->sync_interval = atoi(start);
         }

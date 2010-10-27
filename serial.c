@@ -544,6 +544,7 @@ cmd_create_unpack(char *data, char *key, unsigned char *valuelen, unsigned char 
     return 0;
 }
 
+/*
 int
 cmd_sync_unpack(char *data, unsigned int *logver, unsigned int *log_index_pos) 
 {
@@ -563,6 +564,7 @@ cmd_sync_dump_unpack(char *data, unsigned int *dumpver, unsigned int *size)
     memcpy(size, data + count, sizeof(int));
     return 0;
 }
+*/
 
 int 
 cmd_del_pack(char *data, char *key, char *value, unsigned char valuelen)
@@ -796,6 +798,8 @@ cmd_sync_pack(char *data, unsigned int logver, unsigned int logpos)
 	count += sizeof(int);
 	memcpy(data + count, &logpos, sizeof(int));
 	count += sizeof(int);
+	len = count -= sizeof(short);
+    memcpy(data, &len, sizeof(short));
 	
 	return count;
 }
@@ -826,6 +830,8 @@ cmd_getdump_pack(char *data, unsigned int dumpver, unsigned int size)
 	count += sizeof(int);
 	memcpy(data + count, &size, sizeof(int));
 	count += sizeof(int);
+	len = count -= sizeof(short);
+    memcpy(data, &len, sizeof(short));
 	
 	return count;
 }
@@ -835,9 +841,9 @@ cmd_getdump_unpack(char *data, unsigned int *dumpver, unsigned int *size)
 {
 	int count = sizeof(short) + sizeof(char);
 	
-	memcpy(logver, data + count, sizeof(int));
+	memcpy(dumpver, data + count, sizeof(int));
 	count += sizeof(int);
-	memcpy(logpos, data + count, sizeof(int));
+	memcpy(size, data + count, sizeof(int));
 
 	return 0;
 }
