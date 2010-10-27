@@ -9,6 +9,9 @@
 
 #include "logfile.h"
 #include "zzmalloc.h"
+#include "utils.h"
+#include "network.h"
+#include "serial.h"
 #include "sslave.h"
 
 /**
@@ -68,7 +71,10 @@ int
 sslave_forever(SSlave *ss)
 {
 	char sndbuf[64];
+	int  sndsize = 0;
 	// send sync
+
+	cmd_sync_pack(sndbuf);
 	writen(ss->sock, sndbuf, sndsize, ss->timeout);
 
 	return 0;
@@ -86,10 +92,10 @@ sslave_run(void *args)
 	int		ret;
 
 	while (1) {
-		if (ss->fd == 0) {
-			ret = tcp_socket_connect();
+		if (ss->sock == 0) {
+			ret = tcp_socket_connect(g_cf->master_sync_host, g_cf->master_sync_port, ss->timeout);
 			if (ret <= 0) {
-				DERROR("connect error! ret:%d\n", ret);
+				DERROR("connect error! ret:%d, continue.\n", ret);
 				sleep(1);
 				continue;
 			}
@@ -113,7 +119,7 @@ sslave_create()
     }
     memset(ss, 0, sizeof(SSlave));
 
-	ss->timeout = g_cf->timeout
+	ss->timeout = g_cf->timeout;
 
     pthread_t threadid;
     pthread_attr_t attr;
