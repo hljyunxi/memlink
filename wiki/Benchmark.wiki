@@ -42,6 +42,10 @@ memlink
 || range last200 || c:7938<br/> py:5956<br/> php:6461 || c:7515<br/> py:5629<br/> php:6078 || c:4615<br/> py:3688<br/> php:3899 || c:111<br/> py:96<br/> php:97 ||
 || range last1000 || c:1358<br/> py:1442<br/> php:1458 || c:1345<br/> py:1421<br/> php:1440 || c:1209<br/> py:1251<br/> php:1272 || c:103<br/> py:91<br/> php:91 ||
 
+redis
+|| *操作* || 1w || 10w || 100w || 1000w ||
+|| insert<br/> mem:1064K || c:12626<br/> mem:1884K || c:14900<br/> mem:8928 || c:13271<br/> mem:77M || c:12652<br/> mem:764M ||
+
 
 *2. 一个客户端， 全部是短连接。一次请求一个连接。*
 
