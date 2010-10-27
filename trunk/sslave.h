@@ -1,6 +1,8 @@
 #ifndef MEMLINK_SSLAVE_H
 #define MEMLINK_SSLAVE_H
 
+#include <stdio.h>
+
 typedef struct _sslave 
 {
     int sock;

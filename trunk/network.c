@@ -66,20 +66,20 @@ tcp_socket_connect(char *host, int port, int timeout)
     }
 
 	struct linger ling = {0, 0};
-    ret = setsockopt(sock, SOL_SOCKET, SO_LINGER, (void *)&ling, sizeof(ling));
+    ret = setsockopt(fd, SOL_SOCKET, SO_LINGER, (void *)&ling, sizeof(ling));
     if (ret != 0) {
         DERROR("setsockopt LINGER error: %s\n", strerror(errno));
 		return -1;
 	}
 
     int flags = 1;
-    ret = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (void*)&flags, sizeof(flags));
+    ret = setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (void*)&flags, sizeof(flags));
     if (ret != 0) {
         DERROR("setsockopt NODELAY error: %s\n", strerror(errno));
 		return -1;
 	}
 
-    ret = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (void *)&flags, sizeof(flags));
+    ret = setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (void *)&flags, sizeof(flags));
     if (ret != 0) {
         DERROR("setsockopt KEEPALIVE error: %s\n", strerror(errno));
         return -1;
