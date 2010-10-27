@@ -41,7 +41,7 @@ conn_create(int svrfd)
     }
     DINFO("accept newfd: %d\n", newfd);
 
-    tcp_setopt(newfd);
+    tcp_server_setopt(newfd);
 
     conn = (Conn*)zz_malloc(sizeof(Conn));
     if (conn == NULL) {

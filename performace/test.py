@@ -5,6 +5,7 @@ import time
 from memlinkclient import *
 
 key = 'testmyhaha'
+valuesize = 12
 
 def clearkey():
     m = MemLinkClient('127.0.0.1', 11001, 11002, 30)
@@ -18,7 +19,7 @@ def clearkey():
 
 def test_insert(count):
     #print '====== test_insert ======'
-    global key
+    global key, valuesize
     vals = []
     for i in xrange(0, count):
         val = '%012d' % i
@@ -26,7 +27,7 @@ def test_insert(count):
 
     m = MemLinkClient('127.0.0.1', 11001, 11002, 30)
  
-    ret = m.create(key, 12, "4:3:1")
+    ret = m.create(key, valuesize, "4:3:1")
     if ret != MEMLINK_OK:
         print 'create error!', ret
         return -1
@@ -50,7 +51,7 @@ def test_insert(count):
 
 def test_insert_short(count):
     #print '====== test_insert ======'
-    global key
+    global key, valuesize
     vals = []
     for i in xrange(0, count):
         val = '%012d' % i
@@ -64,7 +65,7 @@ def test_insert_short(count):
         m = MemLinkClient('127.0.0.1', 11001, 11002, 30)
 
         if iscreate == 0:
-            ret = m.create(key, 12, "4:3:1")
+            ret = m.create(key, vaulesize, "4:3:1")
             if ret != MEMLINK_OK:
                 print 'create error!', ret
                 return -1
@@ -135,7 +136,6 @@ def alltest():
     insertfunc = [test_insert, test_insert_short]
     insert_test_count = 4
      
-    '''
     for func in insertfunc:
         for t in testnum[:2]:
             insertret = []
@@ -150,8 +150,7 @@ def alltest():
             insertret.sort()
 
             ret = insertret[1:-1]
-            print '====== speed ave:', sum(ret) / len(ret), '======'
-    '''
+            print '\33[31m====== num:%d speed:%d' % (t, sum(ret) / len(ret)), '======\33[0m'
 
     rangeret = []
     rangefunc = [test_range, test_range_short]
@@ -181,7 +180,7 @@ def alltest():
 
                     rangeret.sort()
                     ret = rangeret[1:-1]
-                    print '\33[31m====== from%d len:%d speed:%d' % (startpos, slen, sum(ret) / len(ret)), '======\33[0m'
+                    print '\33[31m====== num:%d from:%d len:%d speed:%d' % (t, startpos, slen, sum(ret) / len(ret)), '======\33[0m'
 
             clearkey()
 
@@ -200,8 +199,8 @@ def dotest():
     range_start = int(sys.argv[2])
     range_len = int(sys.argv[3])
 
-    test_insert(count)
-    test_range(range_start, range_len, 1000)
+    test_insert_short(count)
+    test_range_short(range_start, range_len, 1000)
 
 
 if __name__ == '__main__':

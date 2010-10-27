@@ -25,7 +25,7 @@
 */
 
 #define CMD_SYNC        100 
-#define CMD_SYNC_DUMP   101
+#define CMD_GETDUMP		101
 
 
 
@@ -91,7 +91,11 @@ int cmd_range_pack(char *data, char *key, unsigned char masknum, unsigned int *m
 int cmd_range_unpack(char *data, char *key, unsigned char *masknum, unsigned int*maskarray, 
                      unsigned int *frompos, unsigned int *len);
 
+// for sync client
+int cmd_sync_pack(char *data, unsigned int logver, unsigned int logpos);
 int cmd_sync_unpack(char *data, unsigned int *logver, unsigned int *logpos);
-int cmd_sync_dump_unpack(char *data, unsigned int *dumpver, unsigned int *size);
+int cmd_getdump_pack(char *data, unsigned int dumpver, unsigned int size);
+int cmd_getdump_unpack(char *data, unsigned int *dumpver, unsigned int *size);
+
 
 #endif

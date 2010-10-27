@@ -4,11 +4,10 @@
 typedef struct _sslave 
 {
     int sock;
-    struct event_base *base;
-    struct event event;
+	int timeout;
 } SSlave;
 
 SSlave* sslave_create();
-void sslave_destroy();
+void	sslave_destroy(SSlave *slave);
 
 #endif

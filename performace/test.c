@@ -8,6 +8,9 @@
 #include "logfile.h"
 #include "utils.h"
 
+#define VALUE_SIZE		12
+#define TEST_THREAD_NUM 10
+
 int isthread = 0;
 
 int clear_key()
@@ -41,7 +44,6 @@ int clear_key()
     }
 
     memlink_destroy(m);
-
     return 0;
 }
 
@@ -58,7 +60,7 @@ int create_key(char *key)
 
 	int  ret;
    
-    ret = memlink_cmd_create(m, key, 12, "4:3:1");
+    ret = memlink_cmd_create(m, key, VALUE_SIZE, "4:3:1");
     if (ret != MEMLINK_OK) {
         DERROR("create error! ret:%d\n", ret);
         return -1;
@@ -144,7 +146,7 @@ int test_insert_short(int count, int docreate)
 		}
 
 		if (docreate == 1 && iscreate == 0) {
-			ret = memlink_cmd_create(m, key, 6, "4:3:1");
+			ret = memlink_cmd_create(m, key, VALUE_SIZE, "4:3:1");
 
 			if (ret != MEMLINK_OK) {
 				DERROR("create %s error: %d\n", key, ret);
@@ -206,6 +208,7 @@ int test_range_long(int frompos, int rlen, int count)
 			DERROR("insert error, i:%d, val:%s, ret:%d\n", i, val, ret);
 			return -3;
 		}
+		//DINFO("range count: %d\n", result.count);
 		memlink_result_free(&result);
 	}
 	gettimeofday(&end, NULL);
@@ -251,6 +254,7 @@ int test_range_short(int frompos, int rlen, int count)
 			DERROR("insert error, i:%d, val:%s, ret:%d\n", i, val, ret);
 			return -3;
 		}
+		//DINFO("range count: %d\n", result.count);
 		memlink_result_free(&result);
 		memlink_destroy(m);
 	}
@@ -260,7 +264,7 @@ int test_range_short(int frompos, int rlen, int count)
 
     if (isthread == 0) {
         unsigned int tmd = timediff(&start, &end);
-        double speed = ((double)count / tmd) * 1000000;
+        speed = ((double)count / tmd) * 1000000;
         DINFO("range short use time: %u, speed: %.2f\n", tmd, speed);
     }
 
@@ -433,7 +437,6 @@ int alltest()
     return 0;
 }
 
-#define TEST_THREAD_NUM 10
 int thread_create_count = 0;
 pthread_mutex_t	lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t	cond = PTHREAD_COND_INITIALIZER;
@@ -462,9 +465,11 @@ void* thread_start (void *args)
 	DINFO("thread run %u\n", (unsigned int)pthread_self());
 
 	if (a->type == 1) {  //insert
+		//DINFO("insert args: %d\n", a->count);
 		insert_func	func = a->func;	
 		ret = func(a->count, 0);
 	}else{ // range
+		//DINFO("range args: %d, %d, %d\n", a->startpos, a->slen, a->count);
 		range_func	func = a->func;	
 		ret = func(a->startpos, a->slen, a->count);
 	}
@@ -516,12 +521,12 @@ int alltest_thread()
 					thread_create_count += 1;
                 }
 
+                gettimeofday(&start, NULL);
                 ret = pthread_cond_broadcast(&cond);
                 if (ret != 0) {
                     DERROR("pthread_cond_signal error: %s\n", strerror(errno));
                 }
 
-                gettimeofday(&start, NULL);
                 for (t = 0; t < TEST_THREAD_NUM; t++) {
                     pthread_join(threads[t], NULL);
                 }
@@ -534,13 +539,11 @@ int alltest_thread()
                 }else{
                     DINFO("thread insert short use time: %u, speed: %.2f\n", tmd, speed);
                 }
-                
                 insertret[n] = speed;
                 clear_key();
             }
 
             qsort(insertret, INSERT_TESTS, sizeof(int), compare_int);
-
             for (n = 0; n < INSERT_TESTS; n++) {
                 printf("n: %d, %d\t", n, insertret[n]);
             }
@@ -553,7 +556,6 @@ int alltest_thread()
 
             float av = (float)sum / (INSERT_TESTS - 2);
             DINFO("====== sum: %d, ave: %.2f ======\n", sum, av);
-
         }
     }
 
@@ -581,11 +583,14 @@ int alltest_thread()
                     }
                     
                     int thnum = range_test_num / TEST_THREAD_NUM;
+					//DINFO("thnum: %d\n", thnum);
                     for (n = 0; n < RANGE_TESTS; n++) {
                         for (t = 0; t < TEST_THREAD_NUM; t++) {
                             ThreadArgs *ta = (ThreadArgs*)malloc(sizeof(ThreadArgs));
                             memset(ta, 0, sizeof(ThreadArgs));
                             ta->type = 2;
+							ta->startpos = startpos;
+							ta->slen = slen;
                             ta->func = rfuncs[f];
                             ta->count = thnum;
 
@@ -597,12 +602,12 @@ int alltest_thread()
 					        thread_create_count += 1;
                         }
                             
+                        gettimeofday(&start, NULL);
                         ret = pthread_cond_broadcast(&cond);
                         if (ret != 0) {
                             DERROR("pthread_cond_signal error: %s\n", strerror(errno));
                         }
 
-                        gettimeofday(&start, NULL);
                         for (t = 0; t < TEST_THREAD_NUM; t++) {
                             pthread_join(threads[t], NULL);
                         }

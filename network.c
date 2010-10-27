@@ -18,7 +18,6 @@ int
 tcp_socket_server(int port)
 {
     int fd;
-    //int flags;
     int ret;
 
     fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -27,36 +26,9 @@ tcp_socket_server(int port)
         return -1;
     }
 
-    tcp_setopt(fd);
-    /*
-    if ((flags = fcntl(fd, F_GETFL, 0)) < 0 || fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) {
-        DERROR("setting O_NONBLOCK error: %s\n", strerror(errno));
-        close(fd);
-        return -2;
-    }
-
-    flags = 1;
-    setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void *)&flags, sizeof(flags));
-
-
-    ret = setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (void *)&flags, sizeof(flags));
-    if (ret != 0) {
-        DERROR("setsockopt KEEPALIVE error: %s\n", strerror(errno));
-    }
-
-    struct linger ling = {0, 0};
-    ret = setsockopt(fd, SOL_SOCKET, SO_LINGER, (void *)&ling, sizeof(ling));
-    if (ret != 0) {
-        DERROR("setsockopt LINGER error: %s\n", strerror(errno));
-        perror("setsockopt");
-    }
-
-    ret = setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (void *)&flags, sizeof(flags));
-    if (ret != 0) {
-        DERROR("setsockopt NODELAY error: %s\n", strerror(errno));
-    }
-    */
-    struct sockaddr_in  sin;
+    tcp_server_setopt(fd);
+    
+	struct sockaddr_in  sin;
 
     sin.sin_family = AF_INET;
     sin.sin_port = htons((short)port);
@@ -82,7 +54,57 @@ tcp_socket_server(int port)
 
 
 int
-tcp_setopt(int fd)
+tcp_socket_connect(char *host, int port, int timeout)
+{
+	int fd;
+    int ret;
+
+    fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd == -1) {
+        DERROR("create socket error: %s\n", strerror(errno));
+        return -1;
+    }
+
+	struct linger ling = {0, 0};
+    ret = setsockopt(sock, SOL_SOCKET, SO_LINGER, (void *)&ling, sizeof(ling));
+    if (ret != 0) {
+        DERROR("setsockopt LINGER error: %s\n", strerror(errno));
+		return -1;
+	}
+
+    int flags = 1;
+    ret = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (void*)&flags, sizeof(flags));
+    if (ret != 0) {
+        DERROR("setsockopt NODELAY error: %s\n", strerror(errno));
+		return -1;
+	}
+
+    ret = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (void *)&flags, sizeof(flags));
+    if (ret != 0) {
+        DERROR("setsockopt KEEPALIVE error: %s\n", strerror(errno));
+        return -1;
+    }
+    
+	struct sockaddr_in  sin;
+
+    sin.sin_family = AF_INET;
+    sin.sin_port = htons((short)port);
+    sin.sin_addr.s_addr = htonl(inet_addr(host));
+
+	DINFO("connect to %s:%d\n", host, port);
+    ret = connect(fd, (struct sockaddr*)&sin, sizeof(sin));
+    if (ret == -1) {
+        DERROR("connect error: %s\n", strerror(errno));
+        close(fd);
+        return -3;
+    }
+
+	return fd;
+}
+
+
+int
+tcp_server_setopt(int fd)
 {
     int ret;
     int flags;
@@ -95,7 +117,6 @@ tcp_setopt(int fd)
     
     flags = 1;
     setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void *)&flags, sizeof(flags));
-
 
     ret = setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (void *)&flags, sizeof(flags));
     if (ret != 0) {

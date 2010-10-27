@@ -14,6 +14,7 @@
 /**
  *
  */
+/*
 static int 
 sslave_connect() 
 {
@@ -58,20 +59,47 @@ sslave_connect()
     DINFO("memlink sync slave connected\n");
     return sock;
 }
-
-static void*
-sslave_loop(void *arg) 
-{
-    SSlave *ss = (SSlave*) arg;
-    DINFO("sync slave looping...\n");
-    event_base_loop(ss->base, 0);
-
-    return NULL;
-}
-
+*/
 
 // TODO
 // code to process the sync log data from sync master
+
+int
+sslave_forever(SSlave *ss)
+{
+	char sndbuf[64];
+	// send sync
+	writen(ss->sock, sndbuf, sndsize, ss->timeout);
+
+	return 0;
+}
+
+
+/**
+ * slave sync thread
+ * 1.find local sync logver/logline 2. send sync command to server 3.get dump/sync message
+ */
+void*
+sslave_run(void *args)
+{
+	SSlave	*ss = (SSlave*)args;
+	int		ret;
+
+	while (1) {
+		if (ss->fd == 0) {
+			ret = tcp_socket_connect();
+			if (ret <= 0) {
+				DERROR("connect error! ret:%d\n", ret);
+				sleep(1);
+				continue;
+			}
+		}
+
+		sslave_forever(ss);
+	}
+
+	return NULL;
+}
 
 SSlave*
 sslave_create() 
@@ -85,17 +113,8 @@ sslave_create()
     }
     memset(ss, 0, sizeof(SSlave));
 
-    ss->sock = sslave_connect();
-    if (ss->sock < 0) 
-        MEMLINK_EXIT;
+	ss->timeout = g_cf->timeout
 
-    ss->base = event_base_new();
-
-    event_set(&ss->event, ss->sock, EV_READ | EV_PERSIST, client_read, ss);
-    event_base_set(ss->base, &ss->event);
-    event_add(&ss->event, 0);
-
-    // TODO timeout event
     pthread_t threadid;
     pthread_attr_t attr;
     int ret;
@@ -106,7 +125,7 @@ sslave_create()
         MEMLINK_EXIT;
     }
 
-    ret = pthread_create(&threadid, &attr, sslave_loop, ss);
+    ret = pthread_create(&threadid, &attr, sslave_run, ss);
     if (ret != 0) {
         DERROR("pthread_create error: %s\n", strerror(errno));
         MEMLINK_EXIT;
