@@ -156,9 +156,9 @@ Dump文件的格式为二进制的格式：
 
 如果状态为1，表示从需要发送dump请求。
 
-2. dump {dumpversion} {size}
+2. getdump {dumpversion} {size}
 
-描述：dump命令编号为101。Dumpversion为dump版本号，是4字节，size为已同步文件大小，为8字节。
+描述：getdump命令编号为101。Dumpversion为dump版本号，是4字节，size为已同步文件大小，为8字节。
 
 返回：是否是原dump文件，1表示是，0表示不是，需要1字节。如果为1，主接着发送原dump文件。如果为0，主开始发送新的dump文件。
 
@@ -281,7 +281,7 @@ Dump文件的格式为二进制的格式：
 ||Tag ||9||
 ||range ||10||
 ||Sync ||100||
-||Syncontinue||101||
+||Getdump||101||
 
 
 = 7 启动流程=
