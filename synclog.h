@@ -11,7 +11,7 @@
 
 #define SYNCLOG_NAME "bin.log"
 
-#define SYNCLOG_HEADER_LEN  (sizeof(short)+sizeof(int)+sizeof(int))
+#define SYNCLOG_HEADER_LEN  (sizeof(short)+sizeof(int)+sizeof(char)+sizeof(int))
 
 /**
  * header and index area are mapped in memory address space.

@@ -135,6 +135,14 @@ int2string(char *s, unsigned int val)
     int ret, i = 0, j = 0;
     char ss[32];
 
+	if (v == 0) {
+		s[0] = '0';
+		return 1;
+	}
+
+	if (v == UINT_MAX)
+		return 0;
+
     while (v > 0) {
         yu = v % 10;
         v  = v / 10;

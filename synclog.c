@@ -13,6 +13,7 @@
 #include "dumpfile.h"
 #include "synclog.h"
 #include "zzmalloc.h"
+#include "common.h"
 #include "utils.h"
 
 static int
@@ -106,6 +107,11 @@ synclog_create()
             DERROR("write synclog newver error: %d\n", newver);
             MEMLINK_EXIT;
         }
+		if (writen(slog->fd, &g_cf->role, sizeof(char), 0) < 0) {
+            DERROR("write synclog role error: %d\n", g_cf->role);
+            MEMLINK_EXIT;
+        }
+
         if (writen(slog->fd, &synlen, sizeof(int), 0) < 0) {
             DERROR("write synclog synlen error: %d\n", synlen);
             MEMLINK_EXIT;
@@ -166,13 +172,16 @@ synclog_new(SyncLog *slog)
         DERROR("write synclog newver error: %d\n", newver);
         MEMLINK_EXIT;
     }
+	if (writen(slog->fd, &g_cf->role, sizeof(char), 0) < 0) {
+        DERROR("write synclog role error: %d\n", g_cf->role);
+        MEMLINK_EXIT;
+    }
     if (writen(slog->fd, &synlen, sizeof(int), 0) < 0) {
         DERROR("write synclog synlen error: %d\n", synlen);
         MEMLINK_EXIT;
     }
     
     fsync(slog->fd);
-
     truncate_file(slog->fd, slog->len);
 
     slog->index = mmap(NULL, slog->len, PROT_READ|PROT_WRITE, MAP_SHARED, slog->fd, 0);
@@ -238,7 +247,6 @@ synclog_validate(SyncLog *slog)
 
     for (i = 0; i < looplen; i++) {
         if (loopdata[i] == 0) {
-            //i -= 1;
             break;
         }
         lastidx = loopdata[i];
@@ -253,8 +261,10 @@ synclog_validate(SyncLog *slog)
 
     unsigned int oldidx = lastidx; 
     while (lastidx < filelen) {
-        int cur = lseek(slog->fd, lastidx, SEEK_SET);
         DINFO("check offset: %d\n", lastidx);
+		// skip logver and logline
+		lastidx += sizeof(int) + sizeof(int);
+        int cur = lseek(slog->fd, lastidx, SEEK_SET);
         if (readn(slog->fd, &dlen, sizeof(short), 0) != sizeof(short)) {
             DERROR("synclog readn error, lastidx: %u, cur: %u\n", lastidx, cur);
             MEMLINK_EXIT;
@@ -301,11 +311,21 @@ synclog_write(SyncLog *slog, char *data, int datalen)
     int wpos = 0;
     int ret;
     int cur;
+	char *wdata = data;
     //int pos = lseek(slog->fd, 0, SEEK_CUR);
     //char buf[128];
 	
 	if (slog->index_pos == SYNCLOG_INDEXNUM) {
 		synclog_rotate(slog);
+	}
+
+	// add logver/logline for master
+	if (g_cf->role == ROLE_MASTER) {
+		//int count = 0;
+		wdata = (char *)alloca(datalen + sizeof(int) + sizeof(int));
+		memcpy(wdata, &g_runtime->logver, sizeof(int));
+		memcpy(wdata + sizeof(int), &slog->pos, sizeof(int));
+		memcpy(wdata + sizeof(int) + sizeof(int), data, datalen);
 	}
 
 	DINFO("datalen: %d, wlen: %d, pos:%d\n", datalen, wlen, slog->pos);
@@ -327,7 +347,7 @@ synclog_write(SyncLog *slog, char *data, int datalen)
 
 		//DINFO("write pos: %u wpos:%d, wlen:%d, data:%s\n", (unsigned int)lseek(slog->fd, 0, SEEK_CUR), wpos, wlen, formath(data+wpos, wlen, buf, 128));
 		DINFO("write pos: %u wpos:%d, wlen:%d\n", (unsigned int)lseek(slog->fd, 0, SEEK_CUR), wpos, wlen);
-        ret = write(slog->fd, data + wpos, wlen);
+        ret = write(slog->fd, wdata + wpos, wlen);
         DINFO("write return:%d\n", ret);
         if (ret == -1) {
             if (errno == EINTR) {
@@ -344,7 +364,6 @@ synclog_write(SyncLog *slog, char *data, int datalen)
     }
 	
 	DINFO("after write pos: %u\n", (unsigned int)lseek(slog->fd, 0, SEEK_CUR));
-
     //unsigned int *idxdata = (unsigned int*)(slog->index + sizeof(short) + sizeof(int) * 2);
     unsigned int *idxdata = (unsigned int*)(slog->index + slog->headlen);
     DINFO("write index: %u, %u\n", slog->index_pos, slog->pos);

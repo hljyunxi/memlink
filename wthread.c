@@ -193,8 +193,6 @@ wdata_apply(char *data, int datalen, int writelog)
     switch(cmd) {
         case CMD_DUMP:
             DINFO("<<< cmd DUMP >>>\n");
-            //pthread_mutex_unlock(&g_runtime->mutex);
-            //ret = dumpfile_call();
             ret = dumpfile(g_runtime->ht);
             break;
         case CMD_CLEAN:
@@ -234,7 +232,6 @@ wdata_apply(char *data, int datalen, int writelog)
 						MEMLINK_EXIT;
 					}
 				}
-
 			}
             break;
         case CMD_DEL:
