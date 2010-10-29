@@ -3,6 +3,35 @@
 #include <memlink_client.h>
 #include "logfile.h"
 
+
+int check_mask(MemLink *m, char *key, char *newmask)
+{
+	MemLinkResult	result;
+	int				ret;
+
+	ret = memlink_cmd_range(m, key, "::", 0, 1, &result);
+	if (ret != MEMLINK_OK) {
+		DERROR("range error, key:%s, ret:%d\n", key, ret);
+		return -5;
+	}
+
+	MemLinkItem	*item = result.root;
+
+	if (NULL == item) {
+		DERROR("range not return data, error!, key:%s\n", key);
+		return -6;
+	}
+	if (strcmp(item->mask, newmask) != 0) {
+		DERROR("mask set error, item->mask:%s, newmask:%s\n", item->mask, newmask);	
+		return -7;
+	}
+	
+	memlink_result_free(&result);
+
+	return 0;
+}
+
+
 int main()
 {
 	MemLink	*m;
@@ -16,52 +45,41 @@ int main()
 	}
 
 	int  ret;
-	char buf[32];
+	char key[32];
 
-	sprintf(buf, "haha");
-	ret = memlink_cmd_create(m, buf, 6, "4:3:1");
+	sprintf(key, "haha");
+	ret = memlink_cmd_create(m, key, 6, "4:3:1");
 	
 	if (ret != MEMLINK_OK) {
-		DERROR("1 memlink_cmd_create %s error: %d\n", buf, ret);
+		DERROR("1 memlink_cmd_create %s error: %d\n", key, ret);
 		return -2;
 	}
 
 	char *val		= "111111";
 	char *maskstr	= "8:3:1";
 
-	ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr, 1);
+	ret = memlink_cmd_insert(m, key, val, strlen(val), maskstr, 1);
 	if (ret != MEMLINK_OK) {
-		DERROR("insert error, key:%s, val:%s, mask:%s, i:%d, ret:%d\n", buf, val, maskstr, 1, ret);
+		DERROR("insert error, key:%s, val:%s, mask:%s, i:%d, ret:%d\n", key, val, maskstr, 1, ret);
 		return -3;
 	}
-
-	char *newmask  = "7:2:0";
-	ret = memlink_cmd_mask(m, buf, val, strlen(val), newmask);
+	
+	char *newmask  = "7:2:1";
+	ret = memlink_cmd_mask(m, key, val, strlen(val), newmask);
 	if (ret != MEMLINK_OK) {
-		DERROR("mask error, key:%s, val:%s, mask:%s, ret:%d\n", buf, val, newmask, ret);
+		DERROR("mask error, key:%s, val:%s, mask:%s, ret:%d\n", key, val, newmask, ret);
 		return -4;
 	}
+	check_mask(m, key, newmask);
 
-	MemLinkResult	result;
-	
-	ret = memlink_cmd_range(m, buf, "::", 0, 1, &result);
+
+	newmask  = "7:2:0";
+	ret = memlink_cmd_mask(m, key, val, strlen(val), newmask);
 	if (ret != MEMLINK_OK) {
-		DERROR("range error, key:%s, ret:%d\n", buf, ret);
-		return -5;
+		DERROR("mask error, key:%s, val:%s, mask:%s, ret:%d\n", key, val, newmask, ret);
+		return -4;
 	}
-
-	MemLinkItem	*item = result.root;
-
-	if (NULL == item) {
-		DERROR("range not return data, error!, key:%s\n", buf);
-		return -6;
-	}
-	if (strcmp(item->mask, newmask) != 0) {
-		DERROR("mask set error, item->mask:%s, newmask:%s\n", item->mask, newmask);	
-		return -7;
-	}
-	
-	memlink_result_free(&result);
+	check_mask(m, key, newmask);
 
 	memlink_destroy(m);
 

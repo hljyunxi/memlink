@@ -14,68 +14,17 @@
 #include "serial.h"
 #include "sslave.h"
 
-/**
- *
- */
-/*
-static int 
-sslave_connect() 
-{
-    int ret;
-    int sock;
-
-    DINFO("memlink sync slave connecting...\n");    
-
-    sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock == -1) {
-        DERROR("socket creation error: %s\n", strerror(errno));
-        return -1;
-    }
-
-    struct linger ling = {0, 0};
-    ret = setsockopt(sock, SOL_SOCKET, SO_LINGER, (void *)&ling, sizeof(ling));
-    if (ret != 0)
-        DERROR("setsockopt LINGER error: %s\n", strerror(errno));
-
-    int flags = 1;
-    ret = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (void*)&flags, sizeof(flags));
-    if (ret != 0)
-        DERROR("setsockopt NODELAY error: %s\n", strerror(errno));
-
-    ret = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (void *)&flags, sizeof(flags));
-    if (ret != 0) {
-        DERROR("setsockopt KEEPALIVE error: %s\n", strerror(errno));
-        return -1;
-    }
-
-    struct sockaddr_in sin;
-    sin.sin_port = htons((short)g_cf->sync_port);
-    sin.sin_addr.s_addr = inet_addr(g_cf->master_addr);
-
-    ret = connect(sock, (struct sockaddr*)&sin, sizeof(sin));
-    if (ret != 0) {
-        DERROR("socket connect error: %s\n", strerror(errno));
-        close(sock);
-        return -1;
-    }
-
-    DINFO("memlink sync slave connected\n");
-    return sock;
-}
-*/
-
 // TODO
 // code to process the sync log data from sync master
-
 int
 sslave_forever(SSlave *ss)
 {
-	char sndbuf[64];
-	int  sndsize = 0;
+	//char sndbuf[64];
+	//int  sndsize = 0;
 	// send sync
 
-	cmd_sync_pack(sndbuf);
-	writen(ss->sock, sndbuf, sndsize, ss->timeout);
+	//cmd_sync_pack(sndbuf);
+	//writen(ss->sock, sndbuf, sndsize, ss->timeout);
 
 	return 0;
 }
@@ -83,7 +32,7 @@ sslave_forever(SSlave *ss)
 
 /**
  * slave sync thread
- * 1.find local sync logver/logline 2. send sync command to server 3.get dump/sync message
+ * 1.find local sync logver/logline 2.send sync command to server 3.get dump/sync message
  */
 void*
 sslave_run(void *args)

@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <sys/time.h>
 #include <pthread.h>
+#include <getopt.h>
 #include <memlink_client.h>
 #include "logfile.h"
 #include "utils.h"
@@ -644,28 +645,109 @@ int alltest_thread()
     return 0;
 }
 
+int show_help()
+{
+	printf("test [options]\n");
+	exit(0);
+}
+
 
 int main(int argc, char *argv[])
 {
 #ifdef DEBUG
 	logfile_create("stdout", 3);
 #endif
-    if (argc == 1) {
-        alltest_thread();
+
+
+	int     optret;
+    int     optidx = 0;
+    char    *optstr = "ht:c:f:l:";
+    struct option myoptions[] = {{"help", 0, NULL, 'h'},
+                                 {"thread", 0, NULL, 't'},
+                                 {"count", 0, NULL, 'n'},
+                                 {"frompos", 0, NULL, 'f'},
+                                 {"len", 0, NULL, 'l'},
+                                 {"alltest", 0, NULL, 'a'},
+                                 {"do", 0, NULL, 'd'},
+                                 {"longconn", 0, NULL, 'c'},
+                                 {NULL, 0, NULL, 0}};
+
+
+    if (argc < 2) {
+        show_help();
         return 0;
     }
 
-	if (argc != 4) {
-		printf("usage: test count range_start range_len\n");
-		return 0;
+	
+	int threads = 0;
+	int frompos = 0;
+	int len 	= 0;
+	int count   = 0;
+	int longcon = 0;
+	int isalltest  = 0;
+	char dostr[32] = {0};
+
+
+    while(optret = getopt_long(argc, argv, optstr, myoptions, &optidx)) {
+        if (0 > optret) {
+            break;
+        }
+
+        switch (optret) {
+        case 'f':
+			frompos = atoi(optarg);	
+            break;
+		case 't':
+			threads = atoi(optarg);
+			break;
+		case 'n':
+			count   = atoi(optarg);
+			break;
+		case 'c':
+			longcon = atoi(optarg);
+			break;
+		case 'l':
+			len     = atoi(optarg);
+			break;		
+		case 'a':
+			isalltest = atoi(optarg);
+			if (isalltest != 0)
+				isalltest = 1;
+			break;	
+		case 'd':
+			snprintf(dostr, 32, "%s", optarg);
+			break;
+        case 'h':
+            show_help();
+            //return 0;
+            break;
+        default:
+            break;
+        }
+    }
+
+    if (isalltest == 1) {
+		if (threads > 0) {
+        	alltest_thread(threads);
+		}else{
+        	alltest();
+		}
+        return 0;
+    }
+
+	if (strcmp(dostr, "insert") == 0) {
+		if (longcon == 0) {
+			test_insert_long(count, 1);
+		}else{
+			test_insert_short(count, 1);
+		}
+	}else if (strcmp(dostr, "range") == 0){
+		if (longcon == 0) {
+			test_range_long(frompos, len, 1000);
+		}else{
+			test_range_short(frompos, len, 1000);
+		}
 	}
-
-	int count = atoi(argv[1]);
-	int range_start = atoi(argv[2]);
-	int range_len = atoi(argv[3]);
-
-	test_insert_short(count, 1);
-	test_range_short(range_start, range_len, 1000);
 
 	return 0;
 }

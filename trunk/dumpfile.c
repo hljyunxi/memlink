@@ -15,6 +15,8 @@
 /**
  * Creates a dump file from the hash table. The old dump file is replaced by 
  * the new dump file. Sync log is also rotated.
+ * format:
+ * | dumpfile format(2B) | dumpfile version (4B) | sync log version(4B) | dumpfile is master (1B) | data
  *
  * @param ht hash table
  */
@@ -54,6 +56,9 @@ dumpfile(HashTable *ht)
     }
     fwrite(&logver, sizeof(int), 1, fp);
     DINFO("write logfile version %d\n", logver);
+
+	fwrite(&g_cf->role, sizeof(char), 1, fp);
+	DINFO("write role: %d\n", g_cf->role);
 
     unsigned char keylen;
     int datalen;
@@ -147,6 +152,9 @@ loaddump(HashTable *ht)
 
     fread(&g_runtime->dumplogver, sizeof(int), 1, fp);
     DINFO("load dumpfile log ver: %u\n", g_runtime->dumplogver);
+
+	char role;
+	fread(&role, sizeof(char), 1, fp);
 
     unsigned char keylen;
     unsigned char masklen;

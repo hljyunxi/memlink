@@ -46,4 +46,7 @@
 // 假
 #define MEMLINK_FALSE				0
 
+#define ROLE_MASTER		1
+#define ROLE_SLAVE		0
+
 #endif

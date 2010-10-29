@@ -9,7 +9,7 @@
 START_TEST(test_mask)
 {
     unsigned char format[3] = {4, 3, 1};
-    unsigned int  maskarray[3] = {7, 2, 1};
+    unsigned int  maskarray[3] = {7, 0, 0};
     unsigned int  masknum = 3;
     char          data[1024] = {0}; 
     int           ret;
@@ -18,7 +18,7 @@ START_TEST(test_mask)
     printf("====== start masktest ======\n");
     printb((char*)&v, 4);
 
-    DINFO("format 4:3:1, array: 7:2:1 \n");
+    DINFO("format %d:%d:%d, array: %d:%d:%d\n", format[0], format[1], format[2], maskarray[0], maskarray[1], maskarray[2]);
     ret = mask_array2binary(format, maskarray, masknum, data);
     DINFO("mask_array2binary ret: %d\n", ret);
 
@@ -28,7 +28,7 @@ START_TEST(test_mask)
 	char result[256] = {0};
 
 	mask_binary2string(format, 3, data, ret, result);
-	printf("to string: %s\n", result);
+	printf("binary2string: %s\n", result);
 
     DINFO("==================================================\n");
     DINFO("flag 4:3:1, array: 10:3:1\n");
