@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/types.h>
 #include <sys/select.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include "utils.h"
 #include "logfile.h"
 #include "common.h"
@@ -228,10 +229,55 @@ formath(char *data, int datalen, char *buf, int blen)
 }
 
 
-unsigned int timediff(struct timeval *start, struct timeval *end)
+unsigned int 
+timediff(struct timeval *start, struct timeval *end)
 {
 	return 1000000 * (end->tv_sec - start->tv_sec) + (end->tv_usec - start->tv_usec);
 }
 
 
+int
+isfile (char *path)
+{
+    struct stat buf;
+    if (stat(path, &buf) != 0)
+        return 0;
+    if (!S_ISREG(buf.st_mode))
+        return 0;
+    return 1;
+}
+
+
+int
+isdir (char *path)
+{
+    struct stat buf;
+    if (stat(path, &buf) != 0)
+        return 0;
+    if (!S_ISDIR(buf.st_mode))
+        return 0;
+    return 1;
+}
+
+int
+islink (char *path)
+{
+    struct stat buf;
+    if (stat(path, &buf) != 0)
+        return 0;
+    if (!S_ISLNK(buf.st_mode))
+        return 0;
+    return 1;
+}
+
+int
+isexists (char *path)
+{
+    struct stat buf;
+    if (stat(path, &buf) != 0)
+        return 0;
+    if (!S_ISDIR(buf.st_mode) && !S_ISREG(buf.st_mode) && !S_ISLNK(buf.st_mode))
+        return 0;
+    return 1;
+}
 

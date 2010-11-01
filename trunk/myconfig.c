@@ -207,8 +207,10 @@ load_data()
     int    ret;
     struct stat stbuf;
     int    havedump = 0;
-    char   *filename = "data/dump.dat";
+    //char   *filename = "data/dump.dat";
+    char   filename[PATH_MAX];
 
+    snprintf(filename, PATH_MAX, "%s/dump.dat", g_cf->datadir);
     // check dumpfile exist
     ret = stat(filename, &stbuf);
     if (ret == -1 && errno == ENOENT) {
@@ -220,7 +222,7 @@ load_data()
         havedump = 1;
     
         DINFO("try load dumpfile ...\n");
-        ret = loaddump(g_runtime->ht);
+        ret = loaddump(g_runtime->ht, filename);
         if (ret < 0) {
             DERROR("loaddump error: %d\n", ret);
             MEMLINK_EXIT;

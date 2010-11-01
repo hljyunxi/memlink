@@ -17,4 +17,9 @@ char*   formath(char *data, int datalen, char *buf, int blen);
 
 unsigned int timediff(struct timeval *start, struct timeval *end);
 
+int     isfile (char *path);
+int     isdir (char *path);
+int     islink (char *path);
+int     isexists (char *path);
+
 #endif

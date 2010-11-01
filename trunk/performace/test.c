@@ -18,7 +18,6 @@ int clear_key()
 {
 	MemLink	*m;
     
-    //DINFO("=== rmkey ===\n");
     m = memlink_create("127.0.0.1", 11001, 11002, 30);
 	if (NULL == m) {
 		DERROR("memlink_create error!\n");
@@ -29,7 +28,6 @@ int clear_key()
 	char key[32];
 
 	sprintf(key, "haha");
-   
     ret = memlink_cmd_rmkey(m, key);
     if (ret != MEMLINK_OK) {
         DERROR("rmkey error! ret:%d\n", ret);
@@ -37,7 +35,6 @@ int clear_key()
     }
     
     MemLinkStat     stat;
-
     ret = memlink_cmd_stat(m, key, &stat);
     if (ret != MEMLINK_ERR_NOKEY) {
         DERROR("stat result error! ret:%d\n", ret);
@@ -52,7 +49,6 @@ int create_key(char *key)
 {
 	MemLink	*m;
     
-    //DINFO("=== rmkey ===\n");
     m = memlink_create("127.0.0.1", 11001, 11002, 30);
 	if (NULL == m) {
 		DERROR("memlink_create error!\n");
@@ -60,7 +56,6 @@ int create_key(char *key)
 	}
 
 	int  ret;
-   
     ret = memlink_cmd_create(m, key, VALUE_SIZE, "4:3:1");
     if (ret != MEMLINK_OK) {
         DERROR("create error! ret:%d\n", ret);
@@ -78,7 +73,6 @@ int test_insert_long(int count, int docreate)
 	MemLink	*m;
 	struct timeval start, end;
 
-	//DINFO("=== test_insert ===\n");
 	gettimeofday(&start, NULL);
 	m = memlink_create("127.0.0.1", 11001, 11002, 30);
 	if (NULL == m) {
@@ -133,7 +127,6 @@ int test_insert_short(int count, int docreate)
 	struct timeval start, end;
 	int iscreate = 0;
 
-	//DINFO("====== test_insert ======\n");
 	int i, ret;
 	char *maskstr = "6:2:1";
 	char *key = "haha";
@@ -184,7 +177,6 @@ int test_range_long(int frompos, int rlen, int count)
 {
 	MemLink	*m;
 	struct timeval start, end;
-	//DINFO("====== test_range ======\n");
 
 	m = memlink_create("127.0.0.1", 11001, 11002, 30);
 	if (NULL == m) {
@@ -199,7 +191,6 @@ int test_range_long(int frompos, int rlen, int count)
 	sprintf(key, "haha");
 	int i;
 
-	//DINFO("start range ...\n");
 	gettimeofday(&start, NULL);
 	for (i = 0; i < count; i++) {
 		sprintf(val, "%020d", i);
@@ -213,7 +204,6 @@ int test_range_long(int frompos, int rlen, int count)
 		memlink_result_free(&result);
 	}
 	gettimeofday(&end, NULL);
-	//DINFO("end range ... %d\n", i);
 
     double speed = 0;
 
@@ -234,9 +224,7 @@ int test_range_short(int frompos, int rlen, int count)
 	struct timeval start, end;
 	int i, ret;
 	char *key = "haha";
-	//DINFO("====== test_range ======\n");
 
-	//DINFO("start range ...\n");
 	gettimeofday(&start, NULL);
 
 	for (i = 0; i < count; i++) {
@@ -412,7 +400,6 @@ int alltest()
                         rangeret[n] = ret;
                     }
 
-
                     qsort(rangeret, RANGE_TESTS, sizeof(int), compare_int);
 
                     for (n = 0; n < RANGE_TESTS; n++) {
@@ -421,7 +408,6 @@ int alltest()
                     printf("\n");
 
                     int sum = 0;
-
                     for (n = 1; n < RANGE_TESTS - 1; n++) {
                         sum += rangeret[n];
                     }
@@ -430,7 +416,6 @@ int alltest()
                     DINFO("====== sum: %d, ave: %.2f ======\n", sum, av);
                 }
             }
-
             clear_key();
         }
     }
@@ -647,7 +632,18 @@ int alltest_thread()
 
 int show_help()
 {
-	printf("test [options]\n");
+	printf("usage:\n\ttest [options]\n");
+    printf("options:\n");
+    printf("\t--help,-h\tshow help information\n");
+    printf("\t--thread,-t\tthread count for test\n");
+    printf("\t--count,-n\tinsert number\n");
+    printf("\t--frompos,-f\trange from position\n");
+    printf("\t--len,-l\trange length\n");
+    printf("\t--alltest,-a\tuse alltest. will test insert/range in 1w,10w,100w,1000w\n");
+    printf("\t--do,-d\t\tinsert or range\n");
+    printf("\t--longconn,-c\tuse long connection for test\n");
+    printf("\n\n");
+
 	exit(0);
 }
 

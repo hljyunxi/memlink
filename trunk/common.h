@@ -1,12 +1,6 @@
 #ifndef MEMLINK_COMMON_H
 #define MEMLINK_COMMON_H
 
-// 命令执行超时
-#define MEMLINK_ERR_TIMEOUT         -1000
-// 发送数据错误
-#define MEMLINK_ERR_SEND            -100
-// 接收数据错误
-#define MEMLINK_ERR_RECV            -200
 // 客户端错误
 #define MEMLINK_ERR_CLIENT          -10
 // 服务器端错误
@@ -35,6 +29,13 @@
 #define MEMLINK_ERR_REMOVED         -22
 // 
 #define MEMLINK_ERR_RANGE_SIZE		-23
+// 发送数据错误
+#define MEMLINK_ERR_SEND            -24
+// 接收数据错误
+#define MEMLINK_ERR_RECV            -25
+// 命令执行超时
+#define MEMLINK_ERR_TIMEOUT         -26
+
 // 其他错误
 #define MEMLINK_ERR                 -1
 // 操作失败
@@ -46,7 +47,17 @@
 // 假
 #define MEMLINK_FALSE				0
 
+// GETDUMP 命令中大小错误
+#define MEMLINK_ERR_DUMP_SIZE       -100
+// GETDUMP 命令中dump文件错误
+#define MEMLINK_ERR_DUMP_VER        -101
+
+
 #define ROLE_MASTER		1
 #define ROLE_SLAVE		0
+
+// 命令执行返回信息头部长度
+// datalen(2B) + retcode(2B)
+#define CMD_REPLY_HEAD_LEN     (sizeof(short)+sizeof(short))
 
 #endif
