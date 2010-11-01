@@ -1,5 +1,5 @@
 #labels Introduce
-#Introduce Memlink.
+#Memlink介绍
 
 = Memlink功能 =
 
@@ -23,7 +23,10 @@ redis同样也提供key => list 存储功能，memlink与redis区别有：
 memlink主要对上述特点进行了改进。
 
 = 性能 =
-[benchmark]
+[Benchmark]
+
+= Client API =
+[ClientAPI]
 
 = 未来 =
 
