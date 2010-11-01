@@ -1,16 +1,19 @@
 #labels Introduce
 #Introduce Memlink.
 
-= Introduction =
+= Memlink功能 =
 
-Memlink是持久化的内存数据引擎，保存key => List/Queue数据对象，List是可以排序的。可以用于海量数据的论坛类产品，保存帖子列表逻辑关系；也可以用于海量数据的微博产品，保存消息队列。
+Memlink是持久化的、内存数据引擎，保存key => List/Queue数据对象，List是可以排序的，Quee为双向队列。Memlink可以用于海量数据的论坛类产品，用于保存帖子列表逻辑关系；也可以用于海量数据的微博产品，保存消息队列等。
 
 特点：
   * 内存数据引擎，性能极为高效
   * 数据持久化，非Cache模式
   * 内存使用精简
+  * 支持redo-log，内存和文件系统数据的一致性
   * 分布式，主从同步
 
+同类产品对比：
+目前有redis提供key => list
 
 = Details =
 
