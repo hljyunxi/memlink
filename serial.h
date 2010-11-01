@@ -59,8 +59,8 @@ int cmd_rmkey_unpack(char *data, char *key);
 int cmd_count_pack(char *data, char *key, unsigned char masknum, unsigned int *maskarray);
 int cmd_count_unpack(char *data, char *key, unsigned char *masknum, unsigned int *maskarray);
 
-int cmd_stat_pack(char *data, char *key); //, HashTableStat *stat);
-int cmd_stat_unpack(char *data, char *key); //, HashTableStat *stat);
+int cmd_stat_pack(char *data, char *key);
+int cmd_stat_unpack(char *data, char *key);
 
 int cmd_create_pack(char *data, char *key, unsigned char valuelen, 
                     unsigned char masknum, unsigned int *maskformat);

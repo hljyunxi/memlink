@@ -402,6 +402,7 @@ synclog_lastlog()
     mydir = opendir(g_cf->datadir);
     if (NULL == mydir) {
         DERROR("opendir %s error: %s\n", g_cf->datadir, strerror(errno));
+        MEMLINK_EXIT;
         return 0;
     }
     //DINFO("readdir ...\n");

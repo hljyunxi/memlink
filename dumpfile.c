@@ -120,13 +120,14 @@ dumpfile(HashTable *ht)
 }
 
 int
-loaddump(HashTable *ht)
+loaddump(HashTable *ht, char *filename)
 {
     FILE    *fp;
-    char    filename[PATH_MAX];
+    //char    filename[PATH_MAX];
     int     filelen;
     
-    snprintf(filename, PATH_MAX, "%s/%s", g_cf->datadir, DUMP_FILE_NAME);
+    //snprintf(filename, PATH_MAX, "%s/%s", g_cf->datadir, DUMP_FILE_NAME);
+    //snprintf(filename, PATH_MAX, "%s/%s", g_cf->datadir, dumpfile_name);
     fp = fopen(filename, "r");
     if (NULL == fp) {
         DERROR("open dumpfile %s error: %s\n", filename, strerror(errno));
