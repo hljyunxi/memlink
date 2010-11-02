@@ -199,8 +199,8 @@ def dotest():
     range_start = int(sys.argv[2])
     range_len = int(sys.argv[3])
 
-    test_insert_short(count)
-    test_range_short(range_start, range_len, 1000)
+    test_insert(count)
+    test_range(range_start, range_len, 1000)
 
 
 if __name__ == '__main__':
