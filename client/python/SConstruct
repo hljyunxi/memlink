@@ -15,7 +15,7 @@ python_ldflags = x.stdout.read()
 os.system('swig -python -o memlink_client_python.c ../c/memlink_client.i')
 
 #cflags   = '-ggdb -DRANGE_MASK_STR'
-cflags   = '-ggdb'
+cflags   = '-ggdb -DDEBUG'
 includes = ['.', '../../', '../c/', '/Developer/usr/include'] + python_includes
 #ldflags  = python_ldflags
 ldflags  = ''

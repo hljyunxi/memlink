@@ -1,3 +1,7 @@
+#define _LARGEFILE_SOURCE
+#define _LARGEFILE64_SOURCE
+#define _FILE_OFFSET_BITS 64
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,7 +20,7 @@
  * Creates a dump file from the hash table. The old dump file is replaced by 
  * the new dump file. Sync log is also rotated.
  * format:
- * | dumpfile format(2B) | dumpfile version (4B) | sync log version(4B) | dumpfile is master (1B) | data
+ * | dumpfile format(2B) | dumpfile version (4B) | sync log version(4B) | dumpfile is master (1B) | dumpfile size (8B)| data
  *
  * @param ht hash table
  */
@@ -29,6 +33,7 @@ dumpfile(HashTable *ht)
     char        tmpfile[PATH_MAX];
     char        dumpfile[PATH_MAX];
     int         i;
+	long long   size = 0;
     
     DINFO("dumpfile start ...\n");
 
@@ -59,6 +64,8 @@ dumpfile(HashTable *ht)
 
 	fwrite(&g_cf->role, sizeof(char), 1, fp);
 	DINFO("write role: %d\n", g_cf->role);
+
+	fwrite(&size, sizeof(long long), 1, fp);
 
     unsigned char keylen;
     int datalen;
@@ -104,6 +111,12 @@ dumpfile(HashTable *ht)
     }
     
     DINFO("dump count: %d\n", dump_count);
+	
+	size = ftell(fp);
+
+	fseek(fp,  DUMP_HEAD_LEN - sizeof(long long), SEEK_SET);
+	fwrite(&size, sizeof(long long), 1, fp);
+
     fclose(fp);
 
     int ret = rename(tmpfile, dumpfile);
@@ -156,6 +169,9 @@ loaddump(HashTable *ht, char *filename)
 
 	char role;
 	fread(&role, sizeof(char), 1, fp);
+
+	long long size;
+	fread(&size, sizeof(long long), 1, fp);
 
     unsigned char keylen;
     unsigned char masklen;

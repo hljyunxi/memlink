@@ -75,29 +75,29 @@ wdata_check_clean(int fd, short event, void *arg)
  *
  * @param conn
  * @param retcode return code
- * @param msg message
  * @param return return data length
  * @param data return data
  *
- * -----------------------------------------------------------------
- * | length (4B)| retcode (2B) | message len (1B) | message | data |
- * -----------------------------------------------------------------
+ * ------------------------------------
+ * | length (4B)| retcode (2B) | data |
+ * ------------------------------------
  * Length is the count of bytes following it.
  */
 int
-data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
+data_reply(Conn *conn, short retcode, char *retdata, int retlen)
 {
-    int mlen = 0;  // msg string len
+    //int mlen = 0;  // msg string len
     unsigned int datalen = 0;
     char *wdata;
 
     DINFO("retcode:%d, retlen:%d, retdata:%p\n", retcode, retlen, retdata);
+	/*
     if (msg) {
         mlen = strlen(msg);
-    }
+    }*/
 
-    // package length + retcode + msg len + msg + retdata
-    datalen = sizeof(int) + sizeof(short) + sizeof(char) + mlen + retlen;
+    // package length + retcode + retdata
+    datalen = CMD_REPLY_HEAD_LEN + retlen;
     DINFO("datalen: %d, retcode: %d, conn->wsize:%d\n", datalen, retcode, conn->wsize); 
     
     if (conn->wsize >= datalen) {
@@ -125,14 +125,16 @@ data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen)
 
     memcpy(wdata + count, &retcode, sizeof(short));
     count += sizeof(short);
-   
+  
+	/*
     unsigned char msglen = mlen;
     memcpy(wdata + count, &msglen, sizeof(char));
     count += sizeof(char);
     if (msglen > 0) {
         memcpy(wdata + count, msg, msglen);
         count += msglen;
-    }
+    }*/
+
     DINFO("retlen: %d, retdata:%p, count:%d\n", retlen, retdata, count);
     if (retlen > 0) {
         memcpy(wdata + count, retdata, retlen);
@@ -398,7 +400,7 @@ wdata_ready(Conn *conn, char *data, int datalen)
     int ret = wdata_apply(data, datalen, 1);
     pthread_mutex_unlock(&g_runtime->mutex);
 
-    ret = data_reply(conn, ret, NULL, NULL, 0);
+    ret = data_reply(conn, ret, NULL, 0);
     gettimeofday(&end, NULL);
     DINFO("data_reply return: %d\n", ret);
 

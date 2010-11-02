@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <fcntl.h>
 
 #include "logfile.h"
 #include "zzmalloc.h"
@@ -13,12 +15,14 @@
 #include "network.h"
 #include "serial.h"
 #include "synclog.h"
+#include "common.h"
 #include "sslave.h"
 
 #define SYNC_HEAD_LEN   (sizeof(int)+sizeof(int))
 
 // TODO
 // code to process the sync log data from sync master
+/*
 static int
 sslave_forever(SSlave *ss)
 {
@@ -26,15 +30,17 @@ sslave_forever(SSlave *ss)
 	int  sndsize = 0;
 	// send sync
 
-	cmd_sync_pack(sndbuf);
+	cmd_sync_pack(sndbuf, );
 	writen(ss->sock, sndbuf, sndsize, ss->timeout);
 
 	return 0;
 }
-
+*/
 int 
 sslave_check_sync_dump(SSlave *ss)
 {
+
+	return 0;
 }
 
 
@@ -79,6 +85,13 @@ sslave_do_cmd(SSlave *ss, char *sendbuf, int buflen, char *recvbuf, int recvlen)
     return len + sizeof(short);
 }
 
+static int 
+find_prev_sync_pos(unsigned int *logver, unsigned int *logline)
+{
+
+	return 0;
+}
+
 
 int
 sslave_conn_init(SSlave *ss)
@@ -86,10 +99,10 @@ sslave_conn_init(SSlave *ss)
     char sndbuf[1024];
     int  sndlen;
     char recvbuf[1024];
-    int  recvlen;
+    //int  recvlen;
     int  ret;
-    int  logver = ss->logver;
-    int  logline = ss->logline;
+    unsigned int  logver  = ss->logver;
+    unsigned int  logline = ss->logline;
     unsigned int  dumpver;
     long long     dumpsize;
 
@@ -111,7 +124,7 @@ sslave_conn_init(SSlave *ss)
                 return 0;
 
             i += 1;
-            memcpy(&dumpver, recvbuf[i], sizeof(int));
+            memcpy(&dumpver, &recvbuf[i], sizeof(int));
             // try find the last sync position
             ret = find_prev_sync_pos(&logver, &logline);
             if (ret != 0) { // get dump
@@ -125,7 +138,7 @@ sslave_conn_init(SSlave *ss)
     
 
     sndlen = cmd_getdump_pack(sndbuf, dumpver, dumpsize); 
-    ret = sslave_do_cmd(sndbuf, sndlen, recvbuf, 1024); 
+    ret = sslave_do_cmd(ss, sndbuf, sndlen, recvbuf, 1024); 
     if (ret < 0) {
         DERROR("cmd getdump error: %d\n", ret);
         return ret;
@@ -145,7 +158,7 @@ sslave_conn_init(SSlave *ss)
     snprintf(dumpfile, PATH_MAX, "%s/dump.master.dat", g_cf->datadir);
     snprintf(dumpfile_tmp, PATH_MAX, "%s/dump.master.dat.tmp", g_cf->datadir);
     
-    fd = open(dumpfile_tmp, O_CREATE|O_WRONLY, 0644);
+    fd = open(dumpfile_tmp, O_CREAT|O_WRONLY, 0644);
     if (fd == -1) {
         DERROR("open dumpfile %s error! %s\n", dumpfile_tmp, strerror(errno));
         return -2;
@@ -172,7 +185,7 @@ sslave_conn_init(SSlave *ss)
     close(fd);
 
     
-    ret = rename(dumpfile_tmp, dump_file);
+    ret = rename(dumpfile_tmp, dumpfile);
     if (ret == -1) {
         DERROR("dump file rename error: %s\n", strerror(errno));
         return -1;
@@ -182,6 +195,8 @@ sslave_conn_init(SSlave *ss)
     //
 
     //loaddump(g_runtime->ht, dumpfile);
+
+	return 0;
 }
 
 int
@@ -190,7 +205,7 @@ sslave_recv_synclog(SSlave *ss)
     int  ret;
     int  len;
     char buf[1024];
-    char buflen = 0;
+    //char buflen = 0;
     int  headlen = SYNC_HEAD_LEN + sizeof(short);
 
     while (ss->sock) {
@@ -221,6 +236,8 @@ sslave_recv_synclog(SSlave *ss)
             return -3;
         }
     }
+
+	return 0;
 }
 
 
@@ -244,10 +261,10 @@ sslave_run(void *args)
 			}
 		}
 
-        if (logver == 0) {
+        if (ss->logver == 0) {
         }
 
-		sslave_forever(ss);
+		//sslave_forever(ss);
 	}
 
 	return NULL;

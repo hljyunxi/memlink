@@ -24,7 +24,7 @@ rdata_ready(Conn *conn, char *data, int datalen)
     //char value[1024];
     char cmd;
     int  ret = 0;
-    char *msg = NULL;
+    //char *msg = NULL;
     char *retdata = NULL;
     int  retlen = 0;
 
@@ -64,7 +64,7 @@ rdata_ready(Conn *conn, char *data, int datalen)
            
             retlen += sizeof(char) * 2;
 
-            ret = data_reply(conn, ret, msg, retrec, retlen);
+            ret = data_reply(conn, ret, retrec, retlen);
             DINFO("data_reply return: %d\n", ret);
 
             break;
@@ -84,7 +84,7 @@ rdata_ready(Conn *conn, char *data, int datalen)
 
             DINFO("data_reply return: %d\n", ret);
 
-            ret = data_reply(conn, ret, msg, retdata, retlen);
+            ret = data_reply(conn, ret, retdata, retlen);
             DINFO("data_reply return: %d\n", ret);
 
             break;
@@ -107,14 +107,14 @@ rdata_ready(Conn *conn, char *data, int datalen)
             memcpy(retrec + sizeof(int), &mcount, sizeof(int));
             //retlen = sizeof(int) + sizeof(int);
 
-            ret = data_reply(conn, ret, msg, retrec, retlen);
+            ret = data_reply(conn, ret, retrec, retlen);
             DINFO("data_reply return: %d\n", ret);
             break;
         }
         default: {
             ret = MEMLINK_ERR_CLIENT_CMD;
 
-            ret = data_reply(conn, ret, msg, retdata, retlen);
+            ret = data_reply(conn, ret, retdata, retlen);
             DINFO("data_reply return: %d\n", ret);
 
         }

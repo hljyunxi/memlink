@@ -156,10 +156,10 @@ cmd_sync(Conn* conn, char *data, int datalen)
     cmd_sync_unpack(data, &logver, &log_index_pos);
     DINFO("log version: %d, log index position: %d\n", logver, log_index_pos);
     if ((find_synclog(logver, log_index_pos)) >= 0) {
-        ret = data_reply(conn, 0, NULL, NULL, 0);
+        ret = data_reply(conn, 0, NULL, 0);
         DINFO("Found sync log file (version = %d)\n", logver);
     } else { 
-        ret = data_reply(conn, 1, NULL, (char *)&(g_runtime->dumpver), sizeof(int));
+        ret = data_reply(conn, 1, (char *)&(g_runtime->dumpver), sizeof(int));
         DINFO("Not found syn log file with version %d\n", logver);
     }
 
@@ -179,7 +179,7 @@ cmd_sync_dump(Conn* conn, char *data, int datalen)
     cmd_getdump_unpack(data, &dumpver, &size);
     DINFO("dump version: %d, synchronized data size: %d\n", dumpver, size);
     retcode = g_runtime->dumpver == dumpver ? 1 : 0;
-    ret = data_reply(conn, retcode, NULL, NULL, 0);
+    ret = data_reply(conn, retcode, NULL, 0);
 
     // TODO send dump file
     return ret;

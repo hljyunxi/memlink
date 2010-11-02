@@ -17,7 +17,6 @@
 #include "zzmalloc.h"
 #include "utils.h"
 
-#define RECV_HEAD_LEN		(sizeof(int)+sizeof(short))
 #define RECV_PKG_SIZE_LEN	sizeof(int)
 
 MemLink*    
@@ -204,11 +203,9 @@ memlink_write(MemLink *m, int fdtype, char *wbuf, int wlen)
 
 /**
  * Send a command to memlink server and recieve the response. Response format:
- * ----------------------------------------------------
- * | response length (2 bytes) | return code (2 bytes)|
- * ----------------------------------------------------
- * | message length (1 bytes) | message | data |
- * ---------------------------------------------
+ * -----------------------------------------------------------
+ * | response length (2 bytes) | return code (2 bytes)| data |
+ * -----------------------------------------------------------
  *
  * @param m memlink client
  * @param fdtype read or write
@@ -307,14 +304,14 @@ memlink_cmd_stat(MemLink *m, char *key, MemLinkStat *stat)
         return ret;
     }
 
-    char msglen;
-    int  pos = RECV_HEAD_LEN;
+    //char msglen;
+    int  pos = CMD_REPLY_HEAD_LEN;
 
-    memcpy(&msglen, retdata + pos, sizeof(char));
+    /*memcpy(&msglen, retdata + pos, sizeof(char));
     pos += sizeof(char);
     if (msglen > 0) {
         pos += msglen;
-    }
+    }*/
     
     memcpy(stat, retdata + pos, sizeof(MemLinkStat));
 #ifdef DEBUG
@@ -488,14 +485,15 @@ memlink_cmd_count(MemLink *m, char *key, char *maskstr, MemLinkCount *count)
 	if (ret < 0) 
 		return ret;
 
-    char msglen;
-    int  pos = RECV_HEAD_LEN;
+    //char msglen;
+    int  pos = CMD_REPLY_HEAD_LEN;
 
+	/*
     memcpy(&msglen, retdata + pos, sizeof(char));
     pos += sizeof(char);
     if (msglen > 0) {
         pos += msglen;
-    }
+    }*/
     
     memcpy(count, retdata + pos, sizeof(MemLinkCount));
     DINFO("count, visible: %d, tag: %d\n", count->visible_count, count->tagdel_count);
@@ -622,7 +620,7 @@ memlink_cmd_range(MemLink *m, char *key, char *maskstr, unsigned int frompos, un
 
     //int  retlen = 256 * len + HASHTABLE_MASK_MAX_LEN * sizeof(int) * len + 32;
 	// valuesize + masksize + 1 + maskformat+ max valuesize + max mask size + head size + max message size
-    int  retlen = 3 + maskn + 256 * len + maskn * sizeof(int) * len + RECV_HEAD_LEN + 257;
+    int  retlen = 3 + maskn + 256 * len + maskn * sizeof(int) * len + CMD_REPLY_HEAD_LEN + 257;
     DINFO("retlen: %d\n", retlen);
 	if (retlen > 1024000) { // do not more than 1M
 		return MEMLINK_ERR_RANGE_SIZE;
@@ -638,15 +636,15 @@ memlink_cmd_range(MemLink *m, char *key, char *maskstr, unsigned int frompos, un
     //memcpy(&dlen, retdata, sizeof(int));
 	dlen = *(unsigned int*)(retdata);
 
-    char msglen;
-    int  pos = RECV_HEAD_LEN;
+    //char msglen;
+    int  pos = CMD_REPLY_HEAD_LEN;
 
     //memcpy(&msglen, retdata + pos, sizeof(char));
-	msglen = *(char*)(retdata + pos);
+	/*msglen = *(char*)(retdata + pos);
     pos += sizeof(char);
     if (msglen > 0) {
         pos += msglen;
-    }
+    }*/
  
     unsigned char valuesize, masksize, masknum;
     unsigned char maskformat[1024];
