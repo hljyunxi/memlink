@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # coding: utf-8
 import os, sys
+home = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.join(home, "client/python"))
 import time
 import subprocess
 #import memlinkclient
@@ -77,9 +79,11 @@ def test():
     time.sleep(1)
 
     print memlinkstart
-
+    #x = subprocess.Popen(memlinkstart, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
+    #                         shell=True, env=os.environ, universal_newlines=True) 
     x = subprocess.Popen(memlinkstart, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
                              shell=True, env=os.environ, universal_newlines=True) 
+    #x = subprocess.Popen(memlinkstart, shell=True, env=os.environ, universal_newlines=True) 
      
     time.sleep(5)
     ret = test_result()

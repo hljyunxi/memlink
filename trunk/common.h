@@ -57,7 +57,7 @@
 #define ROLE_SLAVE		0
 
 // 命令执行返回信息头部长度
-// datalen(2B) + retcode(2B)
-#define CMD_REPLY_HEAD_LEN     (sizeof(short)+sizeof(short))
+// datalen(4B) + retcode(2B)
+#define CMD_REPLY_HEAD_LEN     (sizeof(int)+sizeof(short))
 
 #endif

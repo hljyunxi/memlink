@@ -19,7 +19,7 @@ void*       wthread_loop(void *arg);
 
 void        client_read(int fd, short event, void *arg);
 void        client_write(int fd, short event, void *arg);
-int         data_reply(Conn *conn, short retcode, char *msg, char *retdata, int retlen);
+int         data_reply(Conn *conn, short retcode, char *retdata, int retlen);
 int         wdata_apply(char *data, int datalen, int writelog);
 int			change_event(Conn *conn, int newflag, int isnew);
 

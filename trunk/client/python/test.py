@@ -30,17 +30,15 @@ def test1():
 
 def test2():
     m = memlinkclient.MemLinkClient('127.0.0.1', 11001, 11002, 10)
-    print dir(m)
+    #print dir(m)
 
     key = 'haha'
-
     ret, result = m.stat(key)
-    print ret, result
+    print result
 
-    ret, result = m.range(key, "::", 2, 10) 
-    print ret, result
-  
-    del result
+    #ret, result = m.range(key, "::", 2, 10) 
+    #print ret, result
+    #del result
 
     m.destroy()
 
