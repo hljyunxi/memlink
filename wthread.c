@@ -62,11 +62,6 @@ change_event(Conn *conn, int newflag, int isnew)
     return 0;
 }
 
-void
-wdata_check_clean(int fd, short event, void *arg)
-{
-
-}
 
 /**
  * 回复数据
@@ -150,9 +145,10 @@ data_reply(Conn *conn, short retcode, char *retdata, int retlen)
     */
     conn->wlen = datalen;
 
+#ifdef DEBUG
     char buf[10240] = {0};
     DINFO("reply %s\n", formath(conn->wbuf, conn->wlen, buf, 10240));
-
+#endif
 	DINFO("change event to write.\n");
 	int ret = change_event(conn, EV_WRITE|EV_PERSIST, 0);
 	if (ret < 0) {
@@ -161,6 +157,64 @@ data_reply(Conn *conn, short retcode, char *retdata, int retlen)
 	}
 
     return 0;
+}
+
+void*
+wdata_do_clean(void *args)
+{
+	HashNode	*node = (HashNode*)args;
+	int			ret;
+	
+	pthread_mutex_lock(&g_runtime->mutex);
+	ret = hashtable_clean(g_runtime->ht, node->key);
+	if (ret != 0) {
+		DERROR("wdata_do_clean error: %d\n", ret);
+	}
+	pthread_mutex_unlock(&g_runtime->mutex);
+
+	return NULL;
+}
+
+void
+wdata_check_clean(char *key)
+{
+	HashNode	*node;
+
+	if (key	== NULL || key[0] == 0) 
+		return;
+
+	node = hashtable_find(g_runtime->ht, key);
+	if (NULL == node)
+		return;
+
+	double rate = (double)node->used / node->all;
+	DINFO("check clean rate: %f\n", rate);
+	
+	if (g_cf->block_clean_cond < 0.01 || g_cf->block_clean_cond > rate) {
+		return;
+	}
+
+    pthread_t       threadid;
+    pthread_attr_t  attr;
+    int             ret;
+    
+    ret = pthread_attr_init(&attr);
+    if (ret != 0) {
+        DERROR("pthread_attr_init error: %s\n", strerror(errno));
+        MEMLINK_EXIT;
+    }
+
+    ret = pthread_create(&threadid, &attr, wdata_do_clean, node);
+    if (ret != 0) {
+        DERROR("pthread_create error: %s\n", strerror(errno));
+        MEMLINK_EXIT;
+    }
+
+	ret = pthread_detach(threadid);
+	if (ret != 0) {
+		DERROR("pthread_detach error; %s\n", strerror(errno));
+		MEMLINK_EXIT;
+	}
 }
 
 /**
@@ -204,11 +258,15 @@ wdata_apply(char *data, int datalen, int writelog)
 				DERROR("unpack clean error! ret: %d\n", ret);
 				break;
 			}
+#ifdef DEBUG
             hashtable_print(g_runtime->ht, key);
             DINFO("clean unpack key: %s\n", key);
+#endif
             ret = hashtable_clean(g_runtime->ht, key); 
+#ifdef DEBUG
             DINFO("clean return:%d\n", ret); 
             hashtable_print(g_runtime->ht, key);
+#endif
             break;
         case CMD_CREATE:
             DINFO("<<< cmd CREATE >>>\n");
@@ -247,8 +305,9 @@ wdata_apply(char *data, int datalen, int writelog)
             DINFO("unpack del, key: %s, value: %s, valuelen: %d\n", key, value, valuelen);
             ret = hashtable_del(g_runtime->ht, key, value);
             DINFO("hashtable_del: %d\n", ret);
-
+#ifdef DEBUG
             hashtable_print(g_runtime->ht, key);
+#endif
             if (ret >= 0 && writelog) {
                 int sret = synclog_write(g_runtime->synclog, data, datalen);
                 if (sret < 0) {
@@ -266,9 +325,7 @@ wdata_apply(char *data, int datalen, int writelog)
 				break;
 			}
 
-
             DINFO("unpak pos: %d, mask: %d, array:%d,%d,%d\n", pos, masknum, maskarray[0], maskarray[1], maskarray[2]);
-
             ret = hashtable_add_mask(g_runtime->ht, key, value, maskarray, masknum, pos);
             DINFO("hashtable_add_mask: %d\n", ret);
            
@@ -322,7 +379,9 @@ wdata_apply(char *data, int datalen, int writelog)
                     masknum, maskarray[0], maskarray[1], maskarray[2]);
             ret = hashtable_mask(g_runtime->ht, key, value, maskarray, masknum);
             DINFO("hashtable_mask: %d\n", ret);
+#ifdef DEBUG
             hashtable_print(g_runtime->ht, key);
+#endif
             if (ret >= 0 && writelog) {
                 int sret = synclog_write(g_runtime->synclog, data, datalen);
                 if (sret < 0) {
@@ -344,7 +403,9 @@ wdata_apply(char *data, int datalen, int writelog)
             ret = hashtable_tag(g_runtime->ht, key, value, tag);
             DINFO("hashtable_tag: %d\n", ret);
 
+#ifdef DEBUG
             hashtable_print(g_runtime->ht, key);
+#endif
             if (ret >= 0 && writelog) {
                 int sret = synclog_write(g_runtime->synclog, data, datalen);
                 if (sret < 0) {
@@ -362,9 +423,7 @@ wdata_apply(char *data, int datalen, int writelog)
 				break;
 			}
 
-
             DINFO("unpack rmkey, key:%s\n", key);
-            
             ret = hashtable_remove_key(g_runtime->ht, key);
             DINFO("hashtable_remove_key ret: %d\n", ret);
             if (ret >= 0 && writelog) {
@@ -379,6 +438,8 @@ wdata_apply(char *data, int datalen, int writelog)
             ret = MEMLINK_ERR_CLIENT_CMD;
             break;
     }
+	
+	wdata_check_clean(key);
 
     return ret;
 }
