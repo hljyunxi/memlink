@@ -39,6 +39,64 @@ sslave_forever(SSlave *ss)
 int 
 sslave_check_sync_dump(SSlave *ss)
 {
+	char dumpfile[PATH_MAX];	
+	int  ret;
+
+	snprintf(dumpfile, PATH_MAX, "%s/dump.master.dat", g_cf->datadir);
+	
+	if (isfile(dumpfile)) {
+		FILE	*dumpf;	
+		dumpf = fopen(dumpfile, "r");
+		if (dumpf == NULL) {
+			DERROR("open file %s error! %s\n", dumpfile, strerror(errno));
+			return -1;
+		}
+		
+		fseek(dumpf, 0, SEEK_END);
+		ss->dumpfile_size = ftell(dumpf);
+
+		if (ss->dumpfile_size >= DUMP_HEAD_LEN) {
+			long long size;
+			fseek(dumpf, DUMP_HEAD_LEN - sizeof(long long), SEEK_SET);
+			ret = fread(&size, sizeof(long long), 1, dumpf);
+			if (ret != sizeof(long long)) {
+				DERROR("fread error: %s\n", strerror(errno));
+				//fclose(dumpf);
+				//return -1;
+				goto read_dump_over;
+			}
+			ss->dumpsize = size;
+
+			int pos = sizeof(short) + sizeof(int);
+			fseek(dumpf, pos, SEEK_SET);
+
+			unsigned int dump_logver;
+			ret = fread(&dump_logver, sizeof(int), 1, dumpf);
+			if (ret != sizeof(int)) {
+				DERROR("fread error: %s\n", strerror(errno));
+				//fclose(dumpf);
+				//return -1;
+				goto read_dump_over;
+			}
+			ss->dump_logver = dump_logver;
+		}
+read_dump_over:
+		fclose(dumpf);
+	}
+
+	char *binlog;
+	char logname[PATH_MAX];
+
+	snprintf(logname, PATH_MAX, "%s/bin.log", g_cf->datadir);
+
+	binlog = logname;	
+	FILE	*binf;
+
+	binf = fopen(binlog, "r");
+		
+	
+
+	fclose(binf);
 
 	return 0;
 }
@@ -86,8 +144,34 @@ sslave_do_cmd(SSlave *ss, char *sendbuf, int buflen, char *recvbuf, int recvlen)
 }
 
 static int 
-find_prev_sync_pos(unsigned int *logver, unsigned int *logline)
+sslave_prev_sync_pos(SSlave *ss, unsigned int *logver, unsigned int *logline)
 {
+	//int previd = synclog_prevlog(logver);
+	int fd;
+	char filepath[PATH_MAX];
+	int bver = ss->binlog_ver;
+	//int ret;
+
+	if (ss->binlog_index == 0) {
+		//ret = synclog_prevlog();		
+	}
+
+	if (ss->binlog_ver > 0) {
+		snprintf(filepath, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, bver);
+	}else{
+		snprintf(filepath, PATH_MAX, "%s/bin.log", g_cf->datadir);
+	}
+
+	fd = open(filepath, O_RDONLY);
+	if (fd == -1) {
+		DERROR("open file %s error! %s\n", filepath, strerror(errno));
+		return -1;
+	}
+
+	int pos = SYNCLOG_HEAD_LEN + sizeof(int) * ss->binlog_index;
+	lseek(fd, pos, SEEK_SET);
+	
+	close(fd);
 
 	return 0;
 }
@@ -126,7 +210,7 @@ sslave_conn_init(SSlave *ss)
             i += 1;
             memcpy(&dumpver, &recvbuf[i], sizeof(int));
             // try find the last sync position
-            ret = find_prev_sync_pos(&logver, &logline);
+            ret = sslave_prev_sync_pos(ss, &logver, &logline);
             if (ret != 0) { // get dump
                 dumpsize = 0;
                 break;
@@ -174,7 +258,7 @@ sslave_conn_init(SSlave *ss)
         buflen = ret;
         ret = writen(fd, dumpbuf, buflen, 0);
         if (ret < 0) {
-            DERROR("write dump erro: %d, %s\n", ret, strerror(errno));
+            DERROR("write dump error: %d, %s\n", ret, strerror(errno));
             close(fd);
             return ret;
         }
@@ -243,7 +327,9 @@ sslave_recv_synclog(SSlave *ss)
 
 /**
  * slave sync thread
- * 1.find local sync logver/logline 2.send sync command to server 3.get dump/sync message
+ * 1.find local sync logver/logline 
+ * 2.send sync command to server 
+ * 3.get dump/sync message
  */
 void*
 sslave_run(void *args)
