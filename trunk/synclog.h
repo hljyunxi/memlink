@@ -11,7 +11,7 @@
 
 #define SYNCLOG_NAME "bin.log"
 
-#define SYNCLOG_HEADER_LEN  (sizeof(short)+sizeof(int)+sizeof(char)+sizeof(int))
+#define SYNCLOG_HEAD_LEN  (sizeof(short)+sizeof(int)+sizeof(char)+sizeof(int))
 
 /**
  * header and index area are mapped in memory address space.
@@ -35,5 +35,6 @@ int         synclog_write(SyncLog *slog, char *data, int datalen);
 void        synclog_destroy(SyncLog *slog);
 int         synclog_rotate(SyncLog *slog);
 int         synclog_lastlog();
+int			synclog_prevlog(int curid);
 
 #endif

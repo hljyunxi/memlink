@@ -421,5 +421,32 @@ synclog_lastlog()
     return maxid;
 }
 
+int
+synclog_prevlog(int curid)
+{
+    DIR     *mydir; 
+    struct  dirent *nodes;
+    int     maxid = 0;
+
+    mydir = opendir(g_cf->datadir);
+    if (NULL == mydir) {
+        DERROR("opendir %s error: %s\n", g_cf->datadir, strerror(errno));
+        MEMLINK_EXIT;
+        return 0;
+    }
+    while ((nodes = readdir(mydir)) != NULL) {
+        DINFO("name: %s\n", nodes->d_name);
+        if (strncmp(nodes->d_name, "bin.log.", 8) == 0) {
+            int binid = atoi(&nodes->d_name[8]);
+            if (binid > maxid && binid < curid) {
+                maxid = binid;
+            }
+        }
+    }
+    closedir(mydir);
+
+    return maxid;
+}
+
 
 

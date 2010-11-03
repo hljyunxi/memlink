@@ -60,4 +60,8 @@
 // datalen(4B) + retcode(2B)
 #define CMD_REPLY_HEAD_LEN     (sizeof(int)+sizeof(short))
 
+// format + version + log version + ismaster + size
+#define DUMP_HEAD_LEN	(sizeof(short)+sizeof(int)+sizeof(int)+sizeof(char)+sizeof(long long))
+
+
 #endif
