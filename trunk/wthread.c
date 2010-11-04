@@ -166,10 +166,15 @@ wdata_do_clean(void *args)
 	int			ret;
 	
 	pthread_mutex_lock(&g_runtime->mutex);
+	//g_runtime->inclean = 1;
+	//snprintf(g_runtime->cleankey, 512, "%s", node->key);
+
 	ret = hashtable_clean(g_runtime->ht, node->key);
 	if (ret != 0) {
 		DERROR("wdata_do_clean error: %d\n", ret);
 	}
+	//g_runtime->cleankey[0] = 0;
+	//g_runtime->inclean = 0;
 	pthread_mutex_unlock(&g_runtime->mutex);
 
 	return NULL;
@@ -179,6 +184,10 @@ void
 wdata_check_clean(char *key)
 {
 	HashNode	*node;
+	
+	/*if (g_runtime->inclean == 1) {
+		return;
+	}*/
 
 	if (key	== NULL || key[0] == 0) 
 		return;
