@@ -10,6 +10,7 @@ typedef struct _sslave
 
 	unsigned int binlog_ver;
 	unsigned int binlog_index;
+	unsigned int binlog_min_ver;
 
     unsigned int logver; // last logver
     unsigned int logline; // last logline

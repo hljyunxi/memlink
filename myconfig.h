@@ -50,7 +50,8 @@ typedef struct _runtime
     SyncLog         *synclog;  // current synclog
     MemPool         *mpool; 
     HashTable       *ht;
-    volatile int    indump;
+	//volatile int	inclean;
+    //char			cleankey[512];
     WThread         *wthread;
     MainServer      *server;
     SSlave          *sslave; // sync slave
