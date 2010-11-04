@@ -25,9 +25,12 @@ CREATE TABLE `ThreadList` (
 ) ENGINE=Innodb DEFAULT CHARSET=utf8;
 }}}
 
-
+*memlink*
 c:表示c客户端每秒操作成功条数，py:表示python客户端每秒操作成功条数，php:为php客户端每秒操作成功条数。mem:表示memlink server消耗内存。
 insert为插入操作，range为获取列表某个范围的操作。插入的列表中的数据每条为12字节。
+
+*redis*
+redis测试和memlink基本相同。redis只测试c客户端，使用hiredis。
 
 *1. 一个客户端，长连接*
 
