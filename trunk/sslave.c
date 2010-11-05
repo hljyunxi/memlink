@@ -16,26 +16,51 @@
 #include "serial.h"
 #include "synclog.h"
 #include "common.h"
+#include "dumpfile.h"
 #include "sslave.h"
 
 #define SYNC_HEAD_LEN   (sizeof(int)+sizeof(int))
 
-// TODO
-// code to process the sync log data from sync master
-/*
 static int
 sslave_forever(SSlave *ss)
 {
-	char sndbuf[64];
-	int  sndsize = 0;
+	char recvbuf[1024];
+	//int  recvsize = 0;
+	int  checksize = SYNC_HEAD_LEN + sizeof(int);
+	int  ret;
+	unsigned int  rlen = 0;
 	// send sync
+	
+	while (1) {
+		ret = readn(ss->sock, recvbuf, checksize, 0);
+		if (ret < checksize) {
+			DERROR("read sync head too short: %d, close\n", ret);
+			close(ss->sock);
+			ss->sock = -1;
+			return -1;
+		}
+		
+		memcpy(&rlen, recvbuf + SYNC_HEAD_LEN, sizeof(int));
+		
+		ret = readn(ss->sock, recvbuf + checksize, rlen, 0);
+		if (ret < rlen) {
+			DERROR("read sync too short: %d, close\n", ret);
+			close(ss->sock);
+			ss->sock = -1;
+			return -1;
+		}
 
-	cmd_sync_pack(sndbuf, );
-	writen(ss->sock, sndbuf, sndsize, ss->timeout);
+		unsigned int size = checksize + rlen;	
+	
+		ret = wdata_apply(recvbuf + SYNC_HEAD_LEN, rlen, 0);
+		if (ret == 0) {
+			synclog_write(g_runtime->synclog, recvbuf, size);
+		}
+	}
 
 	return 0;
 }
-*/
+
 int
 sslave_load_master_dump_info(SSlave *ss)
 {
@@ -117,6 +142,9 @@ sslave_load_dump_info(SSlave *ss)
 	return 0;
 }
 
+/* 
+ *
+ */
 static int 
 sslave_prev_sync_pos(SSlave *ss)
 {
@@ -131,8 +159,8 @@ sslave_prev_sync_pos(SSlave *ss)
             DERROR("synclog_prevlog error: %d\n", ret);
             return -1;
         }
-        ss->binlog_ver = ret;
-        ss->binlog_index = -1;
+        ss->binlog_ver   = ret;
+        ss->binlog_index = 0;
 	}
 
 	if (ss->binlog_ver > 0) {
@@ -141,6 +169,7 @@ sslave_prev_sync_pos(SSlave *ss)
 		snprintf(filepath, PATH_MAX, "%s/bin.log", g_cf->datadir);
 	}
 
+	
 	fd = open(filepath, O_RDONLY);
 	if (fd == -1) {
 		DERROR("open file %s error! %s\n", filepath, strerror(errno));
@@ -260,6 +289,7 @@ sslave_conn_init(SSlave *ss)
         while (1) {
             logver  = ss->logver;
             logline = ss->logline;
+			DINFO("logver: %u, logline: %u\n", logver, logline);
             sndlen = cmd_sync_pack(sndbuf, logver, logline); 
             ret = sslave_do_cmd(ss, sndbuf, sndlen, recvbuf, 1024);
             if (ret < 0) {
@@ -278,7 +308,7 @@ sslave_conn_init(SSlave *ss)
             memcpy(&dumpver, &recvbuf[i], sizeof(int));
             // try find the last sync position
             ret = sslave_prev_sync_pos(ss);
-            if (ret != 0) { // get dump
+            if (ret != 0) { // no prev log, try get dump
                 dumpsize = 0;
                 break;
             }
@@ -287,7 +317,7 @@ sslave_conn_init(SSlave *ss)
         dumpsize = ss->dumpfile_size;
     }
     
-
+	// do getdump
     sndlen = cmd_getdump_pack(sndbuf, dumpver, dumpsize); 
     ret = sslave_do_cmd(ss, sndbuf, sndlen, recvbuf, 1024); 
     if (ret < 0) {
@@ -334,7 +364,6 @@ sslave_conn_init(SSlave *ss)
     }
 
     close(fd);
-
     
     ret = rename(dumpfile_tmp, dumpfile);
     if (ret == -1) {
@@ -342,10 +371,13 @@ sslave_conn_init(SSlave *ss)
         return -1;
     }
 
-    // load dump file, restart memlink
-    //
+    // load dump file
+	hashtable_clear_all(g_runtime->ht);
+	loaddump(g_runtime->ht, dumpfile);
 
-    //loaddump(g_runtime->ht, dumpfile);
+	/*char olddump[PATH_MAX];
+    snprintf(olddumpfile, PATH_MAX, "%s/dump.dat", g_cf->datadir);
+	remove();*/ 
 
 	return 0;
 }
@@ -360,7 +392,6 @@ sslave_recv_synclog(SSlave *ss)
     int  headlen = SYNC_HEAD_LEN + sizeof(short);
 
     while (ss->sock) {
-        // Fixme: maybe not close conn
         ret = readn(ss->sock, buf, headlen, ss->timeout);         
         if (ret != headlen) {
             DERROR("readn synclog head error! %d, close\n", ret);
@@ -412,12 +443,17 @@ sslave_run(void *args)
 				sleep(1);
 				continue;
 			}
+
+			// do sync, getdump
+			ret = sslave_conn_init(ss);
+			if (ret < 0) {
+				continue;
+			}
+			break;
 		}
-
-        if (ss->logver == 0) {
-        }
-
-		//sslave_forever(ss);
+		
+		// recv sync log from master
+		ret = sslave_forever(ss);
 	}
 
 	return NULL;

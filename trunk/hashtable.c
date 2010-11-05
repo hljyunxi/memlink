@@ -412,6 +412,29 @@ hashtable_destroy(HashTable *ht)
     zz_free(ht);
 }
 
+void
+hashtable_clear_all(HashTable *ht)
+{
+    if (NULL == ht)
+        return;
+
+    int i;
+
+    for (i = 0; i < HASHTABLE_BUNKNUM; i++) {
+        if (ht->bunks[i] != NULL) {
+            DataBlock   *dbk = ht->bunks[i]->data;
+            DataBlock   *tmp; 
+            while (dbk) {
+                tmp = dbk;
+                dbk = dbk->next;
+                zz_free(tmp);
+            }
+        }
+        zz_free(ht->bunks[i]->key);
+        zz_free(ht->bunks[i]->maskformat);
+    }
+	memset(ht->bunks, 0, sizeof(ht->bunks));
+}
 
 /**
  * 创建HashTable中一个key的结构信息
