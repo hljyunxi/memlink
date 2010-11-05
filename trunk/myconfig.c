@@ -32,6 +32,7 @@ myconfig_create(char *filename)
     mcf->block_data_count = 100;
     mcf->block_clean_cond = 0.5;
     mcf->dump_interval = 60;
+    mcf->sync_interval = 60;
     mcf->write_port = 11212;
     mcf->sync_port  = 11213;
     mcf->log_level  = 3; 
@@ -98,6 +99,8 @@ myconfig_create(char *filename)
             mcf->block_data_count = atoi(start);
         }else if (strcmp(buffer, "dump_interval") == 0) {
             mcf->dump_interval = atoi(start);
+        }else if (strcmp(buffer, "sync_interval") == 0) {
+            mcf->sync_interval = atoi(start); 
         }else if (strcmp(buffer, "block_clean_cond") == 0) {
             mcf->block_clean_cond = atof(start);
         }else if (strcmp(buffer, "read_port") == 0) {

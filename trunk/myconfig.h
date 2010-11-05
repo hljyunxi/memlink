@@ -20,7 +20,7 @@
 typedef struct _myconfig
 {
     unsigned int block_data_count;
-    unsigned int dump_interval;
+    unsigned int dump_interval;                       // in minutes
     float        block_clean_cond;
     int          read_port;
     int          write_port;
@@ -29,14 +29,14 @@ typedef struct _myconfig
     int          log_level;
     char         log_name[PATH_MAX];
     int          timeout;
-    int          thread_num; 
-    int          max_conn;  // max connection
-    int          max_core;  // maximize core file limit
-    int          is_daemon; // is run with daemon
-    char         role; // 1 means master
+    int          thread_num;
+    int          max_conn;                            // max connection
+    int          max_core;                            // maximize core file limit
+    int          is_daemon;                           // is run with daemon
+    char         role;                                // 1 means master; 0 means slave
     char         master_sync_host[IP_ADDR_MAX_LEN];
-	int			 master_sync_port;
-    int          sync_interval;
+    int          master_sync_port;
+    unsigned int sync_interval;                       // in seconds
 }MyConfig;
 
 
