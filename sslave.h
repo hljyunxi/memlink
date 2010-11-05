@@ -8,9 +8,9 @@ typedef struct _sslave
     int sock;
 	int timeout;
 
-	unsigned int binlog_ver;
-	unsigned int binlog_index;
-	unsigned int binlog_min_ver;
+	int binlog_ver;
+	int binlog_index;
+	int binlog_min_ver;
 
     unsigned int logver; // last logver
     unsigned int logline; // last logline

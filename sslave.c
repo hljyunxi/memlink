@@ -117,6 +117,61 @@ sslave_load_dump_info(SSlave *ss)
 	return 0;
 }
 
+static int 
+sslave_prev_sync_pos(SSlave *ss)
+{
+	char filepath[PATH_MAX];
+	int fd;
+	int bver = ss->binlog_ver;
+	int ret;
+
+	if (ss->binlog_index == 0) {
+		ret = synclog_prevlog(ss->binlog_ver);		
+        if (ret <= 0) {
+            DERROR("synclog_prevlog error: %d\n", ret);
+            return -1;
+        }
+        ss->binlog_ver = ret;
+        ss->binlog_index = -1;
+	}
+
+	if (ss->binlog_ver > 0) {
+		snprintf(filepath, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, bver);
+	}else{
+		snprintf(filepath, PATH_MAX, "%s/bin.log", g_cf->datadir);
+	}
+
+	fd = open(filepath, O_RDONLY);
+	if (fd == -1) {
+		DERROR("open file %s error! %s\n", filepath, strerror(errno));
+		return -1;
+	}
+
+	int pos = SYNCLOG_HEAD_LEN + sizeof(int) * ss->binlog_index;
+	lseek(fd, pos, SEEK_SET);
+
+    unsigned int logver, logline;
+    ret = readn(fd, &logver, sizeof(int), 0);
+    if (ret != sizeof(int)) {
+        DERROR("read logver error! %s\n", strerror(errno));
+	    close(fd);
+        return -1;
+    }
+    ret = readn(fd, &logline, sizeof(int), 0);
+    if (ret != sizeof(int)) {
+        DERROR("read logline error! %s\n", strerror(errno));
+	    close(fd);
+        return -2;
+    }
+    
+    ss->logver  = logver;
+    ss->logline = logline;
+
+	close(fd);
+
+	return 0;
+}
+
 
 int 
 sslave_check_sync(SSlave *ss)
@@ -172,7 +227,7 @@ sslave_do_cmd(SSlave *ss, char *sendbuf, int buflen, char *recvbuf, int recvlen)
     
     if (len + sizeof(short) > recvlen) {
         sslave_close(ss);
-        DERROR("recv data too long: %d\n", len + sizeof(short));
+        DERROR("recv data too long: %d\n", (int)(len + sizeof(short)));
         return -3;
     }
 
@@ -186,39 +241,6 @@ sslave_do_cmd(SSlave *ss, char *sendbuf, int buflen, char *recvbuf, int recvlen)
     return len + sizeof(short);
 }
 
-static int 
-sslave_prev_sync_pos(SSlave *ss, unsigned int *logver, unsigned int *logline)
-{
-	//int previd = synclog_prevlog(logver);
-	int fd;
-	char filepath[PATH_MAX];
-	int bver = ss->binlog_ver;
-	//int ret;
-
-	if (ss->binlog_index == 0) {
-		//ret = synclog_prevlog();		
-	}
-
-	if (ss->binlog_ver > 0) {
-		snprintf(filepath, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, bver);
-	}else{
-		snprintf(filepath, PATH_MAX, "%s/bin.log", g_cf->datadir);
-	}
-
-	fd = open(filepath, O_RDONLY);
-	if (fd == -1) {
-		DERROR("open file %s error! %s\n", filepath, strerror(errno));
-		return -1;
-	}
-
-	int pos = SYNCLOG_HEAD_LEN + sizeof(int) * ss->binlog_index;
-	lseek(fd, pos, SEEK_SET);
-	
-	close(fd);
-
-	return 0;
-}
-
 
 int
 sslave_conn_init(SSlave *ss)
@@ -228,14 +250,16 @@ sslave_conn_init(SSlave *ss)
     char recvbuf[1024];
     //int  recvlen;
     int  ret;
-    unsigned int  logver  = ss->logver;
-    unsigned int  logline = ss->logline;
+    unsigned int  logver;
+    unsigned int  logline;
     unsigned int  dumpver;
     long long     dumpsize;
 
-    if (ss->dumpsize == ss->dumpfile_size) { // have master dumpfile, and size ok
+    if (ss->dumpsize == ss->dumpfile_size) { // have master dumpfile, and size ok or not have master dumpfile
         // send sync command 
         while (1) {
+            logver  = ss->logver;
+            logline = ss->logline;
             sndlen = cmd_sync_pack(sndbuf, logver, logline); 
             ret = sslave_do_cmd(ss, sndbuf, sndlen, recvbuf, 1024);
             if (ret < 0) {
@@ -253,7 +277,7 @@ sslave_conn_init(SSlave *ss)
             i += 1;
             memcpy(&dumpver, &recvbuf[i], sizeof(int));
             // try find the last sync position
-            ret = sslave_prev_sync_pos(ss, &logver, &logline);
+            ret = sslave_prev_sync_pos(ss);
             if (ret != 0) { // get dump
                 dumpsize = 0;
                 break;
