@@ -27,6 +27,8 @@ typedef struct _sslave
 	unsigned int dump_logver; // logver in dumpfile
     long long    dumpsize;
     long long    dumpfile_size;
+
+    int     trycount; // count of get last sync position
 } SSlave;
 
 SSlave* sslave_create();
