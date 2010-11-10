@@ -19,7 +19,7 @@ env.Program("test", ["test.c", "testframe.c", "../client/c/libmemlink.a"])
 #env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=['m'])
 #env.Program('testmask', ["testmask.c", '../utils.c', '../logfile.c', '../serial.c', '../zzmalloc.c'])
 
-
+'''
 env.Program("testredis", 
 	["testredis.c", "testframe.o", "../logfile.c", "../zzmalloc.c"], 
 	CCFLAGS='-ggdb -DDEBUG',
@@ -27,10 +27,13 @@ env.Program("testredis",
 	LIBPATH=[hiredis_home],
 	LIBS=['hiredis', 'm', 'pthread'], 
 	LINKFLAGS=[hiredis_linkpath])
+'''
 
-mysql_include = '/www/zhaowei/mysql/include/mysql'
-mysql_lib = '/www/zhaowei/mysql/lib/mysql'
-mysql_linkpath = '-Wl,-R/www/zhaowei/mysql/lib/mysql'
+#mysql_home = '/www/zhaowei/mysql'
+mysql_home = '/usr'
+mysql_include	= mysql_home + '/include/mysql'
+mysql_lib		= mysql_home + '/lib/mysql'
+mysql_linkpath	= '-Wl,-R' + mysql_home + '/lib/mysql'
 
 env.Program("testmysql", 
 	["testmysql.c", "testframe.o", "../logfile.c", "../zzmalloc.c"], 
