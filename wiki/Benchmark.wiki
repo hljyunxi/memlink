@@ -165,9 +165,9 @@ mysql
 || range first100 || 2210 || 2286 || 1955 || 1611 || 
 || range first200 || 1444 || 1791 || 1870 || 1402 ||
 || range first1000 || 550 || 692 || 620 || 686 ||
-|| range last100 || 80 || 8 || 1 ||  ||
-|| range last200 || 94 || 9 || 1 ||  ||
-|| range last1000 || 94 || 9 || 1 ||  ||
+|| range last100 || 80 || 8 || 1 || - ||
+|| range last200 || 94 || 9 || 1 || - ||
+|| range last1000 || 94 || 9 || 1 || - ||
 
 || *operation* || *engine* || *api* || *count 100k* || *count 500k* || *count 1M* || *count 5M* ||
 || Frist 10k || mysql || select threadid from ThreadList where forumid=x order by reply_time limit 10000,100 || time/mem || time/mem ||
