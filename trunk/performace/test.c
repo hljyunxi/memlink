@@ -8,13 +8,15 @@
 #include <memlink_client.h>
 #include "logfile.h"
 #include "utils.h"
+#include "testframe.h"
 
 #define VALUE_SIZE		12
-#define TEST_THREAD_NUM 10
+//#define TEST_THREAD_NUM 10
 
-int isthread = 0;
 
-int clear_key()
+
+
+int clear_key(char *key)
 {
 	MemLink	*m;
     
@@ -25,9 +27,9 @@ int clear_key()
 	}
 
 	int  ret;
-	char key[32];
+	//char key[32];
+	//sprintf(key, "haha");
 
-	sprintf(key, "haha");
     ret = memlink_cmd_rmkey(m, key);
     if (ret != MEMLINK_OK) {
         DERROR("rmkey error! ret:%d\n", ret);
@@ -109,7 +111,7 @@ int test_insert_long(int count, int docreate)
 
     double speed = 0;
    
-    if (isthread == 0) {
+    if (g_tcf->isthread == 0) {
         unsigned int tmd = timediff(&start, &end);
         speed = ((double)count / tmd) * 1000000;
         DINFO("insert long use time: %u, speed: %.2f\n", tmd, speed);
@@ -162,7 +164,7 @@ int test_insert_short(int count, int docreate)
 	gettimeofday(&end, NULL);
 
     double speed = 0;
-    if (isthread == 0) {
+    if (g_tcf->isthread == 0) {
         unsigned int tmd = timediff(&start, &end);
         speed = ((double)count / tmd) * 1000000;
         DINFO("insert short use time: %u, speed: %.2f\n", tmd, speed);
@@ -207,7 +209,7 @@ int test_range_long(int frompos, int rlen, int count)
 
     double speed = 0;
 
-    if (isthread == 0) {
+    if (g_tcf->isthread == 0) {
         unsigned int tmd = timediff(&start, &end);
         speed = ((double)count / tmd) * 1000000;
         DINFO("range long use time: %u, speed: %.2f\n", tmd, speed);
@@ -251,7 +253,7 @@ int test_range_short(int frompos, int rlen, int count)
 
     double speed = 0;
 
-    if (isthread == 0) {
+    if (g_tcf->isthread == 0) {
         unsigned int tmd = timediff(&start, &end);
         speed = ((double)count / tmd) * 1000000;
         DINFO("range short use time: %u, speed: %.2f\n", tmd, speed);
@@ -261,6 +263,21 @@ int test_range_short(int frompos, int rlen, int count)
 }
 
 
+int testconfig_init(TestConfig *tcf)
+{
+	tcf->ifuncs[0] = test_insert_long;
+	tcf->ifuncs[1] = test_insert_short;
+	tcf->rfuncs[0] = test_range_long;
+	tcf->rfuncs[1] = test_range_short;
+
+	return 0;
+}
+
+
+
+
+
+/*
 #define TESTN   4
 #define INSERT_TESTS   4
 #define RANGE_TESTS   8
@@ -348,7 +365,7 @@ int alltest()
                     DINFO("mem: %d KB\n", insertmem[i]);
                 }
 
-                clear_key();
+                clear_key("haha");
             }
 
             qsort(insertret, INSERT_TESTS, sizeof(int), compare_int);
@@ -416,7 +433,7 @@ int alltest()
                     DINFO("====== sum: %d, ave: %.2f ======\n", sum, av);
                 }
             }
-            clear_key();
+            clear_key("haha");
         }
     }
 
@@ -747,3 +764,4 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
+*/
