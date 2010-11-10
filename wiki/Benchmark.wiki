@@ -131,9 +131,11 @@ mysql
 || range first100 ||  || 2059 || 2015 || 2387 || 
 || range first200 ||  || 1768 || 1854 || 1614 ||
 || range first1000 ||  || 641 || 648 || 631 ||
-|| range last100 || 91 || 8 || 1 ||  ||
-|| range last200 || 96 || 9 || 1 ||  ||
-|| range last1000 || 91 || 8 || 1 ||  ||
+|| range last100 || 91 || 8 || 1 || - ||
+|| range last200 || 96 || 9 || 1 || - ||
+|| range last1000 || 91 || 8 || 1 || - ||
+
+上面的 - 表示时间太长，数百秒也没有结果。
 
 *4. 10个客户端，并发短连接*
 
@@ -160,12 +162,12 @@ redis
 mysql
 || *操作* || 1w || 10w || 100w || 1000w ||
 || insert ||  ||  ||  ||  ||
-|| range first100 ||  ||  ||  ||  || 
-|| range first200 ||  ||  ||  ||  ||
-|| range first1000 ||  ||  ||   ||  ||
-|| range last100 ||  ||   ||   ||  ||
-|| range last200 ||  ||  ||  ||  ||
-|| range last1000 ||  ||  ||  ||  ||
+|| range first100 ||  || 2286 || 1955 || 1611 || 
+|| range first200 || 1444 || 1791 || 1870 || 1402 ||
+|| range first1000 || 550 || 692 || 620 || 686 ||
+|| range last100 || 80 || 8 || 1 ||  ||
+|| range last200 || 94 || 9 || 1 ||  ||
+|| range last1000 || 94 || 9 || 1 ||  ||
 
 || *operation* || *engine* || *api* || *count 100k* || *count 500k* || *count 1M* || *count 5M* ||
 || Frist 10k || mysql || select threadid from ThreadList where forumid=x order by reply_time limit 10000,100 || time/mem || time/mem ||
