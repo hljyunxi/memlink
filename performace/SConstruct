@@ -1,3 +1,6 @@
+hiredis_home = "/www/zhaowei/soft/hiredis"
+hiredis_linkpath = '-Wl,-R' + hiredis_home
+
 cflags   = '-ggdb -DDEBUG -O2 -pthread'
 #cflags   = '-ggdb'
 includes = ['/Developer/usr/include', '../client/c', '../']
@@ -11,7 +14,30 @@ env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=l
 #for fn in files:
 #	env.Program(fn)
 
-env.Program("test", ["test.c", "../client/c/libmemlink.a"])
+env.Program("test", ["test.c", "testframe.c", "../client/c/libmemlink.a"])
 
 #env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=['m'])
 #env.Program('testmask', ["testmask.c", '../utils.c', '../logfile.c', '../serial.c', '../zzmalloc.c'])
+
+
+env.Program("testredis", 
+	["testredis.c", "testframe.o", "../logfile.c", "../zzmalloc.c"], 
+	CCFLAGS='-ggdb -DDEBUG',
+	CPPPATH=[hiredis_home, '../'],
+	LIBPATH=[hiredis_home],
+	LIBS=['hiredis', 'm', 'pthread'], 
+	LINKFLAGS=[hiredis_linkpath])
+
+mysql_include = '/www/zhaowei/mysql/include/mysql'
+mysql_lib = '/www/zhaowei/mysql/lib/mysql'
+mysql_linkpath = '-Wl,-R/www/zhaowei/mysql/lib/mysql'
+
+env.Program("testmysql", 
+	["testmysql.c", "testframe.o", "../logfile.c", "../zzmalloc.c"], 
+	CCFLAGS='-ggdb -DDEBUG',
+	CPPPATH=[mysql_include, '../'],
+	LIBPATH=[mysql_lib],
+	LIBS=['mysqlclient_r', 'm', 'pthread'], 
+	LINKFLAGS=[mysql_linkpath])
+
+

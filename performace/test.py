@@ -5,7 +5,7 @@ import time
 from memlinkclient import *
 
 key = 'testmyhaha'
-valuesize = 12
+valuesize = 20
 
 def clearkey():
     m = MemLinkClient('127.0.0.1', 11001, 11002, 30)
@@ -21,8 +21,10 @@ def test_insert(count):
     #print '====== test_insert ======'
     global key, valuesize
     vals = []
+    formatstr = "%0" + str(valuesize) + "d"
     for i in xrange(0, count):
-        val = '%012d' % i
+        #val = '%012d' % i
+        val = formatstr % i
         vals.append(val)
 
     m = MemLinkClient('127.0.0.1', 11001, 11002, 30)
@@ -53,8 +55,10 @@ def test_insert_short(count):
     #print '====== test_insert ======'
     global key, valuesize
     vals = []
+    formatstr = "%0" + str(valuesize) + "d"
     for i in xrange(0, count):
-        val = '%012d' % i
+        #val = '%012d' % i
+        val = formatstr % i
         vals.append(val)
 
     maskstr = "8:3:1"
@@ -65,7 +69,7 @@ def test_insert_short(count):
         m = MemLinkClient('127.0.0.1', 11001, 11002, 30)
 
         if iscreate == 0:
-            ret = m.create(key, vaulesize, "4:3:1")
+            ret = m.create(key, valuesize, "4:3:1")
             if ret != MEMLINK_OK:
                 print 'create error!', ret
                 return -1
@@ -201,7 +205,6 @@ def dotest():
 
     test_insert(count)
     test_range(range_start, range_len, 1000)
-
 
 if __name__ == '__main__':
     dotest()

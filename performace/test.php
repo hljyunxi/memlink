@@ -3,6 +3,8 @@ include "memlinkclient.php";
 
 date_default_timezone_set("Asia/Shanghai");
 
+$valuesize = 20;
+
 function timediff($starttm, $endtm)
 {
 	return ($endtm['sec'] - $starttm['sec']) * 1000000 + ($endtm['usec'] - $starttm['usec']);
@@ -30,7 +32,7 @@ function test_insert($count)
 	$m = new MemLinkClient('127.0.0.1', 11001, 11002, 30);
 
 	$key = "testmyhaha";
-	$ret = $m->create($key, 12, "4:3:1");
+	$ret = $m->create($key, $valuesize, "4:3:1");
 	if ($ret != MEMLINK_OK) {
 		echo "create error $ret\n";
 		return -1;
@@ -40,7 +42,7 @@ function test_insert($count)
 	$starttm = gettimeofday();
 	
 	for ($i = 0; $i < $count; $i++) {
-		$val = sprintf("%012d", $i);
+		$val = sprintf("%0${valuesize}d", $i);
 		//echo "insert $val\n";
 		$ret = $m->insert($key, $val, strlen($val), $maskstr, 0);
 		if ($ret != MEMLINK_OK) {
@@ -70,7 +72,7 @@ function test_insert_short($count)
 		$m = new MemLinkClient('127.0.0.1', 11001, 11002, 30);
 
 		if ($iscreate == 0) {
-			$ret = $m->create($key, 12, "4:3:1");
+			$ret = $m->create($key, $valuesize, "4:3:1");
 			if ($ret != MEMLINK_OK) {
 				echo "create error $ret\n";
 				return -1;
@@ -79,7 +81,7 @@ function test_insert_short($count)
 		}
 
 
-		$val = sprintf("%012d", $i);
+		$val = sprintf("%0${valuesize}d", $i);
 		//echo "insert $val\n";
 		$ret = $m->insert($key, $val, strlen($val), $maskstr, 0);
 		if ($ret != MEMLINK_OK) {
@@ -242,7 +244,7 @@ $count = intval($argv[1]);
 $range_start = intval($argv[2]);
 $range_len   = intval($argv[3]);
 
-test_insert_short($count);
-test_range_short($range_start, $range_len, 1000);
+//test_insert_short($count);
+test_range($range_start, $range_len, 1000);
 
 ?>
