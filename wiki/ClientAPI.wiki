@@ -2,7 +2,7 @@
 
 = Introduction =
 
-目前，memlink支持的客户端库，有c,python,php,java这四种。python，php，java客户端实际上是利用c客户端来做成不同语言的模块。这样可以让c以外语言的客户端同样可以达到很高的性能。
+目前，memlink支持的客户端库，有c,python,php,java这四种。python，php，java客户端实际上是利用c客户端来做成不同语言的模块。因此c以外语言的客户端同样可以达到很高的性能。
 
 
 = Details =
