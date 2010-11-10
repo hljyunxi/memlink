@@ -18,7 +18,7 @@ CPU：Intel(R) Xeon(R) CPU E5405  @ 2.00GHz （四核）<br/>
 {{{
 CREATE TABLE `ThreadList` (
   `forumid` int(11) NOT NULL,
-  `threadid` binary(12) NOT NULL,
+  `threadid` char(12) NOT NULL,
   `status` bit(1) DEFAULT 0,
   `reply_time` datetime NOT NULL,
   KEY `threadlist` (`forumid`,`reply_time`,`status`)
