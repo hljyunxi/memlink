@@ -19,33 +19,6 @@
 #define BUF_SIZE 1024
 
 /**
- * Connection for sending sync log.
- */
-typedef struct _syncConn 
-{
-    int sock; // socket file descriptor
-
-    int log_fd; // sync log file descriptor
-    char log_name[PATH_MAX];
-    unsigned int log_ver; // sync log version
-    unsigned int log_index_pos; // sync log index position
-
-    int dump_fd;
-
-    struct event evt;
-    struct event_base *base;
-} SyncLogConn;
-
-typedef struct _dumpConn
-{
-    int sock;
-    int dump_fd;
-
-    struct event evt;
-    struct event_base *base;
-} DumpConn;
-
-/**
  * Malloc. Terminate program if fails.
  */
 static void* 
@@ -57,41 +30,6 @@ sthread_malloc(size_t size)
         MEMLINK_EXIT;
     }
     return ptr;
-}
-
-static SyncLogConn*
-synclog_conn_create() 
-{
-    SyncLogConn* conn = (SyncLogConn*) sthread_malloc(sizeof(SyncLogConn));
-    memset(conn, 0, sizeof(SyncLogConn));
-    return conn;
-}
-
-/*
- *static void 
- *synclog_conn_destroy(SyncLogConn *conn) 
- *{
- *    event_del(&conn->evt);
- *    close(conn->sock);
- *    close(conn->log_fd);
- *    zz_free(conn);
- *}
- */
-
-static DumpConn*
-dump_conn_create() 
-{
-    DumpConn* conn = (DumpConn*) sthread_malloc(sizeof(DumpConn));
-    memset(conn, 0, sizeof(DumpConn));
-    return conn;
-}
-
-static void
-dump_conn_destroy(DumpConn *conn) 
-{
-    event_del(&conn->evt);
-    close(conn->dump_fd);
-    zz_free(conn);
 }
 
 static void*
@@ -134,11 +72,40 @@ create_thread(SThread* st)
 static void 
 get_synclog_filename(unsigned int log_ver, char *log_name)
 {
-    // TODO race condition?
-    if (log_ver != g_runtime->logver) 
-        snprintf(log_name, PATH_MAX, "%s/data/bin.log.%d", g_runtime->home, log_ver);
-    else 
-        snprintf(log_name, PATH_MAX, "%s/data/bin.log", g_runtime->home);
+	/*
+	 * The following steps when sync log is rotated:
+	 *
+	 * 1. Rename bin.log(xxx) to xxx.log
+	 * 2. Create a new bin.log(xxx+1)
+	 * 3. Update g_runtime->logver to xxx+1
+	 *
+	 * The following list shows a example of sync log rotation. State 1 show 
+	 * the initial state. State 4 is the final state after the rotation. State 
+	 * format is g_runtime->logver followed by sync log file names.
+	 *
+	 * 1. 003: 001.log 002.log bin.log
+	 * 2. 003: 001.log 002.log 003.log
+	 * 3. 003: 001.log 002.log 003.log bin.log
+	 * 4. 004: 001.log 002.log 003.log bin.log
+	 */
+	if (log_ver < g_runtime->logver) {
+		/*
+		 * If log_ver < g_runtime->log_ver, <log_ver>.log must exist.
+		 */
+		snprintf(log_name, PATH_MAX, "%s/data/bin.log.%u", g_runtime->home, log_ver);
+	} else {
+		/*
+		 * If log_ver == g_runtime->log_ver, there are 2 siutions. Return 
+		 * <log_ver>.log if it exists. This happens for state 2 and state 3.  
+		 * Otherwise, return bin.log. This happends for state 1.
+		 */
+		snprintf(log_name, PATH_MAX, "%s/data/bin.log.%u", g_runtime->home, log_ver);
+		struct stat stbuf;
+		int ret = stat(log_name, &stbuf);
+		if (ret == -1 && errno == ENOENT) {
+			snprintf(log_name, PATH_MAX, "%s/data/bin.log", g_runtime->home);
+		}
+	}
 }
 
 /**
@@ -202,18 +169,16 @@ seek_and_read_int(int fd, unsigned int offset)
  * record does not exist.
  */
 static int
-get_synclog_record_pos(unsigned int log_ver, unsigned int log_no)
+get_synclog_record_pos(unsigned int log_ver, unsigned int log_no, int *fd_ptr, char *log_name)
 {
-    int log_fd;
-    char log_name[PATH_MAX];
-    open_synclog(log_ver, log_name, &log_fd);
+    open_synclog(log_ver, log_name, fd_ptr);
 
     unsigned int log_index_pos = get_index_pos(log_no);
-    unsigned int log_pos = seek_and_read_int(log_fd, log_index_pos);
+    unsigned int log_pos = seek_and_read_int(*fd_ptr, log_index_pos);
     if (log_pos > 0) {
-        DINFO("log record %d is at %d\n", log_no, log_pos);
+        DINFO("log record %u is at %u\n", log_no, log_pos);
     } else {
-        DERROR("log record %d does not exist in log file %s\n", log_no, log_name);
+        DERROR("log record %u does not exist in log file %s\n", log_no, log_name);
     }
     return log_pos;
 }
@@ -315,15 +280,19 @@ send_synclog(int fd, short event, void *arg)
     event_add(&conn->evt, &interval);
 }
 
-static void 
-send_synclog_init(int sock, unsigned int log_ver, unsigned int log_no) 
+static SyncLogConn*
+synclog_conn_init(int sock, unsigned int log_ver, unsigned int log_no)
 {
     SyncLogConn* conn = synclog_conn_create();
     conn->sock = sock;
     conn->log_ver = log_ver;
     conn->log_index_pos = get_index_pos(log_no);
-    open_synclog(conn->log_ver, conn->log_name, &conn->log_fd);
+	return conn;
+}
 
+static void 
+send_synclog_init(SyncLogConn* conn) 
+{
     evtimer_set(&conn->evt, send_synclog, conn);
     event_base_set(g_runtime->sthread->base, &conn->evt);
     struct timeval interval = create_interval(0); 
@@ -334,17 +303,21 @@ static int
 cmd_sync(Conn* conn, char *data, int datalen) 
 {
     int ret;
+	int log_fd;
+	char log_name[PATH_MAX];
     unsigned int log_ver;
     unsigned int log_no;
     cmd_sync_unpack(data, &log_ver, &log_no);
-    DINFO("log version: %d, log record number: %d\n", log_ver, log_no);
-    if ((get_synclog_record_pos(log_ver, log_no)) > 0) {
+    DINFO("log version: %u, log record number: %u\n", log_ver, log_no);
+    if ((get_synclog_record_pos(log_ver, log_no, &log_fd, log_name)) > 0) {
         ret = data_reply(conn, 0, NULL, 0);
-        DINFO("Found sync log file (version = %d)\n", log_ver);
-        send_synclog_init(conn->sock, log_ver, log_no);
+        DINFO("Found sync log file (version = %u)\n", log_ver);
+        SyncLogConn *syncConn = synclog_conn_init(conn->sock, log_ver, log_no);
+		syncConn->log_fd = log_fd;
+		send_synclog_init(syncConn);
     } else { 
         ret = data_reply(conn, 1, (char *)&(g_runtime->dumpver), sizeof(int));
-        DINFO("Not found syn log file with version %d\n", log_ver);
+        DINFO("Not found syn log file with version %u\n", log_ver);
     }
     return ret;
 }
@@ -378,7 +351,7 @@ get_file_size(int fd)
 static void 
 send_dump(int fd, short event, void *arg)
 {
-    DumpConn* conn = arg;
+    DumpConn* dumpConn = arg;
     char buf[BUF_SIZE];
     int ret;
     /*
@@ -387,11 +360,13 @@ send_dump(int fd, short event, void *arg)
      */
     unsigned int log_ver = g_runtime->logver;
 
-    while ((ret = sthread_readn(conn->dump_fd, buf, BUF_SIZE)) > 0) 
-        sthread_writen(conn->sock, buf, ret);
-    dump_conn_destroy(conn);
+    while ((ret = sthread_readn(dumpConn->dump_fd, buf, BUF_SIZE)) > 0) 
+        sthread_writen(dumpConn->sock, buf, ret);
+    dump_conn_destroy(dumpConn);
 
-    send_synclog_init(conn->sock, log_ver, 0); 
+	SyncLogConn* syncConn = synclog_conn_init(dumpConn->sock, log_ver, 0);
+	open_synclog(syncConn->log_ver, syncConn->log_name, &(syncConn->log_fd));
+    send_synclog_init(syncConn); 
 }
 
 static void 
@@ -416,7 +391,7 @@ cmd_get_dump(Conn* conn, char *data, int datalen)
     int retcode;
 
     cmd_getdump_unpack(data, &dumpver, &size);
-    DINFO("dump version: %d, synchronized data size: %d\n", dumpver, size);
+    DINFO("dump version: %u, synchronized data size: %u\n", dumpver, size);
     retcode = g_runtime->dumpver == dumpver ? 1 : 0;
 
     int dump_fd = open_dump(); 
@@ -510,4 +485,37 @@ sdata_ready(Conn *conn, char *data, int datalen)
 void sthread_destroy(SThread *st) 
 {
     zz_free(st);
+}
+
+SyncLogConn*
+synclog_conn_create() 
+{
+    SyncLogConn* conn = (SyncLogConn*) sthread_malloc(sizeof(SyncLogConn));
+    memset(conn, 0, sizeof(SyncLogConn));
+    return conn;
+}
+
+void 
+synclog_conn_destroy(SyncLogConn *conn) 
+{
+	event_del(&conn->evt);
+	close(conn->sock);
+	close(conn->log_fd);
+	zz_free(conn);
+}
+
+DumpConn*
+dump_conn_create() 
+{
+    DumpConn* conn = (DumpConn*) sthread_malloc(sizeof(DumpConn));
+    memset(conn, 0, sizeof(DumpConn));
+    return conn;
+}
+
+void
+dump_conn_destroy(DumpConn *conn) 
+{
+    event_del(&conn->evt);
+    close(conn->dump_fd);
+    zz_free(conn);
 }

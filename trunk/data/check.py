@@ -15,30 +15,29 @@ def binlog(filename='bin.log'):
     print '====================== bin log   ========================='
     #print 'head:', repr(s)
     print 'format:%d, logver:%d, role:%d, index:%d' % tuple(v)
-   
-    dlen = 0
+
     indexes = []
     while True:
         ns = f.read(4)
         v = struct.unpack('I', ns)
-
         if v[0] == 0:
             break
         else:
-            dlen += 1
-        
-        indexes.append(v[0])
+            indexes.append(v[0])
+
     if indexes:
-        print 'index:', len(indexes), indexes
-
-    f.seek(4000010)
-    for i in range(0, dlen):
-        s1 = f.read(2)
-        slen = struct.unpack('H', s1)[0]
-        s2 = f.read(slen)
-        s = s1 + s2
-        print 'data %02d %d:' % (i+1, len(s)), repr(s), f.tell()
-
+        dlen = len(indexes)
+        print 'index:', dlen, indexes
+        f.seek(4000011)
+        for i in range(0, dlen):
+            log_ver = struct.unpack('I', f.read(4))
+            log_pos = struct.unpack('I', f.read(4))
+            s1 = f.read(2)
+            slen = struct.unpack('H', s1)[0]
+            s2 = f.read(slen)
+            s = s1 + s2 
+            print 'logver: %d, logpos: %d, data %02d %d:' % \
+                (log_ver[0], log_pos[0], i+1, len(s)), repr(s), f.tell()
     f.close()
 
 
