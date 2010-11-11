@@ -214,10 +214,8 @@ synclog_new(SyncLog *slog)
         return -1;
     }
 
-	g_runtime->logver += 1;
-
     unsigned short format = DUMP_FORMAT_VERSION;
-    unsigned int   newver = g_runtime->logver;
+    unsigned int   newver = g_runtime->logver + 1;
     unsigned int   synlen = SYNCLOG_INDEXNUM;
     
     DINFO("synclog new ver: %d, %x, synlen: %d, %x\n", newver, newver, synlen, synlen);
@@ -239,6 +237,7 @@ synclog_new(SyncLog *slog)
     }
     
     fsync(slog->fd);
+
     truncate_file(slog->fd, slog->len);
 
     slog->index = mmap(NULL, slog->len, PROT_READ|PROT_WRITE, MAP_SHARED, slog->fd, 0);
@@ -249,6 +248,7 @@ synclog_new(SyncLog *slog)
 
     slog->pos       = slog->len;
     slog->index_pos = 0;
+	g_runtime->logver += 1;
 
     return 0;
 }
