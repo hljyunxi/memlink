@@ -74,7 +74,13 @@ int main(int argc, char *argv[])
         DINFO("valuesize:%d, masksize:%d, count:%d\n", result.valuesize, result.masksize,
                 result.count);
     }
-    
+
+
+	ret = memlink_dump(m);
+	if (ret != MEMLINK_OK) {
+		DERROR("dump error: %d\n", ret);
+	}
+
     memlink_destroy(m);
 
     return 0;
