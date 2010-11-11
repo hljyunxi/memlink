@@ -366,6 +366,7 @@ synclog_validate(SyncLog *slog)
 int
 synclog_write(SyncLog *slog, char *data, int datalen)
 {
+    int offset;
     int wlen = datalen;
     int wpos = 0;
     int ret;
@@ -381,7 +382,8 @@ synclog_write(SyncLog *slog, char *data, int datalen)
 	// add logver/logline for master
 	if (g_cf->role == ROLE_MASTER) {
 		//int count = 0;
-		wdata = (char *)alloca(datalen + sizeof(int) + sizeof(int));
+        wlen = datalen + sizeof(int) + sizeof(int);
+		wdata = (char *)alloca(wlen);
 		memcpy(wdata, &g_runtime->logver, sizeof(int));
 		memcpy(wdata + sizeof(int), &slog->pos, sizeof(int));
 		memcpy(wdata + sizeof(int) + sizeof(int), data, datalen);
@@ -396,6 +398,7 @@ synclog_write(SyncLog *slog, char *data, int datalen)
 	ret = write(slog->fd, "zhaowei", 7);
 	DINFO("write test ret: %d, cur: %d\n", ret, (unsigned int)lseek(slog->fd, 0, SEEK_CUR));
 	*/	
+    offset = wlen;
     while (wlen > 0) {
         /*int old = lseek(slog->fd, 0, SEEK_CUR);
         char databuf[1023];
@@ -428,7 +431,7 @@ synclog_write(SyncLog *slog, char *data, int datalen)
     DINFO("write index: %u, %u\n", slog->index_pos, slog->pos);
     idxdata[slog->index_pos] = slog->pos;
     slog->index_pos ++;
-    slog->pos += datalen;
+    slog->pos += offset;
 
     return 0;
 }
