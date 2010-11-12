@@ -10,37 +10,37 @@
  ==C/C++==
 
   * {{{MemLink* memlink_create(char *host, int readport, int writeport, int timeout);}}}<br/>
-   创建MemLink数据结构
-   host为memlink  server的ip，readport为server端的读端口，writeport为server端的写端口，timeout为网络操作的超时时间。单位为秒。
+   创建MemLink数据结构<br/>
+   host为memlink  server的ip，readport为server端的读端口，writeport为server端的写端口，timeout为网络操作的超时时间。单位为秒。<br/>
    错误返回NULL，否则为成功
 
-void memlink_destroy(MemLink *m);<br/>
-销毁MemLink数据结构，释放资源
+  * {{{void memlink_destroy(MemLink *m);}}}<br/>
+   销毁MemLink数据结构，释放资源
 
-void memlink_close(MemLink *m);<br/>
-关闭MemLink中的网络连接
+  * {{{void memlink_close(MemLink *m);}}}<br/>
+   关闭MemLink中的网络连接
 
-int memlink_cmd_dump(MemLink *m);<br/>
-发送DUMP命令。memlink服务器端执行dump操作。
-返回MEMLINK_OK表示执行成功，否则出错
+  * {{{int memlink_cmd_dump(MemLink *m);}}}<br/>
+   发送DUMP命令。memlink服务器端执行dump操作。<br/>
+   返回MEMLINK_OK表示执行成功，否则出错
 
-int memlink_cmd_clean(MemLink *m, char *key);<br/>
-发送CLEAN命令。memlink会对该key下的列表进行重新排列，以去除已真实删除的数据空洞。
+  * {{{int memlink_cmd_clean(MemLink *m, char *key);}}}<br/>
+   发送CLEAN命令。memlink会对该key下的列表进行重新排列，以去除已真实删除的数据空洞。
 
-int memlink_cmd_stat(MemLink *m, char *key, MemLinkStat *stat);<br/>
-发送STAT命令。获取对应key的一些统计信息，结果存储到传入的参数stat中。
-MemLinkStat的结构如下：
-typedef struct _memlink_stat
-{
-    unsigned char   valuesize;
-    unsigned char   masksize;
-    unsigned int    blocks; // all blocks
-    unsigned int    data;   // all alloc data item
-    unsigned int    data_used; // all data item used
-    unsigned int    mem;       // all alloc mem
-    unsigned int    mem_used;  // all used mem
-}MemLinkStat;
-其中valuesize为value长度的字节数，masksize为mask长度的字节数。blocks为该key下有多少个大的数据块（这里称为block），data为这些所有block中可以容纳的value数，data_used为实际存储了多少个value值。mem为所有block一共占用的内存字节数，mem_used对应data_used所占用的内存字节数。
+  * {{{int memlink_cmd_stat(MemLink *m, char *key, MemLinkStat *stat);}}}<br/>
+   发送STAT命令。获取对应key的一些统计信息，结果存储到传入的参数stat中。
+   MemLinkStat的结构如下：
+   {{{typedef struct _memlink_stat
+   {
+       unsigned char   valuesize;
+       unsigned char   masksize;
+       unsigned int    blocks; // all blocks
+       unsigned int    data;   // all alloc data item
+       unsigned int    data_used; // all data item used
+       unsigned int    mem;       // all alloc mem
+       unsigned int    mem_used;  // all used mem
+   }MemLinkStat;}}}
+   其中valuesize为value长度的字节数，masksize为mask长度的字节数。blocks为该key下有多少个大的数据块（这里称为block），data为这些所有block中可以容纳的value数，data_used为实际存储了多少个value值。mem为所有block一共占用的内存字节数，mem_used对应data_used所占用的内存字节数。
 
 int memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr);<br/>
 发送CREATE命令，创建一个key。参数valuelen表示该key下的value的长度，maskstr为value的属性格式。该属性格式由问号分隔的数字组成。这些数字表示对应属性项所占用的空间的bit数。比如4:3:1表示有三个属性，这三个属性分别占用4bit，3bit，1bit。
