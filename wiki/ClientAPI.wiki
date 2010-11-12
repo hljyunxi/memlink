@@ -46,15 +46,15 @@
 
   其中valuesize为value长度的字节数，masksize为mask长度的字节数。blocks为该key下有多少个大的数据块（这里称为block），data为这些所有block中可以容纳的value数，data_used为实际存储了多少个value值。mem为所有block一共占用的内存字节数，mem_used对应data_used所占用的内存字节数。
 
-int memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr);<br/>
-发送CREATE命令，创建一个key。参数valuelen表示该key下的value的长度，maskstr为value的属性格式。该属性格式由问号分隔的数字组成。这些数字表示对应属性项所占用的空间的bit数。比如4:3:1表示有三个属性，这三个属性分别占用4bit，3bit，1bit。
+  * int memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr);<br/>
+  发送CREATE命令，创建一个key。参数valuelen表示该key下的value的长度，maskstr为value的属性格式。该属性格式由问号分隔的数字组成。这些数字表示对应属性项所占用的空间的bit数。比如4:3:1表示有三个属性，这三个属性分别占用4bit，3bit，1bit。
 
-int memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen);<br/>
-发送DEL命令。删除一个指定key下的对应value。
+  * int memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen);<br/>
+  发送DEL命令。删除一个指定key下的对应value。
 
-int memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen,<br/>
+  * int memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen,<br/>
                                char *maskstr, unsigned int pos);<br/>
-发送insert命令，在指定的key下插入一个value，且此value要插入到一个指定位置。maskstr为该value的熟悉信息。格式和创建key时指定的属性格式对应。比如创建时属性格式为4:3:1，那么这里的maskstr也只能设置三项，比如maskstr可以为8:3:1。pos表示value要插入到列表中的哪个位置，0是列表头部，-1是列表尾部。注意，如果pos超出了列表的范围，也会被插入到尾部。
+  发送insert命令，在指定的key下插入一个value，且此value要插入到一个指定位置。maskstr为该value的熟悉信息。格式和创建key时指定的属性格式对应。比如创建时属性格式为4:3:1，那么这里的maskstr也只能设置三项，比如maskstr可以为8:3:1。pos表示value要插入到列表中的哪个位置，0是列表头部，-1是列表尾部。注意，如果pos超出了列表的范围，也会被插入到尾部。
 
 int memlink_cmd_update(MemLink *m, char *key, char *value, int valuelen, unsigned int pos);<br/>
 发送UPDATE命令，更新一个value的位置。pos为此value的新位置。
