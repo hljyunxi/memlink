@@ -65,9 +65,7 @@
   * {{{int memlink_cmd_tag(MemLink *m, char *key, char *value, int valuelen, int tag);}}}<br/>
   发送TAG命令，对一个value进行标记删除或者恢复。标记删除的value不会被真实删除，只是该数据不再显示。tag值为MEMLINK_TAG_DEL表示标记删除，为MEMLINK_TAG_RESTOR表示恢复。
 
-  * {{{int memlink_cmd_range(MemLink *m, char *key, char *maskstr,<br/>
-                              unsigned int frompos, unsigned int len,<br/>
-                              MemLinkResult *result);}}}<br/>
+  * {{{int memlink_cmd_range(MemLink *m, char *key, char *maskstr,unsigned int frompos, unsigned int len,MemLinkResult *result);}}}<br/>
   发送RANGE命令，获取指定key下的某个范围的value。frompos是获取的开始位置，从0开始，len为要获取的长度。结果将写入到result中。
   MemLinkResult的结构定义如下：
   {{{
