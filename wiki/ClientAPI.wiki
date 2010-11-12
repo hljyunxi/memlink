@@ -52,8 +52,7 @@
   * {{{int memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen);}}}<br/>
   发送DEL命令。删除一个指定key下的对应value。
 
-  * {{{int memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen,<br/>
-                               char *maskstr, unsigned int pos);}}}<br/>
+  * {{{int memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen,char *maskstr, unsigned int pos);}}}<br/>
   发送insert命令，在指定的key下插入一个value，且此value要插入到一个指定位置。maskstr为该value的熟悉信息。格式和创建key时指定的属性格式对应。比如创建时属性格式为4:3:1，那么这里的maskstr也只能设置三项，比如maskstr可以为8:3:1。pos表示value要插入到列表中的哪个位置，0是列表头部，-1是列表尾部。注意，如果pos超出了列表的范围，也会被插入到尾部。
 
   * {{{int memlink_cmd_update(MemLink *m, char *key, char *value, int valuelen, unsigned int pos);}}}<br/>
