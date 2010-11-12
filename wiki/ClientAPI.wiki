@@ -11,7 +11,6 @@
 
   * {{{MemLink* memlink_create(char *host, int readport, int writeport, int timeout);}}}<br/>
    创建MemLink数据结构
-
     host为memlink  server的ip，readport为server端的读端口，writeport为server端的写端口，timeout为网络操作的超时时间。单位为秒。
     错误返回NULL，否则为成功
 
