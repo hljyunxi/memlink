@@ -69,7 +69,7 @@ create_thread(SThread* st)
  * @param log_ver synclog version
  * @param log_name return the synclog file pathname
  */
-static void 
+static int 
 get_synclog_filename(unsigned int log_ver, char *log_name)
 {
 	/*
@@ -93,7 +93,8 @@ get_synclog_filename(unsigned int log_ver, char *log_name)
 		 * If log_ver < g_runtime->log_ver, <log_ver>.log must exist.
 		 */
 		snprintf(log_name, PATH_MAX, "%s/data/bin.log.%u", g_runtime->home, log_ver);
-	} else {
+        return 0;
+	} else if (log_ver == g_runtime->logver) {
 		/*
 		 * If log_ver == g_runtime->log_ver, there are 2 siutions. Return 
 		 * <log_ver>.log if it exists. This happens for state 2 and state 3.  
@@ -105,7 +106,10 @@ get_synclog_filename(unsigned int log_ver, char *log_name)
 		if (ret == -1 && errno == ENOENT) {
 			snprintf(log_name, PATH_MAX, "%s/data/bin.log", g_runtime->home);
 		}
-	}
+        return 0;
+	} else {
+        return 1;
+    }
 }
 
 /**
@@ -118,7 +122,9 @@ get_synclog_filename(unsigned int log_ver, char *log_name)
 static void 
 open_synclog(unsigned int log_ver, char *log_name, int *log_fd_ptr) 
 {
-    get_synclog_filename(log_ver, log_name);
+    if (get_synclog_filename(log_ver, log_name) != 0) {
+        DERROR("sync log with version %u does not exist\n", log_ver);
+    }
     *log_fd_ptr = open(log_name, O_RDONLY);
     if (*log_fd_ptr == -1) {
         DERROR("open file %s error! %s\n", log_name, strerror(errno));
@@ -171,7 +177,14 @@ seek_and_read_int(int fd, unsigned int offset)
 static int
 get_synclog_record_pos(unsigned int log_ver, unsigned int log_no, int *fd_ptr, char *log_name)
 {
-    open_synclog(log_ver, log_name, fd_ptr);
+    if (get_synclog_filename(log_ver, log_name) != 0)
+        return 0;
+
+    *fd_ptr = open(log_name, O_RDONLY);
+    if (*fd_ptr == -1) {
+        DERROR("open file %s error! %s\n", log_name, strerror(errno));
+        MEMLINK_EXIT;
+    }
 
     unsigned int log_index_pos = get_index_pos(log_no);
     unsigned int log_pos = seek_and_read_int(*fd_ptr, log_index_pos);
@@ -233,6 +246,7 @@ transfer(SyncLogConn *conn,  void *ptr, size_t n)
     sthread_writen(conn->sock, ptr, n);
 }
 
+
 /**
  * Send available synclog records in the current open synclog file in 
  * SyncLogConn.
@@ -241,19 +255,30 @@ static void
 send_synclog_record(SyncLogConn *conn)
 {
     unsigned int log_pos;
-    unsigned int integer;
+    unsigned int master_log_ver;
+    unsigned int master_log_pos;
+
     unsigned short len;
-    char *buf;
+    int buf_len = 256;
+    char buf[buf_len];
+    char p_buf[buf_len];
 
     while ((log_pos = seek_and_read_int(conn->log_fd, conn->log_index_pos)) > 0) {
-        transfer(conn, &integer, sizeof(int)); // log version
-        transfer(conn, &integer, sizeof(int)); // log position 
+        if (lseek(conn->log_fd, log_pos, SEEK_SET) == -1) {
+            DERROR("lseek error! %s\n", strerror(errno));
+            close(conn->log_fd);
+            MEMLINK_EXIT;
+        }
+        transfer(conn, &master_log_ver, sizeof(int)); // log version
+        transfer(conn, &master_log_pos, sizeof(int)); // log position 
         transfer(conn, &len, sizeof(short)); // log record length
 
         // log record
-        buf = sthread_malloc(len);
         transfer(conn, buf, len);
-        zz_free(buf);
+        formath(buf, len, p_buf, buf_len);
+
+        DINFO("sent {log version %u, log position: %u, log record (%u): %s}\n", 
+                master_log_ver, master_log_pos, len, p_buf);
 
         conn->log_index_pos += sizeof(int);
     }
