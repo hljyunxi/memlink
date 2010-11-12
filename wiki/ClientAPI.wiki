@@ -2,7 +2,7 @@
 
 = Introduction =
 
-目前，memlink支持的客户端库，有c,python,php,java这四种。python，php，java客户端实际上是利用c客户端来做成不同语言的模块。因此c以外语言的客户端同样可以达到很高的性能。
+  目前，memlink支持的客户端库，有c,python,php,java这四种。python，php，java客户端实际上是利用c客户端来做成不同语言的模块。因此c以外语言的客户端同样可以达到很高的性能。
 
 
 = Details =
@@ -150,51 +150,37 @@
 ==PYTHON==
 
   * class MemLinkClient
-  memlink客户端类
- 
-    __init__(self, host, readport, writeport, timeout)
-		同c版memlink_create。
-    close(self)
-		同c版memlink_close
-		
-    destroy(self)
-		同c版memlink_destroy
-		
-    dump(self)
-		同c版memlink_dump。返回值为整型，正常返回MEMLNK_OK。
-		
-    clean(self, key)
-		同c版memlink_cmd_clean。返回值为整型，正常返回MEMLNK_OK。
-		
-    create(self, key, valuesize, maskstr)
-		同c版memlink_cmd_create。返回值为整型，正常返回MEMLNK_OK。
-		
-    stat(self, key)
-		同c版memlink_cmd_stat。返回值为tuple,共两个成员。其中第一项为整形返回值，为MEMLINK_OK表示正常。第二项为MemLinkStat对象。
-		
-	delete(self, key, value)
-		同c版memlink_cmd_delete。返回值为整型，正常返回MEMLNK_OK。
-		
-    insert(self, key, value, maskstr, pos)
-		同c版memlink_cmd_insert。返回值为整型，正常返回MEMLNK_OK。
-		
-    update(self, key, value, pos)
-		同c版memlink_cmd_update。返回值为整型，正常返回MEMLNK_OK。
-		
-    mask(self, key, value, maskstr)
-		同c版memlink_cmd_mask。返回值为整型，正常返回MEMLNK_OK。
-		
-    tag(self, key, value, tag)
-		同c版memlink_cmd_tag。返回值为整型，正常返回MEMLNK_OK。
-		
-    range(self, key, maskstr, frompos, len)
-		同c版memlink_cmd_range。返回值为tuple,共两个成员。其中第一项为整形返回值，为MEMLINK_OK表示正常。第二项为MemLinkResult对象。
-		
-    rmkey(self, key)
-		同c版memlink_cmd_rmkey。返回值为整型，正常返回MEMLNK_OK。
-		
-    count(self, key, maskstr)
-		同c版memlink_cmd_count。返回值为tuple,共两个成员。其中第一项为整形返回值，为MEMLINK_OK表示正常。第二项为MemLinkCount对象。
+  memlink客户端类 
+    * __init__(self, host, readport, writeport, timeout)
+    同c版memlink_create。
+    * close(self)
+    同c版memlink_close		
+    * destroy(self)
+    同c版memlink_destroy		
+    * dump(self)
+    同c版memlink_dump。返回值为整型，正常返回MEMLNK_OK。		
+    * clean(self, key)
+    同c版memlink_cmd_clean。返回值为整型，正常返回MEMLNK_OK。		
+    * create(self, key, valuesize, maskstr)
+    同c版memlink_cmd_create。返回值为整型，正常返回MEMLNK_OK。		
+    * stat(self, key)
+    同c版memlink_cmd_stat。返回值为tuple,共两个成员。其中第一项为整形返回值，为MEMLINK_OK表示正常。第二项为MemLinkStat对象。		
+    * delete(self, key, value)
+    同c版memlink_cmd_delete。返回值为整型，正常返回MEMLNK_OK。		
+    * insert(self, key, value, maskstr, pos)
+    同c版memlink_cmd_insert。返回值为整型，正常返回MEMLNK_OK。		
+    * update(self, key, value, pos)
+    同c版memlink_cmd_update。返回值为整型，正常返回MEMLNK_OK。		
+    * mask(self, key, value, maskstr)
+    同c版memlink_cmd_mask。返回值为整型，正常返回MEMLNK_OK。		
+    * tag(self, key, value, tag)
+    同c版memlink_cmd_tag。返回值为整型，正常返回MEMLNK_OK。		
+    * range(self, key, maskstr, frompos, len)
+    同c版memlink_cmd_range。返回值为tuple,共两个成员。其中第一项为整形返回值，为MEMLINK_OK表示正常。第二项为MemLinkResult对象。		
+    * rmkey(self, key)
+    同c版memlink_cmd_rmkey。返回值为整型，正常返回MEMLNK_OK。		
+    * count(self, key, maskstr)
+    同c版memlink_cmd_count。返回值为tuple,共两个成员。其中第一项为整形返回值，为MEMLINK_OK表示正常。第二项为MemLinkCount对象。
 
   * Java
   
