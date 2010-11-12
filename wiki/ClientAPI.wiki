@@ -9,26 +9,26 @@
 
   * C/C++
 
-MemLink* memlink_create(char *host, int readport, int writeport, int timeout);
+MemLink* memlink_create(char *host, int readport, int writeport, int timeout);<br/>
 创建MemLink数据结构
 
 host为memlink  server的ip，readport为server端的读端口，writeport为server端的写端口，timeout为网络操作的超时时间。单位为秒。
 错误返回NULL，否则为成功
 
-void memlink_destroy(MemLink *m);
+void memlink_destroy(MemLink *m);<br/>
 销毁MemLink数据结构，释放资源
 
-void memlink_close(MemLink *m);
+void memlink_close(MemLink *m);<br/>
 关闭MemLink中的网络连接
 
-int memlink_cmd_dump(MemLink *m);
+int memlink_cmd_dump(MemLink *m);<br/>
 发送DUMP命令。memlink服务器端执行dump操作。
 返回MEMLINK_OK表示执行成功，否则出错
 
-int memlink_cmd_clean(MemLink *m, char *key);
+int memlink_cmd_clean(MemLink *m, char *key);<br/>
 发送CLEAN命令。memlink会对该key下的列表进行重新排列，以去除已真实删除的数据空洞。
 
-int memlink_cmd_stat(MemLink *m, char *key, MemLinkStat *stat);
+int memlink_cmd_stat(MemLink *m, char *key, MemLinkStat *stat);<br/>
 发送STAT命令。获取对应key的一些统计信息，结果存储到传入的参数stat中。
 MemLinkStat的结构如下：
 typedef struct _memlink_stat
@@ -43,28 +43,28 @@ typedef struct _memlink_stat
 }MemLinkStat;
 其中valuesize为value长度的字节数，masksize为mask长度的字节数。blocks为该key下有多少个大的数据块（这里称为block），data为这些所有block中可以容纳的value数，data_used为实际存储了多少个value值。mem为所有block一共占用的内存字节数，mem_used对应data_used所占用的内存字节数。
 
-int memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr);
+int memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr);<br/>
 发送CREATE命令，创建一个key。参数valuelen表示该key下的value的长度，maskstr为value的属性格式。该属性格式由问号分隔的数字组成。这些数字表示对应属性项所占用的空间的bit数。比如4:3:1表示有三个属性，这三个属性分别占用4bit，3bit，1bit。
 
-int memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen);
+int memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen);<br/>
 发送DEL命令。删除一个指定key下的对应value。
 
-int memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen,
-                               char *maskstr, unsigned int pos);
+int memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen,<br/>
+                               char *maskstr, unsigned int pos);<br/>
 发送insert命令，在指定的key下插入一个value，且此value要插入到一个指定位置。maskstr为该value的熟悉信息。格式和创建key时指定的属性格式对应。比如创建时属性格式为4:3:1，那么这里的maskstr也只能设置三项，比如maskstr可以为8:3:1。pos表示value要插入到列表中的哪个位置，0是列表头部，-1是列表尾部。注意，如果pos超出了列表的范围，也会被插入到尾部。
 
-int memlink_cmd_update(MemLink *m, char *key, char *value, int valuelen, unsigned int pos);
+int memlink_cmd_update(MemLink *m, char *key, char *value, int valuelen, unsigned int pos);<br/>
 发送UPDATE命令，更新一个value的位置。pos为此value的新位置。
 
-int memlink_cmd_mask(MemLink *m, char *key, char *value, int valuelen, char *maskstr);
+int memlink_cmd_mask(MemLink *m, char *key, char *value, int valuelen, char *maskstr);<br/>
 发送MASK命令，修改一个value的属性值。这里的maskstr的格式和INSERT命令的格式一样。
 
-int memlink_cmd_tag(MemLink *m, char *key, char *value, int valuelen, int tag);
+int memlink_cmd_tag(MemLink *m, char *key, char *value, int valuelen, int tag);<br/>
 发送TAG命令，对一个value进行标记删除或者恢复。标记删除的value不会被真实删除，只是该数据不再显示。tag值为MEMLINK_TAG_DEL表示标记删除，为MEMLINK_TAG_RESTOR表示恢复。
 
-int memlink_cmd_range(MemLink *m, char *key, char *maskstr,
-                              unsigned int frompos, unsigned int len,
-                              MemLinkResult *result);
+int memlink_cmd_range(MemLink *m, char *key, char *maskstr,<br/>
+                              unsigned int frompos, unsigned int len,<br/>
+                              MemLinkResult *result);<br/>
 发送RANGE命令，获取指定key下的某个范围的value。frompos是获取的开始位置，从0开始，len为要获取的长度。结果将写入到result中。
 MemLinkResult的结构定义如下：
 typedef struct _memlink_result
@@ -84,10 +84,10 @@ typedef struct _memlink_item
 }MemLinkItem;
 其中的next是链表的下一个节点指针，value和mask就是对应的结果值。
 
-int memlink_cmd_rmkey(MemLink *m, char *key);
+int memlink_cmd_rmkey(MemLink *m, char *key);<br/>
 发送RMKEY命令，删除一个key，以及该key下的所有value。
 
-int memlink_cmd_count(MemLink *m, char *key, char *maskstr, MemLinkCount *count); 
+int memlink_cmd_count(MemLink *m, char *key, char *maskstr, MemLinkCount *count); <br/>
 发送COUNT命令，以maskstr为条件，统计一个key下所有可见的value，以及被标记删除的value的数量。结果写入到count中。MemLinkCount结构定义如下：
 typedef struct _memlink_count
 {
@@ -97,7 +97,7 @@ typedef struct _memlink_count
 
 visible_count为可见value的数量。tagdel_count为标记删除的value的数量。
 
-void memlink_result_free(MemLinkResult *result);
+void memlink_result_free(MemLinkResult *result);<br/>
 释放MemLinkResult结构中的root项的内存。
 
   * PHP
