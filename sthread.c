@@ -372,6 +372,10 @@ get_file_size(int fd)
        DERROR("lseek error! %s", strerror(errno));
        MEMLINK_EXIT;
    }
+   if (lseek(fd, 0, SEEK_SET) == -1) {
+       DERROR("lseek error! %s", strerror(errno));
+       MEMLINK_EXIT;
+   }
    return file_size;
 }
 
@@ -381,6 +385,8 @@ send_dump(int fd, short event, void *arg)
 {
     DumpConn* dumpConn = arg;
     char buf[BUF_SIZE];
+    int p_buf_size = BUF_SIZE * 3;
+    char p_buf[p_buf_size];
     int ret;
     /*
      * The current log version may be changed if dump event happends. So it is 
@@ -388,8 +394,11 @@ send_dump(int fd, short event, void *arg)
      */
     unsigned int log_ver = g_runtime->logver;
 
-    while ((ret = sthread_readn(dumpConn->dump_fd, buf, BUF_SIZE)) > 0) 
+    DINFO("sending dump...\n");
+    while ((ret = sthread_readn(dumpConn->dump_fd, buf, BUF_SIZE)) > 0) {
+        DINFO("dump data: %s\n", formath(buf, ret, p_buf, p_buf_size));
         sthread_writen(dumpConn->sock, buf, ret);
+    }
     dump_conn_destroy(dumpConn);
 
 	SyncLogConn* syncConn = synclog_conn_init(dumpConn->sock, log_ver, 0);
@@ -427,7 +436,7 @@ cmd_get_dump(Conn* conn, char *data, int datalen)
     int retlen = sizeof(int) + sizeof(long long);
     char retrc[retlen];
     memcpy(retrc, &g_runtime->dumpver, sizeof(int));
-    memcpy(retrc, &file_size, sizeof(int long));
+    memcpy(retrc + sizeof(int), &file_size, sizeof(long long));
     ret = data_reply(conn, retcode, retrc, retlen);
 
     send_dump_init(conn->sock, dump_fd);

@@ -20,7 +20,11 @@
  * Creates a dump file from the hash table. The old dump file is replaced by 
  * the new dump file. Sync log is also rotated.
  * format:
- * | dumpfile format(2B) | dumpfile version (4B) | sync log version(4B) | dumpfile is master (1B) | dumpfile size (8B)| data
+ * ---------------------------------------------------------------------
+ * | dumpfile format(2B) | dumpfile version (4B) | sync log version(4B)|
+ * ---------------------------------------------------------------------
+ * | dumpfile is master (1B) | dumpfile size (8B)| data |
+ * ------------------------------------------------------
  *
  * @param ht hash table
  */
