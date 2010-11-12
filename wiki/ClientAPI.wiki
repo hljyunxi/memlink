@@ -182,5 +182,29 @@
     * count(self, key, maskstr)
     同c版memlink_cmd_count。返回值为tuple,共两个成员。其中第一项为整形返回值，为MEMLINK_OK表示正常。第二项为MemLinkCount对象。
 
-  * Java
+==Java==
+
+  * public class MemLinkClient
+    memlink客户端类
+    * public MemLinkClient (String host, int readport, int writeport, int timeout)
+    * public void close()			
+    * public void destroy()
+    * public int create(String key, int valuesize, String maskstr)    
+    * public int dump()
+    * public int clean(String key)
+    * public MemLinkStat stat(String key)	
+    * public int stat2(String key, MemLinkStat stat)		
+    * public int delete(String key, String value)
+    * public int insert(String key, String value, String maskstr, int pos)
+    * public int update(String key, String value, int pos)
+    * public int mask(String key, String value, String maskstr)
+    * public int tag(String key, String value, int tag)   
+    * public MemLinkResult range(String key, String maskstr, int frompos, int len)	
+    * public int range2(String key, String maskstr, int frompos, int len, MemLinkResult mresult)		
+    * public int rmkey(String key)
+    * public MemLinkCount count(String key, String maskstr)	
+    * public int count2(String key, String maskstr, MemLinkCount mcount)
+
+
+
   
