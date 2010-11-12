@@ -102,7 +102,7 @@ public class MemLinkClient
 			return result;
 		}
 
-		return null;;
+		return null;
 	}
 
 	public int rmkey(String key)
