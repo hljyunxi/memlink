@@ -37,5 +37,5 @@ env = Environment(CCFLAGS=cflags, CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
 env.SharedLibrary("memlink", files)
 
 Java(target='.', source='com')
-Jar(target="memlink.jar", source='com')
+Jar(target="memlink.jar", source=['com', 'Test.class'])
 
