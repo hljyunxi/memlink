@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
     }
 
 
-	ret = memlink_dump(m);
+	ret = memlink_cmd_dump(m);
 	if (ret != MEMLINK_OK) {
 		DERROR("dump error: %d\n", ret);
 	}
