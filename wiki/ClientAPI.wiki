@@ -29,7 +29,7 @@
 
   * {{{int memlink_cmd_stat(MemLink *m, char *key, MemLinkStat *stat);}}}<br/>
   发送STAT命令。获取对应key的一些统计信息，结果存储到传入的参数stat中。
-  MemLinkStat的结构如下：
+  MemLinkStat的结构如下：<br/>
   {{{typedef struct _memlink_stat
   {
       unsigned char   valuesize;
