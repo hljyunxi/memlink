@@ -55,7 +55,10 @@ def dumpfile():
     f.close()
 
 def main():
-    binlog()
+    if len(sys.argv) > 1:
+        binlog('bin.log.' + sys.argv[1])
+    else: 
+        binlog()
     dumpfile()
 
 
