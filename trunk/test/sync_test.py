@@ -11,29 +11,35 @@ def cmd(sock, data):
   data = sock.recv(length)
   retcode = unpack('H', data[:2])[0]
   print 'length: %d, retcode: %d, ' % (length, retcode), repr(header + data)
+  return (retcode, data)
 
+def cmd_sync(sock, log_ver, log_index):
+  data = [pack('H', 9),
+          pack('B', 100),
+          pack('II', log_ver, log_index)]
+  (retcode, retdata) = cmd(sock, data)
   if retcode == 0:
-      for a in range(2): 
+      for a in range(4): 
           log_ver = unpack('I', sock.recv(4))[0]
           log_pos = unpack('I', sock.recv(4))[0]
           log_record = sock.recv(2)
           length = unpack('H', log_record)[0]
           log_record += sock.recv(length)
           print 'logver: %d, logpos: %d, length: %d' % \
-                        (log_ver, log_pos, length), repr(log_record);
-
-def cmd_sync(sock, log_ver, log_index):
-  data = [pack('H', 9),
-          pack('B', 100),
-          pack('II', log_ver, log_index)]
-  cmd(sock, data)
+                        (log_ver, log_pos, length + 2), repr(log_record);
 
 def cmd_sync_dump(sock, dumpver, size):
   data = [pack('H', 13),
           pack('B', 101),
           pack('I', dumpver),
           pack('Q', size)]
-  cmd(sock, data)
+  (retcode, retdata) = cmd(sock, data)
+  dump_size = unpack('Q', retdata[-8:])[0]
+  print "dump size: ", dump_size
+  dump_data = sock.recv(dump_size)
+  time.sleep(5)
+  print repr(dump_data)
+  time.sleep(300)
 
 def test_cmd_sync(sock):
   # invalid index 
@@ -44,14 +50,14 @@ def test_cmd_sync(sock):
   cmd_sync(sock, 1, 30)
 
 def test_cmd_sync_dump(sock):
-  cmd_sync_dump(sock, 1, 0)
+  cmd_sync_dump(sock, 2, 0)
 
 def main():
   sock = socket(AF_INET, SOCK_STREAM);
   sock.connect(('localhost', 11003));
 
-  test_cmd_sync(sock)
-  #test_cmd_sync_dump(sock)
+  #test_cmd_sync(sock)
+  test_cmd_sync_dump(sock)
 
   sock.close()
 
