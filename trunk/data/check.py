@@ -37,7 +37,7 @@ def binlog(filename='bin.log'):
             s2 = f.read(slen)
             s = s1 + s2 
             print 'logver: %d, logpos: %d, data %02d %d:' % \
-                (log_ver[0], log_pos[0], i+1, len(s)), repr(s), f.tell()
+                (log_ver[0], log_pos[0], i, len(s)), repr(s), f.tell()
     f.close()
 
 
