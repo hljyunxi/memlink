@@ -17,6 +17,7 @@
 #include "common.h"
 
 #define BUF_SIZE 1024
+#define SYNCLOG_MAX_INDEX_POS (get_index_pos(SYNCLOG_INDEXNUM))
 
 /**
  * Malloc. Terminate program if fails.
@@ -141,11 +142,7 @@ open_synclog(unsigned int log_ver, char *log_name, int *log_fd_ptr)
 inline static unsigned int
 get_index_pos(unsigned int log_no)
 {
-    return sizeof(short) + 
-        sizeof(int) + 
-        sizeof(char) + 
-        sizeof(int) + 
-        log_no * sizeof(int);
+    return SYNCLOG_HEAD_LEN + log_no * sizeof(int);
 }
 
 /**
@@ -263,7 +260,9 @@ send_synclog_record(SyncLogConn *conn)
     char buf[buf_len];
     char p_buf[buf_len];
 
-    while ((log_pos = seek_and_read_int(conn->log_fd, conn->log_index_pos)) > 0) {
+    DINFO("sending sync log in %s\n", conn->log_name);
+    while (conn->log_index_pos < SYNCLOG_MAX_INDEX_POS 
+            && (log_pos = seek_and_read_int(conn->log_fd, conn->log_index_pos)) > 0) {
         if (lseek(conn->log_fd, log_pos, SEEK_SET) == -1) {
             DERROR("lseek error! %s\n", strerror(errno));
             close(conn->log_fd);
@@ -287,6 +286,7 @@ send_synclog_record(SyncLogConn *conn)
 static void
 send_synclog(int fd, short event, void *arg) 
 {
+    DINFO("sending sync log...\n");
     SyncLogConn *conn = arg;
     /*
      * Send history synclog files and open the current synclog file.
@@ -294,8 +294,10 @@ send_synclog(int fd, short event, void *arg)
     while (conn->log_ver < g_runtime->logver) {
         send_synclog_record(conn);
         (conn->log_ver)++;
+        conn->log_index_pos = get_index_pos(0);
         open_synclog(conn->log_ver, conn->log_name, &conn->log_fd);
     }
+
     /*
      * Send available records in the current synclog file
      */
@@ -339,6 +341,7 @@ cmd_sync(Conn* conn, char *data, int datalen)
         DINFO("Found sync log file (version = %u)\n", log_ver);
         SyncLogConn *syncConn = synclog_conn_init(conn->sock, log_ver, log_no);
 		syncConn->log_fd = log_fd;
+        strcpy(syncConn->log_name, log_name);
 		send_synclog_init(syncConn);
     } else { 
         ret = data_reply(conn, 1, (char *)&(g_runtime->dumpver), sizeof(int));
@@ -447,7 +450,7 @@ sthread_read(int fd, short event, void *arg)
         conn->base = st->base;
 
         DINFO("new conn: %d\n", conn->sock);
-        DINFO("change event to read.");
+        DINFO("change event to read.\n");
         ret = change_event(conn, EV_READ | EV_PERSIST, 1);
         if (ret < 0) {
             DERROR("change_event error: %d, close conn.\n", ret);

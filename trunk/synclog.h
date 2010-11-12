@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <limits.h>
 
-#define SYNCLOG_INDEXNUM 1000000
 
 #define SYNCLOG_OK   0
 #define SYNCLOG_FULL 1
