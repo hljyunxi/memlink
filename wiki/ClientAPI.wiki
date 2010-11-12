@@ -107,11 +107,11 @@
 
 ==PHP==
 
-class MemLinkClient
-	memlink客户端类。
+  * class MemLinkClient
+    memlink客户端类。
 	
-    __construct($host, $readport, $writeport, $timeout)
-		同c版memlink_create。
+   *__construct($host, $readport, $writeport, $timeout)
+    同c版memlink_create。
     close()
 		同c版memlink_close
     destroy()
