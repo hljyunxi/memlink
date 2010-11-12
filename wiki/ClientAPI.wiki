@@ -111,7 +111,6 @@
   memlink客户端类。	
     * __construct($host, $readport, $writeport, $timeout)
     同c版memlink_create。
-
     * close()
     同c版memlink_close
 
