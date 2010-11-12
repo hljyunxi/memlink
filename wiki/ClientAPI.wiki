@@ -108,49 +108,66 @@
 ==PHP==
 
   * class MemLinkClient
-    memlink客户端类。	
+  memlink客户端类。	
     * __construct($host, $readport, $writeport, $timeout)
     同c版memlink_create。
-    * close()
-		同c版memlink_close
-    * destroy()
-		同c版memlink_destroy		
-    * create($key, $valuesize, $maskformat)
-		同c版memlink_cmd_create。返回值为整型，正常返回MEMLNK_OK。
-    * dump()
-		同c版memlink_dump。返回值为整型，正常返回MEMLNK_OK。
-    * clean($key)
-		同c版memlink_cmd_clean。返回值为整型，正常返回MEMLNK_OK。
-    * stat($key)
-		同c版memlink_cmd_stat。返回MemLinkStat对象，失败返回null。
-    * stat2($key, $mstat)
-		同c版memlink_cmd_stat。和上一个stat方法的区别是，需要传一个MemLinkStat对象作为第二个参数，返回值为整型，正常返回MEMLNK_OK。
-    * delete($key, $value, $valuelen)
-		同c版memlink_cmd_del。返回值为整型，正常返回MEMLNK_OK。
-    * insert($key, $value, $valuelen, $maskstr, $pos)
-		同c版memlink_cmd_insert。返回值为整型，正常返回MEMLNK_OK。
-    * update($key, $value, $valuelen, $pos)
-		同c版memlink_cmd_update。返回值为整型，正常返回MEMLNK_OK。
-    * mask($key, $value, $valulen, $maskstr)
-		同c版memlink_cmd_mask。返回值为整型，正常返回MEMLNK_OK。
-    * tag($key, $value, $valuelen, $tag)
-		同c版memlink_cmd_tag。返回值为整型，正常返回MEMLNK_OK。
-    * range($key, $maskstr, $frompos, $len)
-		同c版memlink_cmd_range。返回MemLinkResult对象，失败返回null。
-    * range2($key, $maskstr, $frompos, $len, $result)
-		同c版memlink_cmd_range。和上一个range方法的区别是，需要传一个MemLinkResult对象作为第二个参数，返回值为整型，正常返回MEMLNK_OK。
-    * rmkey($key)
-		同c版memlink_cmd_rmkey。返回值为整型，正常返回MEMLNK_OK。
-    * count($key, $maskstr)
-		同c版memlink_cmd_count。返回MemLinkCount对象，失败返回null。
-    * count2($key, $maskstr, $count)
-		同c版memlink_cmd_count2。和上一个count方法的区别是，需要传一个MemLinkCount对象作为第二个参数，返回值为整型，正常返回MEMLNK_OK。
- 
- 
-  * PYTHON
 
-class MemLinkClient
-	memlink客户端类
+    * close()
+    同c版memlink_close
+
+    * destroy()
+    同c版memlink_destroy
+		
+    * create($key, $valuesize, $maskformat)
+    同c版memlink_cmd_create。返回值为整型，正常返回MEMLNK_OK。
+
+    * dump()
+    同c版memlink_dump。返回值为整型，正常返回MEMLNK_OK。
+
+    * clean($key)
+    同c版memlink_cmd_clean。返回值为整型，正常返回MEMLNK_OK。
+
+    * stat($key)
+    同c版memlink_cmd_stat。返回MemLinkStat对象，失败返回null。
+
+    * stat2($key, $mstat)
+    同c版memlink_cmd_stat。和上一个stat方法的区别是，需要传一个MemLinkStat对象作为第二个参数，返回值为整型，正常返回MEMLNK_OK。
+
+    * delete($key, $value, $valuelen)
+    同c版memlink_cmd_del。返回值为整型，正常返回MEMLNK_OK。
+
+    * insert($key, $value, $valuelen, $maskstr, $pos)
+    同c版memlink_cmd_insert。返回值为整型，正常返回MEMLNK_OK。
+
+    * update($key, $value, $valuelen, $pos)
+    同c版memlink_cmd_update。返回值为整型，正常返回MEMLNK_OK。
+
+    * mask($key, $value, $valulen, $maskstr)
+    同c版memlink_cmd_mask。返回值为整型，正常返回MEMLNK_OK。
+
+    * tag($key, $value, $valuelen, $tag)
+    同c版memlink_cmd_tag。返回值为整型，正常返回MEMLNK_OK。
+
+    * range($key, $maskstr, $frompos, $len)
+    同c版memlink_cmd_range。返回MemLinkResult对象，失败返回null。
+
+    * range2($key, $maskstr, $frompos, $len, $result)
+    同c版memlink_cmd_range。和上一个range方法的区别是，需要传一个MemLinkResult对象作为第二个参数，返回值为整型，正常返回MEMLNK_OK。
+
+    * rmkey($key)
+    同c版memlink_cmd_rmkey。返回值为整型，正常返回MEMLNK_OK。
+
+    * count($key, $maskstr)
+    同c版memlink_cmd_count。返回MemLinkCount对象，失败返回null。
+
+    * count2($key, $maskstr, $count)
+    同c版memlink_cmd_count2。和上一个count方法的区别是，需要传一个MemLinkCount对象作为第二个参数，返回值为整型，正常返回MEMLNK_OK。
+ 
+ 
+==PYTHON==
+
+  * class MemLinkClient
+  memlink客户端类
  
     __init__(self, host, readport, writeport, timeout)
 		同c版memlink_create。
