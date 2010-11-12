@@ -185,7 +185,7 @@
 ==Java==
 
   * public class MemLinkClient
-  memlink客户端类
+  memlink客户端类。说明和php版本类似。
     * public MemLinkClient (String host, int readport, int writeport, int timeout)
     * public void close()			
     * public void destroy()
