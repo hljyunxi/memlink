@@ -31,7 +31,8 @@
   发送STAT命令。获取对应key的一些统计信息，结果存储到传入的参数stat中。
   MemLinkStat的结构如下：<br/>
 
-  {{{typedef struct _memlink_stat
+  {{{
+  typedef struct _memlink_stat
   {
       unsigned char   valuesize;
       unsigned char   masksize;
@@ -40,7 +41,8 @@
       unsigned int    data_used; // all data item used
       unsigned int    mem;       // all alloc mem
       unsigned int    mem_used;  // all used mem
-  }MemLinkStat; }}}
+  }MemLinkStat; 
+  }}}
 
   其中valuesize为value长度的字节数，masksize为mask长度的字节数。blocks为该key下有多少个大的数据块（这里称为block），data为这些所有block中可以容纳的value数，data_used为实际存储了多少个value值。mem为所有block一共占用的内存字节数，mem_used对应data_used所占用的内存字节数。
 
