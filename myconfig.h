@@ -28,6 +28,7 @@ typedef struct _myconfig
     char         datadir[PATH_MAX];
     int          log_level;
     char         log_name[PATH_MAX];
+	int			 write_binlog;
     int          timeout;
     int          thread_num;
     int          max_conn;                            // max connection

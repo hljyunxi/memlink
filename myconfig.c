@@ -47,6 +47,7 @@ myconfig_create(char *filename)
     //snprintf(filepath, PATH_MAX, "etc/%s", filename);
 
     //fp = fopen(filepath, "r");
+	int lineno = 0;
     fp = fopen(filename, "r");
     if (NULL == fp) {
         DERROR("open config file error: %s\n", filename);
@@ -59,6 +60,7 @@ myconfig_create(char *filename)
             //DINFO("config file read complete!\n");
             break;
         }
+		lineno ++;
         //DINFO("buffer: %s\n", buffer);
         
         if (buffer[0] == '#') { // skip comment
@@ -67,7 +69,7 @@ myconfig_create(char *filename)
 
         char *sp = strchr(buffer, '=');
         if (sp == NULL) {
-            DERROR("config file error: %s\n", buffer);
+            DERROR("config file error at line %d: %s\n", lineno, buffer);
             MEMLINK_EXIT;
         }
 
