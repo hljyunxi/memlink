@@ -147,7 +147,7 @@
     同c版memlink_cmd_count2。和上一个count方法的区别是，需要传一个MemLinkCount对象作为第二个参数，返回值为整型，正常返回MEMLNK_OK。
  
  
-==PYTHON==
+==Python==
 
   * class MemLinkClient
   memlink客户端类 
