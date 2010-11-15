@@ -1,4 +1,3 @@
-#Benchmark
 #summary MemLink与redis，mysql的测试对比
 
 = Introduction =
