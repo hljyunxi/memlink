@@ -1090,7 +1090,7 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
 
     node = hashtable_find(ht, key);
     if (NULL == node) {
-        DERROR("hashtable_add not found node\n");
+        DERROR("hashtable_find not found node\n");
         return MEMLINK_ERR_NOKEY;
     }
 

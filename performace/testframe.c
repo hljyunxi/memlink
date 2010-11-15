@@ -10,6 +10,10 @@
 #include "logfile.h"
 #include "utils.h"
 
+
+#define STAT_MIDDLE		1
+
+
 extern int clear_key(char *key);
 extern int create_key(char *key);
 
@@ -76,7 +80,7 @@ int alltest_insert()
 	memset(insertret, 0, g_tcf->insert_test_count * sizeof(int));
 
     // test insert
-    for (f = 0; f < 2; f++) {
+    for (f = 1; f < 2; f++) {
         for (i = 0; i < g_tcf->testnum_count - 2; i++) {
             for (n = 0; n < g_tcf->insert_test_count; n++) {
                 DINFO("====== insert %d test: %d ======\n", g_tcf->testnum[i], n);
@@ -88,6 +92,8 @@ int alltest_insert()
 		
 			int		sum = 0;
 			float	av;	
+
+#ifdef STAT_MIDDLE
 			if (g_tcf->insert_test_count > 2) {
 				qsort(insertret, g_tcf->insert_test_count, sizeof(int), compare_int);
 				for (n = 0; n < g_tcf->insert_test_count; n++) {
@@ -100,11 +106,15 @@ int alltest_insert()
 				}
 				av = (float)sum / (g_tcf->insert_test_count - 2);
 			}else{
+#endif
 				for (n = 0; n < g_tcf->insert_test_count; n++) {
 					sum += insertret[n];
 				}
 				av = (float)sum / g_tcf->insert_test_count;
+
+#ifdef STAT_MIDDLE
 			}
+#endif
             DINFO("\33[31m====== sum: %d, ave: %.2f ======\33[0m\n", g_tcf->testnum[i], sum, av);
         }
     }
@@ -118,20 +128,21 @@ int alltest_range()
     int n;
     int ret;
     int f;
-
-
-    //int rangetest[tcf->range_test_range_count] = {100, 200, 1000};
     int *rangeret; //[g_tcf->range_test_count] = {0};
     int j = 0, k = 0;
 
 	rangeret = (int*)alloca(g_tcf->range_test_count * sizeof(int));
 	memset(rangeret, 0, g_tcf->range_test_count * sizeof(int));
 
+    /*       
+	DINFO("range insert: %d\n", g_tcf->testnum[g_tcf->testnum_count - 1]);
+	insert_func insertlong = g_tcf->ifuncs[0];
+	ret = insertlong(g_tcf->testnum[g_tcf->testnum_count - 1], 1);
+	*/
 
     // test range
-    for (f = 0; f < 2; f++) {
+    for (f = 1; f < 2; f++) {
         for (i = 0; i < g_tcf->testnum_count; i++) {
-            ret = test_insert_long(g_tcf->testnum[i], 1);
             for (j = 0; j < 2; j++) {
                 for (k = 0; k < g_tcf->range_test_range_count; k++) {
                     int startpos, slen;
@@ -156,6 +167,7 @@ int alltest_range()
 					int		sum = 0;
 					float	av;	
 
+#ifdef STAT_MIDDLE
 					if (g_tcf->range_test_count > 2) {
 						qsort(rangeret, g_tcf->range_test_count, sizeof(int), compare_int);
 
@@ -169,16 +181,19 @@ int alltest_range()
 						}
 						av = (float)sum / (g_tcf->range_test_count - 2);
 					}else{
+#endif
 						for (n = 0; n < g_tcf->range_test_count; n++) {
 							sum += rangeret[n];
 						}
 						av = (float)sum / g_tcf->range_test_count;
+#ifdef STAT_MIDDLE
 					}
+#endif
 
                     DINFO("\33[31m====== range:%d  sum: %d, ave: %.2f ======\33[0m\n", g_tcf->testnum[i], sum, av);
                 }
             }
-            clear_key("haha");
+            //clear_key("haha");
         }
     }
 
@@ -244,7 +259,7 @@ int alltest_thread_insert()
     g_tcf->isthread = 1;
 
     // test insert
-    for (f = 0; f < 2; f++) {
+    for (f = 1; f < 2; f++) {
         for (i = 0; i < g_tcf->testnum_count; i++) {
             for (n = 0; n < g_tcf->insert_test_count; n++) {
                 DINFO("====== insert %d test: %d ======\n", g_tcf->testnum[i], n);
@@ -291,6 +306,7 @@ int alltest_thread_insert()
 			int		sum = 0;
 			float	av;	
 
+#ifdef STAT_MIDDLE
 			if (g_tcf->insert_test_count > 2) {
 				qsort(insertret, g_tcf->insert_test_count, sizeof(int), compare_int);
 				for (n = 0; n < g_tcf->insert_test_count; n++) {
@@ -305,11 +321,14 @@ int alltest_thread_insert()
 
 				av = (float)sum / (g_tcf->insert_test_count - 2);
 			}else{
+#endif
 				for (n = 0; n < g_tcf->insert_test_count; n++) {
 					sum += insertret[n];
 				}
 				av = (float)sum / g_tcf->insert_test_count;
+#ifdef STAT_MIDDLE
 			}
+#endif
             DINFO("\33[31m====== insert %d sum: %d, ave: %.2f ======\33[0m\n", g_tcf->testnum[i], sum, av);
         }
     }
@@ -325,9 +344,6 @@ int alltest_thread_range()
     int ret;
     int f;
     int t;
-
-    //int rangetest[RANGEN] = {100, 200, 1000};
-    //int rangeret[TESTN][RANGEN*2] = {0};
     int *rangeret; //[RANGE_TESTS] = {0};
     int j = 0, k = 0;
     int range_test_num  = 10 * g_tcf->range_sample_count;
@@ -340,13 +356,19 @@ int alltest_thread_range()
 
     g_tcf->isthread = 1;
 
+	g_tcf->range_test_count = 1;
 
+	/*
+	DINFO("range insert: %d\n", g_tcf->testnum[g_tcf->testnum_count - 1]);
+	insert_func insertlong = g_tcf->ifuncs[0];
+	ret = insertlong(g_tcf->testnum[g_tcf->testnum_count - 1], 1);
+	*/
     // test range
     for (f = 0; f < 2; f++) {
         for (i = 0; i < g_tcf->testnum_count; i++) {
-            DINFO("====== insert %d ======\n", g_tcf->testnum[i]);
-			insert_func insertlong = g_tcf->ifuncs[0];
-            ret = insertlong(g_tcf->testnum[i], 1);
+            //DINFO("====== insert %d ======\n", g_tcf->testnum[i]);
+			//insert_func insertlong = g_tcf->ifuncs[0];
+            //ret = insertlong(g_tcf->testnum[i], 1);
             for (j = 0; j < 2; j++) {
                 for (k = 0; k < g_tcf->range_test_range_count; k++) {
                     int startpos, slen;
@@ -403,6 +425,7 @@ int alltest_thread_range()
 					int		sum = 0;
 					float	av;	
 
+#ifdef STAT_MIDDLE
 					if (g_tcf->range_test_count > 2) {
 						qsort(rangeret, g_tcf->range_test_count, sizeof(int), compare_int);
 						for (n = 0; n < g_tcf->range_test_count; n++) {
@@ -417,16 +440,20 @@ int alltest_thread_range()
 
 						av = (float)sum / (g_tcf->range_test_count - 2);
 					}else{
+#endif
 						for (n = 0; n < g_tcf->range_test_count; n++) {
 							sum += rangeret[n];
 						}
 						av = (float)sum / g_tcf->range_test_count;
+
+#ifdef STAT_MIDDLE
 					}
+#endif
 
                     DINFO("\33[31m====== range %d,%d sum: %d, speed: %.2f ======\33[0m\n", startpos, slen, sum, av);
                 }
             }
-            clear_key("haha");
+            //clear_key("haha");
         }
     }
 
@@ -490,7 +517,7 @@ int main(int argc, char *argv[])
 	testconfig_init(&tcf);
 	
 	tcf.insert_test_count = 1;
-	tcf.range_test_count  = 4;
+	tcf.range_test_count  = 2;
 
 	tcf.testnum[0] = 10000;
 	tcf.testnum[1] = 100000;
@@ -504,7 +531,7 @@ int main(int argc, char *argv[])
 	tcf.range_test_range_count = 3;
 
 	tcf.longcon = 1;
-	tcf.range_sample_count = 100;
+	tcf.range_sample_count = 1;
 
 	g_tcf = &tcf;
 

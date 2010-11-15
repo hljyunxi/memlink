@@ -6,7 +6,7 @@
 
 #define MYSQL_HOST	"127.0.0.1"
 #define MYSQL_USER	"root"
-#define MYSQL_PASS	"123456"
+#define MYSQL_PASS	""
 #define MYSQL_DB	"mytest"
 
 
@@ -134,7 +134,7 @@ int test_insert_short(int count, int docreate)
 
 	unsigned int tmd = timediff(&start, &end);
 	double speed = ((double)count / tmd) * 1000000;
-	DINFO("insert long use time: %u, speed: %.2f\n", tmd, speed);
+	DINFO("insert short use time: %u, speed: %.2f\n", tmd, speed);
 	
 
 
@@ -246,8 +246,7 @@ int test_range_short(int frompos, int slen, int count)
 
 	unsigned int tmd = timediff(&start, &end);
 	double speed = ((double)count / tmd) * 1000000;
-	DINFO("range long use time: %u, speed: %.2f\n", tmd, speed);
-	
+	DINFO("range shortuse time: %u, speed: %.2f\n", tmd, speed);
 
 	return (int)speed;
 }
