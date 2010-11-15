@@ -7,6 +7,22 @@
 
 = Details =
 
+命令描述：
+
+|| 命令名 || 类型 || 描述 ||
+|| dump || 管理 || 立即复制一份内存数据到磁盘 ||
+|| clean || 管理 || 重拍某个key下的列表 ||
+|| stat || 管理 || 一些统计信息 ||
+|| create || 写 || 创建key ||
+|| del || 写 || 删除key下的某个value ||
+|| insert || 写 || 在key下的列表中插入一条 ||
+|| update || 写 || 更新key下列表中某value在列表中的位置 ||
+|| mask || 写 || 修改某个value的mask信息 ||
+|| tag || 写 || 标记删除列表中的某个value或者恢复某个value ||
+|| rmkey || 写 || 删除一个key，包括它的列表 ||
+|| range || 读 || 获取指定key下的列表中的某个范围的value ||
+|| count || 读 || 获取指定key下列表的条数 ||
+
 ==C/C++==
 
   * {{{MemLink* memlink_create(char *host, int readport, int writeport, int timeout);}}}<br/>
