@@ -30,10 +30,10 @@ CREATE TABLE `ThreadList` (
 c:表示c客户端每秒操作成功条数，py:表示python客户端每秒操作成功条数，php:为php客户端每秒操作成功条数。mem:表示memlink server消耗内存。
 insert为插入操作，range为获取列表某个范围的操作。插入的列表中的数据每条为12字节。
 
-*redis*<br/>
+<font color="green"><b>redis</b></font><br/>
 redis测试一样每条数据是12字节。redis只测试c客户端，使用hiredis。用LRANGE命令获取列表，用LPUSH向队列插入数据。redis是默认配置。
 
-*mysql*<br/>
+<font color="blue"><b>mysql</b></font><br/>
 mysql使用上面的数据库表结构。插入语句为：insert into ThreadList values (1, 'xxxx', 0, now()) 查询列表的语句为：select threadid from  ThreadList where forumid=1 order by reply_time limit frompos,len
 
 *1. 一个客户端，长连接*
