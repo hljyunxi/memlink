@@ -36,6 +36,8 @@ redis测试一样每条数据是12字节。redis只测试c客户端，使用hire
 <font color="blue"><b>mysql</b></font><br/>
 mysql使用上面的数据库表结构。插入语句为：insert into ThreadList values (1, 'xxxx', 0, now()) 查询列表的语句为：select threadid from  ThreadList where forumid=1 order by reply_time limit frompos,len
 
+下面的测试结果中，<font color="red">红色为memlink</font>，<font color="green">绿色为redis</font>，<font color="blue">蓝色为mysql</font>。
+
 *1. 一个客户端，长连接*
 
 || *操作* || 1w || 10w || 100w || 1000w ||
