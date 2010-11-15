@@ -56,71 +56,18 @@ mysql使用上面的数据库表结构。插入语句为：insert into ThreadLis
 ||range last100||<font color="red">c:5468<br/> py:4451<br/> php:4970</font><br/><font color="green">994</font><br/><font color="blue">20</font>||<font color="red">c:5229<br/> py:4233<br/> php:4692</font><br/><font color="green">271</font><br/><font color="blue">3</font>||<font color="red">c:3763<br/> py:3055<br/> php:3155</font><br/><font color="green">32</font><br/><font color="blue">0.21</font>||<font color="red">c:110<br/> py:96<br/> php:96</font><br/><font color="green">3</font><br/><font color="blue">0.02</font>||
 
 
-
-memlink
-|| *操作* || 1w || 10w || 100w || 1000w ||
-|| insert<br/> mem:4760K || c:6560<br/> py:6138<br/> php:6064<br/> mem:5108K || c:6466<br/> py:5990<br/> php:5986<br/> mem:6704K || c:6675<br/> py:6092<br/> php:6010<br/> mem:18M || c:6719<br/> py:6012<br/> php:6003<br/> mem:139M ||
-|| range first100 || c:5467<br/> py:4535<br/> php:5064 || c:5472<br/> py:4450<br/> php:4944 || c:5662<br/> py:4495<br/> php:4712 || c:5484<br/> py:4475<br/> php:4779 ||
-|| range first200 || c:4533<br/> py:3746<br/> php:4124 || c:4563<br/> py:3693<br/> php:4049 || c:4709<br/> py:3724<br/> php:3893 || c:4567<br/> py:3708<br/> php:3931 ||
-|| range first1000 || c:1206<br/> py:1254<br/> php:1291 || c:1200<br/> py:1249<br/> php:1285 || c:1215<br/> py:1253<br/> php:1263 || c:1202<br/> py:1250<br/> php:1266 ||
-|| range last100 || c:5468<br/> py:4451<br/> php:4970 || c:5229<br/> py:4233<br/> php:4692 || c:3763<br/> py:3055<br/> php:3155 || c:110<br/> py:96<br/> php:96 ||
-|| range last200 || c:4558<br/> py:3692<br/> php:4053 || c:4355<br/> py:3545<br/> php:3886 || c:3323<br/> py:2680<br/> php:2790 || c:110<br/> py:95<br/> php:96 ||
-|| range last1000 || c:1198<br/> py:1247<br/> php:1284 || c:1191<br/> py:1226<br/> php:1267 || c:1096<br/> py:1093<br/> php:1125 || c:102<br/> py:91<br/> php:91 ||
-
-
-redis
-|| *操作* || 1w || 10w || 100w || 1000w ||
-|| insert || 10891 || 10297 || 10233 || 10135 ||
-|| range first100 || 1058 || 1172 || 1166 || 1163 || 
-|| range first200 || 654 || 651 || 669 || 667 ||
-|| range first1000 || 146 || 145 || 145  || 144 ||
-|| range last100 || 994 || 271  || 32  || 3 ||
-|| range last200 || 630 || 233 || 32 || 3 ||
-|| range last1000 || 144 || 104 || 27 || 3 ||
-
-mysql
-|| *操作* || 1w || 10w || 100w || 1000w ||
-|| insert || 3313 || 3251 || 3108 || 3001 ||
-|| range first100 || 923 || 1158 || 1031 || 885 || 
-|| range first200 || 815 || 823 || 783 || 743 ||
-|| range first1000 || 227 || 230 || 226  || 212 ||
-|| range last100 || 20 || 3 || 0.21  || 0.02 ||
-|| range last200 || 30 || 3 || 0.3 || 0.04 ||
-|| range last1000 || 30 || 3 || 0.3 || 0.03 ||
-
 *3. 10个客户端，并发长连接。
 
 memlink内部开启4个处理线程。仅c客户端测试。
 || *操作* || 1w || 10w || 100w || 1000w ||
-|| insert || 23021 || 22210 || 22200 || 22242 ||
-|| range first100 || 45451 || 53463 || 55645 || 48283 ||
-|| range first200 || 23768 || 33966 || 35045 || 35417 ||
-|| range first1000 || 4269 || 4305 || 4281 || 4271 ||
-|| range last100 || 53719 || 48948 || 24086 || 295 ||
-|| range last200 || 35593 || 34264 || 21830 || 292 ||
-|| range last1000 || 4285 || 4270 || 4336 || 277 ||
+||insert||<font color="red">23021</font><br/><font color="green">29401</font><br/><font color="blue">13704</font>||<font color="red">22210</font><br/><font color="green">30929</font><br/><font color="blue">12786</font>||<font color="red">22200</font><br/><font color="green">29109</font><br/><font color="blue">12087</font>||<font color="red">22242</font><br/><font color="green">30278</font><br/><font color="blue">11023</font>||
+||range first100||<font color="red">45451</font><br/><font color="green">1443</font><br/><font color="blue">2011</font>||<font color="red">53463</font><br/><font color="green">1384</font><br/><font color="blue">2059</font>||<font color="red">55645</font><br/><font color="green">1396</font><br/><font color="blue">2015</font>||<font color="red">48283</font><br/><font color="green">1339</font><br/><font color="blue">2387</font>||
+||range first200||<font color="red">23768</font><br/><font color="green">667</font><br/><font color="blue">1637</font>||<font color="red">33966</font><br/><font color="green">641</font><br/><font color="blue">1768</font>||<font color="red">35045</font><br/><font color="green">636</font><br/><font color="blue">1854</font>||<font color="red">35417</font><br/><font color="green">655</font><br/><font color="blue">1614</font>||
+||range first1000||<font color="red">4269</font><br/><font color="green">114</font><br/><font color="blue">654</font>||<font color="red">4305</font><br/><font color="green">115</font><br/><font color="blue">641</font>||<font color="red">4281</font><br/><font color="green">114</font><br/><font color="blue">648</font>||<font color="red">4271</font><br/><font color="green">115</font><br/><font color="blue">631</font>||
+||range last100||<font color="red">53719</font><br/><font color="green">1584</font><br/><font color="blue">91</font>||<font color="red">48948</font><br/><font color="green">229</font><br/><font color="blue">8</font>||<font color="red">24086</font><br/><font color="green">19</font><br/><font color="blue">1</font>||<font color="red">295</font><br/><font color="green">2</font><br/><font color="blue">-</font>||
 
 
-redis
-|| *操作* || 1w || 10w || 100w || 1000w ||
-|| insert || 29401 || 30929 || 29109 || 30278 ||
-|| range first100 || 1443 || 1384 || 1396 || 1339 || 
-|| range first200 || 667 || 641 || 636 || 655 ||
-|| range first1000 || 114 || 115 || 114 || 115 ||
-|| range last100 || 1584 || 229  || 19  || 2 ||
-|| range last200 || 696 || 220 || 19 || 2 ||
-|| range last1000 || 114 || 142 || 19 || 2 ||
 
-
-mysql
-|| *操作* || 1w || 10w || 100w || 1000w ||
-|| insert || 13704 || 12786 || 12087 || 11023 ||
-|| range first100 || 2011 || 2059 || 2015 || 2387 || 
-|| range first200 || 1637 || 1768 || 1854 || 1614 ||
-|| range first1000 || 654 || 641 || 648 || 631 ||
-|| range last100 || 91 || 8 || 1 || - ||
-|| range last200 || 96 || 9 || 1 || - ||
-|| range last1000 || 91 || 8 || 1 || - ||
 
 上面的 - 表示时间太长，数百秒也没有结果。
 
