@@ -1,8 +1,9 @@
-#summary MemLink与redis，mysql的测试对比
+memlink性能测试<br/>
+memLink与redis，mysql的性能测试对比
 
 = Introduction =
 
-Memlink用于持久化存储论坛中forum=>thread list,thread=>post list数据，下面对比了不同数据存储引擎存储上述逻辑关系的查询性能和内存开销。
+Memlink用于存储Key=>List数据，下面对比了不同数据存储引擎存储存储Key=>List数据的性能和内存开销。压力测试分为：客户端有长连接和短链接、N个并发数执行M个查询、在不同数据规模下等多种组合测试。
 
 
 = Details =
