@@ -47,7 +47,7 @@
   其中valuesize为value长度的字节数，masksize为mask长度的字节数。blocks为该key下有多少个大的数据块（这里称为block），data为这些所有block中可以容纳的value数，data_used为实际存储了多少个value值。mem为所有block一共占用的内存字节数，mem_used对应data_used所占用的内存字节数。
 
   * {{{int memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr);}}}<br/>
-  发送CREATE命令，创建一个key。参数valuelen表示该key下的value的长度，maskstr为value的属性格式。该属性格式由问号分隔的数字组成。这些数字表示对应属性项所占用的空间的bit数。比如4:3:1表示有三个属性，这三个属性分别占用4bit，3bit，1bit。
+  发送CREATE命令，创建一个key。key为字符串，长度最长为255字节。参数valuelen表示该key下的value的长度，value在memlink内部处理为2进制格式，也就是说memlink不关心它是什么类型的。maskstr为value的属性格式。该属性格式由问号分隔的数字组成。这些数字表示对应属性项所占用的空间的bit数。比如4:3:1表示有三个属性，这三个属性分别占用4bit，3bit，1bit。
 
   * {{{int memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen);}}}<br/>
   发送DEL命令。删除一个指定key下的对应value。
