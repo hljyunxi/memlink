@@ -26,7 +26,7 @@ CREATE TABLE `ThreadList` (
 ) ENGINE=Innodb DEFAULT CHARSET=utf8;
 }}}
 
-* <font color=red>memlink</font> *<br/>
+<font color=red><b>memlink</b></font> <br/>
 c:表示c客户端每秒操作成功条数，py:表示python客户端每秒操作成功条数，php:为php客户端每秒操作成功条数。mem:表示memlink server消耗内存。
 insert为插入操作，range为获取列表某个范围的操作。插入的列表中的数据每条为12字节。
 
