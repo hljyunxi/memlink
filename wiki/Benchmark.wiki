@@ -46,39 +46,16 @@ mysql使用上面的数据库表结构。插入语句为：insert into ThreadLis
 ||range last100||<font color="red">c:11153<br/> py:8137<br/> php:8996</font><br/><font color="green">1221</font><br/><font color="blue">31</font>||<font color="red">c:10318<br/> py:7526<br/> php:8263</font><br/><font color="green">212</font><br/><font color="blue">3</font>||<font color="red">c:5519<br/> py:4410<br/> php:4691</font><br/><font color="green">19</font><br/><font color="blue">0.3</font>||<font color="red">c:112<br/> py:97<br/> php:97</font><br/><font color="green">2</font><br/><font color="blue">0.04</font>||
 
 
-
-memlink
-
-|| *操作* || 1w || 10w || 100w || 1000w ||
-|| insert<br/> mem:4764K || <font color="red">c:16296<br/> py:12558<br/> php:12153<br/> mem:5032K</font>|| <font color="red">c:14125<br/> py:12565<br/> php:12144<br/> mem:6628K </font>|| <font color="red">c:13868<br/> py: 13096<br/> php: 12521<br/> mem:18M </font>|| <font color="red">c:13187<br/> py:12611<br/> php:12124<br/> mem:139M </font>||
-|| range first100 || <font color="red">c:10874<br/> py:8275<br/> php:9185</font> || <font color="red">c:11429<br/> py:8273<br/> php:9171</font> || <font color="red">c:10994<br/> py:8068<br/> php:9136</font> || <font color="red">c:11663<br/> py:8256<br/> php:10071</font> ||
-|| range first200 || <font color="red">c:8045<br/> py:6015<br/> php:6544</font> || <font color="red">c:8041<br/> py:6017<br/> php:6545</font> || <font color="red">c:7863<br/> py:5941<br/> php:6542</font> || <font color="red">c:7970<br/> py:6024<br/> php:7010</font> ||
-|| range first1000 || <font color="red">c:1362<br/> py:1446<br/> php:1466</font> || <font color="red">c:1362<br/> py:1448<br/> php:1468</font> || <font color="red">c:1354<br/> py:1440<br/> php:1462</font> || <font color="red">c:1362<br/> py:1444<br/> php:1492</font> ||
-|| range last100 || <font color="red">c:11153<br/> py:8137<br/> php:8996</font> || <font color="red">c:10318<br/> py:7526<br/> php:8263</font> || <font color="red">c:5519<br/> py:4410<br/> php:4691</font> || <font color="red">c:112<br/> py:97<br/> php:97</font> ||
-|| range last200 || <font color="red">c:7938<br/> py:5956<br/> php:6461</font> || <font color="red">c:7515<br/> py:5629<br/> php:6078</font> || <font color="red">c:4615<br/> py:3688<br/> php:3899</font> || <font color="red">c:111<br/> py:96<br/> php:97</font> ||
-|| range last1000 || <font color="red">c:1358<br/> py:1442<br/> php:1458</font> || <font color="red">c:1345<br/> py:1421<br/> php:1440</font> || <font color="red">c:1209<br/> py:1251<br/> php:1272</font> || <font color="red">c:103<br/> py:91<br/> php:91</font> ||
-
-redis
-|| *操作* || 1w || 10w || 100w || 1000w ||
-|| insert<br/> mem:1060K || 15183<br/> mem:1920K || 14997<br/> mem:9044 || 14828<br/> mem:78M || 14788<br/> mem:771M ||
-|| range first100 || 1328 || 1329 || 1324 || 1332 || 
-|| range first200 || 708 || 709 || 705 || 709 ||
-|| range first1000 || 147 || 148 || 148  || 147 ||
-|| range last100 || 1221 || 212  || 19  || 2 ||
-|| range last200 || 675 || 184 || 19 || 2 ||
-|| range last1000 || 147 || 92 || 17 || 2 ||
-
-mysql
-|| *操作* || 1w || 10w || 100w || 1000w ||
-|| insert || 10891 || 10297 || 10022 || 9718 ||
-|| range first100 || 1550 || 1563 || 1559 || 1307 || 
-|| range first200 || 956 || 954 || 956 || 941 ||
-|| range first1000 || 230 || 230 || 230  || 235 ||
-|| range last100 || 31 || 3  || 0.3  || 0.04 ||
-|| range last200 || 31 || 3 || 0.3 || 0.04 ||
-|| range last1000 || 30 || 3 || 0.3 || 0.03 ||
-
 *2. 一个客户端， 全部是短连接。一次请求一个连接。*
+
+|| *操作* || 1w || 10w || 100w || 1000w ||
+||insert<br/><font color="red">mem:4760K</font><br/><font color="green"></font>||<font color="red">c:6560<br/> py:6138<br/> php:6064<br/> mem:5108K</font><br/><font color="green">10891</font><br/><font color="blue">3313</font>||<font color="red">c:6466<br/> py:5990<br/> php:5986<br/> mem:6704K</font><br/><font color="green">10297</font><br/><font color="blue">3251</font>||<font color="red">c:6675<br/> py:6092<br/> php:6010<br/> mem:18M</font><br/><font color="green">10233</font><br/><font color="blue">3108</font>||<font color="red">c:6719<br/> py:6012<br/> php:6003<br/> mem:139M</font><br/><font color="green">10135</font><br/><font color="blue">3001</font>||
+||range first100||<font color="red">c:5467<br/> py:4535<br/> php:5064</font><br/><font color="green">1058</font><br/><font color="blue">923</font>||<font color="red">c:5472<br/> py:4450<br/> php:4944</font><br/><font color="green">1172</font><br/><font color="blue">1158</font>||<font color="red">c:5662<br/> py:4495<br/> php:4712</font><br/><font color="green">1166</font><br/><font color="blue">1031</font>||<font color="red">c:5484<br/> py:4475<br/> php:4779</font><br/><font color="green">1163</font><br/><font color="blue">885</font>||
+||range first200||<font color="red">c:4533<br/> py:3746<br/> php:4124</font><br/><font color="green">654</font><br/><font color="blue">815</font>||<font color="red">c:4563<br/> py:3693<br/> php:4049</font><br/><font color="green">651</font><br/><font color="blue">823</font>||<font color="red">c:4709<br/> py:3724<br/> php:3893</font><br/><font color="green">669</font><br/><font color="blue">783</font>||<font color="red">c:4567<br/> py:3708<br/> php:3931</font><br/><font color="green">667</font><br/><font color="blue">743</font>||
+||range first1000||<font color="red">c:1206<br/> py:1254<br/> php:1291</font><br/><font color="green">146</font><br/><font color="blue">227</font>||<font color="red">c:1200<br/> py:1249<br/> php:1285</font><br/><font color="green">145</font><br/><font color="blue">230</font>||<font color="red">c:1215<br/> py:1253<br/> php:1263</font><br/><font color="green">145</font><br/><font color="blue">226</font>||<font color="red">c:1202<br/> py:1250<br/> php:1266</font><br/><font color="green">144</font><br/><font color="blue">212</font>||
+||range last100||<font color="red">c:5468<br/> py:4451<br/> php:4970</font><br/><font color="green">994</font><br/><font color="blue">20</font>||<font color="red">c:5229<br/> py:4233<br/> php:4692</font><br/><font color="green">271</font><br/><font color="blue">3</font>||<font color="red">c:3763<br/> py:3055<br/> php:3155</font><br/><font color="green">32</font><br/><font color="blue">0.21</font>||<font color="red">c:110<br/> py:96<br/> php:96</font><br/><font color="green">3</font><br/><font color="blue">0.02</font>||
+
+
 
 memlink
 || *操作* || 1w || 10w || 100w || 1000w ||
