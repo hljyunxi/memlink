@@ -1,5 +1,4 @@
-memlink性能测试<br/>
-memLink与redis，mysql的性能测试对比
+summary: memlink性能测试、与redis，mysql的性能测试对比
 
 = Introduction =
 
