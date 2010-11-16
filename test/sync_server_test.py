@@ -4,8 +4,8 @@ import socket
 from errono import EINTR
 import struct
 
-CMD_SYNC        100 
-CMD_GETDUMP     101
+CMD_SYNC    = 100 
+CMD_GETDUMP = 101
 
 class SyncServer:
     def __init__(self, host, port):
@@ -16,7 +16,6 @@ class SyncServer:
         self.sock.bind((host, port))
         self.listen(32)
 
-
     def loop(self):
         while True:
             try:
@@ -25,7 +24,6 @@ class SyncServer:
                 if why.args[0] == EINTR:
                     continue
                 raise
-                
             self.run(newsock)
             newsock.close()
     
@@ -44,13 +42,21 @@ class SyncServer:
         hlen = sock.recv(2)
         dlen = struct.unpack('H', hlen)
         print 'head len:', dlen
+        s = sock.recv(dlen)
 
+        return self.decode(hlen + s)
 
+    def send_sync_cmd(self, sock, ret):
+        s = struct.pack('H', ret)
+        s = struct.pack('I', len(s)) + s
+        sock.send(s)
 
-    def send_sync_cmd(self, sock):
-        pass
+    def send_getdump_cmd(self, sock, ret):
+        s = struct.pack('H', ret)
+        s = struct.pack('I', len(s)) + s
+        sock.send(s)
 
-    def send_getdump_cmd(self, sock):
+    def send_data(self, sock):
         pass
 
     def decode(self, data):
@@ -81,7 +87,6 @@ class SyncServer:
         ss = struct.pack('H', len(s)) + s
         
         return ss
-
 
 
 def main():
