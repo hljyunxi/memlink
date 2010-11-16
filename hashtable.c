@@ -817,6 +817,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 
                 new_nextbk->next = nextbk->next;
                 mempool_put(g_runtime->mpool, nextbk, datalen);
+				node->all -= g_cf->block_data_count;	
             }
         }
 
@@ -948,6 +949,10 @@ hashtable_del(HashTable *ht, char *key, void *value)
         }
         node->used--;
     }
+
+	if (dbk->mask_count + dbk->visible_count == 0) {
+		// Fixme: remove the null block
+	}
 
     return MEMLINK_OK;
 }
@@ -1255,7 +1260,8 @@ hashtable_clean(HashTable *ht, char *key)
 
     if (NULL == dbk)
         return MEMLINK_OK;
-
+		
+	DINFO("=== hashtable clean: %s ===\n", key);
     if (node->used == 0) {
         DataBlock *tmp;
         while (dbk) {

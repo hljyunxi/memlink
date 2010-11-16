@@ -78,11 +78,9 @@ rdata_ready(Conn *conn, char *data, int datalen)
             ret = hashtable_stat(g_runtime->ht, key, &stat);
             DINFO("hashtable stat: %d\n", ret);
             DINFO("stat blocks: %d\n", stat.blocks);
-
+			
             retdata = (char*)&stat;
             retlen  = sizeof(HashTableStat);
-
-            DINFO("data_reply return: %d\n", ret);
 
             ret = data_reply(conn, ret, retdata, retlen);
             DINFO("data_reply return: %d\n", ret);

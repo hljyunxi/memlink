@@ -144,11 +144,12 @@ data_reply(Conn *conn, short retcode, char *retdata, int retlen)
     conn->wbuf = wdata;
     */
     conn->wlen = datalen;
-
+/*
 #ifdef DEBUG
     char buf[10240] = {0};
     DINFO("reply %s\n", formath(conn->wbuf, conn->wlen, buf, 10240));
 #endif
+*/
 	DINFO("change event to write.\n");
 	int ret = change_event(conn, EV_WRITE|EV_PERSIST, 0);
 	if (ret < 0) {
@@ -195,6 +196,12 @@ wdata_check_clean(char *key)
 	node = hashtable_find(g_runtime->ht, key);
 	if (NULL == node)
 		return;
+
+	DINFO("check clean cond: all:%d, blocks:%d\n", node->all, node->all / g_cf->block_data_count);
+	// not do clean, when blocks is small than 3
+	if (node->all / g_cf->block_data_count < 3) {
+		return;
+	}
 
 	double rate = (double)node->used / node->all;
 	DINFO("check clean rate: %f\n", rate);
@@ -344,7 +351,8 @@ wdata_apply(char *data, int datalen, int writelog)
                 DINFO("mask, i:%d, mask:%d\n", i, maskarray[i]);
             }*/
 
-            //hashtable_print(g_runtime->ht, key);
+            hashtable_print(g_runtime->ht, key);
+
             if (ret >= 0 && writelog) {
                 int sret = synclog_write(g_runtime->synclog, data, datalen);
                 if (sret < 0) {

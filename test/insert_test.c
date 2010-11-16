@@ -35,7 +35,7 @@ int main()
 		sprintf(val, "%06d", i);
 		ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr, 0);	
 		if (ret != MEMLINK_OK) {
-			DERROR("insert error, key:%s, val:%s, mask:%s, i:%d\n", buf, val, maskstr, i);
+			DERROR("insert error, ret:%d, key:%s, val:%s, mask:%s, i:%d\n", ret, buf, val, maskstr, i);
 			return -3;
 		}
 	}
@@ -43,10 +43,12 @@ int main()
 	MemLinkStat	stat;
 	ret = memlink_cmd_stat(m, buf, &stat);
 	if (ret != MEMLINK_OK) {
-		DERROR("stat error, key:%s\n", buf);
+		DERROR("stat error, key:%s, ret:%d\n", buf, ret);
 		return -4;
 	}
 	
+	//DINFO("stat blocks:%d data:%d, data_used:%d\n", stat.blocks, stat.data, stat.data_used);
+
 	if (stat.data_used != insertnum) {
 		DERROR("insert num error, data_used:%d\n", stat.data_used);
 		return -5;
