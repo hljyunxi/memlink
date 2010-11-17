@@ -36,9 +36,17 @@ redis同样也提供key=>list 存储功能，memlink与redis区别有：
 
 memlink主要对上述特点进行了改进。
 
-= 性能 =
+= 性能测试 =
+硬件
+OS：CentOS release 4.6 (Final) 
+内核：2.6.9-67.0.22.ELsmp 32位<br/>
+内存：4G <br/>
+CPU：Intel(R) Xeon(R) CPU E5405  @ 2.00GHz （四核）<br/>
+硬盘：250G SATA <br/>
+
+客户端
   * 10个客户端，并发短连接
-  * Memlink内部开启4个处理线程。仅c客户端测试。
+  * Memlink内部开启4个处理线程。
   * redis只支持单线程模型
 <table border="1"><tr><td>*操作*</td><td></td><td>*1w*</td><td>*10w*</td><td>*100w*</td><td>*1000w*</td></tr>
 <tr><td rowspan="4">insert</td><td><font color="red">memlink</font></td><td><font color="red">9665</font></td><td><font color="red">9650</font></td><td><font color="red">10078</font></td><td><font color="red">10183</font></td></tr>
