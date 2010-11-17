@@ -1394,9 +1394,9 @@ hashtable_count(HashTable *ht, char *key, unsigned int *maskarray, int masknum, 
         int datalen = node->valuesize + node->masksize;
         DataBlock *dbk = node->data;
         while (dbk) {
-            dbk = dbk->next;
             char *itemdata = dbk->data;
             for (i = 0; i < g_cf->block_data_count; i++) {
+				//DINFO("dbk:%p node:%p, itemdata:%p\n", dbk, node, itemdata);
                 ret = dataitem_check_data(node, itemdata);
                 if (ret != MEMLINK_ITEM_REMOVED) {
                     char *maskdata = itemdata + node->valuesize;
@@ -1417,6 +1417,7 @@ hashtable_count(HashTable *ht, char *key, unsigned int *maskarray, int masknum, 
                 }
                 itemdata += datalen;
             }
+            dbk = dbk->next;
         }
     }else{
         DataBlock *dbk = node->data;
