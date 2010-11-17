@@ -89,7 +89,11 @@ tcp_socket_connect(char *host, int port, int timeout)
 
     sin.sin_family = AF_INET;
     sin.sin_port = htons((short)port);
-    sin.sin_addr.s_addr = htonl(inet_addr(host));
+    if (NULL == host) {
+        sin.sin_addr.s_addr = htonl(INADDR_ANY);
+    }else{
+        sin.sin_addr.s_addr = inet_addr(host);
+    }
 
 	DINFO("connect to %s:%d\n", host, port);
     ret = connect(fd, (struct sockaddr*)&sin, sizeof(sin));

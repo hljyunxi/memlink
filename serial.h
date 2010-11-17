@@ -95,8 +95,8 @@ int cmd_range_unpack(char *data, char *key, unsigned char *masknum, unsigned int
 int cmd_sync_pack(char *data, unsigned int logver, unsigned int logpos);
 int cmd_sync_unpack(char *data, unsigned int *logver, unsigned int *logpos);
 
-int cmd_getdump_pack(char *data, unsigned int dumpver, unsigned int size);
-int cmd_getdump_unpack(char *data, unsigned int *dumpver, unsigned int *size);
+int cmd_getdump_pack(char *data, unsigned int dumpver, unsigned long long size);
+int cmd_getdump_unpack(char *data, unsigned int *dumpver, unsigned long long *size);
 
 
 #endif
