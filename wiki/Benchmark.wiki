@@ -68,7 +68,10 @@ mysql使用上面的数据库表结构。插入语句为：insert into ThreadLis
 <tr><td><font color="green">redis</font></td><td><font color="green">147</font></td><td><font color="green">92</font></td><td><font color="green">17</font></td><td><font color="green">2</font></td></tr>
 <tr><td><font color="blue">mysql</font></td><td><font color="blue">30</font></td><td><font color="blue">3</font></td><td><font color="blue">0.3</font></td><td><font color="blue">0.03</font></td></tr>
 </table>
+
+
 *2. 一个客户端， 全部是短连接。一次请求一个连接。*
+
 <table border="1"><tr><td>*操作*</td><td></td><td>*1w*</td><td>*10w*</td><td>*100w*</td><td>*1000w*</td></tr>
 <tr><td rowspan="3">insert</td><td><font color="red">memlink</font></td><td><font color="red">c:6560<br/> py:6138<br/> php:6064<br/></font></td><td><font color="red">c:6466<br/> py:5990<br/> php:5986<br/></font></td><td><font color="red">c:6675<br/> py:6092<br/> php:6010<br/></font></td><td><font color="red">c:6719<br/> py:6012<br/> php:6003<br/></font></td></tr>
 <tr><td><font color="green">redis</font></td><td><font color="green">10891</font></td><td><font color="green">10297</font></td><td><font color="green">10233</font></td><td><font color="green">10135</font></td></tr>
