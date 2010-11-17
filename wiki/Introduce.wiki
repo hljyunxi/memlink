@@ -38,11 +38,11 @@ memlink主要对上述特点进行了改进。
 
 = 性能测试 =
 硬件
-OS：CentOS release 4.6 (Final) 
-内核：2.6.9-67.0.22.ELsmp 32位<br/>
-内存：4G <br/>
-CPU：Intel(R) Xeon(R) CPU E5405  @ 2.00GHz （四核）<br/>
-硬盘：250G SATA <br/>
+  * CentOS release 4.6 (Final) 
+  * Kernel 2.6.9-67.0.22.ELsmp 32位
+  * Memory 4G
+  * CPU Intel(R) Xeon(R) CPU E5405  @ 2.00GHz （四核）
+  * Disk 250G SATA <br/>
 
 客户端
   * 10个客户端，并发短连接
