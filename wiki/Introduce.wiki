@@ -50,7 +50,7 @@ memlink主要对上述特点进行了改进。
   * Memlink内部开启4个处理线程。
   * redis只支持单线程模型。结果表格中的hiredis为使用hiredis客户端测试的结果。redis为官方的redis-benchmark测试结果。
 
-<table border="1"><tr><td><imsg src="http://memlink.googlecode.com/svn/trunk/doc/figures/1.gif" width="95" height="50"/></td><td></td><td>*1w*</td><td>*10w*</td><td>*100w*</td><td>*1000w*</td></tr>
+<table border="1"><tr><td><img src="http://memlink.googlecode.com/svn/trunk/doc/figures/1.gif" width="95" height="50"/></td><td></td><td>*1w*</td><td>*10w*</td><td>*100w*</td><td>*1000w*</td></tr>
 <tr><td rowspan="4">insert</td><td><font color="red">memlink</font></td><td><font color="red">9665</font></td><td><font color="red">9650</font></td><td><font color="red">10078</font></td><td><font color="red">10183</font></td></tr>
 <tr><td><font color="green">hiredis</font></td><td><font color="green">9381</font></td><td><font color="green">9489</font></td><td><font color="green">8993</font></td><td><font color="green">8976</font></td></tr>
 <tr><td><font color="green">redis</font></td><td><font color="green">9285</font></td><td><font color="green">9290</font></td><td><font color="green">9287</font></td><td><font color="green">8835</font></td></tr>
