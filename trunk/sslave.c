@@ -23,15 +23,16 @@
 #define SYNC_HEAD_LEN   (sizeof(int)+sizeof(int))
 
 static int
-sslave_forever(SSlave *ss)
+sslave_recv_log(SSlave *ss)
 {
 	char recvbuf[1024];
 	//int  recvsize = 0;
-	int  checksize = SYNC_HEAD_LEN + sizeof(int);
+	int  checksize = SYNC_HEAD_LEN + sizeof(short);
 	int  ret;
-	unsigned int  rlen = 0;
+	unsigned short  rlen = 0;
 	// send sync
-	
+    
+    DINFO("slave recv log ...\n");
 	while (1) {
 		ret = readn(ss->sock, recvbuf, checksize, 0);
 		if (ret < checksize) {
@@ -40,9 +41,8 @@ sslave_forever(SSlave *ss)
 			ss->sock = -1;
 			return -1;
 		}
-		
-		memcpy(&rlen, recvbuf + SYNC_HEAD_LEN, sizeof(int));
-		
+        DINFO("readn return:%d\n", ret); 		
+		memcpy(&rlen, recvbuf + SYNC_HEAD_LEN, sizeof(short));
 		ret = readn(ss->sock, recvbuf + checksize, rlen, 0);
 		if (ret < rlen) {
 			DERROR("read sync too short: %d, close\n", ret);
@@ -50,9 +50,8 @@ sslave_forever(SSlave *ss)
 			ss->sock = -1;
 			return -1;
 		}
-
+        DINFO("recv log len:%d\n", rlen);
 		unsigned int size = checksize + rlen;	
-	
 		ret = wdata_apply(recvbuf + SYNC_HEAD_LEN, rlen, 0);
 		if (ret == 0) {
 			synclog_write(g_runtime->synclog, recvbuf, size);
@@ -209,7 +208,7 @@ sslave_prev_sync_pos(SSlave *ss)
 	return 0;
 }
 
-
+/*
 int 
 sslave_check_sync(SSlave *ss)
 {
@@ -235,13 +234,14 @@ sslave_check_sync(SSlave *ss)
 
 	return 0;
 }
-
+*/
 
 int 
 sslave_do_cmd(SSlave *ss, char *sendbuf, int buflen, char *recvbuf, int recvlen)
 {
     int ret;
 
+    //DINFO("send buflen: %d\n", buflen);
     ret = writen(ss->sock, sendbuf, buflen, ss->timeout);
     if (ret != buflen) {
         sslave_close(ss);
@@ -250,32 +250,31 @@ sslave_do_cmd(SSlave *ss, char *sendbuf, int buflen, char *recvbuf, int recvlen)
     }
     
     //char recv[1024];
-    ret = readn(ss->sock, recvbuf, sizeof(short), ss->timeout);
-    if (ret != sizeof(short)) {
+    ret = readn(ss->sock, recvbuf, sizeof(int), ss->timeout);
+    if (ret != sizeof(int)) {
         sslave_close(ss);
         DINFO("cmd readn error: %d, close.\n", ret);
         return -2;
     }
     
-    unsigned short len;
-    
-    memcpy(&len, recvbuf, sizeof(short));
+    unsigned int len;
+    memcpy(&len, recvbuf, sizeof(int));
     DINFO("cmd recv len:%d\n", len);
     
-    if (len + sizeof(short) > recvlen) {
+    if (len + sizeof(int) > recvlen) {
         sslave_close(ss);
         DERROR("recv data too long: %d\n", (int)(len + sizeof(short)));
         return -3;
     }
 
-    ret = readn(ss->sock, recvbuf + sizeof(short), len, ss->timeout);
+    ret = readn(ss->sock, recvbuf + sizeof(int), len, ss->timeout);
     if (ret != len) {
         sslave_close(ss);
         DINFO("cmd readn error: %d, close.\n", ret);
         return -4;
     }
 
-    return len + sizeof(short);
+    return len + sizeof(int);
 }
 
 
@@ -292,29 +291,35 @@ sslave_conn_init(SSlave *ss)
     unsigned int  dumpver;
     long long     dumpsize;
 
+    DINFO("slave init ...\n");
+    DINFO("ss->dumpsize:%lld, ss->dumpfile_size:%lld\n", ss->dumpsize, ss->dumpfile_size);
     if (ss->dumpsize == ss->dumpfile_size) { // have master dumpfile, and size ok or not have master dumpfile
         // send sync command 
         while (1) {
             logver  = ss->logver;
             logline = ss->logline;
-			DINFO("logver: %u, logline: %u\n", logver, logline);
+			DINFO("sync pack logver: %u, logline: %u\n", logver, logline);
             sndlen = cmd_sync_pack(sndbuf, logver, logline); 
             ret = sslave_do_cmd(ss, sndbuf, sndlen, recvbuf, 1024);
             if (ret < 0) {
-                return ret;
+                DINFO("cmd sync error: %d\n", ret);
+                return -1;
             }
-
+            DINFO("cmd return len:%d\n", ret);
             char syncret; 
-            int  i = sizeof(short);
+            int  i = sizeof(int);
 
             syncret = recvbuf[i];
-
-            if (syncret == 0) // ok, recv synclog
+            DINFO("cmd return code:%d\n", syncret);
+            if (syncret == 0) { // ok, recv synclog
+                DINFO("sync ok! try recv push message.\n");
                 return 0;
+            }
 
             i += 1;
             memcpy(&dumpver, &recvbuf[i], sizeof(int));
             // try find the last sync position
+            DINFO("try find the last sync position .\n");
             ret = sslave_prev_sync_pos(ss);
             if (ret != 0) { // no prev log, or get error, try get dump
                 dumpsize = 0;
@@ -326,17 +331,20 @@ sslave_conn_init(SSlave *ss)
     }
     
 	// do getdump
+    DINFO("try getdump: %d,%lld\n", dumpver, dumpsize);
     sndlen = cmd_getdump_pack(sndbuf, dumpver, dumpsize); 
     ret = sslave_do_cmd(ss, sndbuf, sndlen, recvbuf, 1024); 
     if (ret < 0) {
         DERROR("cmd getdump error: %d\n", ret);
-        return ret;
+        return -1;
     }
+    unsigned short retcode;
+    unsigned long long size, rlen = 0;
 
-    long long size, rlen = 0;
-    memcpy(&size, recvbuf + CMD_REPLY_HEAD_LEN, sizeof(long long));
-
-    DINFO("dump len: %lld\n", size);
+    memcpy(&retcode, recvbuf + sizeof(int), sizeof(short));
+    memcpy(&dumpver, recvbuf + CMD_REPLY_HEAD_LEN, sizeof(int));
+    memcpy(&size, recvbuf + CMD_REPLY_HEAD_LEN + sizeof(int), sizeof(long long));
+    DINFO("recvlen:%d, retcode:%d, dumpver:%d, dump size: %lld\n", ret, retcode, dumpver, size);
 
     char    dumpbuf[8192];
     int     buflen = 0;
@@ -350,25 +358,42 @@ sslave_conn_init(SSlave *ss)
     fd = open(dumpfile_tmp, O_CREAT|O_WRONLY, 0644);
     if (fd == -1) {
         DERROR("open dumpfile %s error! %s\n", dumpfile_tmp, strerror(errno));
-        return -2;
+        return -1;
     }
-    
+
+    int rsize = 8192;
     while (rlen < size) {
-        ret = readn(ss->sock, dumpbuf, 8192, ss->timeout);    
+        rsize = size - rlen;
+        if (rsize > 8192) {
+            rsize = 8192;
+        }
+        ret = readn(ss->sock, dumpbuf, rsize, ss->timeout);    
         if (ret < 0) {
             DERROR("read dump error: %d\n", ret);
+            close(ss->sock);
+            ss->sock = -1;
             close(fd);
-            return ret;
+            return -1;
+        }
+        if (ret == 0) {
+            DINFO("read eof! close conn:%d\n", ss->sock);
+            close(ss->sock);
+            ss->sock = -1;
+            close(fd);
+            return -1;
         }
         buflen = ret;
         ret = writen(fd, dumpbuf, buflen, 0);
         if (ret < 0) {
             DERROR("write dump error: %d, %s\n", ret, strerror(errno));
+            close(ss->sock);
+            ss->sock = -1;
             close(fd);
-            return ret;
+            return -1;
         }
 
         rlen += ret;
+        DINFO("recv dump size:%lld\n", rlen);
     }
 
     close(fd);
@@ -380,8 +405,9 @@ sslave_conn_init(SSlave *ss)
     }
 
     // load dump file
-	hashtable_clear_all(g_runtime->ht);
-	loaddump(g_runtime->ht, dumpfile);
+    DINFO("load dump ...\n");
+	//hashtable_clear_all(g_runtime->ht);
+	//loaddump(g_runtime->ht, dumpfile);
 
 	/*char olddump[PATH_MAX];
     snprintf(olddumpfile, PATH_MAX, "%s/dump.dat", g_cf->datadir);
@@ -389,47 +415,6 @@ sslave_conn_init(SSlave *ss)
 
 	return 0;
 }
-
-int
-sslave_recv_synclog(SSlave *ss)
-{
-    int  ret;
-    int  len;
-    char buf[1024];
-    //char buflen = 0;
-    int  headlen = SYNC_HEAD_LEN + sizeof(short);
-
-    while (ss->sock) {
-        ret = readn(ss->sock, buf, headlen, ss->timeout);         
-        if (ret != headlen) {
-            DERROR("readn synclog head error! %d, close\n", ret);
-            sslave_close(ss);
-            return -1;
-        }
-
-        memcpy(&len, buf + SYNC_HEAD_LEN, sizeof(short));
-        DINFO("recv synclog len: %d\n", len);
-
-        ret = readn(ss->sock, buf + headlen, len, ss->timeout);
-        if (ret != len) {
-            DERROR("readn synclog error! %d, close\n", ret);
-            sslave_close(ss);
-            return -2;
-        }
-       
-        ret = wdata_apply(buf + SYNC_HEAD_LEN, len + sizeof(short), 0);
-        if (MEMLINK_OK == ret) {
-            synclog_write(g_runtime->synclog, buf, len + headlen);
-        }else{
-            DERROR("wdata_apply error: %d\n", ret);
-            sslave_close(ss);
-            return -3;
-        }
-    }
-
-	return 0;
-}
-
 
 /**
  * slave sync thread
@@ -442,26 +427,30 @@ sslave_run(void *args)
 {
 	SSlave	*ss = (SSlave*)args;
 	int		ret;
-
+    
+    DINFO("sslave run ...\n");
 	while (1) {
 		if (ss->sock <= 0) {
+            DINFO("connect to master %s:%d timeout:%d\n", g_cf->master_sync_host, g_cf->master_sync_port, ss->timeout);
 			ret = tcp_socket_connect(g_cf->master_sync_host, g_cf->master_sync_port, ss->timeout);
 			if (ret <= 0) {
 				DERROR("connect error! ret:%d, continue.\n", ret);
 				sleep(1);
 				continue;
 			}
+            ss->sock = ret;
 
+            DINFO("connect to master ok!\n");
 			// do sync, getdump
 			ret = sslave_conn_init(ss);
 			if (ret < 0) {
+                DINFO("slave conn init error!\n");
 				continue;
 			}
-			break;
+			//break;
 		}
-		
 		// recv sync log from master
-		ret = sslave_forever(ss);
+		ret = sslave_recv_log(ss);
 	}
 
 	return NULL;

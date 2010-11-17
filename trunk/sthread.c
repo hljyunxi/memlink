@@ -424,11 +424,11 @@ cmd_get_dump(Conn* conn, char *data, int datalen)
 {
     int ret;
     unsigned int dumpver;
-    unsigned int size;
+    unsigned long long size;
     int retcode;
 
     cmd_getdump_unpack(data, &dumpver, &size);
-    DINFO("dump version: %u, synchronized data size: %u\n", dumpver, size);
+    DINFO("dump version: %u, synchronized data size: %llu\n", dumpver, size);
     retcode = g_runtime->dumpver == dumpver ? 1 : 0;
 
     int dump_fd = open_dump(); 

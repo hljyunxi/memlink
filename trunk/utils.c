@@ -94,7 +94,7 @@ readn(int fd, void *vptr, size_t n, int timeout)
                 return -1;
             }
         }else if (nread == 0) {
-            //DERROR("read 0, conn close.\n");
+            DERROR("read 0, maybe conn close.\n");
             break;
         }
         nleft -= nread;

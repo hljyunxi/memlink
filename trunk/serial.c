@@ -806,7 +806,7 @@ cmd_sync_pack(char *data, unsigned int logver, unsigned int logpos)
 	count += sizeof(int);
 	memcpy(data + count, &logpos, sizeof(int));
 	count += sizeof(int);
-	len = count -= sizeof(short);
+	len = count - sizeof(short);
     memcpy(data, &len, sizeof(short));
 	
 	return count;
@@ -825,7 +825,7 @@ cmd_sync_unpack(char *data, unsigned int *logver, unsigned int *logpos)
 }
 
 int 
-cmd_getdump_pack(char *data, unsigned int dumpver, unsigned int size)
+cmd_getdump_pack(char *data, unsigned int dumpver, unsigned long long size)
 {
     unsigned char cmd = CMD_GETDUMP;
     unsigned short len;
@@ -836,22 +836,22 @@ cmd_getdump_pack(char *data, unsigned int dumpver, unsigned int size)
 
 	memcpy(data + count, &dumpver, sizeof(int));
 	count += sizeof(int);
-	memcpy(data + count, &size, sizeof(int));
-	count += sizeof(int);
-	len = count -= sizeof(short);
+	memcpy(data + count, &size, sizeof(long long));
+	count += sizeof(long long);
+	len = count - sizeof(short);
     memcpy(data, &len, sizeof(short));
 	
 	return count;
 }
 
 int 
-cmd_getdump_unpack(char *data, unsigned int *dumpver, unsigned int *size)
+cmd_getdump_unpack(char *data, unsigned int *dumpver, unsigned long long *size)
 {
 	int count = sizeof(short) + sizeof(char);
 	
 	memcpy(dumpver, data + count, sizeof(int));
 	count += sizeof(int);
-	memcpy(size, data + count, sizeof(int));
+	memcpy(size, data + count, sizeof(long long));
 
 	return 0;
 }

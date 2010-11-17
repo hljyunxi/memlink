@@ -64,7 +64,7 @@ extern Runtime  *g_runtime;
 
 MyConfig*   myconfig_create(char *filename);
 Runtime*    runtime_create_master(char *pgname);
-Runtime*    slave_runtime_create(char *pgname);
+Runtime*    runtime_create_slave(char *pgname);
 void        runtime_destroy(Runtime *rt);
 
 #endif

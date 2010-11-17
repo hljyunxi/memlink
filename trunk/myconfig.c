@@ -271,50 +271,7 @@ load_data()
     for (i = g_runtime->dumplogver; i < n; i++) {
         snprintf(logname, PATH_MAX, "%s/data/bin.log.%d", g_runtime->home, logids[i]);
         DINFO("load synclog: %s\n", logname);
-
         load_synclog(logname);
-
-        /* 
-        ffd = open(logname, O_RDONLY);
-        if (-1 == ffd) {
-            DERROR("open file %s error! %s\n", logname, strerror(errno));
-            MEMLINK_EXIT;
-        }
-        len = lseek(ffd, 0, SEEK_END);
-        
-        char *addr = mmap(NULL, len, PROT_READ, MAP_SHARED, ffd, 0);
-        if (addr == MAP_FAILED) {
-            DERROR("synclog mmap error: %s\n", strerror(errno));
-            MEMLINK_EXIT;
-        }   
-        unsigned int indexlen = *(unsigned int*)(addr + sizeof(short) + sizeof(int));
-        //unsigned int *index = (unsigned int*)(addr + sizeof(short) + sizeof(int) * 2);
-        char *data    = addr + sizeof(short) + sizeof(int) * 2 + indexlen * sizeof(int);
-        char *enddata = addr + len;
-       
-        unsigned short blen; 
-        while (data < enddata) {
-            blen = *(unsigned short*)data;  
-           
-            if (enddata < data + blen + sizeof(short)) {
-                DERROR("synclog end error: %s, skip\n", logname);
-                //MEMLINK_EXIT;
-                break;
-            }
-            DINFO("command, len:%d\n", blen);
-            ret = wdata_apply(data, blen + sizeof(short), 0);       
-            if (ret != 0) {
-                DERROR("wdata_apply log error: %d\n", ret);
-                MEMLINK_EXIT;
-            }
-
-            data += blen + sizeof(short); 
-        }
-    
-        munmap(addr, len);
-
-        close(ffd);
-        */
     }
 
     snprintf(logname, PATH_MAX, "%s/data/bin.log", g_runtime->home);
@@ -331,6 +288,7 @@ load_data()
 
 Runtime *g_runtime;
 
+/*
 static Runtime* 
 runtime_init(char *pgname) 
 {
@@ -358,6 +316,7 @@ int mainserver_init(Runtime *rt)
     DINFO("main thread create ok!\n");
     return 0;
 }
+*/
 
 int hashtable_init(Runtime* rt) 
 {
@@ -456,26 +415,30 @@ runtime_create_common(char *pgname)
 }
 
 Runtime* 
-slave_runtime_create(char *pgname) 
+runtime_create_slave(char *pgname) 
 {
-    Runtime * rt = runtime_init(pgname);
+    Runtime *rt;
 
-    if (hashtable_init(rt) != 0)
-      return NULL;
-    if (mempool_init(rt) != 0)
+    rt = runtime_create_common(pgname);
+    if (NULL == rt) {
+        return rt;
+    }
+    
+    rt->wthread = wthread_create();
+    if (NULL == rt->wthread) {
+        DERROR("wthread_create error!\n");
+        MEMLINK_EXIT;
         return NULL;
-    if (mainserver_init(rt) != 0)
-        return NULL;
+    }
+    DINFO("write thread create ok!\n");
 
-    /*rt->sslave = sslave_create();*/
-    /*if (NULL == rt->wthread) {*/
-    /*   DERROR("sync slave creation error!\n");*/
-    /*   MEMLINK_EXIT;*/
-    /*   return NULL;*/
-    /*}*/
-    /*DINFO("sync slave creation ok!\n");*/
+    rt->sslave = sslave_create();
+    if (NULL == rt->sslave) {
+        DERROR("sslave_create error!\n");
+        MEMLINK_EXIT;
+    }
+    DINFO("sslave thread create ok!\n");
 
-    DINFO("create slave runtime ok!\n");
     return rt;
 }
 

@@ -19,20 +19,17 @@ static void sig_handler(const int sig) {
 int signal_install()
 {
     struct sigaction sigact;
-    //int    ret;
 
     sigact.sa_handler = sig_handler;
     sigemptyset(&sigact.sa_mask);
     sigact.sa_flags = 0;
 
     sigaction(SIGINT, &sigact, NULL);
-
     sigact.sa_handler = SIG_IGN;
     sigaction(SIGPIPE, &sigact, NULL);
 
     return 0;
 }
-
 
 void master(char *pgname) 
 {
@@ -46,8 +43,10 @@ void master(char *pgname)
 
 void slave(char *pgname) 
 {
-    slave_runtime_create(pgname);
+    logfile_create(g_cf->log_name, g_cf->log_level);
+    runtime_create_slave(pgname);
     DINFO("slave runtime ok!\n");
+
     mainserver_loop(g_runtime->server);
 }
 
@@ -92,7 +91,6 @@ int main(int argc, char *argv[])
             MEMLINK_EXIT;
         }
     }
-    
 
     if (getrlimit(RLIMIT_NOFILE, &rlim) != 0) { 
         DERROR("failed to getrlimit number of files\n");
@@ -110,7 +108,6 @@ int main(int argc, char *argv[])
     }
 
     signal_install();
-    //DINFO("signal ok!\n");
 
     if (g_cf->is_daemon) {
         ret = daemonize(g_cf->max_core, 0);
