@@ -11,8 +11,8 @@
 #define MEMLINK_WRITER  2
 #define MEMLINK_ALL     3
 
-#define MEMLINK_TAG_DEL     1
-#define MEMLINK_TAG_RESTORE 0
+//#define MEMLINK_TAG_DEL     1
+//#define MEMLINK_TAG_RESTORE 0
 
 typedef struct _memlink_client
 {

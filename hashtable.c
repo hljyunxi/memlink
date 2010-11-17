@@ -979,9 +979,9 @@ hashtable_tag(HashTable *ht, char *key, void *value, unsigned char tag)
 
     DINFO("tag v:%x\n", v);
 
-    if ( (v & 0x01) == 1) {
+    if ( (v & 0x01) == 1) { // data not real delete
         DINFO("tag data:%x\n", *data);
-        if (tag == 1) {
+        if (tag == MEMLINK_TAG_DEL) {
             *data |= 0x02; 
         }else{
             *data &= 0xfd; 
@@ -989,12 +989,12 @@ hashtable_tag(HashTable *ht, char *key, void *value, unsigned char tag)
     
         DINFO("tag data:%x\n", *data);
             
-        if ( (v & 0x02) == 1 && tag == 0) {
+        if ( (v & 0x02) == 2 && tag == MEMLINK_TAG_RESTORE) {
             dbk->mask_count --;
             dbk->visible_count ++;
         }
 
-        if ( (v & 0x02) == 0 && tag == 1) {
+        if ( (v & 0x02) == 0 && tag == MEMLINK_TAG_DEL) {
             dbk->mask_count ++;
             dbk->visible_count --;
         }

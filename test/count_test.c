@@ -82,6 +82,31 @@ int main()
         }
 	}
 
+	int restore_count = 5;
+	for (i = 0; i < restore_count; i++) {
+		sprintf(val, "%06d", i*2);
+		
+		ret = memlink_cmd_tag(m, key, val, strlen(val), MEMLINK_TAG_RESTORE);
+		if (ret != MEMLINK_OK) {
+			DERROR("tag restroe error, ret:%d, key:%s, val:%s\n", ret, key, val);
+			return -5;
+		}
+
+        MemLinkCount    count2;
+        ret = memlink_cmd_count(m, key, "", &count2);
+        if (ret != MEMLINK_OK) {
+            DERROR("count error, ret:%d\n", ret);
+            return -4;
+        }
+        if (count2.visible_count != insertnum - tagcount + i + 1) {
+            DERROR("count visible_count error: %d, must:%d\n", count2.visible_count, insertnum - tagcount + i + 1);
+            return -5;
+        }
+        if (count2.tagdel_count != tagcount - i - 1) {
+            DERROR("count tagdel_count error: %d, must:%d\n", count2.tagdel_count, tagcount - i - 1);
+            return -5;
+        }
+	}
 
 
 	for (i = 50; i < 60; i++) {
@@ -99,11 +124,11 @@ int main()
             DERROR("count error, ret:%d\n", ret);
             return -4;
         }
-        if (count2.visible_count != insertnum - tagcount - i - 1 + 50) {
+        if (count2.visible_count != insertnum - tagcount - i - 1 + 50 + restore_count) {
             DERROR("count visible_count error, i:%d, count2.visible_count:%d, v:%d\n", i, count2.visible_count, insertnum - tagcount - i -1);
             return -5;
         }
-        if (count2.tagdel_count != tagcount) {
+        if (count2.tagdel_count != tagcount - restore_count) {
             DERROR("count tagdel_count error: %d\n", count2.tagdel_count);
             return -5;
         }

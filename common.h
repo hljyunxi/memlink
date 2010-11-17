@@ -65,4 +65,7 @@
 #define SYNCLOG_HEAD_LEN  (sizeof(short)+sizeof(int)+sizeof(char)+sizeof(int))
 #define SYNCLOG_INDEXNUM 1000000
 
+#define MEMLINK_TAG_DEL     1
+#define MEMLINK_TAG_RESTORE 0
+
 #endif
