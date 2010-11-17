@@ -31,7 +31,7 @@ c:表示c客户端每秒操作成功条数，py:表示python客户端每秒操�
 insert为插入操作，range为获取列表某个范围的操作。插入的列表中的数据每条为12字节。
 
 <font color="green"><b>redis</b></font><br/>
-redis测试一样每条数据是12字节。redis只测试c客户端，使用hiredis。用LRANGE命令获取列表，用LPUSH向队列插入数据。redis是默认配置。
+redis测试一样每条数据是12字节。redis只测试c客户端。这里有两组测试，一组使用hiredis客户端，另一组使用redis自带的redis-benchmark。用LRANGE命令获取列表，用LPUSH向队列插入数据。redis是默认配置。
 
 <font color="blue"><b>mysql</b></font><br/>
 mysql使用上面的数据库表结构。插入语句为：insert into ThreadList values (1, 'xxxx', 0, now()) 查询列表的语句为：select threadid from  ThreadList where forumid=1 order by reply_time limit frompos,len
@@ -134,29 +134,35 @@ memlink内部开启4个处理线程。仅c客户端测试。
 
 Memlink内部开启4个处理线程。仅c客户端测试。
 <table border="1"><tr><td>*操作*</td><td></td><td>*1w*</td><td>*10w*</td><td>*100w*</td><td>*1000w*</td></tr>
-<tr><td rowspan="3">insert</td><td><font color="red">memlink</font></td><td><font color="red">9665</font></td><td><font color="red">9650</font></td><td><font color="red">10078</font></td><td><font color="red">10183</font></td></tr>
-<tr><td><font color="green">redis</font></td><td><font color="green">9381</font></td><td><font color="green">9489</font></td><td><font color="green">8993</font></td><td><font color="green">8976</font></td></tr>
+<tr><td rowspan="4">insert</td><td><font color="red">memlink</font></td><td><font color="red">9665</font></td><td><font color="red">9650</font></td><td><font color="red">10078</font></td><td><font color="red">10183</font></td></tr>
+<tr><td><font color="green">hiredis</font></td><td><font color="green">9381</font></td><td><font color="green">9489</font></td><td><font color="green">8993</font></td><td><font color="green">8976</font></td></tr>
+<tr><td><font color="green">redis</font></td><td><font color="green">9285</font></td><td><font color="green">9290</font></td><td><font color="green">9287</font></td><td><font color="green">8835</font></td></tr>
 <tr><td><font color="blue">mysql</font></td><td><font color="blue">5623</font></td><td><font color="blue">5621</font></td><td><font color="blue">5468</font></td><td><font color="blue">5306</font></td></tr>
-<tr><td rowspan="3">range first100</td><td><font color="red">memlink</font></td><td><font color="red">17400</font></td><td><font color="red">17504</font></td><td><font color="red">16614</font></td><td><font color="red">17292</font></td></tr>
-<tr><td><font color="green">redis</font></td><td><font color="green">1695</font></td><td><font color="green">1637</font></td><td><font color="green">1696</font></td><td><font color="green">1586</font></td></tr>
+<tr><td rowspan="4">range first100</td><td><font color="red">memlink</font></td><td><font color="red">17400</font></td><td><font color="red">17504</font></td><td><font color="red">16614</font></td><td><font color="red">17292</font></td></tr>
+<tr><td><font color="green">hiredis</font></td><td><font color="green">1695</font></td><td><font color="green">1637</font></td><td><font color="green">1696</font></td><td><font color="green">1586</font></td></tr>
+<tr><td><font color="green">redis</font></td><td><font color="green">4629</font></td><td><font color="green">4587</font></td><td><font color="green">4504</font></td><td><font color="green">4545</font></td></tr>
 <tr><td><font color="blue">mysql</font></td><td><font color="blue">2210</font></td><td><font color="blue">2286</font></td><td><font color="blue">1955</font></td><td><font color="blue">1611</font></td></tr>
-<tr><td rowspan="3">range first200</td><td><font color="red">memlink</font></td><td><font color="red">15786</font></td><td><font color="red">15772</font></td><td><font color="red">15964</font></td><td><font color="red">16180</font></td></tr>
-<tr><td><font color="green">redis</font></td><td><font color="green">711</font></td><td><font color="green">711</font></td><td><font color="green">719</font></td><td><font color="green">692</font></td></tr>
+<tr><td rowspan="4">range first200</td><td><font color="red">memlink</font></td><td><font color="red">15786</font></td><td><font color="red">15772</font></td><td><font color="red">15964</font></td><td><font color="red">16180</font></td></tr>
+<tr><td><font color="green">hiredis</font></td><td><font color="green">711</font></td><td><font color="green">711</font></td><td><font color="green">719</font></td><td><font color="green">692</font></td></tr>
+<tr><td><font color="green">redis</font></td><td><font color="green">2941</font></td><td><font color="green">2949</font></td><td><font color="green">2941</font></td><td><font color="green">2857</font></td></tr>
 <tr><td><font color="blue">mysql</font></td><td><font color="blue">1444</font></td><td><font color="blue">1791</font></td><td><font color="blue">1870</font></td><td><font color="blue">1402</font></td></tr>
-<tr><td rowspan="3">range first1000</td><td><font color="red">memlink</font></td><td><font color="red">3795</font></td><td><font color="red">3918</font></td><td><font color="red">3703</font></td><td><font color="red">3250</font></td></tr>
-<tr><td><font color="green">redis</font></td><td><font color="green">118</font></td><td><font color="green">115</font></td><td><font color="green">116</font></td><td><font color="green">114</font></td></tr>
+<tr><td rowspan="4">range first1000</td><td><font color="red">memlink</font></td><td><font color="red">3795</font></td><td><font color="red">3918</font></td><td><font color="red">3703</font></td><td><font color="red">3250</font></td></tr>
+<tr><td><font color="green">hiredis</font></td><td><font color="green">118</font></td><td><font color="green">115</font></td><td><font color="green">116</font></td><td><font color="green">114</font></td></tr>
+<tr><td><font color="green">redis</font></td><td><font color="green">761</font></td><td><font color="green">739</font></td><td><font color="green">761</font></td><td><font color="green">735</font></td></tr>
 <tr><td><font color="blue">mysql</font></td><td><font color="blue">550</font></td><td><font color="blue">692</font></td><td><font color="blue">620</font></td><td><font color="blue">686</font></td></tr>
-<tr><td rowspan="3">range last100</td><td><font color="red">memlink</font></td><td><font color="red">16989</font></td><td><font color="red">16502</font></td><td><font color="red">13118</font></td><td><font color="red">319</font></td></tr>
-<tr><td><font color="green">redis</font></td><td><font color="green">2132</font></td><td><font color="green">240</font></td><td><font color="green">20</font></td><td><font color="green">2</font></td></tr>
+<tr><td rowspan="4">range last100</td><td><font color="red">memlink</font></td><td><font color="red">16989</font></td><td><font color="red">16502</font></td><td><font color="red">13118</font></td><td><font color="red">319</font></td></tr>
+<tr><td><font color="green">hiredis</font></td><td><font color="green">2132</font></td><td><font color="green">240</font></td><td><font color="green">20</font></td><td><font color="green">2</font></td></tr>
+<tr><td><font color="green">redis</font></td><td><font color="green">4385</font></td><td><font color="green">191</font></td><td><font color="green">19</font></td><td><font color="green">2</font></td></tr>
 <tr><td><font color="blue">mysql</font></td><td><font color="blue">80</font></td><td><font color="blue">8</font></td><td><font color="blue">1</font></td><td><font color="blue">-</font></td></tr>
-<tr><td rowspan="3">range last200</td><td><font color="red">memlink</font></td><td><font color="red">15915</font></td><td><font color="red">15596</font></td><td><font color="red">12203</font></td><td><font color="red">316</font></td></tr>
-<tr><td><font color="green">redis</font></td><td><font color="green">743</font></td><td><font color="green">229</font></td><td><font color="green">20</font></td><td><font color="green">2</font></td></tr>
+<tr><td rowspan="4">range last200</td><td><font color="red">memlink</font></td><td><font color="red">15915</font></td><td><font color="red">15596</font></td><td><font color="red">12203</font></td><td><font color="red">316</font></td></tr>
+<tr><td><font color="green">hiredis</font></td><td><font color="green">743</font></td><td><font color="green">229</font></td><td><font color="green">20</font></td><td><font color="green">2</font></td></tr>
+<tr><td><font color="green">redis</font></td><td><font color="green">2941</font></td><td><font color="green">182</font></td><td><font color="green">19</font></td><td><font color="green">2</font></td></tr>
 <tr><td><font color="blue">mysql</font></td><td><font color="blue">94</font></td><td><font color="blue">9</font></td><td><font color="blue">1</font></td><td><font color="blue">-</font></td></tr>
-<tr><td rowspan="3">range last1000</td><td><font color="red">memlink</font></td><td><font color="red">3893</font></td><td><font color="red">3641</font></td><td><font color="red">3332</font></td><td><font color="red">299</font></td></tr>
-<tr><td><font color="green">redis</font></td><td><font color="green">120</font></td><td><font color="green">174</font></td><td><font color="green">19</font></td><td><font color="green">2</font></td></tr>
+<tr><td rowspan="4">range last1000</td><td><font color="red">memlink</font></td><td><font color="red">3893</font></td><td><font color="red">3641</font></td><td><font color="red">3332</font></td><td><font color="red">299</font></td></tr>
+<tr><td><font color="green">hiredis</font></td><td><font color="green">120</font></td><td><font color="green">174</font></td><td><font color="green">19</font></td><td><font color="green">2</font></td></tr>
+<tr><td><font color="green">redis</font></td><td><font color="green">756</font></td><td><font color="green">149</font></td><td><font color="green">18</font></td><td><font color="green">2</font></td></tr>
 <tr><td><font color="blue">mysql</font></td><td><font color="blue">94</font></td><td><font color="blue">9</font></td><td><font color="blue">1</font></td><td><font color="blue">-</font></td></tr>
 </table>
-
 
 
 
