@@ -18,9 +18,10 @@ V 0.2:
   * client api(c/php/python/java)
   * master-slave
 
-V 0.3:
+V 0.3:(2010.12)
   * memory queue
   * authentication
 
-V 0.4:
+V 0.4:(2011.2)
+  * thrift interface
   * example
