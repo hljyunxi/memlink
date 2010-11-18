@@ -235,7 +235,11 @@ timediff(struct timeval *start, struct timeval *end)
 	return 1000000 * (end->tv_sec - start->tv_sec) + (end->tv_usec - start->tv_usec);
 }
 
-
+/**
+ * Test whether the path exists and is a regular file.
+ * 
+ * @return 1 if the path exists and is a regular file, 0 otherwise.
+ */
 int
 isfile (char *path)
 {
@@ -270,6 +274,11 @@ islink (char *path)
     return 1;
 }
 
+/**
+ * Test whether the path exists.
+ * 
+ * @return 1 if the path exists, 0 otherwise.
+ */
 int
 isexists (char *path)
 {

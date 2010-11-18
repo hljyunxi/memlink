@@ -1,6 +1,7 @@
 from socket import *
 from struct import *
 import time
+import sys
 
 def cmd(sock, data):
   for param in data:
@@ -42,10 +43,16 @@ def cmd_sync_dump(sock, dumpver, size):
   time.sleep(300)
 
 def test_cmd_sync(sock):
-  # invalid index 
-  cmd_sync(sock, 1, 4000)
   # invalid log version
-  cmd_sync(sock, 2, 4)
+  cmd_sync(sock, 0, 0)
+  # invalid log no
+  cmd_sync(sock, 1, 1000000)
+  # nonexistent index 
+  cmd_sync(sock, 1, 4000)
+  # nonexistent log version
+  cmd_sync(sock, 9, 4)
+
+  #sys.exit(1)
   # valid
   cmd_sync(sock, 1, 30)
 
@@ -56,8 +63,8 @@ def main():
   sock = socket(AF_INET, SOCK_STREAM);
   sock.connect(('localhost', 11003));
 
-  #test_cmd_sync(sock)
-  test_cmd_sync_dump(sock)
+  test_cmd_sync(sock)
+  #test_cmd_sync_dump(sock)
 
   sock.close()
 
