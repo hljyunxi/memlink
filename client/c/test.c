@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 
    
     
-	printf("============== create ===============\n");
+    printf("============== create ===============\n");
     for (i = 0; i < 2; i++) {
         sprintf(buf, "haha%d", i);
         ret = memlink_cmd_create(m, buf, 6, "4:3:1");
@@ -43,9 +43,9 @@ int main(int argc, char *argv[])
         ret = memlink_cmd_insert(m, "haha1", buf, strlen(buf), "1:2:0", 0);
         DINFO("memlink_cmd_insert: %d\n", ret);
     }
-	
 
-	
+
+
     printf("============= stat ================\n");
     MemLinkStat stat;
     ret = memlink_cmd_stat(m, "haha1", &stat);
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
     printf("=============================\n");
     ret = memlink_cmd_tag(m, "haha", "gogo1", 5, 1);
     DINFO("memlink_cmd_xx: %d\n", ret);
-	*/
+    */
 
     for (i = 0; i < 2; i++) {
         printf("============== range %d ===============\n", i);
@@ -76,10 +76,11 @@ int main(int argc, char *argv[])
     }
 
 
-	ret = memlink_cmd_dump(m);
-	if (ret != MEMLINK_OK) {
-		DERROR("dump error: %d\n", ret);
-	}
+    printf("============== dump ===============\n", i);
+    ret = memlink_cmd_dump(m);
+    if (ret != MEMLINK_OK) {
+        DERROR("dump error: %d\n", ret);
+    }
 
     memlink_destroy(m);
 
