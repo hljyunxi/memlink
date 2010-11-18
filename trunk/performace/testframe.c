@@ -80,7 +80,7 @@ int alltest_insert()
 	memset(insertret, 0, g_tcf->insert_test_count * sizeof(int));
 
     // test insert
-    for (f = 1; f < 2; f++) {
+    for (f = 0; f < 2; f++) {
         for (i = 0; i < g_tcf->testnum_count - 2; i++) {
             for (n = 0; n < g_tcf->insert_test_count; n++) {
                 DINFO("====== insert %d test: %d ======\n", g_tcf->testnum[i], n);
@@ -141,7 +141,7 @@ int alltest_range()
 	*/
 
     // test range
-    for (f = 1; f < 2; f++) {
+    for (f = 0; f < 2; f++) {
         for (i = 0; i < g_tcf->testnum_count; i++) {
             for (j = 0; j < 2; j++) {
                 for (k = 0; k < g_tcf->range_test_range_count; k++) {
@@ -259,7 +259,7 @@ int alltest_thread_insert()
     g_tcf->isthread = 1;
 
     // test insert
-    for (f = 1; f < 2; f++) {
+    for (f = 0; f < 2; f++) {
         for (i = 0; i < g_tcf->testnum_count; i++) {
             for (n = 0; n < g_tcf->insert_test_count; n++) {
                 DINFO("====== insert %d test: %d ======\n", g_tcf->testnum[i], n);

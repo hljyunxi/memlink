@@ -385,11 +385,15 @@ synclog_write(SyncLog *slog, char *data, int datalen)
         wlen = datalen + sizeof(int) + sizeof(int);
 		wdata = (char *)alloca(wlen);
 		memcpy(wdata, &g_runtime->logver, sizeof(int));
-		memcpy(wdata + sizeof(int), &slog->pos, sizeof(int));
+		memcpy(wdata + sizeof(int), &slog->index_pos, sizeof(int));
 		memcpy(wdata + sizeof(int) + sizeof(int), data, datalen);
 	}
 
-	DINFO("datalen: %d, wlen: %d, pos:%d\n", datalen, wlen, slog->pos);
+#ifdef DEBUG
+	char tmpbuf[512];
+	DINFO("write log: %s\n", formath(wdata, wlen, tmpbuf, 512));
+#endif
+	DINFO("datalen: %d, wlen: %d, pos:%d, index_pos:%d\n", datalen, wlen, slog->pos, slog->index_pos);
     cur = lseek(slog->fd, slog->pos, SEEK_SET);
 	/*
     DINFO("write synclog, cur: %u, pos: %d, %d, wlen: %d, %s\n", cur, slog->pos, 

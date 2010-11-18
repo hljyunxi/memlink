@@ -1,6 +1,7 @@
 # coding: utf-8
 import os, sys
 import struct
+import getopt
 
 def binlog(filename='bin.log'):
     f = open(filename, 'rb')
@@ -41,10 +42,10 @@ def binlog(filename='bin.log'):
     f.close()
 
 
-def dumpfile():
-    if not os.path.isfile('dump.dat'):
+def dumpfile(filename):
+    if not os.path.isfile(filename):
         return
-    f = open("dump.dat", "rb") 
+    f = open(filename, "rb") 
     headstr = f.read(2 + 4 + 4 + 1 + 8)
     dformat = struct.unpack('H', headstr[:2])[0]
     dfver, dlogver = struct.unpack('II', headstr[2:10]) 
@@ -52,15 +53,51 @@ def dumpfile():
     size = struct.unpack('Q', headstr[11:])[0]
     print '====================== dump file ========================='
     print 'format:%d, dumpver:%d, logver:%d, role:%d, size:%d' % (dformat, dfver, dlogver, role, size)
+
+    while True:
+        head = f.read(8)
+        if not head:
+            break
+        logver, logline = struct.unpack('II', head)    
+        dlen = struct.unpack('H', f.read(2))[0]
+        cmd  = struct.unpack('B', f.read(1))[0]
+        print 'logver:%d, logline:%d, len:%d, cmd:%d' % (logver, logline, dlen, cmd)
+        f.seek(dlen - 1, os.SEEK_CUR)
+
     f.close()
 
-def main():
-    if len(sys.argv) > 1:
-        binlog('bin.log.' + sys.argv[1])
-    else: 
-        binlog()
-    dumpfile()
+def show_help():
+    print 'usage:'
+    print '\tpython check.py [options]'
+    print 'options:'
+    print '\t-b binlog file name'
+    print '\t-d dump file name'
 
+def main():
+    binlog_filename = ''
+    dump_filename   = ''
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], 'b:d:')
+    except:
+        show_help()
+        return
+
+    for opt,arg in opts:
+        if opt == '-b':
+            binlog_filename = arg
+        elif opt == '-d':
+            dump_filename = arg
+           
+    if not binlog_filename and not dump_filename:
+        show_help()
+        return
+        
+    if binlog_filename:
+        binlog(binlog_filename) 
+    
+    if dump_filename:
+        dumpfile(dump_filename)
 
 if __name__ == '__main__':
     main()

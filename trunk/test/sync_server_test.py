@@ -4,6 +4,7 @@ import socket
 from errno import EINTR
 import struct
 import time
+import traceback
 
 CMD_SYNC    = 100 
 CMD_GETDUMP = 101
@@ -30,8 +31,12 @@ class SyncServer:
                     continue
                 raise
             print 'new conn:', newsock, newaddr
-            self.run(newsock)
-            newsock.close()
+            try:
+                self.run(newsock)
+            except:
+                traceback.print_exc()
+            finally:
+                newsock.close()
     
     def run(self, sock):
         logver  = 1
