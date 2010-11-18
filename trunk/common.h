@@ -62,8 +62,9 @@
 
 // format + version + log version + ismaster + size
 #define DUMP_HEAD_LEN	(sizeof(short)+sizeof(int)+sizeof(int)+sizeof(char)+sizeof(long long))
-#define SYNCLOG_HEAD_LEN  (sizeof(short)+sizeof(int)+sizeof(char)+sizeof(int))
-#define SYNCLOG_INDEXNUM 1000000
+#define SYNCLOG_HEAD_LEN	(sizeof(short)+sizeof(int)+sizeof(char)+sizeof(int))
+#define SYNCLOG_INDEXNUM	1000000
+#define SYNCPOS_LEN		(sizeof(int)+sizeof(int))
 
 #define MEMLINK_TAG_DEL     1
 #define MEMLINK_TAG_RESTORE 0

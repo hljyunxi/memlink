@@ -136,7 +136,7 @@ sslave_load_dump_info(SSlave *ss)
 		fclose(dumpf);
 		return -1;
 	}
-	ss->binlog_min_ver = dump_logver;
+	//ss->binlog_min_ver = dump_logver;
 	fclose(dumpf);
 
 	return 0;
@@ -427,7 +427,11 @@ sslave_run(void *args)
 {
 	SSlave	*ss = (SSlave*)args;
 	int		ret;
-    
+	
+	while (ss->isrunning == 0) {
+		sleep(1);
+	}
+
     DINFO("sslave run ...\n");
 	while (1) {
 		if (ss->sock <= 0) {
@@ -495,6 +499,12 @@ sslave_create()
     DINFO("create sync slave thread ok!\n");
 
     return ss;
+}
+
+void
+sslave_go(SSlave *ss)
+{
+	ss->isrunning = 1;
 }
 
 void

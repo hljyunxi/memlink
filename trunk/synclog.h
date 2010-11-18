@@ -35,5 +35,6 @@ int         synclog_rotate(SyncLog *slog);
 int			synclog_version(SyncLog *slog, unsigned int *logver);
 int         synclog_lastlog();
 int			synclog_prevlog(int curid);
+int			synclog_scan_binlog(int *result, int rsize);
 
 #endif

@@ -532,4 +532,41 @@ synclog_prevlog(int curid)
 }
 
 
+int
+synclog_scan_binlog(int *result, int rsize)
+{
+	DIR     *mydir; 
+    struct  dirent *nodes;
+    int     minid = g_runtime->dumplogver;
+    //int     logids[10000] = {0};
+    int     i = 0;
+
+    DINFO("try get synclog ...\n");
+    mydir = opendir(g_cf->datadir);
+    if (NULL == mydir) {
+        DERROR("opendir %s error: %s\n", g_cf->datadir, strerror(errno));
+        return -2; 
+    }   
+    while ((nodes = readdir(mydir)) != NULL) {
+        DINFO("name: %s\n", nodes->d_name);
+        if (strncmp(nodes->d_name, "bin.log.", 8) == 0) {
+            int binid = atoi(&nodes->d_name[8]);
+            if (binid > minid) {
+                //logids[i] = binid;
+				if (i >= rsize) {
+					DERROR("array to store binlog, too small.\n");
+					return -100;
+				}
+				result[i] = binid;
+                i++;
+            }   
+        }   
+    }   
+    closedir(mydir);        
+
+    qsort(result, i, sizeof(int), compare_int);
+
+	return i;
+}
+
 

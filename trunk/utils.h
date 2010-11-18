@@ -22,4 +22,6 @@ int     isdir (char *path);
 int     islink (char *path);
 int     isexists (char *path);
 
+int		compare_int ( const void *a , const void *b );
+
 #endif

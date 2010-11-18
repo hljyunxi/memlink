@@ -17,7 +17,7 @@ typedef struct _sslave
 
 	int binlog_ver;
 	int binlog_index;
-	int binlog_min_ver;
+	//int binlog_min_ver;  the same as g_runtime->dumplogver
 
 	SyncLog		*binlog;
 
@@ -25,13 +25,15 @@ typedef struct _sslave
     unsigned int logline; // last logline
 
 	unsigned int dump_logver; // logver in dumpfile
-    long long    dumpsize;
+    long long    dumpsize; // size in dumpfile
     long long    dumpfile_size;
 
-    int     trycount; // count of get last sync position
+    int			 trycount; // count of get last sync position
+	volatile int isrunning;
 } SSlave;
 
 SSlave* sslave_create();
+void	sslave_go(SSlave *slave);
 void	sslave_destroy(SSlave *slave);
 void	sslave_close(SSlave *slave);
 
