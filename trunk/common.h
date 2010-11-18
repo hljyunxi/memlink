@@ -69,4 +69,8 @@
 #define MEMLINK_TAG_DEL     1
 #define MEMLINK_TAG_RESTORE 0
 
+#define CMD_GETDUMP_OK			1
+#define CMD_GETDUMP_CHANGE		2
+#define CMD_GETDUMP_SIZE_ERR	3
+
 #endif
