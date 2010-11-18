@@ -166,7 +166,7 @@ Dump文件的格式为二进制的格式：
 
 || 长度(2字节) || 命令编号(1字节) || dump version(4字节) || size （8字节） || 
 
-描述：getdump命令编号为101。Dumpversion为dump版本号，是4字节，size为已同步文件大小，为8字节。
+描述：getdump命令编号为101。Dumpversion为dump版本号，是4字节，size为已同步文件大小，为8字节。如果dump version为0，表示请求发送最新的dump文件。
 
 返回数据格式：
 
