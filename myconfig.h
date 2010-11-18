@@ -55,7 +55,7 @@ typedef struct _runtime
     //char			cleankey[512];
     WThread         *wthread;
     MainServer      *server;
-    SSlave          *sslave; // sync slave
+    SSlave          *slave; // sync slave
     SThread         *sthread; // sync thread
 }Runtime;
 
