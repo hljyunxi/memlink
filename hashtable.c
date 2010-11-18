@@ -404,9 +404,9 @@ hashtable_destroy(HashTable *ht)
                 dbk = dbk->next;
                 zz_free(tmp);
             }
+			zz_free(ht->bunks[i]->key);
+			zz_free(ht->bunks[i]->maskformat);
         }
-        zz_free(ht->bunks[i]->key);
-        zz_free(ht->bunks[i]->maskformat);
     }
 
     zz_free(ht);
@@ -421,6 +421,7 @@ hashtable_clear_all(HashTable *ht)
     int i;
 
     for (i = 0; i < HASHTABLE_BUNKNUM; i++) {
+		//DINFO("clear: %d, %p\n", i, ht->bunks[i]);
         if (ht->bunks[i] != NULL) {
             DataBlock   *dbk = ht->bunks[i]->data;
             DataBlock   *tmp; 
@@ -429,9 +430,9 @@ hashtable_clear_all(HashTable *ht)
                 dbk = dbk->next;
                 zz_free(tmp);
             }
+			zz_free(ht->bunks[i]->key);
+			zz_free(ht->bunks[i]->maskformat);
         }
-        zz_free(ht->bunks[i]->key);
-        zz_free(ht->bunks[i]->maskformat);
     }
 	memset(ht->bunks, 0, sizeof(ht->bunks));
 }

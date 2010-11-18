@@ -17,6 +17,7 @@
 #include "wthread.h"
 #include "common.h"
 #include "utils.h"
+#include "sslave.h"
 
 MyConfig *g_cf;
 
@@ -209,7 +210,7 @@ load_synclog(char *logname)
 
     close(ffd);
 
-    return 0;
+    return indexpos;
 }
 
 static int
@@ -282,11 +283,6 @@ load_data_slave()
     snprintf(dump_filename, PATH_MAX, "%s/dump.dat", g_cf->datadir);
     snprintf(master_filename, PATH_MAX, "%s/dump.master.dat", g_cf->datadir);
     // check dumpfile exist
-	/*
-    ret = stat(filename, &stbuf);
-    if (ret == -1 && errno == ENOENT) {
-        DINFO("not found dumpfile: %s\n", filename);
-    }*/
 	if (isfile(dump_filename) == 0) {
 		if (isfile(master_filename)) {
 			// load dump.master.dat
@@ -340,16 +336,16 @@ load_data_slave()
 		for (i = g_runtime->dumplogver; i < n; i++) {
 			snprintf(logname, PATH_MAX, "%s/data/bin.log.%d", g_runtime->home, logids[i]);
 			DINFO("load synclog: %s\n", logname);
-			load_synclog(logname);
-			if (g_cf->role == ROLE_SLAVE) {
-				g_runtime->slave->binlog_ver = 0;
+			ret = load_synclog(logname);
+			if (ret > 0 && g_cf->role == ROLE_SLAVE) {
+				g_runtime->slave->binlog_ver = i;
 			}
 		}
 
 		snprintf(logname, PATH_MAX, "%s/data/bin.log", g_runtime->home);
 		DINFO("load synclog: %s\n", logname);
-		load_synclog(logname);
-		if (g_cf->role == ROLE_SLAVE) {
+		ret = load_synclog(logname);
+		if (ret > 0 && g_cf->role == ROLE_SLAVE) {
 			g_runtime->slave->binlog_ver = 0;
 		}
 
@@ -358,6 +354,8 @@ load_data_slave()
     if (havedump == 0) {
         dumpfile(g_runtime->ht);
     }
+	
+	DINFO("slave binlog_ver:%d, binlog_index:%d, logver:%d, logline:%d, dump_logver:%d, dumpsize:%lld, dumpfile_size:%lld\n", g_runtime->slave->binlog_ver, g_runtime->slave->binlog_index, g_runtime->slave->logver, g_runtime->slave->logline, g_runtime->slave->dump_logver, g_runtime->slave->dumpsize, g_runtime->slave->dumpfile_size);
 
     return 0;
 }

@@ -111,36 +111,6 @@ sslave_load_master_dump_info(SSlave *ss)
 	return 0;
 }
 
-int
-sslave_load_dump_info(SSlave *ss)
-{
-	char dumpfile[PATH_MAX];	
-	int  ret;
-
-	snprintf(dumpfile, PATH_MAX, "%s/dump.dat", g_cf->datadir);
-	
-	FILE	*dumpf;	
-	dumpf = fopen(dumpfile, "r");
-	if (dumpf == NULL) {
-		DERROR("open file %s error! %s\n", dumpfile, strerror(errno));
-		return -1;
-	}
-
-	int pos = sizeof(short) + sizeof(int);
-	fseek(dumpf, pos, SEEK_SET);
-
-	unsigned int dump_logver;
-	ret = fread(&dump_logver, sizeof(int), 1, dumpf);
-	if (ret != sizeof(int)) {
-		DERROR("fread error: %s\n", strerror(errno));
-		fclose(dumpf);
-		return -1;
-	}
-	//ss->binlog_min_ver = dump_logver;
-	fclose(dumpf);
-
-	return 0;
-}
 
 /* 
  *
@@ -259,7 +229,7 @@ sslave_do_cmd(SSlave *ss, char *sendbuf, int buflen, char *recvbuf, int recvlen)
     
     unsigned int len;
     memcpy(&len, recvbuf, sizeof(int));
-    DINFO("cmd recv len:%d\n", len);
+    //DINFO("cmd recv len:%d\n", len);
     
     if (len + sizeof(int) > recvlen) {
         sslave_close(ss);
@@ -298,6 +268,8 @@ sslave_conn_init(SSlave *ss)
         while (1) {
             logver  = ss->logver;
             logline = ss->logline;
+			DINFO("binlog ver:%d, binlog index:%d\n", ss->binlog_ver, ss->binlog_index);
+			DINFO("dump logver:%d, dumpsize:%lld, dumpfilesize:%lld\n", ss->dump_logver, ss->dumpsize, ss->dumpfile_size);
 			DINFO("sync pack logver: %u, logline: %u\n", logver, logline);
             sndlen = cmd_sync_pack(sndbuf, logver, logline); 
             ret = sslave_do_cmd(ss, sndbuf, sndlen, recvbuf, 1024);
@@ -305,12 +277,12 @@ sslave_conn_init(SSlave *ss)
                 DINFO("cmd sync error: %d\n", ret);
                 return -1;
             }
-            DINFO("cmd return len:%d\n", ret);
+            DINFO("sync cmd return len:%d\n", ret);
             char syncret; 
             int  i = sizeof(int);
 
             syncret = recvbuf[i];
-            DINFO("cmd return code:%d\n", syncret);
+            DINFO("sync cmd return code:%d\n", syncret);
             if (syncret == 0) { // ok, recv synclog
                 DINFO("sync ok! try recv push message.\n");
                 return 0;
@@ -322,6 +294,7 @@ sslave_conn_init(SSlave *ss)
             DINFO("try find the last sync position .\n");
             ret = sslave_prev_sync_pos(ss);
             if (ret != 0) { // no prev log, or get error, try get dump
+				DINFO("no prev log, try getdump.\n");
                 dumpsize = 0;
                 break;
             }
@@ -331,7 +304,7 @@ sslave_conn_init(SSlave *ss)
     }
     
 	// do getdump
-    DINFO("try getdump: %d,%lld\n", dumpver, dumpsize);
+    DINFO("try getdump, dumpver:%d, dumpsize:%lld\n", dumpver, dumpsize);
     sndlen = cmd_getdump_pack(sndbuf, dumpver, dumpsize); 
     ret = sslave_do_cmd(ss, sndbuf, sndlen, recvbuf, 1024); 
     if (ret < 0) {
@@ -406,8 +379,8 @@ sslave_conn_init(SSlave *ss)
 
     // load dump file
     DINFO("load dump ...\n");
-	//hashtable_clear_all(g_runtime->ht);
-	//loaddump(g_runtime->ht, dumpfile);
+	hashtable_clear_all(g_runtime->ht);
+	loaddump(g_runtime->ht, dumpfile);
 
 	/*char olddump[PATH_MAX];
     snprintf(olddumpfile, PATH_MAX, "%s/dump.dat", g_cf->datadir);

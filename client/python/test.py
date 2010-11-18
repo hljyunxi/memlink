@@ -1,35 +1,9 @@
 import os, sys
-import memlink
-import memlinkclient
+from memlinkclient import *
 #print dir(memlink)
 
-def test1():
-    conn = memlink.memlink_create('127.0.0.1', 11001, 11002, 10)
-    print dir(conn)
-    
-    stat = memlink.MemLinkStat()
-
-    key = "haha1"
-    memlink.memlink_cmd_stat(conn, key, stat)
-
-    print stat.valuesize, stat.masksize, stat.blocks, stat.data, stat.data_used, stat.mem, stat.mem_used
-
-    result = memlink.MemLinkResult()
-
-    memlink.memlink_cmd_range(conn, key, "::", 2, 10, result)
-
-    item = result.root
-    while item:
-        print item.value, repr(item.mask)
-        item = item.next
-
-    memlink.memlink_result_free(result)
-
-    memlink.memlink_destroy(conn)
-
-
-def test2():
-    m = memlinkclient.MemLinkClient('127.0.0.1', 11001, 11002, 10)
+def test():
+    m = MemLinkClient('127.0.0.1', 11001, 11002, 10)
     #print dir(m)
 
     key = 'haha'
@@ -42,5 +16,42 @@ def test2():
 
     m.destroy()
 
-test2()
+def insert():
+    m = MemLinkClient('127.0.0.1', 11011, 11012, 10)
+   
+    ret = m.create('haha', 12, "1")
+    if ret != MEMLINK_OK:
+        print 'create haha error!', ret
+        return
+
+    for i in xrange(0, 100):
+        ret = m.insert('haha', '%012d' % i, "1", 0)
+        if ret != MEMLINK_OK:
+            print 'insert error:', ret, i
+            return
+    
+    m.destroy()
+
+def dump():
+    m = MemLinkClient('127.0.0.1', 11011, 11012, 10)
+    ret = m.dump()
+    if ret != MEMLINK_OK:
+        print 'dump error!', ret
+    m.destroy()
+
+def dump():
+    m = MemLinkClient('127.0.0.1', 11011, 11012, 10)
+    ret = m.range('haha', '', 0 ,100)
+    if ret != MEMLINK_OK:
+        print 'dump error!', ret
+    m.destroy()
+
+
+if __name__ == '__main__':
+    action = sys.argv[1]
+
+    func = globals()[action]
+    func()
+        
+
 

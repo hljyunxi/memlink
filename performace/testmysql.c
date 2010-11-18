@@ -149,6 +149,7 @@ int test_range_long(int frompos, int slen, int count)
 	MYSQL_RES	*result;
 	struct timeval start, end;
 
+	DINFO("count: %d\n", count);
 	mysql_init(&mysql);
 
 	if (!mysql_real_connect(&mysql, MYSQL_HOST, MYSQL_USER, MYSQL_PASS, MYSQL_DB, 0, NULL, 0)) {

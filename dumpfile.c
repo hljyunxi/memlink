@@ -226,7 +226,7 @@ loaddump(HashTable *ht, char *filename)
         char        *itemdata = NULL;
 
         for (i = 0; i < itemnum; i++) {
-            DINFO("i: %d\n", i);
+            //DINFO("i: %d\n", i);
             if (i % g_cf->block_data_count == 0) {
                 DINFO("create new datablock ...\n");
                 DataBlock *newdbk = mempool_get(g_runtime->mpool, datalen); 
@@ -269,6 +269,34 @@ loaddump(HashTable *ht, char *filename)
     DINFO("load count: %d\n", load_count);
 
     return 0;
+}
+
+int
+dumpfile_logver(char *filename)
+{
+    int  ret;
+
+    FILE    *dumpf;
+    dumpf = fopen(filename, "r");
+    if (dumpf == NULL) {
+        DERROR("open file %s error! %s\n", filename, strerror(errno));
+        return -1;
+    }
+
+    int pos = sizeof(short) + sizeof(int);
+    fseek(dumpf, pos, SEEK_SET);
+
+    int dump_logver = 0;
+    ret = fread(&dump_logver, sizeof(int), 1, dumpf);
+    if (ret != sizeof(int)) {
+        DERROR("fread error: %s\n", strerror(errno));
+        fclose(dumpf);
+        return -1;
+    }
+    fclose(dumpf);
+
+    return dump_logver;
+	
 }
 
 void
