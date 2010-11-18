@@ -172,7 +172,7 @@ Dump文件的格式为二进制的格式：
 
 || 长度(4字节） || 返回值（2字节）|| dump version (4字节) ||  dump size (8字节) || 
 
-返回：是否是原dump文件，1表示是，0表示不是，需要1字节。如果为1，主接着发送原dump文件。如果为0，主开始发送新的dump文件。dump size表示要发送的dump size。
+返回：是否是原dump文件，1表示是原dump文件，2表示不是原dump文件，3表示文件size不正确。如果为1，主接着发送原dump文件。如果为0，主开始发送新的dump文件。dump size表示要发送的dump size。
 
 如果需要发送dump文件，主紧接着开始发送dump文件。
 
