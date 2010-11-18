@@ -16,7 +16,7 @@
 #include "utils.h"
 #include "common.h"
 
-#define BUF_SIZE 1024
+#define BUF_SIZE 4096
 #define SYNCLOG_MAX_INDEX_POS (get_index_pos(SYNCLOG_INDEXNUM))
 
 /**
@@ -356,7 +356,7 @@ cmd_sync(Conn* conn, char *data, int datalen)
         strcpy(syncConn->log_name, log_name);
         send_synclog_init(syncConn);
     } else { 
-        ret = data_reply(conn, 1, (char *)&(g_runtime->dumpver), sizeof(int));
+        ret = data_reply(conn, 1, NULL, 0);
         DINFO("Not found syn log file (version %u) having log record %d\n", log_ver, log_no);
     }
     return ret;
