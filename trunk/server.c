@@ -9,6 +9,7 @@
 #include "myconfig.h"
 #include "server.h"
 #include "wthread.h"
+#include "rthread.h"
 #include "network.h"
 #include "zzmalloc.h"
 
@@ -69,12 +70,13 @@ mainserver_read(int fd, short event, void *arg)
     MainServer  *ms = (MainServer*)arg;
     Conn        *conn;
 
-    conn = conn_create(fd);
+    conn = conn_create(fd, sizeof(Conn));
     if (NULL == conn) {
         return;
     }
-    conn->port = g_cf->read_port;
-  
+    conn->port  = g_cf->read_port;
+	conn->ready = rdata_ready;
+
     int             n   = ms->lastth;
     ThreadServer    *ts = &ms->threads[n];
     ms->lastth = (ms->lastth + 1) % g_cf->thread_num;
@@ -84,7 +86,7 @@ mainserver_read(int fd, short event, void *arg)
     DINFO("send socket %d to notify ...\n", conn->sock);
     if (write(ts->notify_send_fd, "", 1) == -1) {
         DERROR("Writing to thread %d notify pipe error: %s\n", n, strerror(errno));
-        conn_destroy(conn);
+        conn->destroy(conn);
     }
 
 }
@@ -124,7 +126,7 @@ thserver_notify(int fd, short event, void *arg)
 		ret = change_event(conn, EV_READ|EV_PERSIST, 1);
 		if (ret < 0) {
 			DERROR("change event error: %d, close conn\n", ret);
-			conn_destroy(conn);
+			conn->destroy(conn);
 		}
        
         item = item->next;

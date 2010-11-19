@@ -943,7 +943,7 @@ hashtable_del(HashTable *ht, char *key, void *value)
     *data &= 0xfe;
 
     if ( (v & 0x01) == 1) {
-        if ( (v & 0x02) == 1) {
+        if ( (v & 0x02) == 2) {
             dbk->mask_count --;
         }else{
             dbk->visible_count --;
