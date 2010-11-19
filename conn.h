@@ -10,24 +10,47 @@
 #define CONN_WRITE  2
 #define CONN_SYNC   3
 
+/*
+    int     sock;\                    // socket file descriptor
+    char    rbuf[CONN_MAX_READ_LEN];\ // read buffer
+    int     rlen;\                    // length of data which have been read
+    char    *wbuf;\                   // write buffer
+    int     wsize;\                   // write buffer mem size
+    int     wlen;\                    // write buffer length
+    int     wpos;\                    // write buffer position
+    int     port;\                    // server port
+	struct event		evt;\
+    struct event_base   *base;\
+    struct timeval      ctime;\
+	void	(*destroy)(Conn *conn);\
+	int		(*ready)(Conn *conn, char *data, int datalen);
+
+
+ */
+#define CONN_MEMBER \
+    int     sock;\
+    char    rbuf[CONN_MAX_READ_LEN];\
+    int     rlen;\
+    char    *wbuf;\
+    int     wsize;\
+    int     wlen;\
+    int     wpos;\
+    int     port;\
+	struct event		evt;\
+    struct event_base   *base;\
+    struct timeval      ctime;\
+	void	(*destroy)(struct _conn *conn);\
+	int		(*ready)(struct _conn *conn, char *data, int datalen);
+
+
+
+
 typedef struct _conn
 {
-    int     sock;                    // socket file descriptor
-    char    rbuf[CONN_MAX_READ_LEN]; // read buffer
-    int     rlen;                    // length of data which have been read
-    char    *wbuf;                   // write buffer
-    int     wsize;                   // write buffer mem size
-    int     wlen;                    // write buffer length
-    int     wpos;                    // write buffer position
-    int     port;                    // server port
-
-	struct event		evt;
-    struct event_base   *base;
-
-    struct timeval      ctime;
+	CONN_MEMBER
 }Conn;
 
-Conn*   conn_create(int svrfd);
+Conn*   conn_create(int svrfd, int connsize);
 void    conn_destroy(Conn *conn);
 
 

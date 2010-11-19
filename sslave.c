@@ -20,14 +20,14 @@
 #include "sslave.h"
 
 #define MAX_SYNC_PREV   100
-#define SYNC_HEAD_LEN   (sizeof(int)+sizeof(int))
+#define SYNCPOS_LEN   (sizeof(int)+sizeof(int))
 
 static int
 sslave_recv_log(SSlave *ss)
 {
 	char recvbuf[1024];
 	//int  recvsize = 0;
-	int  checksize = SYNC_HEAD_LEN + sizeof(short);
+	int  checksize = SYNCPOS_LEN + sizeof(short);
 	int  ret;
 	unsigned short  rlen = 0;
 	// send sync
@@ -42,7 +42,7 @@ sslave_recv_log(SSlave *ss)
 			return -1;
 		}
         DINFO("readn return:%d\n", ret); 		
-		memcpy(&rlen, recvbuf + SYNC_HEAD_LEN, sizeof(short));
+		memcpy(&rlen, recvbuf + SYNCPOS_LEN, sizeof(short));
 		ret = readn(ss->sock, recvbuf + checksize, rlen, 0);
 		if (ret < rlen) {
 			DERROR("read sync too short: %d, close\n", ret);
@@ -52,7 +52,7 @@ sslave_recv_log(SSlave *ss)
 		}
         DINFO("recv log len:%d\n", rlen);
 		unsigned int size = checksize + rlen;	
-		ret = wdata_apply(recvbuf + SYNC_HEAD_LEN, rlen, 0);
+		ret = wdata_apply(recvbuf + SYNCPOS_LEN, rlen, 0);
 		if (ret == 0) {
 			synclog_write(g_runtime->synclog, recvbuf, size);
 		}
@@ -62,12 +62,12 @@ sslave_recv_log(SSlave *ss)
 }
 
 int
-sslave_load_master_dump_info(SSlave *ss)
+sslave_load_master_dump_info(SSlave *ss, char *dumpfile, long long *filesize, long long *dumpsize, int *logver)
 {
-	char dumpfile[PATH_MAX];	
+	//char dumpfile[PATH_MAX];	
 	int  ret;
 
-	snprintf(dumpfile, PATH_MAX, "%s/dump.master.dat", g_cf->datadir);
+	//snprintf(dumpfile, PATH_MAX, "%s/dump.master.dat", g_cf->datadir);
 	
 	if (isfile(dumpfile)) {
 		FILE	*dumpf;	
@@ -78,32 +78,33 @@ sslave_load_master_dump_info(SSlave *ss)
 		}
 		
 		fseek(dumpf, 0, SEEK_END);
-		ss->dumpfile_size = ftell(dumpf);
+		*filesize = ftell(dumpf);
 
-		if (ss->dumpfile_size >= DUMP_HEAD_LEN) {
+		if (*filesize >= DUMP_HEAD_LEN) {
 			long long size;
 			fseek(dumpf, DUMP_HEAD_LEN - sizeof(long long), SEEK_SET);
-			ret = fread(&size, sizeof(long long), 1, dumpf);
+			ret = fread(&size, 1, sizeof(long long), dumpf);
 			if (ret != sizeof(long long)) {
-				DERROR("fread error: %s\n", strerror(errno));
+				DERROR("fread error, ret:%d, %s\n", ret, strerror(errno));
 				fclose(dumpf);
 				return -1;
 				//goto read_dump_over;
 			}
-			ss->dumpsize = size;
+			*dumpsize = size;
 
 			int pos = sizeof(short) + sizeof(int);
 			fseek(dumpf, pos, SEEK_SET);
 
-			unsigned int dump_logver;
-			ret = fread(&dump_logver, sizeof(int), 1, dumpf);
+			ret = fread(logver, 1, sizeof(int), dumpf);
 			if (ret != sizeof(int)) {
 				DERROR("fread error: %s\n", strerror(errno));
 				fclose(dumpf);
 				return -1;
 				//goto read_dump_over;
 			}
-			ss->dump_logver = dump_logver;
+		}else{
+			*dumpsize   = 0;	
+			*logver		= 0;
 		}
 		fclose(dumpf);
 	}
@@ -246,65 +247,29 @@ sslave_do_cmd(SSlave *ss, char *sendbuf, int buflen, char *recvbuf, int recvlen)
     return len + sizeof(int);
 }
 
-
 int
-sslave_conn_init(SSlave *ss)
+sslave_do_getdump(SSlave *ss)
 {
-    char sndbuf[1024];
+	char    dumpfile[PATH_MAX];
+    char    dumpfile_tmp[PATH_MAX];
+
+    snprintf(dumpfile, PATH_MAX, "%s/dump.master.dat", g_cf->datadir);
+    snprintf(dumpfile_tmp, PATH_MAX, "%s/dump.master.dat.tmp", g_cf->datadir);
+
+	long long	tmpsize  = 0;
+	long long	dumpsize = 0;
+	int			logver   = 0;
+	int			ret;
+
+	sslave_load_master_dump_info(ss, dumpfile_tmp, &tmpsize, &dumpsize, &logver);
+
+	char sndbuf[1024];
     int  sndlen;
     char recvbuf[1024];
-    //int  recvlen;
-    int  ret;
-    unsigned int  logver;
-    unsigned int  logline;
-    unsigned int  dumpver;
-    long long     dumpsize;
 
-    DINFO("slave init ...\n");
-    DINFO("ss->dumpsize:%lld, ss->dumpfile_size:%lld\n", ss->dumpsize, ss->dumpfile_size);
-    if (ss->dumpsize == ss->dumpfile_size) { // have master dumpfile, and size ok or not have master dumpfile
-        // send sync command 
-        while (1) {
-            logver  = ss->logver;
-            logline = ss->logline;
-			DINFO("binlog ver:%d, binlog index:%d\n", ss->binlog_ver, ss->binlog_index);
-			DINFO("dump logver:%d, dumpsize:%lld, dumpfilesize:%lld\n", ss->dump_logver, ss->dumpsize, ss->dumpfile_size);
-			DINFO("sync pack logver: %u, logline: %u\n", logver, logline);
-            sndlen = cmd_sync_pack(sndbuf, logver, logline); 
-            ret = sslave_do_cmd(ss, sndbuf, sndlen, recvbuf, 1024);
-            if (ret < 0) {
-                DINFO("cmd sync error: %d\n", ret);
-                return -1;
-            }
-            DINFO("sync cmd return len:%d\n", ret);
-            char syncret; 
-            int  i = sizeof(int);
-
-            syncret = recvbuf[i];
-            DINFO("sync cmd return code:%d\n", syncret);
-            if (syncret == 0) { // ok, recv synclog
-                DINFO("sync ok! try recv push message.\n");
-                return 0;
-            }
-
-            i += 1;
-            memcpy(&dumpver, &recvbuf[i], sizeof(int));
-            // try find the last sync position
-            DINFO("try find the last sync position .\n");
-            ret = sslave_prev_sync_pos(ss);
-            if (ret != 0) { // no prev log, or get error, try get dump
-				DINFO("no prev log, try getdump.\n");
-                dumpsize = 0;
-                break;
-            }
-        } 
-    }else{
-        dumpsize = ss->dumpfile_size;
-    }
-    
 	// do getdump
-    DINFO("try getdump, dumpver:%d, dumpsize:%lld\n", dumpver, dumpsize);
-    sndlen = cmd_getdump_pack(sndbuf, dumpver, dumpsize); 
+    DINFO("try getdump, dumpver:%d, dumpsize:%lld\n", logver, dumpsize);
+    sndlen = cmd_getdump_pack(sndbuf, logver, dumpsize); 
     ret = sslave_do_cmd(ss, sndbuf, sndlen, recvbuf, 1024); 
     if (ret < 0) {
         DERROR("cmd getdump error: %d\n", ret);
@@ -314,20 +279,22 @@ sslave_conn_init(SSlave *ss)
     unsigned long long size, rlen = 0;
 
     memcpy(&retcode, recvbuf + sizeof(int), sizeof(short));
-    memcpy(&dumpver, recvbuf + CMD_REPLY_HEAD_LEN, sizeof(int));
+    memcpy(&logver, recvbuf + CMD_REPLY_HEAD_LEN, sizeof(int));
     memcpy(&size, recvbuf + CMD_REPLY_HEAD_LEN + sizeof(int), sizeof(long long));
-    DINFO("recvlen:%d, retcode:%d, dumpver:%d, dump size: %lld\n", ret, retcode, dumpver, size);
+    DINFO("recvlen:%d, retcode:%d, logver:%d, dump size: %lld\n", ret, retcode,logver, size);
 
     char    dumpbuf[8192];
     int     buflen = 0;
-    char    dumpfile[PATH_MAX];
-    char    dumpfile_tmp[PATH_MAX];
     int     fd;
+	int		oflag; 
 
-    snprintf(dumpfile, PATH_MAX, "%s/dump.master.dat", g_cf->datadir);
-    snprintf(dumpfile_tmp, PATH_MAX, "%s/dump.master.dat.tmp", g_cf->datadir);
-    
-    fd = open(dumpfile_tmp, O_CREAT|O_WRONLY, 0644);
+	if (retcode == CMD_GETDUMP_OK) {
+		oflag = O_CREAT|O_WRONLY|O_APPEND;
+	}else{
+		oflag = O_CREAT|O_WRONLY|O_TRUNC;
+	}
+
+    fd = open(dumpfile_tmp, oflag, 0644);
     if (fd == -1) {
         DERROR("open dumpfile %s error! %s\n", dumpfile_tmp, strerror(errno));
         return -1;
@@ -375,15 +342,87 @@ sslave_conn_init(SSlave *ss)
         DERROR("dump file rename error: %s\n", strerror(errno));
         return -1;
     }
+	return 0;
+}
 
-    // load dump file
-    DINFO("load dump ...\n");
-	hashtable_clear_all(g_runtime->ht);
-	loaddump(g_runtime->ht, dumpfile);
+int
+sslave_conn_init(SSlave *ss)
+{
+    char sndbuf[1024];
+    int  sndlen;
+    char recvbuf[1024];
+    //int  recvlen;
+    int  ret;
+    unsigned int  logver;
+    unsigned int  logline;
+    //unsigned int  dumpver;
+    //long long     dumpsize;
+	char    mdumpfile[PATH_MAX];
+	char    mdumpfile_tmp[PATH_MAX];
 
-	/*char olddump[PATH_MAX];
-    snprintf(olddumpfile, PATH_MAX, "%s/dump.dat", g_cf->datadir);
-	remove();*/ 
+    snprintf(mdumpfile, PATH_MAX, "%s/dump.master.dat", g_cf->datadir);
+    snprintf(mdumpfile_tmp, PATH_MAX, "%s/dump.master.dat.tmp", g_cf->datadir);
+
+    DINFO("slave init ...\n");
+    DINFO("ss->dumpsize:%lld, ss->dumpfile_size:%lld, ss->dump_logver:%d\n", ss->dumpsize, ss->dumpfile_size, ss->dump_logver);
+
+	if (ss->dump_logver == 0) {
+		sslave_load_master_dump_info(ss, mdumpfile, &ss->dumpfile_size, &ss->dumpsize, &ss->dump_logver);
+	}
+
+	if (ss->logver == 0) {
+		ss->logver  = ss->dump_logver;
+		ss->logline = 0;
+	}
+
+    if (ss->dumpsize == ss->dumpfile_size) { // have master dumpfile, and size ok or not have master dumpfile
+        // send sync command 
+		int is_getdump = 0;
+        while (1) {
+            logver  = ss->logver;
+            logline = ss->logline;
+			DINFO("binlog ver:%d, binlog index:%d\n", ss->binlog_ver, ss->binlog_index);
+			DINFO("dump logver:%d, dumpsize:%lld, dumpfilesize:%lld\n", ss->dump_logver, ss->dumpsize, ss->dumpfile_size);
+			DINFO("sync pack logver: %u, logline: %u\n", logver, logline);
+
+            sndlen = cmd_sync_pack(sndbuf, logver, logline); 
+            ret = sslave_do_cmd(ss, sndbuf, sndlen, recvbuf, 1024);
+            if (ret < 0) {
+                DINFO("cmd sync error: %d\n", ret);
+                return -1;
+            }
+            //DINFO("sync cmd return len:%d\n", ret);
+            char syncret; 
+            int  i = sizeof(int);
+
+            syncret = recvbuf[i];
+            DINFO("sync return code:%d\n", syncret);
+            if (syncret == CMD_SYNC_OK) { // ok, recv synclog
+                DINFO("sync ok! try recv push message.\n");
+                return 0;
+            }else if (syncret == CMD_SYNC_FAILED && \
+					  is_getdump == 1 && ss->logline == 0) {
+				sleep(1);
+				continue;
+			}
+
+            // try find the last sync position
+            DINFO("try find the last sync position .\n");
+            ret = sslave_prev_sync_pos(ss);
+            if (ret != 0) { // no prev log, or get error, try get dump
+				DINFO("no prev log, try getdump.\n");
+                //dumpsize = 0;
+                //break;
+				if (sslave_do_getdump(ss) == 0) {
+					DINFO("load dump ...\n");
+					hashtable_clear_all(g_runtime->ht);
+					loaddump(g_runtime->ht, mdumpfile);
+
+					is_getdump = 1;
+				}
+            }
+        } 
+    }
 
 	return 0;
 }

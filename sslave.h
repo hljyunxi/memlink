@@ -37,6 +37,6 @@ void	sslave_go(SSlave *slave);
 void	sslave_destroy(SSlave *slave);
 void	sslave_close(SSlave *slave);
 
-int		sslave_load_master_dump_info(SSlave *ss);
+//int		sslave_load_master_dump_info(SSlave *ss);
 
 #endif

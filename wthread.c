@@ -154,7 +154,7 @@ data_reply(Conn *conn, short retcode, char *retdata, int retlen)
 	int ret = change_event(conn, EV_WRITE|EV_PERSIST, 0);
 	if (ret < 0) {
 		DERROR("change_event error: %d, close conn.\n", ret);
-		conn_destroy(conn);
+		conn->destroy(conn);
 	}
 
     return 0;
@@ -499,18 +499,20 @@ wthread_read(int fd, short event, void *arg)
     Conn    *conn;
     
     DINFO("wthread_read ...\n");
-    conn = conn_create(fd);
+    conn = conn_create(fd, sizeof(WThread));
     if (conn) {
         int ret = 0;
         conn->port = g_cf->write_port;
 		conn->base = wt->base;
+		
+		conn->ready = wdata_ready;
 
         DINFO("new conn: %d\n", conn->sock);
 		DINFO("change event to read.\n");
 		ret = change_event(conn, EV_READ|EV_PERSIST, 1);
 		if (ret < 0) {
 			DERROR("change_event error: %d, close conn.\n", ret);
-			conn_destroy(conn);
+			conn->destroy(conn);
 		}
 
     }
@@ -555,12 +557,12 @@ client_read(int fd, short event, void *arg)
             }else if (errno != EAGAIN) {
                 // maybe close conn?
                 DERROR("%d read error: %s\n", fd, strerror(errno));
-                conn_destroy(conn);
+                conn->destroy(conn);
                 return;
             }
         }else if (ret == 0) {
             DINFO("read 0, close conn %d.\n", fd);
-            conn_destroy(conn);
+            conn->destroy(conn);
             return;
         }else{
             conn->rlen += ret;
@@ -577,6 +579,7 @@ client_read(int fd, short event, void *arg)
         int mlen = datalen + sizeof(short);
 
         if (conn->rlen >= mlen) {
+			/*
             if (conn->port == g_cf->write_port) {
                 wdata_ready(conn, conn->rbuf, mlen);
             }else if (conn->port == g_cf->read_port) {
@@ -585,9 +588,11 @@ client_read(int fd, short event, void *arg)
                 sdata_ready(conn, conn->rbuf, mlen);
             }else{
                 DERROR("conn port error: %d\n", conn->port);
-                conn_destroy(conn);
+                conn->destroy(conn);
                 return;
-            }
+            }*/
+
+			conn->ready(conn, conn->rbuf, mlen);
         
             memmove(conn->rbuf, conn->rbuf + mlen, conn->rlen - mlen);
             conn->rlen -= mlen;
@@ -616,7 +621,7 @@ client_write(int fd, short event, void *arg)
         ret = change_event(conn, EV_READ|EV_PERSIST, 0);
         if (ret < 0) {
             DERROR("change event error:%d close socket\n", ret);
-            conn_destroy(conn);
+            conn->destroy(conn);
         }
         return;
     }
@@ -631,7 +636,7 @@ client_write(int fd, short event, void *arg)
             }else if (errno != EAGAIN) {
                 // maybe close conn?
                 DERROR("write error! %s\n", strerror(errno)); 
-                conn_destroy(conn);
+                conn->destroy(conn);
                 break;
             }
         }else{

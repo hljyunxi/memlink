@@ -504,6 +504,8 @@ synclog_lastlog()
     return maxid;
 }
 
+/* find previous binlog
+ */
 int
 synclog_prevlog(int curid)
 {
@@ -522,7 +524,7 @@ synclog_prevlog(int curid)
         return 0;
     }
     while ((nodes = readdir(mydir)) != NULL) {
-        DINFO("name: %s\n", nodes->d_name);
+        //DINFO("name: %s\n", nodes->d_name);
         if (strncmp(nodes->d_name, "bin.log.", 8) == 0) {
             int binid = atoi(&nodes->d_name[8]);
             if (binid > maxid && curid > binid) {
@@ -535,7 +537,9 @@ synclog_prevlog(int curid)
     return maxid;
 }
 
-
+/*
+ * find all binlog
+ */
 int
 synclog_scan_binlog(int *result, int rsize)
 {
@@ -552,7 +556,7 @@ synclog_scan_binlog(int *result, int rsize)
         return -2; 
     }   
     while ((nodes = readdir(mydir)) != NULL) {
-        DINFO("name: %s\n", nodes->d_name);
+        //DINFO("name: %s\n", nodes->d_name);
         if (strncmp(nodes->d_name, "bin.log.", 8) == 0) {
             int binid = atoi(&nodes->d_name[8]);
             if (binid > minid) {

@@ -490,7 +490,7 @@ sthread_read(int fd, short event, void *arg)
     int ret;
 
     DINFO("sthread_read...\n");
-    conn = conn_create(fd);
+    conn = conn_create(fd, sizeof(Conn));
 
     if (conn) {
         conn->port = g_cf->sync_port;

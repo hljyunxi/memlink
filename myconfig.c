@@ -298,6 +298,7 @@ load_data_slave()
 
 			slave->logver  = g_runtime->dumplogver;
 			slave->logline = 0;
+
 			slave->dump_logver   = 0;
 			slave->dumpsize      = 0;
 			slave->dumpfile_size = 0;
@@ -348,7 +349,6 @@ load_data_slave()
 		if (ret > 0 && g_cf->role == ROLE_SLAVE) {
 			g_runtime->slave->binlog_ver = 0;
 		}
-
 	}
 
     if (havedump == 0) {

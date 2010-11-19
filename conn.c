@@ -20,7 +20,7 @@
  * conn_create - return the accepted connection.
  */
 Conn*   
-conn_create(int svrfd)
+conn_create(int svrfd, int connsize)
 {
     Conn    *conn;
     int     newfd;
@@ -43,15 +43,18 @@ conn_create(int svrfd)
 
     tcp_server_setopt(newfd);
 
-    conn = (Conn*)zz_malloc(sizeof(Conn));
+    //conn = (Conn*)zz_malloc(sizeof(Conn));
+    conn = (Conn*)zz_malloc(connsize);
     if (conn == NULL) {
         DERROR("wr_read malloc error.\n");
         MEMLINK_EXIT;
     }
-    memset(conn, 0, sizeof(Conn)); 
+    //memset(conn, 0, sizeof(Conn)); 
+    memset(conn, 0, connsize); 
     conn->sock = newfd;
     
     gettimeofday(&conn->ctime, NULL);
+	conn->destroy = conn_destroy;
 
     return conn;
 }
