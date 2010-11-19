@@ -73,4 +73,8 @@
 #define CMD_GETDUMP_CHANGE		2
 #define CMD_GETDUMP_SIZE_ERR	3
 
+#define CMD_SYNC_OK		0
+#define CMD_SYNC_FAILED	1
+
+
 #endif
