@@ -2,6 +2,7 @@
 #define MEMLINK_STHREAD_H
 
 #include "conn.h"
+#include <limits.h>
 
 typedef struct _sthread 
 {

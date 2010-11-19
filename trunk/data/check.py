@@ -12,10 +12,12 @@ def binlog(filename='bin.log'):
     v.extend(struct.unpack('I', s[2:6]))
     v.extend(struct.unpack('B', s[6]))
     v.extend(struct.unpack('I', s[7:]))
+    d = f.tell() + 4 * v[-1]
+    v.append(d)
 
     print '====================== bin log   ========================='
     #print 'head:', repr(s)
-    print 'format:%d, logver:%d, role:%d, index:%d' % tuple(v)
+    print 'format:%d, logver:%d, role:%d, index:%d, data:%d' % tuple(v)
 
     indexes = []
     while True:
@@ -37,8 +39,8 @@ def binlog(filename='bin.log'):
             slen = struct.unpack('H', s1)[0]
             s2 = f.read(slen)
             s = s1 + s2 
-            print 'logver: %d, logpos: %d, data %02d %d:' % \
-                (log_ver[0], log_pos[0], i, len(s)), repr(s), f.tell()
+            print 'ver:%d, i:%d, %d:' % \
+                (log_ver[0], log_pos[0], len(s)), repr(s), f.tell()
     f.close()
 
 
@@ -55,15 +57,31 @@ def dumpfile(filename):
     print 'format:%d, dumpver:%d, logver:%d, role:%d, size:%d' % (dformat, dfver, dlogver, role, size)
 
     while True:
-        head = f.read(8)
-        if not head:
+        klenstr = f.read(1)
+        if not klenstr:
             break
-        logver, logline = struct.unpack('II', head)    
-        dlen = struct.unpack('H', f.read(2))[0]
-        cmd  = struct.unpack('B', f.read(1))[0]
-        print 'logver:%d, logline:%d, len:%d, cmd:%d' % (logver, logline, dlen, cmd)
-        f.seek(dlen - 1, os.SEEK_CUR)
+        klen = struct.unpack('B', klenstr)[0]
+        key  = struct.unpack(str(klen) + 's', f.read(klen))[0]
+        valuelen = struct.unpack('B', f.read(1))[0]
+        masklen  = struct.unpack('B', f.read(1))[0]
+        masknum  = struct.unpack('B', f.read(1))[0]
+        s = f.read(masknum)
+        maskformat = []
+        maskformat.append(struct.unpack('B', s[0])[0]) 
+        maskformat.append(struct.unpack('B', s[1])[0]) 
+        maskformat.append(struct.unpack('B', s[2])[0]) 
 
+        itemnum  = struct.unpack('I', f.read(4))[0] 
+        
+        print 'key:%s, valuelen:%d, masklen:%d, masknum:%d, maskformat:%s, itemnum:%d' % (key, valuelen, masklen, masknum, maskformat, itemnum)
+
+        datalen  = valuelen + masklen
+
+        if itemnum > 0:
+            for i in xrange(0, itemnum):
+                s = f.read(datalen)
+                print '\t' + repr(s)
+        
     f.close()
 
 def show_help():

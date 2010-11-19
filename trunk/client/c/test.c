@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
     DINFO("memlink_cmd_xx: %d\n", ret);
     */
 
-    for (i = 0; i < 2; i++) {
+    for (i = 0; i < 1; i++) {
         printf("============== range %d ===============\n", i);
         MemLinkResult result;
         ret = memlink_cmd_range(m, "haha1", "::", 2, 10, &result);
