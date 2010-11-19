@@ -62,7 +62,7 @@ sslave_recv_log(SSlave *ss)
 }
 
 int
-sslave_load_master_dump_info(SSlave *ss, char *dumpfile, long long *filesize, long long *dumpsize, int *logver)
+sslave_load_master_dump_info(SSlave *ss, char *dumpfile, long long *filesize, long long *dumpsize, unsigned int *logver)
 {
 	//char dumpfile[PATH_MAX];	
 	int  ret;
@@ -178,33 +178,6 @@ sslave_prev_sync_pos(SSlave *ss)
 	return 0;
 }
 
-/*
-int 
-sslave_check_sync(SSlave *ss)
-{
-	//char dumpfile[PATH_MAX];	
-	//int  ret;
-
-	sslave_load_master_dump_info(ss);
-	sslave_load_dump_info(ss);
-
-	char *binlog;
-	char logname[PATH_MAX];
-
-	snprintf(logname, PATH_MAX, "%s/bin.log", g_cf->datadir);
-
-	binlog = logname;	
-	FILE	*binf;
-
-	binf = fopen(binlog, "r");
-		
-	
-
-	fclose(binf);
-
-	return 0;
-}
-*/
 
 int 
 sslave_do_cmd(SSlave *ss, char *sendbuf, int buflen, char *recvbuf, int recvlen)
@@ -256,10 +229,10 @@ sslave_do_getdump(SSlave *ss)
     snprintf(dumpfile, PATH_MAX, "%s/dump.master.dat", g_cf->datadir);
     snprintf(dumpfile_tmp, PATH_MAX, "%s/dump.master.dat.tmp", g_cf->datadir);
 
-	long long	tmpsize  = 0;
-	long long	dumpsize = 0;
-	int			logver   = 0;
-	int			ret;
+	long long	 tmpsize  = 0;
+	long long	 dumpsize = 0;
+	unsigned int logver   = 0;
+	int			 ret;
 
 	sslave_load_master_dump_info(ss, dumpfile_tmp, &tmpsize, &dumpsize, &logver);
 
@@ -382,7 +355,8 @@ sslave_conn_init(SSlave *ss)
             logver  = ss->logver;
             logline = ss->logline;
 			DINFO("binlog ver:%d, binlog index:%d\n", ss->binlog_ver, ss->binlog_index);
-			DINFO("dump logver:%d, dumpsize:%lld, dumpfilesize:%lld\n", ss->dump_logver, ss->dumpsize, ss->dumpfile_size);
+			DINFO("dump logver:%d, dumpsize:%lld, dumpfilesize:%lld\n", 
+                    ss->dump_logver, ss->dumpsize, ss->dumpfile_size);
 			DINFO("sync pack logver: %u, logline: %u\n", logver, logline);
 
             sndlen = cmd_sync_pack(sndbuf, logver, logline); 
