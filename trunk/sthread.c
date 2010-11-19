@@ -64,6 +64,24 @@ create_thread(SThread* st)
     return st;
 }
 
+static off_t
+lseek_or_exit(int fd, off_t offset, int whence) 
+{
+    off_t pos;
+    if ((pos = lseek(fd, offset, whence)) == -1) {
+        DERROR("lseek error! %s\n", strerror(errno));
+        close(fd);
+        MEMLINK_EXIT;    
+    }
+    return pos;
+}
+
+static off_t
+lseek_cur(int fd, off_t offset)
+{
+    return lseek_or_exit(fd, offset, SEEK_CUR);
+}
+
 /**
  * Return the synclog file pathname for the given synclog version.
  * 
@@ -160,13 +178,7 @@ static unsigned int
 seek_and_read_int(int fd, unsigned int offset)
 {
     unsigned int integer;
-    // seek
-    if (lseek(fd, offset, SEEK_SET) == -1) {
-        DERROR("lseek error! %s\n", strerror(errno));
-        close(fd);
-        MEMLINK_EXIT;    
-    }
-    // read
+    lseek_cur(fd, offset);
     if (read(fd, &integer, sizeof(int)) == -1) {
         DERROR("read error! %s\n", strerror(errno));
         close(fd);
@@ -218,12 +230,12 @@ create_interval(unsigned int seconds)
  * Read n bytes. Terminate program if error.
  */
 static int
-sthread_readn(int fd, void *ptr, size_t n)
+try_readn(int fd, void *ptr, size_t n)
 {
     int ret;
-    if ((ret = readn(fd, ptr, n, 0)) < 0) 
+    if ((ret = readn(fd, ptr, n, 0)) < 0)
         MEMLINK_EXIT;
-    else
+     else
         return ret;
 }
 
@@ -232,11 +244,11 @@ sthread_readn(int fd, void *ptr, size_t n)
  * can't all be written. 
  */
 static void 
-sthread_writen(int fd, void *ptr, size_t n)
+writen_or_exit(int fd, void *ptr, size_t n)
 {
     int ret;
     if ((ret = writen(fd, ptr, n, g_cf->timeout)) != n) {
-        DERROR("Unable to write %d byes, only %d bytes are written.\n", (int)n, ret);
+        DERROR("Unable to write %d bytes, only %d bytes are written.\n", (int)n, ret);
         MEMLINK_EXIT;
     }
 }
@@ -248,11 +260,11 @@ static void
 transfer(SyncLogConn *conn,  void *ptr, size_t n)
 {
     int ret;
-    if ((ret = sthread_readn(conn->log_fd, ptr, n)) != n) {
+    if ((ret = try_readn(conn->log_fd, ptr, n)) != n) {
         DERROR("Unable to read %d bytes, only %d bytes are read.\n", (int)n, ret);
         MEMLINK_EXIT;
     }
-    sthread_writen(conn->sock, ptr, n);
+    writen_or_exit(conn->sock, ptr, n);
 }
 
 
@@ -275,11 +287,7 @@ send_synclog_record(SyncLogConn *conn)
     DINFO("sending sync log in %s\n", conn->log_name);
     while (conn->log_index_pos < SYNCLOG_MAX_INDEX_POS 
             && (log_pos = seek_and_read_int(conn->log_fd, conn->log_index_pos)) > 0) {
-        if (lseek(conn->log_fd, log_pos, SEEK_SET) == -1) {
-            DERROR("lseek error! %s\n", strerror(errno));
-            close(conn->log_fd);
-            MEMLINK_EXIT;
-        }
+        lseek_cur(conn->log_fd, log_pos);
         transfer(conn, &master_log_ver, sizeof(int)); // log version
         transfer(conn, &master_log_pos, sizeof(int)); // log position 
         transfer(conn, &len, sizeof(short)); // log record length
@@ -376,21 +384,11 @@ open_dump()
     return fd;
 }
 
-static long long
+static off_t
 get_file_size(int fd)
 {
-   long long file_size;
-   if ((file_size = lseek(fd, 0, SEEK_END)) == -1) {
-       DERROR("lseek error! %s", strerror(errno));
-       MEMLINK_EXIT;
-   }
-   if (lseek(fd, 0, SEEK_SET) == -1) {
-       DERROR("lseek error! %s", strerror(errno));
-       MEMLINK_EXIT;
-   }
-   return file_size;
+    return lseek_or_exit(fd, 0, SEEK_END);
 }
-
 
 static void 
 send_dump(int fd, short event, void *arg)
@@ -407,9 +405,9 @@ send_dump(int fd, short event, void *arg)
     unsigned int log_ver = g_runtime->logver;
 
     DINFO("sending dump...\n");
-    while ((ret = sthread_readn(dumpConn->dump_fd, buf, BUF_SIZE)) > 0) {
+    while ((ret = try_readn(dumpConn->dump_fd, buf, BUF_SIZE)) > 0) {
         DINFO("dump data: %s\n", formath(buf, ret, p_buf, p_buf_size));
-        sthread_writen(dumpConn->sock, buf, ret);
+        writen_or_exit(dumpConn->sock, buf, ret);
     }
     dump_conn_destroy(dumpConn);
 
@@ -431,28 +429,56 @@ send_dump_init(int sock, int dump_fd)
     event_add(&conn->evt, &interval);
 }
 
+static void
+check_dump_ver_and_size(unsigned int dumpver, 
+        unsigned long long transferred_size, 
+        unsigned long long file_size,
+        int *retcode, 
+        unsigned long long *offset)
+{
+    if (g_runtime->dumpver == dumpver) {
+        if (file_size <= transferred_size) {
+            *retcode = CMD_GETDUMP_OK;
+        } else {
+            *retcode = CMD_GETDUMP_SIZE_ERR;
+        }
+    } else {
+        *retcode = CMD_GETDUMP_CHANGE;
+    }
+
+    *offset = *retcode == CMD_GETDUMP_OK ? transferred_size : 0;
+}
+
 static int
 cmd_get_dump(Conn* conn, char *data, int datalen)
 {
     int ret;
     unsigned int dumpver;
-    unsigned long long size;
+    unsigned long long transferred_size;
     int retcode;
+    unsigned long long offset;
+    unsigned long long file_size;
+    int dump_fd;
+    unsigned long long remaining_size;
 
-    cmd_getdump_unpack(data, &dumpver, &size);
-    DINFO("dump version: %u, synchronized data size: %llu\n", dumpver, size);
-    retcode = g_runtime->dumpver == dumpver ? 1 : 0;
+    cmd_getdump_unpack(data, &dumpver, &transferred_size);
+    DINFO("dump version: %u, synchronized data transferred size: %llu\n", dumpver, transferred_size);
 
-    int dump_fd = open_dump(); 
-    long long file_size = get_file_size(dump_fd);
+    dump_fd = open_dump(); 
+    file_size = get_file_size(dump_fd);
+    check_dump_ver_and_size(dumpver, transferred_size, file_size, &retcode, &offset);
+    remaining_size = file_size - offset; 
+
     int retlen = sizeof(int) + sizeof(long long);
     char retrc[retlen];
     memcpy(retrc, &g_runtime->dumpver, sizeof(int));
-    memcpy(retrc + sizeof(int), &file_size, sizeof(long long));
+    memcpy(retrc + sizeof(int), &remaining_size, sizeof(long long));
     ret = data_reply(conn, retcode, retrc, retlen);
 
-    send_dump_init(conn->sock, dump_fd);
-
+    if (offset < file_size) {
+        lseek_cur(dump_fd, offset);
+        send_dump_init(conn->sock, dump_fd);
+    }
     return ret;
 }
 
