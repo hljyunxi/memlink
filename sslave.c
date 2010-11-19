@@ -111,7 +111,6 @@ sslave_load_master_dump_info(SSlave *ss)
 	return 0;
 }
 
-
 /* 
  *
  */

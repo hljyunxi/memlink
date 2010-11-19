@@ -236,7 +236,7 @@ sthread_writen(int fd, void *ptr, size_t n)
 {
     int ret;
     if ((ret = writen(fd, ptr, n, g_cf->timeout)) != n) {
-        DERROR("Unable to write %d byes, only %d bytes are written.\n", n, ret);
+        DERROR("Unable to write %d byes, only %d bytes are written.\n", (int)n, ret);
         MEMLINK_EXIT;
     }
 }
@@ -249,7 +249,7 @@ transfer(SyncLogConn *conn,  void *ptr, size_t n)
 {
     int ret;
     if ((ret = sthread_readn(conn->log_fd, ptr, n)) != n) {
-        DERROR("Unable to read %d bytes, only %d bytes are read.\n", n, ret);
+        DERROR("Unable to read %d bytes, only %d bytes are read.\n", (int)n, ret);
         MEMLINK_EXIT;
     }
     sthread_writen(conn->sock, ptr, n);
