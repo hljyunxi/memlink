@@ -77,9 +77,9 @@ lseek_or_exit(int fd, off_t offset, int whence)
 }
 
 static off_t
-lseek_cur(int fd, off_t offset)
+lseek_set(int fd, off_t offset)
 {
-    return lseek_or_exit(fd, offset, SEEK_CUR);
+    return lseek_or_exit(fd, offset, SEEK_SET);
 }
 
 /**
@@ -178,7 +178,7 @@ static unsigned int
 seek_and_read_int(int fd, unsigned int offset)
 {
     unsigned int integer;
-    lseek_cur(fd, offset);
+    lseek_set(fd, offset);
     if (read(fd, &integer, sizeof(int)) == -1) {
         DERROR("read error! %s\n", strerror(errno));
         close(fd);
@@ -287,7 +287,7 @@ send_synclog_record(SyncLogConn *conn)
     DINFO("sending sync log in %s\n", conn->log_name);
     while (conn->log_index_pos < SYNCLOG_MAX_INDEX_POS 
             && (log_pos = seek_and_read_int(conn->log_fd, conn->log_index_pos)) > 0) {
-        lseek_cur(conn->log_fd, log_pos);
+        lseek_set(conn->log_fd, log_pos);
         transfer(conn, &master_log_ver, sizeof(int)); // log version
         transfer(conn, &master_log_pos, sizeof(int)); // log position 
         transfer(conn, &len, sizeof(short)); // log record length
@@ -437,7 +437,7 @@ check_dump_ver_and_size(unsigned int dumpver,
         unsigned long long *offset)
 {
     if (g_runtime->dumpver == dumpver) {
-        if (file_size <= transferred_size) {
+        if (transferred_size <= file_size) {
             *retcode = CMD_GETDUMP_OK;
         } else {
             *retcode = CMD_GETDUMP_SIZE_ERR;
@@ -476,7 +476,7 @@ cmd_get_dump(Conn* conn, char *data, int datalen)
     ret = data_reply(conn, retcode, retrc, retlen);
 
     if (offset < file_size) {
-        lseek_cur(dump_fd, offset);
+        lseek_set(dump_fd, offset);
         send_dump_init(conn->sock, dump_fd);
     }
     return ret;

@@ -20,7 +20,7 @@ def cmd_sync(sock, log_ver, log_index):
           pack('II', log_ver, log_index)]
   (retcode, retdata) = cmd(sock, data)
   if retcode == 0:
-      for a in range(4): 
+      for a in range(2): 
           log_ver = unpack('I', sock.recv(4))[0]
           log_pos = unpack('I', sock.recv(4))[0]
           log_record = sock.recv(2)
@@ -40,7 +40,7 @@ def cmd_sync_dump(sock, dumpver, size):
   dump_data = sock.recv(dump_size)
   time.sleep(5)
   print repr(dump_data)
-  time.sleep(300)
+  #time.sleep(300)
 
 def test_cmd_sync(sock):
   # invalid log version
@@ -57,14 +57,24 @@ def test_cmd_sync(sock):
   cmd_sync(sock, 1, 30)
 
 def test_cmd_sync_dump(sock):
-  cmd_sync_dump(sock, 2, 0)
+  # invalid dump version
+  #cmd_sync_dump(sock, 0, 0)
+
+  # nonexistent dump version
+  #cmd_sync_dump(sock, 10, 0)
+
+  # too big size
+  cmd_sync_dump(sock, 2, 100000)
+
+  cmd_sync_dump(sock, 2, 100)
+
 
 def main():
   sock = socket(AF_INET, SOCK_STREAM);
   sock.connect(('localhost', 11003));
 
-  test_cmd_sync(sock)
-  #test_cmd_sync_dump(sock)
+  #test_cmd_sync(sock)
+  test_cmd_sync_dump(sock)
 
   sock.close()
 
