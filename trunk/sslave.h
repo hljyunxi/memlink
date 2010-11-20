@@ -13,7 +13,7 @@ typedef struct _sslave
 {
     int sock;
 	int timeout;
-	int status; // 0.init 1. sync 2.dump 3.recv new log
+	//int status; // 0.init 1. sync 2.dump 3.recv new log
 
 	int binlog_ver;
 	int binlog_index;

@@ -26,10 +26,11 @@ static int
 sslave_recv_log(SSlave *ss)
 {
 	char recvbuf[1024];
-	//int  recvsize = 0;
 	int  checksize = SYNCPOS_LEN + sizeof(short);
 	int  ret;
 	unsigned short  rlen = 0;
+    unsigned int    logver;
+    unsigned int    logline;
 	// send sync
     
     DINFO("slave recv log ...\n");
@@ -51,11 +52,22 @@ sslave_recv_log(SSlave *ss)
 			return -1;
 		}
         DINFO("recv log len:%d\n", rlen);
+        memcpy(&logver, recvbuf, sizeof(int));
+        memcpy(&logline, recvbuf + sizeof(int), sizeof(int));
+        
+        if (logver == ss->logver && logline == ss->logline) {
+            //skip first one
+            continue;
+        }
+
 		unsigned int size = checksize + rlen;	
 		ret = wdata_apply(recvbuf + SYNCPOS_LEN, rlen, 0);
 		if (ret == 0) {
 			synclog_write(g_runtime->synclog, recvbuf, size);
 		}
+
+        ss->logver  = logver;
+        ss->logline = logline;
 	}
 
 	return 0;
@@ -258,7 +270,7 @@ sslave_do_getdump(SSlave *ss)
 
     char    dumpbuf[8192];
     int     buflen = 0;
-    int     fd;
+    int     fd = 0;
 	int		oflag; 
 
 	if (retcode == CMD_GETDUMP_OK) {
@@ -282,26 +294,17 @@ sslave_do_getdump(SSlave *ss)
         ret = readn(ss->sock, dumpbuf, rsize, ss->timeout);    
         if (ret < 0) {
             DERROR("read dump error: %d\n", ret);
-            close(ss->sock);
-            ss->sock = -1;
-            close(fd);
-            return -1;
+            goto sslave_do_getdump_error;
         }
         if (ret == 0) {
             DINFO("read eof! close conn:%d\n", ss->sock);
-            close(ss->sock);
-            ss->sock = -1;
-            close(fd);
-            return -1;
+            goto sslave_do_getdump_error;
         }
         buflen = ret;
         ret = writen(fd, dumpbuf, buflen, 0);
         if (ret < 0) {
             DERROR("write dump error: %d, %s\n", ret, strerror(errno));
-            close(ss->sock);
-            ss->sock = -1;
-            close(fd);
-            return -1;
+            goto sslave_do_getdump_error;
         }
 
         rlen += ret;
@@ -316,6 +319,12 @@ sslave_do_getdump(SSlave *ss)
         return -1;
     }
 	return 0;
+
+sslave_do_getdump_error:
+    close(ss->sock);
+    ss->sock = -1;
+    close(fd);
+    return -1;
 }
 
 int
@@ -390,10 +399,12 @@ sslave_conn_init(SSlave *ss)
 				if (sslave_do_getdump(ss) == 0) {
 					DINFO("load dump ...\n");
 					hashtable_clear_all(g_runtime->ht);
-					loaddump(g_runtime->ht, mdumpfile);
+					dumpfile_load(g_runtime->ht, mdumpfile, 0);
 
 					is_getdump = 1;
-				}
+				}else{
+                    return -1;
+                }
             }
         } 
     }
