@@ -22,6 +22,11 @@ class SyncServer:
 
         self.dump_filename = "mydump.dat"
 
+        self.logver  = 0
+        self.logline = 0
+
+        self.dumpdata = []
+
     def loop(self):
         while True:
             try:
@@ -39,23 +44,26 @@ class SyncServer:
                 newsock.close()
     
     def run(self, sock):
-        logver  = 1
-        logline = 10
-
         f = open(self.dump_filename, 'rb')
         dumpdata = f.read()
         f.close()
 
         dumpformat = struct.unpack("H", dumpdata[:2])[0]
         dumpver    = struct.unpack('I', dumpdata[2:6])[0]
+        dumplogver = struct.unpack('I', dumpdata[6:10])[0]
         print 'dump format:%d ver:%d' % (dumpformat, dumpver)
+        
+        self.logver = dumplogver
+        self.logline = len(self.dumpdata)
 
+        cli_logline = 0
         while (True):
             dlen, cmd, param1, param2 = self.recv_cmd(sock)
             print 'recv len:%d, cmd:%d, %d %d' % (dlen, cmd, param1, param2)
 
             if cmd == CMD_SYNC:
-                if logver == param1 and logline == param2:
+                if self.logver == param1 and self.logline <= param2:
+                    cli_logline = param2
                     self.send_sync_cmd(sock, 0) 
                     break
                 else:
@@ -64,13 +72,16 @@ class SyncServer:
                 self.send_getdump_cmd(sock, 1, dumpver, len(dumpdata))
                 print 'send dump:', sock.send(dumpdata)
                 print 'send dump ok!'
-                break
 
         while True:
-            print 'send data ...', logver, logline
-            self.send_data(sock, logver, logline)
+            print 'send data ...', self.logver, self.logline, cli_logline
+            s = self.send_data(sock, self.logver, cil_logline)
             time.sleep(1)
-            logline += 1
+            if cli_logline > self.logline:
+                print 'add to dumpdata:', repr(s)
+                dumpdata.append(s) 
+                self.logline += 1
+            cli_logline += 1
 
     def recv_cmd(self, sock):
         hlen = sock.recv(2)
@@ -102,6 +113,7 @@ class SyncServer:
         ss = struct.pack('IIH', logver, logline, len(s)) + s
         print 'push:', repr(ss)
         sock.send(ss)
+        return ss
 
     def decode(self, data):
         '''datalen(2B) + cmd(1B) + logver/dumpver(4B) + logline(4B)/size(8B)'''

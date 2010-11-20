@@ -136,8 +136,13 @@ dumpfile(HashTable *ht)
     return ret;
 }
 
+/**
+ * @param ht
+ * @param filename  dumpfile name
+ * @param localdump  is local dump file. 
+ */
 int
-loaddump(HashTable *ht, char *filename)
+dumpfile_load(HashTable *ht, char *filename, int localdump)
 {
     FILE    *fp;
     //char    filename[PATH_MAX];
@@ -164,12 +169,20 @@ loaddump(HashTable *ht, char *filename)
         fclose(fp);
         return -2;
     }
+    
+    unsigned int dumpver;
+    fread(&dumpver, sizeof(int), 1, fp);
+    DINFO("load dumpfile ver: %u\n", dumpver);
+    if (localdump) {
+        g_runtime->dumpver = dumpver;
+    }
 
-    fread(&g_runtime->dumpver, sizeof(int), 1, fp);
-    DINFO("load dumpfile ver: %u\n", g_runtime->dumpver);
-
-    fread(&g_runtime->dumplogver, sizeof(int), 1, fp);
-    DINFO("load dumpfile log ver: %u\n", g_runtime->dumplogver);
+    unsigned int dumplogver;
+    fread(&dumplogver, sizeof(int), 1, fp);
+    DINFO("load dumpfile log ver: %u\n", dumplogver);
+    if (localdump) {
+        g_runtime->dumplogver = dumplogver;
+    }
 
 	char role;
 	fread(&role, sizeof(char), 1, fp);
@@ -275,8 +288,8 @@ int
 dumpfile_logver(char *filename)
 {
     int  ret;
-
     FILE    *dumpf;
+
     dumpf = fopen(filename, "r");
     if (dumpf == NULL) {
         DERROR("open file %s error! %s\n", filename, strerror(errno));
@@ -296,7 +309,6 @@ dumpfile_logver(char *filename)
     fclose(dumpf);
 
     return dump_logver;
-	
 }
 
 void

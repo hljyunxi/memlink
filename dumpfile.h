@@ -9,7 +9,7 @@
 #define DUMP_FORMAT_VERSION 1
 
 int  dumpfile(HashTable *ht);
-int  loaddump(HashTable *ht, char *filename);
+int  dumpfile_load(HashTable *ht, char *filename, int localdump);
 void dumpfile_call_loop(int fd, short event, void *arg);
 int  dumpfile_call();
 int  dumpfile_logver(char *filename);

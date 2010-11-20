@@ -234,9 +234,9 @@ load_data()
         havedump = 1;
     
         DINFO("try load dumpfile ...\n");
-        ret = loaddump(g_runtime->ht, filename);
+        ret = dumpfile_load(g_runtime->ht, filename, 1);
         if (ret < 0) {
-            DERROR("loaddump error: %d\n", ret);
+            DERROR("dumpfile_load error: %d\n", ret);
             MEMLINK_EXIT;
             return -1;
         }
@@ -287,16 +287,16 @@ load_data_slave()
 		if (isfile(master_filename)) {
 			// load dump.master.dat
 			DINFO("try load master dumpfile ...\n");
-			ret = loaddump(g_runtime->ht, master_filename);
+			ret = dumpfile_load(g_runtime->ht, master_filename, 0);
 			if (ret < 0) {
-				DERROR("loaddump error: %d\n", ret);
+				DERROR("dumpfile_load error: %d\n", ret);
 				MEMLINK_EXIT;
 				return -1;
 			}
 		
 			SSlave	*slave = g_runtime->slave;
 
-			slave->logver  = g_runtime->dumplogver;
+			slave->logver  = dumpfile_logver(master_filename);
 			slave->logline = 0;
 
 			slave->dump_logver   = 0;
@@ -313,9 +313,9 @@ load_data_slave()
         havedump = 1;
     
         DINFO("try load dumpfile ...\n");
-        ret = loaddump(g_runtime->ht, dump_filename);
+        ret = dumpfile_load(g_runtime->ht, dump_filename, 1);
         if (ret < 0) {
-            DERROR("loaddump error: %d\n", ret);
+            DERROR("dumpfile_load error: %d\n", ret);
             MEMLINK_EXIT;
             return -1;
         }
