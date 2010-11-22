@@ -133,12 +133,16 @@ synclog_create()
 
     if (end >= len) {
         g_runtime->logver = *(unsigned int*)(slog->index + sizeof(short));
-
-        DINFO("validate synclog ...\n");
-        if (synclog_validate(slog) == SYNCLOG_FULL) {
-            // start a new synclog
+		char role = *(slog->index + SYNCLOG_HEAD_LEN - sizeof(int));
+		if (role != g_cf->role) {
             synclog_rotate(slog);
-        }
+		}else{
+			DINFO("validate synclog ...\n");
+			if (synclog_validate(slog) == SYNCLOG_FULL) {
+				// start a new synclog
+				synclog_rotate(slog);
+			}
+		}
     }
 
     DINFO("=== runtime logver: %u file logver: %u ===\n", g_runtime->logver, (unsigned int)*(slog->index + sizeof(short)));

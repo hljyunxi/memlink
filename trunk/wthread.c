@@ -341,7 +341,7 @@ wdata_apply(char *data, int datalen, int writelog)
 				break;
 			}
 
-            DINFO("unpak pos: %d, mask: %d, array:%d,%d,%d\n", pos, masknum, maskarray[0], maskarray[1], maskarray[2]);
+            DINFO("unpak key:%s, value:%s, pos:%d, mask: %d, array:%d,%d,%d\n", key, value, pos, masknum, maskarray[0], maskarray[1], maskarray[2]);
             ret = hashtable_add_mask(g_runtime->ht, key, value, maskarray, masknum, pos);
             DINFO("hashtable_add_mask: %d\n", ret);
            

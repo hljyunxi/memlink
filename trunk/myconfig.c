@@ -298,13 +298,13 @@ load_data_slave()
 
 			slave->logver  = dumpfile_logver(master_filename);
 			slave->logline = 0;
+			
+			//slave->dump_logver   = 0;
+			//slave->dumpsize      = 0;
+			//slave->dumpfile_size = 0;
 
-			slave->dump_logver   = 0;
-			slave->dumpsize      = 0;
-			slave->dumpfile_size = 0;
-
-			g_runtime->dumpver	  = 0;
-			g_runtime->dumplogver = 0;
+			//g_runtime->dumpver	  = 0;
+			//g_runtime->dumplogver = 0;
 
 			load_master_dump = 1;
 		}
@@ -451,7 +451,8 @@ runtime_create_slave(char *pgname)
     DINFO("load_data ok!\n");
 	
 	sslave_go(rt->slave);
-
+	
+	DINFO("create slave runtime ok!\n");
     return rt;
 }
 

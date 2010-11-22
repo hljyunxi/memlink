@@ -8,7 +8,9 @@ import traceback
 
 CMD_SYNC    = 100 
 CMD_GETDUMP = 101
+
 CMD_DEL     = 5
+CMD_INSERT  = 6
 
 class SyncServer:
     def __init__(self, host, port):
@@ -25,7 +27,9 @@ class SyncServer:
         self.logver  = 0
         self.logline = 0
 
-        self.dumpdata = []
+        self.dumpdatalist = []
+
+        self.seqid = 0
 
     def loop(self):
         while True:
@@ -54,7 +58,7 @@ class SyncServer:
         print 'dump format:%d ver:%d' % (dumpformat, dumpver)
         
         self.logver = dumplogver
-        self.logline = len(self.dumpdata)
+        self.logline = len(self.dumpdatalist)
 
         cli_logline = 0
         while (True):
@@ -75,11 +79,11 @@ class SyncServer:
 
         while True:
             print 'send data ...', self.logver, self.logline, cli_logline
-            s = self.send_data(sock, self.logver, cil_logline)
+            s = self.send_data(sock, self.logver, cli_logline)
             time.sleep(1)
             if cli_logline > self.logline:
-                print 'add to dumpdata:', repr(s)
-                dumpdata.append(s) 
+                print 'add to dumpdatalist:', repr(s)
+                self.dumpdatalist.append(s) 
                 self.logline += 1
             cli_logline += 1
 
@@ -109,8 +113,13 @@ class SyncServer:
     def send_data(self, sock, logver, logline):
         '''logver(4B) + logline(4B) + len(2B) + cmd(1B) + data''' 
         print 'send data:', logver, logline
-        s  = struct.pack('BB4sB12s', CMD_DEL, 4, 'haha', 12, 'abcdefghijkl')
+        #s  = struct.pack('BB4sB12s', CMD_DEL, 4, 'haha', 12, 'abcdefghijkl')
+        #ss = struct.pack('IIH', logver, logline, len(s)) + s
+
+        #s  = struct.pack('BB4sB12sBIIII', CMD_INSERT, 4, 'haha', 12, 'xx%010d' % self.seqid, 3, 4, 1, 0, 0)
+        s  = struct.pack('BB4sB12sBII', CMD_INSERT, 4, 'haha', 12, 'xx%010d' % self.seqid, 1, 1, 0)
         ss = struct.pack('IIH', logver, logline, len(s)) + s
+        self.seqid += 1
         print 'push:', repr(ss)
         sock.send(ss)
         return ss
