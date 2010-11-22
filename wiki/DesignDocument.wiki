@@ -205,14 +205,27 @@ Dump文件的格式为二进制的格式：
 
 状态表示命令执行结果，有这些返回可能：
 
-||状态 ||说明||
-||200 ||表示命令成功执行||
-||300 ||表示客户端命令格式有问题||
-||400 ||表示服务器端临时错误，可以重试||
-||500 ||表示服务器端处理有问题||
-||600 len ||表示后面还有数据，数据的长度为len。||
 
-状态后面的描述字符串为人可读的一个描述字符串，是可选的（600没有描述字符串）。状态和描述字符串以一个空格分隔。
+|| MEMLINK_ERR_CLIENT || 客户端错误 ||
+|| MEMLINK_ERR_SERVER || 服务器端错误 ||
+|| MEMLINK_ERR_SERVER_TEMP || 服务器端临时错误 ||
+|| MEMLINK_ERR_CLIENT_CMD || 客户端发送的命令号错误 ||
+|| MEMLINK_ERR_NOKEY || key不存在 ||
+|| MEMLINK_ERR_EKEY ||key已经存在　||
+|| MEMLINK_ERR_CONNECT || 网络错误，无法连接服务器 ||
+|| MEMLINK_ERR_RETCODE || 返回代码错误 ||
+|| MEMLINK_ERR_NOVAL || value不存在 ||
+|| MEMLINK_ERR_MEM || 内存错误 ||
+|| MEMLINK_ERR_MASK || mask错误 ||
+|| MEMLINK_ERR_PACKAGE || 包错误 ||
+|| MEMLINK_ERR_REMOVED || 该项已删除 ||
+|| MEMLINK_ERR_RANGE_SIZE || range范围错误 ||
+|| MEMLINK_ERR_SEND || 发送数据错误 ||
+|| MEMLINK_ERR_RECV || 接收数据错误 ||
+|| MEMLINK_ERR_TIMEOUT || 命令执行超时 ||
+|| MEMLINK_ERR || 其他错误 ||
+|| MEMLINK_FAILED || 操作失败 ||
+|| MEMLINK_OK || 执行成功 ||
 
 
 具体我们支持的命令如下：
