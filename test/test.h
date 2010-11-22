@@ -1,0 +1,8 @@
+#ifndef MEMLINK_TEST_H
+#define MEMLINK_TEST_H
+
+
+#define MEMLINK_READ_PORT	11001
+#define MEMLINK_WRITE_PORT	11002
+
+#endif

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <memlink_client.h>
 #include "logfile.h"
-
+#include "test.h"
 
 int check_mask(MemLink *m, char *key, char *newmask)
 {
@@ -38,7 +38,7 @@ int main()
 #ifdef DEBUG
 	logfile_create("stdout", 3);
 #endif
-	m = memlink_create("127.0.0.1", 11001, 11002, 30);
+	m = memlink_create("127.0.0.1", MEMLINK_READ_PORT, MEMLINK_WRITE_PORT, 30);
 	if (NULL == m) {
 		DERROR("memlink_create error!\n");
 		return -1;
@@ -64,6 +64,19 @@ int main()
 		return -3;
 	}
 	
+//////added by wyx 
+	ret = memlink_cmd_mask(m, key, "xxxx", 4, maskstr);
+	if (ret != MEMLINK_ERR_NOVAL) {
+		DERROR("mask error, must novalue, key:%s, val:%s, ret:%d\n", key, "xxxx", ret);
+		return -4;
+	}
+    ret = memlink_cmd_mask(m, "xxxxxx", "xxxx", 4, maskstr);
+	if (ret != MEMLINK_ERR_NOKEY) {
+		DERROR("mask error, must nokey, key:%s\n", key);
+		return -4;
+	}
+////////////end
+
 	char *newmask  = "7:2:1";
 	ret = memlink_cmd_mask(m, key, val, strlen(val), newmask);
 	if (ret != MEMLINK_OK) {

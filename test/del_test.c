@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <memlink_client.h>
 #include "logfile.h"
+#include "test.h"
 
 int main()
 {
@@ -10,7 +11,7 @@ int main()
 	logfile_create("stdout", 3);
 #endif
 	
-	m = memlink_create("127.0.0.1", 11001, 11002, 30);
+	m = memlink_create("127.0.0.1", MEMLINK_READ_PORT, MEMLINK_WRITE_PORT, 30);
 	if (NULL == m) {
 		DERROR("memlink_create error!\n");
 		return -1;
@@ -33,7 +34,7 @@ int main()
 	for (i = 0; i < 100; i++) {
 		sprintf(val, "%06d", i);
 
-		ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr, i * 3);
+		ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr, i);
 		if (ret != MEMLINK_OK) {
 			DERROR("insert error, key:%s, value:%s, mask:%s, i:%d\n", buf, val, maskstr, i);
 			return -3;
@@ -79,12 +80,13 @@ int main()
 
 		MemLinkResult	result;
 
-		ret = memlink_cmd_range(m, buf, "::", 0, 100, &result);
+		ret = memlink_cmd_range(m, buf, "", 0, 100, &result);
 		if (ret != MEMLINK_OK) {
 			DERROR("range error, ret:%d\n", ret);
 			return -6;
 		}
-		
+        //DINFO("result.count:%d, i:%d \n", result.count, i);
+        
 		MemLinkItem		*item = result.root;
 
 		if (NULL == item) {
@@ -103,6 +105,16 @@ int main()
 		memlink_result_free(&result);
 	}
 
+	i = 99;
+	sprintf(val, "%06d", i);
+	ret = memlink_cmd_del(m, buf, val, strlen(val));		
+	ret = memlink_cmd_del(m, buf, val, strlen(val));
+	//DINFO("ret:%d, val:%d \n", ret, i);
+	if (ret == MEMLINK_OK) {
+		DERROR("del error, key:%s, val:%s, ret: %d\n", buf, val, ret);
+		return -5;
+	}
+	
 memlink_over:
 	memlink_destroy(m);
 
