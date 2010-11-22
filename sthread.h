@@ -18,6 +18,7 @@ typedef struct _syncConn
 {
     CONN_MEMBER
 
+	struct event sync_evt;
     struct timeval interval;
 
     int sync_fd;                // file descriptor for sync log or dump
