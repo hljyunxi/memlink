@@ -55,7 +55,8 @@ lseek_or_exit(int fd, off_t offset, int whence)
 {
     off_t pos;
     if ((pos = lseek(fd, offset, whence)) == -1) {
-        DERROR("lseek error! %s\n", strerror(errno));
+        DERROR("lseek error: {fd: %d, offset: %u, whence: %d}! %s\n", fd, 
+                (unsigned int)offset, whence, strerror(errno));
         close(fd);
         MEMLINK_EXIT;    
     }
@@ -457,7 +458,6 @@ sthread_read(int fd, short event, void *arg)
 
     DINFO("sthread_read...\n");
     conn = (SyncConn *)conn_create(fd, sizeof(SyncConn));
-    conn->sync_fd = -1;
 
     if (conn) {
         conn->port = g_cf->sync_port;
@@ -506,6 +506,7 @@ sdata_ready(Conn *c, char *data, int datalen)
     int ret;
     char cmd;
     SyncConn *conn = (SyncConn*) c;
+    conn->sync_fd = -1;
 
     memcpy(&cmd, data + sizeof(short), sizeof(char));
     char buf[256] = {0};
@@ -523,8 +524,6 @@ sdata_ready(Conn *c, char *data, int datalen)
     } 
     DINFO("data_reply return: %d\n", ret);
     return 0;
-
-    return 0;
 }
 
 void sthread_destroy(SThread *st) 
@@ -538,6 +537,7 @@ sync_conn_destroy(Conn *c)
     DINFO("destroy sync connection\n");
     SyncConn *conn = (SyncConn*) c;
     event_del(&conn->sync_evt);
+    event_del(&conn->evt);
     close(conn->sock);
     if (conn->sync_fd >= 0)
         close(conn->sync_fd);
