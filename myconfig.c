@@ -362,60 +362,6 @@ load_data_slave()
 
 Runtime *g_runtime;
 
-/*
-static Runtime* 
-runtime_init(char *pgname) 
-{
-    Runtime *rt = (Runtime*)zz_malloc(sizeof(Runtime));
-    if (NULL == rt) {
-        DERROR("malloc Runtime error!\n");
-        MEMLINK_EXIT;
-        return NULL; 
-    }
-    memset(rt, 0, sizeof(Runtime));
-    g_runtime = rt;
-
-    realpath(pgname, rt->home);
-    return rt;
-}
-
-int mainserver_init(Runtime *rt) 
-{
-    rt->server = mainserver_create();
-    if (NULL == rt->server) {
-        DERROR("mainserver_create error!\n");
-        MEMLINK_EXIT;
-        return -1;
-    }
-    DINFO("main thread create ok!\n");
-    return 0;
-}
-
-int hashtable_init(Runtime* rt) 
-{
-    rt->ht = hashtable_create();
-    if (NULL == rt->ht) {
-        DERROR("hashtable_create error!\n");
-        MEMLINK_EXIT;
-        return -1;
-    }
-    DINFO("hashtable create ok!\n");
-    return 0;
-}
-
-int mempool_init(Runtime* rt) 
-{
-    rt->mpool = mempool_create();
-    if (NULL == rt->mpool) {
-        DERROR("mempool create error!\n");
-        MEMLINK_EXIT;
-        return -1;
-    }
-    DINFO("mempool create ok!\n");
-    return 0;
-}
-*/
-
 Runtime*
 runtime_create_common(char *pgname)
 {

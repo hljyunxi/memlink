@@ -2,8 +2,8 @@ import os, sys
 from memlinkclient import *
 #print dir(memlink)
 
-READ_PORT  = 11021
-WRITE_PORT = 11022
+READ_PORT  = 11001
+WRITE_PORT = 11002
 
 def test():
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)

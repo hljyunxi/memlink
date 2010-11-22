@@ -27,6 +27,7 @@
 
 
  */
+
 #define CONN_MEMBER \
     int     sock;\
     char    rbuf[CONN_MAX_READ_LEN];\
@@ -41,9 +42,6 @@
     struct timeval      ctime;\
 	void	(*destroy)(struct _conn *conn);\
 	int		(*ready)(struct _conn *conn, char *data, int datalen);
-
-
-
 
 typedef struct _conn
 {

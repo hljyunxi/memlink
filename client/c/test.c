@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
     }
 
 
-    printf("============== dump ===============\n", i);
+    printf("============== dump %d ===============\n", i);
     ret = memlink_cmd_dump(m);
     if (ret != MEMLINK_OK) {
         DERROR("dump error: %d\n", ret);

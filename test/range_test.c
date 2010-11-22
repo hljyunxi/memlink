@@ -95,12 +95,12 @@ int main()
 
 	for (i = 0; i < 6; i++) {
 		MemLinkResult	result2;
-
 		ret = memlink_cmd_range(m, buf, masktest[i], 0, insertnum, &result2);
 		if (ret != MEMLINK_OK) {
 			DERROR("range error, ret:%d\n", ret);
 			return -8;
 		}
+        //DINFO("i:%d, mask: %s key:%s len:%d count:%d\n", i, masktest[i], buf, insertnum, result2.count);
 		if (result2.count != insertnum) {
 			DERROR("range return count error, mask:%s, count:%d\n", masktest[i], result2.count);
 			reterr++;
