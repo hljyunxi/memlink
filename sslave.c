@@ -78,48 +78,59 @@ sslave_load_master_dump_info(SSlave *ss, char *dumpfile, long long *filesize, lo
 {
 	//char dumpfile[PATH_MAX];	
 	int  ret;
-
+	long long fsize;
+	long long dsize;
+	unsigned int mylogver;
 	//snprintf(dumpfile, PATH_MAX, "%s/dump.master.dat", g_cf->datadir);
 	
-	if (isfile(dumpfile)) {
-		FILE	*dumpf;	
-		dumpf = fopen(dumpfile, "r");
-		if (dumpf == NULL) {
-			DERROR("open file %s error! %s\n", dumpfile, strerror(errno));
-			return -1;
-		}
-		
-		fseek(dumpf, 0, SEEK_END);
-		*filesize = ftell(dumpf);
-
-		if (*filesize >= DUMP_HEAD_LEN) {
-			long long size;
-			fseek(dumpf, DUMP_HEAD_LEN - sizeof(long long), SEEK_SET);
-			ret = fread(&size, 1, sizeof(long long), dumpf);
-			if (ret != sizeof(long long)) {
-				DERROR("fread error, ret:%d, %s\n", ret, strerror(errno));
-				fclose(dumpf);
-				return -1;
-				//goto read_dump_over;
-			}
-			*dumpsize = size;
-
-			int pos = sizeof(short) + sizeof(int);
-			fseek(dumpf, pos, SEEK_SET);
-
-			ret = fread(logver, 1, sizeof(int), dumpf);
-			if (ret != sizeof(int)) {
-				DERROR("fread error: %s\n", strerror(errno));
-				fclose(dumpf);
-				return -1;
-				//goto read_dump_over;
-			}
-		}else{
-			*dumpsize   = 0;	
-			*logver		= 0;
-		}
-		fclose(dumpf);
+	if (!isfile(dumpfile)) {
+		return -1;
 	}
+
+	FILE	*dumpf;	
+	dumpf = fopen(dumpfile, "r");
+	if (dumpf == NULL) {
+		DERROR("open file %s error! %s\n", dumpfile, strerror(errno));
+		return -1;
+	}
+
+	fseek(dumpf, 0, SEEK_END);
+	fsize = ftell(dumpf);
+
+	if (filesize) {
+		*filesize = fsize;
+	}
+
+	if (fsize >= DUMP_HEAD_LEN) {
+		fseek(dumpf, DUMP_HEAD_LEN - sizeof(long long), SEEK_SET);
+		ret = fread(&dsize, 1, sizeof(long long), dumpf);
+		if (ret != sizeof(long long)) {
+			DERROR("fread error, ret:%d, %s\n", ret, strerror(errno));
+			fclose(dumpf);
+			return -1;
+			//goto read_dump_over;
+		}
+		if (dumpsize) {
+			*dumpsize = dsize;
+		}
+
+		int pos = sizeof(short) + sizeof(int);
+		fseek(dumpf, pos, SEEK_SET);
+
+		ret = fread(&mylogver, 1, sizeof(int), dumpf);
+		if (ret != sizeof(int)) {
+			DERROR("fread error: %s\n", strerror(errno));
+			fclose(dumpf);
+			return -1;
+			//goto read_dump_over;
+		}
+
+		if (logver) {
+			*logver = mylogver;
+		}
+	}
+	fclose(dumpf);
+
 
 	return 0;
 }
@@ -348,9 +359,11 @@ sslave_conn_init(SSlave *ss)
     DINFO("slave init ...\n");
     DINFO("ss->dumpsize:%lld, ss->dumpfile_size:%lld, ss->dump_logver:%d\n", ss->dumpsize, ss->dumpfile_size, ss->dump_logver);
 
-	if (ss->dump_logver == 0) {
-		sslave_load_master_dump_info(ss, mdumpfile, &ss->dumpfile_size, &ss->dumpsize, &ss->dump_logver);
-	}
+	//if (ss->dump_logver == 0) {
+	//	sslave_load_master_dump_info(ss, mdumpfile, &ss->dumpfile_size, &ss->dumpsize, &ss->dump_logver);
+	//}
+
+	sslave_load_master_dump_info(ss, mdumpfile, &ss->dumpfile_size, &ss->dumpsize, &ss->dump_logver);
 
 	if (ss->logver == 0) {
 		ss->logver  = ss->dump_logver;
@@ -400,7 +413,10 @@ sslave_conn_init(SSlave *ss)
 					DINFO("load dump ...\n");
 					hashtable_clear_all(g_runtime->ht);
 					dumpfile_load(g_runtime->ht, mdumpfile, 0);
+					dumpfile(g_runtime->ht);
 
+					sslave_load_master_dump_info(ss, mdumpfile, NULL, NULL, &ss->logver);
+					ss->logline = 0;
 					is_getdump = 1;
 				}else{
                     return -1;

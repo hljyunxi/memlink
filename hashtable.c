@@ -317,7 +317,9 @@ dataitem_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk, DataB
             *data = item;
             return MEMLINK_OK;
         }
-        skipn -= 1;
+		if (dataitem_have_data(node, item, 0) == MEMLINK_TRUE) {
+			skipn -= 1;
+		}
         item  += datalen;
     }
 
@@ -753,7 +755,6 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
         DataBlock   *lastnewbk = newbk;
         for (i = 0; i < g_cf->block_data_count; i++) {
             //char buf[128] = {0};
-
             if (itemdata == posaddr) { // position for insert, if last position, may be null
                 DINFO("insert pos, go\n");
                 dataitem_copy(node, todata, value, mask);
@@ -786,7 +787,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
                 //DINFO("data2 %p ... %s\n", itemdata, formatb(itemdata + node->valuesize, node->masksize, buf, 128) );
                 //DINFO("copy data ...  %s\n", formatb(itemdata + node->valuesize, node->masksize, buf, 128) );
                 memcpy(todata, itemdata, datalen);
-				if (dataitem_have_data(node, itemdata, 0)) {
+				if (dataitem_have_data(node, itemdata, 1)) {
 					lastnewbk->visible_count += 1;	
 				}else{
 					lastnewbk->mask_count ++;
