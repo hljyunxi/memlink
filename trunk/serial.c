@@ -54,6 +54,9 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
     char    mf;
     // 前两位分别表示真实删除和标记删除，跳过
     // mask[idx] = mask[idx] & 0xfc;
+
+    memset(mask, 0, masknum);
+    
     mask[0] = 0x01;  // 默认设置数据有效，非标记删除
     b += 2;
 
@@ -76,13 +79,15 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
         //DINFO("y: %d, n: %d\n", y, n);
         v = v << b;
         //DINFO("v: %x %b\n", v, v); 
-        unsigned char m = pow(2, b) - 1;
+        //unsigned char m = pow(2, b) - 1;
+        unsigned char m = 0xffffffff >> (32 - b);
         unsigned char x = mask[idx] & m;
         //DINFO("m: %d, %x, x: %d, %x\n", m, m, x, x);
 
         v = v | x;
 
-        m = (pow(2, 8 - y) - 1);
+        //m = (pow(2, 8 - y) - 1);
+        m = 0xff >> y;
         m = m << y;
         x = mask[idx + n - 1] & m;
 
@@ -105,7 +110,8 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
     }
 
     if (b > 0) {
-        mask[idx] = mask[idx] & (char)(pow(2, b) - 1);
+        //mask[idx] = mask[idx] & (char)(pow(2, b) - 1);
+        mask[idx] = mask[idx] & (char)(0xff >> (8 - b));
     }
 
 
@@ -221,11 +227,13 @@ mask_array2flag(unsigned char *maskformat, unsigned int *maskarray, char masknum
     int xlen;
     unsigned int v;
 
+    memset(mask, 0, masknum);
+
     mask[0] = 0x03;
     b = 2;
 
     DINFO("masknum: %d\n", masknum);
-
+    v = 0;
     for (i = 0; i < masknum; i++) {
         mf = maskformat[i];
         m  = maskarray[i];
@@ -233,11 +241,12 @@ mask_array2flag(unsigned char *maskformat, unsigned int *maskarray, char masknum
         DINFO("i: %d, format: %d, array: %d\n", i, mf, m);
         if (m == UINT_MAX) { // set to 1
             xlen = (b + mf) / 8 + ((b + mf) % 8 > 0 ? 1:0);
-            v = pow(2, mf) - 1;
+            //v = pow(2, mf) - 1;
+            v = 0xffffffff >> (32 - mf);
+            //v = 0xffffffff;
             v = v << b;
 
             char *cpdata = (char *)&v;
-
             for (j = 0; j < xlen; j++) {
                 mask[idx + j] |= cpdata[j];
             }
@@ -246,7 +255,6 @@ mask_array2flag(unsigned char *maskformat, unsigned int *maskarray, char masknum
             b = (b + mf) % 8;
         }else{ // set to 0
             b += mf;
-
             if (b >= 8) {
                 idx++;
                 b = b % 8;

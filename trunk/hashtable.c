@@ -188,11 +188,11 @@ dataitem_lookup_pos_mask(HashNode *node, int pos, int visible, char *maskval, ch
 			if (dataitem_have_data(node, itemdata, visible)) {
 				char *maskdata = itemdata + node->valuesize;	
 				
-				/*char buf[64];
-				DINFO("i: %d, maskdata: %s\n", i, formatb(maskdata, node->masksize, buf, 64));
-				*/
+				char buf[64], buf2[64];
+				DINFO("i: %d, maskdata: %s maskflag: %s\n", i, formatb(maskdata, node->masksize, buf, 64), formatb(maskflag, node->masksize, buf2, 64));
+				
 				for (k = 0; k < node->masksize; k++) {
-					//DINFO("check k:%d, maskdata:%x, maskflag:%x, maskval:%x\n", k, maskdata[k], maskflag[k], maskval[k]);
+					DINFO("check k:%d, maskdata:%x, maskflag:%x, maskval:%x\n", k, maskdata[k], maskflag[k], maskval[k]);
 					if ((maskdata[k] & maskflag[k]) != maskval[k]) {
 						break;
 					}
@@ -1062,16 +1062,28 @@ mask_array2_binary_flag(unsigned char *maskformat, unsigned int *maskarray, int 
         }
         maskval[0] = maskval[0] & 0xfc;
 
+#ifdef DEBUG
+        char buf[128];
+
+        DINFO("2binary: %s\n", formatb(maskval, masklen, buf, 128));
+#endif
         masklen = mask_array2flag(maskformat, maskarray, masknum, maskflag);
         if (masklen <= 0) {
             DERROR("mask_array2flag error\n");
             return -2;
         }
-
+#ifdef DEBUG
+        DINFO("2flag: %s\n", formatb(maskflag, masklen, buf, 128));
+#endif
         for (j = 0; j < masknum; j++) {
             maskflag[j] = ~maskflag[j];
         }
         maskflag[0] = maskflag[0] & 0xfc;
+
+#ifdef DEBUG
+        DINFO("^2flag: %s\n", formatb(maskflag, masklen, buf, 128));
+#endif
+
     }else{
         masknum = 0;
     }
@@ -1101,42 +1113,6 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
     }
 
     if (masknum > 0) {
-		/*
-        int j;
-		for (j = 0; j < masknum; j++) {
-            if (maskarray[j] != UINT_MAX)
-			    break;
-		}
-        DINFO("j: %d, masknum: %d\n", j, masknum);
-        
-        if (j < masknum) {
-            int masklen = mask_array2binary(node->maskformat, maskarray, masknum, maskval);
-            if (masklen <= 0) {
-                DERROR("mask_string2array error\n");
-                return -2;
-            }
-            maskval[0] = maskval[0] & 0xfc;
-
-            masklen = mask_array2flag(node->maskformat, maskarray, masknum, maskflag);
-            if (masklen <= 0) {
-                DERROR("mask_array2flag error\n");
-                return -2;
-            }
-
-            for (j = 0; j < masknum; j++) {
-                maskflag[j] = ~maskflag[j];
-            }
-            maskflag[0] = maskflag[0] & 0xfc;
-
-            char buf[64];
-
-            DINFO("maskval:  %s\n", formatb(maskval, node->masksize, buf, 64));
-            DINFO("maskflag: %s\n", formatb(maskflag, node->masksize, buf, 64));
-
-        }else{
-            masknum = 0;
-        }
-		*/
         masknum = mask_array2_binary_flag(node->maskformat, maskarray, masknum, maskval, maskflag);
     }
 
@@ -1224,10 +1200,10 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
                 memcpy(data + idx, maskstr, mlen);
                 idx += mlen;
 #else
-                /*char buf[128];
+                char buf[128];
 				snprintf(buf, node->valuesize + 1, "%s", itemdata);
 				DINFO("ok, copy item ... i:%d, value:%s\n", i, buf);
-				*/
+				
 				memcpy(data + idx, itemdata, datalen);
 				idx += datalen;
 #endif

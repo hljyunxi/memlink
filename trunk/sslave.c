@@ -445,6 +445,7 @@ sslave_run(void *args)
 			ret = sslave_conn_init(ss);
 			if (ret < 0) {
                 DINFO("slave conn init error!\n");
+                sleep(1);
 				continue;
 			}
 			//break;

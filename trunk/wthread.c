@@ -499,12 +499,11 @@ wthread_read(int fd, short event, void *arg)
     Conn    *conn;
     
     DINFO("wthread_read ...\n");
-    conn = conn_create(fd, sizeof(WThread));
+    conn = conn_create(fd, sizeof(Conn));
     if (conn) {
         int ret = 0;
-        conn->port = g_cf->write_port;
-		conn->base = wt->base;
-		
+        conn->port  = g_cf->write_port;
+		conn->base  = wt->base;
 		conn->ready = wdata_ready;
 
         DINFO("new conn: %d\n", conn->sock);
@@ -514,7 +513,6 @@ wthread_read(int fd, short event, void *arg)
 			DERROR("change_event error: %d, close conn.\n", ret);
 			conn->destroy(conn);
 		}
-
     }
 }
 
@@ -593,7 +591,6 @@ client_read(int fd, short event, void *arg)
             }*/
 
 			conn->ready(conn, conn->rbuf, mlen);
-        
             memmove(conn->rbuf, conn->rbuf + mlen, conn->rlen - mlen);
             conn->rlen -= mlen;
         }else{
