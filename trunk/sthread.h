@@ -12,40 +12,24 @@ typedef struct _sthread
 } SThread;
 
 /**
- * Connection for sending sync log.
+ * Connection for sync.
  */
 typedef struct _syncConn 
 {
-    int sock; // socket file descriptor
+    CONN_MEMBER
 
-    int log_fd; // sync log file descriptor
-    char log_name[PATH_MAX];
-    unsigned int log_ver; // sync log version
+    struct timeval interval;
+
+    int sync_fd;                // file descriptor for sync log or dump
+    char log_name[PATH_MAX];    // sync log path
+    unsigned int log_ver;       // sync log version
     unsigned int log_index_pos; // sync log index position
 
-    struct event evt;
-    struct event_base *base;
-} SyncLogConn;
-
-/**
- * Connection for sending dump file.
- */
-typedef struct _dumpConn
-{
-    int sock;
-    int dump_fd;
-
-    struct event evt;
-    struct event_base *base;
-} DumpConn;
+} SyncConn;
 
 SThread* sthread_create();
 void sthread_destroy(SThread *st);
+
 int  sdata_ready(Conn *conn, char *data, int datalen);
-
-SyncLogConn* synclog_conn_create();
-void synclog_conn_destroy(SyncLogConn *conn);
-DumpConn* dump_conn_create();
-void dump_conn_destroy(DumpConn *conn);
-
+void sync_conn_destroy(Conn *conn);
 #endif
