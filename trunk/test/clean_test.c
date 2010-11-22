@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <memlink_client.h>
 #include "logfile.h"
+#include "test.h"
 
 int main()
 {
@@ -9,7 +10,7 @@ int main()
 #ifdef DEBUG
 	logfile_create("stdout", 3);
 #endif
-	m = memlink_create("127.0.0.1", 11001, 11002, 30);
+	m = memlink_create("127.0.0.1", MEMLINK_READ_PORT, MEMLINK_WRITE_PORT, 30);
 	if (NULL == m) {
 		DERROR("memlink_create error!\n");
 		return -1;
@@ -43,7 +44,14 @@ int main()
 	}
 
 	//DINFO("insert ok!\n");
-
+/*
+	MemLinkStat	stat;
+	ret = memlink_cmd_stat(m, key, &stat);
+	if (ret != MEMLINK_OK) {
+		DERROR("stat error, key:%s, ret:%d\n", key, ret);
+		return -4;
+	}
+*/	
     for (i = 0; i < insertnum/2; i++) {
         sprintf(val, "%06d", i);
 		//DINFO("====== try del %s %s %d======\n", key, val, i);

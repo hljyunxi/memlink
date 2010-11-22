@@ -3,6 +3,7 @@
 #include <string.h>
 #include <memlink_client.h>
 #include "logfile.h"
+#include "test.h"
 
 int main()
 {
@@ -10,7 +11,7 @@ int main()
 #ifdef DEBUG
 	logfile_create("stdout", 3);
 #endif
-	m = memlink_create("127.0.0.1", 11001, 11002, 30);
+	m = memlink_create("127.0.0.1", MEMLINK_READ_PORT, MEMLINK_WRITE_PORT, 30);
 	if (NULL == m) {
 		DERROR("memlink_create error!\n");
 		return -1;

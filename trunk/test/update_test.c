@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <memlink_client.h>
 #include "logfile.h"
-
+#include "test.h"
 
 int main()
 {
@@ -10,7 +10,7 @@ int main()
 #ifdef DEBUG
 	logfile_create("stdout", 3);
 #endif
-	m = memlink_create("127.0.0.1", 11001, 11002, 30);
+	m = memlink_create("127.0.0.1", MEMLINK_READ_PORT, MEMLINK_WRITE_PORT, 30);
 	if (NULL == m) {
 		DERROR("memlink_create error!\n");
 		return -1;
@@ -41,7 +41,18 @@ int main()
 		}
 	}
 
-
+//add by wyx
+	ret = memlink_cmd_update(m, buf, "xxxx", 4, 0);
+	if (ret != MEMLINK_ERR_NOVAL) {
+		DERROR("update error, must novalue, key:%s, val:%s, ret:%d\n", buf, "xxxx", ret);
+		return -4;
+	}
+    ret = memlink_cmd_update(m, "xxxxxx", "xxxx", 4, 0);
+	if (ret != MEMLINK_ERR_NOKEY) {
+		DERROR("update error, must nokey, key:%s\n", buf);
+		return -4;
+	}
+//end
 	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
         //DINFO("====== insert i:%d\n", i);

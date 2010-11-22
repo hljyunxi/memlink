@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <memlink_client.h>
 #include "logfile.h"
-
+#include "test.h"
 
 int main()
 {
@@ -10,7 +10,7 @@ int main()
 #ifdef DEBUG
 	logfile_create("stdout", 3);
 #endif
-	m = memlink_create("127.0.0.1", 11001, 11002, 30);
+	m = memlink_create("127.0.0.1", MEMLINK_READ_PORT, MEMLINK_WRITE_PORT, 30);
 	if (NULL == m) {
 		DERROR("memlink_create error!\n");
 		return -1;
@@ -48,10 +48,22 @@ int main()
 		DERROR("tag error, ret:%d\n", ret);
 		return -4;
 	}
-
+	
+	{
+		MemLinkCount	count2;
+		ret = memlink_cmd_count(m, buf, "", &count2);
+		if (ret != MEMLINK_OK) {
+			DERROR("count error, ret:%d\n", ret);
+			return -4;
+		}
+		if (count2.visible_count != insertnum - 1) {
+			DERROR("count visible_count error: %d\n", count2.visible_count);
+			return -5;
+		}
+	}
+	
 	MemLinkResult	result;
-
-	ret = memlink_cmd_range(m, buf, "::", 0, 200, &result);
+	ret = memlink_cmd_range(m, buf, "", 0, 200, &result);
 	if (ret != MEMLINK_OK) {
 		DERROR("range error, ret:%d\n", ret);
 		return -5;
@@ -73,6 +85,19 @@ int main()
 	if (ret != MEMLINK_OK) {
 		DERROR("tag error, ret:%d\n", ret);
 		return -7;
+	}
+	
+	{
+		MemLinkCount	count2;
+		ret = memlink_cmd_count(m, buf, "", &count2);
+		if (ret != MEMLINK_OK) {
+			DERROR("count error, ret:%d\n", ret);
+			return -4;
+		}
+		if (count2.visible_count != insertnum) {
+			DERROR("count visible_count error: %d\n", count2.visible_count);
+			return -5;
+		}
 	}
 
 	ret = memlink_cmd_range(m, buf, "::", 0, 200, &result);
