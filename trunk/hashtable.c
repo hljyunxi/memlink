@@ -1155,6 +1155,7 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
         for (i = 0; i < g_cf->block_data_count; i++) {
 			if (addr) {
 				if (itemdata != addr) {
+					itemdata += datalen;
 					continue;
 				}else{
 					addr = NULL;
@@ -1172,6 +1173,7 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
 					}
 					if (k < node->masksize) { // not equal
 						//DINFO("not equal.\n");
+						itemdata += datalen;
 						continue;
 					}
 				}
