@@ -308,16 +308,16 @@ send_synclog(int fd, short event, void *arg)
     send_synclog_record(conn);
 
     reset_interval(&(conn->interval), g_cf->timeout);
-    event_add(&conn->evt, &(conn->interval));
+    event_add(&conn->sync_evt, &(conn->interval));
 }
 
 static void 
 send_synclog_init(SyncConn* conn) 
 {
-    evtimer_set(&conn->evt, send_synclog, conn);
-    event_base_set(conn->base, &conn->evt);
+    evtimer_set(&conn->sync_evt, send_synclog, conn);
+    event_base_set(conn->base, &conn->sync_evt);
     reset_interval(&(conn->interval), 0);
-    event_add(&conn->evt, &(conn->interval));
+    event_add(&conn->sync_evt, &(conn->interval));
 }
 
 static int
@@ -390,10 +390,10 @@ send_dump(int fd, short event, void *arg)
 static void 
 send_dump_init(SyncConn *conn)
 {
-    evtimer_set(&conn->evt, send_dump, conn);
-    event_base_set(conn->base, &conn->evt);
+    evtimer_set(&conn->sync_evt, send_dump, conn);
+    event_base_set(conn->base, &conn->sync_evt);
     reset_interval(&(conn->interval), 0);
-    event_add(&conn->evt, &(conn->interval));
+    event_add(&conn->sync_evt, &(conn->interval));
 }
 
 static void
@@ -537,7 +537,7 @@ sync_conn_destroy(Conn *c)
 {
     DINFO("destroy sync connection\n");
     SyncConn *conn = (SyncConn*) c;
-    event_del(&conn->evt);
+    event_del(&conn->sync_evt);
     close(conn->sock);
     if (conn->sync_fd >= 0)
         close(conn->sync_fd);
