@@ -43,8 +43,17 @@ def cmd_sync_dump(sock, dumpver, size):
   #time.sleep(300)
 
 def test_cmd_sync(sock):
+  cmd_sync(sock, 1, 0)
+  sys.exit(1)
+  #time.sleep(6000)
+
+  #cmd_sync(sock, 2, 0)
+  #cmd_sync(sock, 1, 0)
+
   # invalid log version
   cmd_sync(sock, 0, 0)
+  #sys.exit(1)
+
   # invalid log no
   cmd_sync(sock, 1, 1000000)
   # nonexistent index 
@@ -54,7 +63,7 @@ def test_cmd_sync(sock):
 
   #sys.exit(1)
   # valid
-  cmd_sync(sock, 1, 30)
+  #cmd_sync(sock, 1, 0)
 
 def test_cmd_sync_dump(sock):
   # invalid dump version
@@ -73,8 +82,8 @@ def main():
   sock = socket(AF_INET, SOCK_STREAM);
   sock.connect(('localhost', 11003));
 
-  #test_cmd_sync(sock)
-  test_cmd_sync_dump(sock)
+  test_cmd_sync(sock)
+  #test_cmd_sync_dump(sock)
 
   sock.close()
 
