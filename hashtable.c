@@ -187,10 +187,10 @@ dataitem_lookup_pos_mask(HashNode *node, int pos, int visible, char *maskval, ch
 		for (i = 0; i < g_cf->block_data_count; i++) {
 			if (dataitem_have_data(node, itemdata, visible)) {
 				char *maskdata = itemdata + node->valuesize;	
-				
+#ifdef DEBUG			
 				char buf[64], buf2[64];
 				DINFO("i: %d, maskdata: %s maskflag: %s\n", i, formatb(maskdata, node->masksize, buf, 64), formatb(maskflag, node->masksize, buf2, 64));
-				
+#endif		
 				for (k = 0; k < node->masksize; k++) {
 					DINFO("check k:%d, maskdata:%x, maskflag:%x, maskval:%x\n", k, maskdata[k], maskflag[k], maskval[k]);
 					if ((maskdata[k] & maskflag[k]) != maskval[k]) {
@@ -199,6 +199,7 @@ dataitem_lookup_pos_mask(HashNode *node, int pos, int visible, char *maskval, ch
 				}
 				if (k < node->masksize) { // not equal
 					DINFO("not equal.\n");
+			        itemdata += datalen;
 					continue;
 				}
 
@@ -796,6 +797,13 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
             }
             itemdata += datalen;
         }
+
+        // insert to last
+        if (posaddr == enddata) {
+            dataitem_copy(node, todata, value, mask);
+            lastnewbk->visible_count ++;
+            todata += datalen; 
+        }
     
         if (dbk->next != newbk->next) { // create two datablock
             DataBlock   *nextbk = dbk->next; 
@@ -1104,8 +1112,6 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
 	char maskflag[HASHTABLE_MASK_MAX_LEN * sizeof(int)];
     HashNode    *node;
 	int			startn;
-    //int         masklen = 0;
-	//int			havemask = 0;
 
     node = hashtable_find(ht, key);
     if (NULL == node) {
