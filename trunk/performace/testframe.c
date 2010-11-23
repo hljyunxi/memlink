@@ -19,10 +19,10 @@ extern int create_key(char *key);
 
 TestConfig *g_tcf;
 
-int compare_int(const void *a, const void *b) 
+/*int compare_int(const void *a, const void *b) 
 {
     return *(int*)a - *(int*)b;
-}
+}*/
 
 int getmem(int pid)
 {

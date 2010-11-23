@@ -43,7 +43,7 @@ dataitem_check_data(HashNode *node, char *itemdata)
     if (delm == 0)
         return MEMLINK_ITEM_REMOVED;
 
-    if (tagm == 1)
+    if (tagm == 2)
         return MEMLINK_ITEM_TAGDEL;
 
     return MEMLINK_ITEM_VISIBLE;
@@ -187,10 +187,10 @@ dataitem_lookup_pos_mask(HashNode *node, int pos, int visible, char *maskval, ch
 		for (i = 0; i < g_cf->block_data_count; i++) {
 			if (dataitem_have_data(node, itemdata, visible)) {
 				char *maskdata = itemdata + node->valuesize;	
-#ifdef DEBUG			
+                /*
 				char buf[64], buf2[64];
 				DINFO("i: %d, maskdata: %s maskflag: %s\n", i, formatb(maskdata, node->masksize, buf, 64), formatb(maskflag, node->masksize, buf2, 64));
-#endif		
+                */
 				for (k = 0; k < node->masksize; k++) {
 					DINFO("check k:%d, maskdata:%x, maskflag:%x, maskval:%x\n", k, maskdata[k], maskflag[k], maskval[k]);
 					if ((maskdata[k] & maskflag[k]) != maskval[k]) {
@@ -460,6 +460,10 @@ hashtable_add_info(HashTable *ht, char *key, int valuesize, char *maskstr)
     unsigned int format[HASHTABLE_MASK_MAX_LEN] = {0};
     int  masknum = mask_string2array(maskstr, format);
     int  i; 
+    
+    if (masknum > HASHTABLE_MASK_MAX_LEN) {
+        return MEMLINK_ERR_MASK;
+    }
 
     for (i = 0; i < masknum; i++) {
         if (format[i] == UINT_MAX) {
@@ -1222,9 +1226,11 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
                 memcpy(data + idx, maskstr, mlen);
                 idx += mlen;
 #else
+                /*
                 char buf[128];
 				snprintf(buf, node->valuesize + 1, "%s", itemdata);
 				DINFO("ok, copy item ... i:%d, value:%s\n", i, buf);
+                */
 				
 				memcpy(data + idx, itemdata, datalen);
 				idx += datalen;
