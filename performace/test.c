@@ -14,8 +14,6 @@
 //#define TEST_THREAD_NUM 10
 
 
-
-
 int clear_key(char *key)
 {
 	MemLink	*m;

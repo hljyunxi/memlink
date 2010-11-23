@@ -9,19 +9,11 @@ libpath  = ['/Developer/usr/lib', '../client/c']
 libs	 = ['m', 'pthread']
 
 env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
+env.Program("test", ["test.c", env.Object("test-testframe", "testframe.c"), "../client/c/libmemlink.a"])
 
-#files = Glob("*.c")
-#for fn in files:
-#	env.Program(fn)
-
-env.Program("test", ["test.c", "testframe.c", "../client/c/libmemlink.a"])
-
-#env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=['m'])
-#env.Program('testmask', ["testmask.c", '../utils.c', '../logfile.c', '../serial.c', '../zzmalloc.c'])
-
-
-env.Program("testredis", 
-	["testredis.c", "testframe.o", "../logfile.c", "../zzmalloc.c"], 
+env2 = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
+env2.Program("testredis", 
+	["testredis.c", env2.Object("testredis-testframe", "testframe.c"), env2.Object("testredis-logfile", "../logfile.c"), env2.Object("test-zzmalloc", "../zzmalloc.c"), env2.Object("test-utils", "../utils.c")], 
 	CCFLAGS='-ggdb -DDEBUG',
 	CPPPATH=[hiredis_home, '../'],
 	LIBPATH=[hiredis_home],
@@ -29,14 +21,15 @@ env.Program("testredis",
 	LINKFLAGS=[hiredis_linkpath])
 
 
-mysql_home = '/www/zhaowei/mysql'
+mysql_home = '/opt/mysql5'
 #mysql_home = '/usr'
 mysql_include	= mysql_home + '/include/mysql'
 mysql_lib		= mysql_home + '/lib/mysql'
 mysql_linkpath	= '-Wl,-R' + mysql_home + '/lib/mysql'
 
-env.Program("testmysql", 
-	["testmysql.c", "testframe.o", "../logfile.c", "../zzmalloc.c"], 
+env3 = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
+env3.Program("testmysql", 
+	["testmysql.c", env3.Object("testmysql-testframe", "testframe.c"), env3.Object("testmysql-logfile", "../logfile.c"), env3.Object("testmysql-zzmalloc", "../zzmalloc.c"), env3.Object("test-utils", "../utils.c")], 
 	CCFLAGS='-ggdb -DDEBUG',
 	CPPPATH=[mysql_include, '../'],
 	LIBPATH=[mysql_lib],

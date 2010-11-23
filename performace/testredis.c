@@ -6,11 +6,11 @@
 #include "logfile.h"
 
 //#define VALUE_SIZE		12
-
+/*
 unsigned int timediff(struct timeval *start, struct timeval *end)
 {
     return 1000000 * (end->tv_sec - start->tv_sec) + (end->tv_usec - start->tv_usec);
-}
+}*/
 
 int clear_key(char *key)
 {
