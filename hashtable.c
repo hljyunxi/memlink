@@ -799,7 +799,8 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
         }
 
         // insert to last
-        if (posaddr == enddata) {
+		DINFO("pasaddr:%p, end:%p\n", posaddr, dbk->data + g_cf->block_data_count * datalen);
+        if (posaddr == dbk->data + g_cf->block_data_count * datalen) {
             dataitem_copy(node, todata, value, mask);
             lastnewbk->visible_count ++;
             todata += datalen; 
