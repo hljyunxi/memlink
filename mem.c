@@ -75,7 +75,7 @@ mempool_put(MemPool *mp, DataBlock *dbk, int blocksize)
         if (mp->freemem[i].memsize == blocksize) {
             dbk->next = mp->freemem[i].data;
             mp->freemem[i].data = dbk; 
-            return -1;
+            return 0;
         }
     }
     
@@ -102,6 +102,8 @@ mempool_expand(MemPool *mp)
     int newnum = mp->idxnum * 2;           
     MemItem  *newitems = (MemItem*)zz_malloc(sizeof(MemItem) * newnum);
     if (NULL == newitems) {
+		DERROR("malloc error!\n");
+		MEMLINK_EXIT;
         return -1;
     }
     

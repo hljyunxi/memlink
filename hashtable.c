@@ -296,7 +296,18 @@ dataitem_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk, DataB
     int         i;
    
     // find last idle space
-    if (skipn >= g_cf->block_data_count) {
+    //if (skipn >= g_cf->block_data_count) {
+	int n = 0;
+
+	if (*dbk) {
+		if (visible) {
+			n = (*dbk)->visible_count;
+		}else{
+			n = (*dbk)->visible_count + (*dbk)->mask_count;
+		}
+	}
+
+	if (skipn >= n) {
         char *enddata = item + datalen * g_cf->block_data_count;
         item = enddata;
         
@@ -799,6 +810,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
         }
 
         // insert to last
+		
 		DINFO("pasaddr:%p, end:%p\n", posaddr, dbk->data + g_cf->block_data_count * datalen);
         if (posaddr == dbk->data + g_cf->block_data_count * datalen) {
             dataitem_copy(node, todata, value, mask);
@@ -1275,16 +1287,6 @@ hashtable_clean(HashTable *ht, char *key)
         itemdata = dbk->data;
         for (i = 0; i < g_cf->block_data_count; i++) {
             if (dataitem_have_data(node, itemdata, 0)) {
-                /*
-                unsigned char v = *(itemdata + node->valuesize) & 0x02;
-                memcpy(newdbk_pos, itemdata, dlen);
-                newdbk_pos += dlen;
-
-                if (v == 2) {
-                    newdbk->mask_count++;
-                }else{
-                    newdbk->visible_count++;
-                }*/
 
                 if (newdbk_pos >= newdbk_end) {
                     newlast = newdbk;
@@ -1394,6 +1396,7 @@ hashtable_count(HashTable *ht, char *key, unsigned int *maskarray, int masknum, 
                         }
                     }
                     if (k < node->masksize) { // not equal
+						itemdata += datalen;
                         continue;
                     }
                     if (ret == MEMLINK_ITEM_VISIBLE) {
