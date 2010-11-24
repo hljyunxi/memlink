@@ -22,6 +22,7 @@ typedef struct _myconfig
     unsigned int block_data_count;
     unsigned int dump_interval;                       // in minutes
     float        block_clean_cond;
+    int          block_clean_start;
     int          read_port;
     int          write_port;
     int          sync_port;
