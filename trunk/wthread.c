@@ -557,7 +557,9 @@ client_read(int fd, short event, void *arg)
                 DERROR("%d read error: %s\n", fd, strerror(errno));
                 conn->destroy(conn);
                 return;
-            }
+            }else{
+				DINFO("EAGAIN: %d\n", fd);
+			}
         }else if (ret == 0) {
             DINFO("read 0, close conn %d.\n", fd);
             conn->destroy(conn);
