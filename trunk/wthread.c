@@ -84,8 +84,9 @@ change_event(Conn *conn, int newflag, int timeout, int isnew)
  * ------------------------------------
  * Length is the count of bytes following it.
  */
+
 int
-data_reply(Conn *conn, short retcode, char *retdata, int retlen)
+data_set_reply(Conn *conn, short retcode, char *retdata, int retlen)
 {
     //int mlen = 0;  // msg string len
     unsigned int datalen = 0;
@@ -156,8 +157,29 @@ data_reply(Conn *conn, short retcode, char *retdata, int retlen)
     DINFO("reply %s\n", formath(conn->wbuf, conn->wlen, buf, 10240));
 #endif
 */
+
+	/*
 	DINFO("change event to write.\n");
 	int ret = change_event(conn, EV_WRITE|EV_PERSIST, g_cf->timeout, 0);
+	if (ret < 0) {
+		DERROR("change_event error: %d, close conn.\n", ret);
+		conn->destroy(conn);
+	}*/
+
+    return 0;
+}
+
+
+int
+data_reply(Conn *conn, short retcode, char *retdata, int retlen)
+{
+	
+	int ret = data_set_reply(conn, retcode, retdata, retlen);
+	if (ret < 0)
+		return ret;
+
+	DINFO("change event to write.\n");
+	ret = change_event(conn, EV_WRITE|EV_PERSIST, g_cf->timeout, 0);
 	if (ret < 0) {
 		DERROR("change_event error: %d, close conn.\n", ret);
 		conn->destroy(conn);
@@ -356,7 +378,6 @@ wdata_apply(char *data, int datalen, int writelog)
             for (i = 0; i < masknum; i++) {
                 DINFO("mask, i:%d, mask:%d\n", i, maskarray[i]);
             }*/
-
             //hashtable_print(g_runtime->ht, key);
 
             if (ret >= 0 && writelog) {
@@ -585,19 +606,6 @@ client_read(int fd, short event, void *arg)
         int mlen = datalen + sizeof(short);
 
         if (conn->rlen >= mlen) {
-			/*
-            if (conn->port == g_cf->write_port) {
-                wdata_ready(conn, conn->rbuf, mlen);
-            }else if (conn->port == g_cf->read_port) {
-                rdata_ready(conn, conn->rbuf, mlen);
-            }else if (conn->port == g_cf->sync_port) {
-                sdata_ready(conn, conn->rbuf, mlen);
-            }else{
-                DERROR("conn port error: %d\n", conn->port);
-                conn->destroy(conn);
-                return;
-            }*/
-
 			conn->ready(conn, conn->rbuf, mlen);
             memmove(conn->rbuf, conn->rbuf + mlen, conn->rlen - mlen);
             conn->rlen -= mlen;
