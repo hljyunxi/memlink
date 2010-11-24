@@ -27,13 +27,19 @@
  *
  * @param conn
  * @param newflag EV_READ or EV_WRITE
- * @param isnew
+ * @param isnew 1 if the connection event has not been registered before. 0 if 
+ * registered.
+ * @param timeout if positive, the event is added with a timeout.
  */
 int
 change_event(Conn *conn, int newflag, int timeout, int isnew)
 {
     struct event      *event = &conn->evt;
 
+    /* 
+     * For old event, do nothing and return if the new flag is the same as the 
+     * old flag.  Otherwise, unregistered the event.
+     */
 	if (isnew == 0) {
 	    if (event->ev_flags == newflag)
 			return 0;
@@ -585,8 +591,8 @@ client_read(int fd, short event, void *arg)
                 conn->destroy(conn);
                 return;
             }else{
-				DINFO("EAGAIN: %d\n", fd);
-			}
+                DERROR("%d read error, error %d: %s\n", fd, errno, strerror(errno));
+            }
         }else if (ret == 0) {
             DINFO("read 0, close conn %d.\n", fd);
             conn->destroy(conn);
@@ -616,7 +622,8 @@ client_read(int fd, short event, void *arg)
 }
 
 /**
- * Send data to client.
+ * Send data inside the connection to client. If all the data has been sent, 
+ * register read event for this connection.
  *
  * @param fd
  * @param event
