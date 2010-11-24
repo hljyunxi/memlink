@@ -1351,22 +1351,23 @@ hashtable_stat(HashTable *ht, char *key, HashTableStat *stat)
     DINFO("node all: %d, used: %d\n", node->all, node->used);
     stat->valuesize = node->valuesize;
     stat->masksize  = node->masksize;
-    stat->blocks    = 0;
+    stat->blocks    = node->all / g_cf->block_data_count;
     stat->data      = node->all;
     stat->data_used = node->used;
     stat->mem       = 0;
     stat->mem_used  = 0;
 
-    int blockmem = sizeof(HashNode) + (node->masksize + node->valuesize) * g_cf->block_data_count;
+    int blockmem = sizeof(DataBlock) + (node->masksize + node->valuesize) * g_cf->block_data_count;
+    stat->mem = stat->blocks * blockmem + sizeof(HashNode);
 
+	/*
     DataBlock *dbk = node->data;
     while (dbk) {
         stat->blocks += 1;
         dbk = dbk->next;
-    }
+    }*/
 
-    stat->mem = stat->blocks * blockmem;
-    stat->mem_used = stat->blocks * sizeof(HashNode) + (node->masksize + node->valuesize) * stat->data_used;
+    //stat->mem_used = stat->blocks * sizeof(DataBlock) + (node->masksize + node->valuesize) * stat->data_used;
     
     DINFO("valuesize:%d, masksize:%d, blocks:%d, data:%d, data_used:%d, mem:%d, mem_used:%d\n", 
             stat->valuesize, stat->masksize, stat->blocks, stat->data, stat->data_used,
