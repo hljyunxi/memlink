@@ -1323,7 +1323,7 @@ hashtable_clean(HashTable *ht, char *key)
             }
             itemdata += dlen;
         }
-        if (count > 0 && count % 100 == 0) {
+        if (count > 0 && count % g_cf->block_clean_num == 0) {
             if (linklast == NULL) { 
                 oldbk = node->data;
                 node->data = newroot;
