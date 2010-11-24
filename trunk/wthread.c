@@ -30,7 +30,7 @@
  * @param isnew
  */
 int
-change_event(Conn *conn, int newflag, int isnew)
+change_event(Conn *conn, int newflag, int timeout, int isnew)
 {
     struct event      *event = &conn->evt;
 
@@ -50,15 +50,21 @@ change_event(Conn *conn, int newflag, int isnew)
 		event_set(event, conn->sock, newflag, client_write, (void *)conn);
 	}
     event_base_set(conn->base, event);
-    
-    struct timeval  tm;
-	evutil_timerclear(&tm);
-    tm.tv_sec = g_cf->timeout;
-
-    if (event_add(event, &tm) == -1) {
-        DERROR("event add error.\n");
-        return -3;
-    }
+  
+	if (timeout > 0) {
+		struct timeval  tm;
+		evutil_timerclear(&tm);
+		tm.tv_sec = g_cf->timeout;
+		if (event_add(event, &tm) == -1) {
+			DERROR("event add error.\n");
+			return -3;
+		}
+	}else{
+		if (event_add(event, 0) == -1) {
+			DERROR("event add error.\n");
+			return -3;
+		}
+	}
     return 0;
 }
 
@@ -151,7 +157,7 @@ data_reply(Conn *conn, short retcode, char *retdata, int retlen)
 #endif
 */
 	DINFO("change event to write.\n");
-	int ret = change_event(conn, EV_WRITE|EV_PERSIST, 0);
+	int ret = change_event(conn, EV_WRITE|EV_PERSIST, g_cf->timeout, 0);
 	if (ret < 0) {
 		DERROR("change_event error: %d, close conn.\n", ret);
 		conn->destroy(conn);
@@ -508,7 +514,7 @@ wthread_read(int fd, short event, void *arg)
 
         DINFO("new conn: %d\n", conn->sock);
 		DINFO("change event to read.\n");
-		ret = change_event(conn, EV_READ|EV_PERSIST, 1);
+		ret = change_event(conn, EV_READ|EV_PERSIST, g_cf->timeout, 1);
 		if (ret < 0) {
 			DERROR("change_event error: %d, close conn.\n", ret);
 			conn->destroy(conn);
@@ -617,7 +623,7 @@ client_write(int fd, short event, void *arg)
     if (conn->wpos == conn->wlen) {
         conn->wlen = conn->wpos = 0;
 		DINFO("change event to read.\n");
-        ret = change_event(conn, EV_READ|EV_PERSIST, 0);
+        ret = change_event(conn, EV_READ|EV_PERSIST, g_cf->timeout, 0);
         if (ret < 0) {
             DERROR("change event error:%d close socket\n", ret);
             conn->destroy(conn);

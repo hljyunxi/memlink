@@ -12,6 +12,7 @@
 #include "rthread.h"
 #include "network.h"
 #include "zzmalloc.h"
+#include "utils.h"
 
 MainServer*
 mainserver_create()
@@ -123,7 +124,7 @@ thserver_notify(int fd, short event, void *arg)
         DINFO("notify fd: %d\n", conn->sock);
 		conn->base = ts->base;
 	
-		ret = change_event(conn, EV_READ|EV_PERSIST, 1);
+		ret = change_event(conn, EV_READ|EV_PERSIST, g_cf->timeout, 1);
 		if (ret < 0) {
 			DERROR("change event error: %d, close conn\n", ret);
 			conn->destroy(conn);

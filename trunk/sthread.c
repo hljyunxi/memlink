@@ -467,7 +467,7 @@ sthread_read(int fd, short event, void *arg)
 
         DINFO("new conn: %d\n", conn->sock);
         DINFO("change event to read.\n");
-        ret = change_event((Conn*)conn, EV_READ | EV_PERSIST, 1);
+        ret = change_event((Conn*)conn, EV_READ | EV_PERSIST, 0, 1);
         if (ret < 0) {
             DERROR("change_event error: %d, close conn.\n", ret);
             sync_conn_destroy((Conn*)conn);
