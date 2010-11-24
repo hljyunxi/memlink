@@ -1088,28 +1088,20 @@ mask_array2_binary_flag(unsigned char *maskformat, unsigned int *maskarray, int 
         }
         maskval[0] = maskval[0] & 0xfc;
 
-#ifdef DEBUG
-        char buf[128];
-
-        DINFO("2binary: %s\n", formatb(maskval, masklen, buf, 128));
-#endif
+        //char buf[128];
+        //DINFO("2binary: %s\n", formatb(maskval, masklen, buf, 128));
         masklen = mask_array2flag(maskformat, maskarray, masknum, maskflag);
         if (masklen <= 0) {
             DERROR("mask_array2flag error\n");
             return -2;
         }
-#ifdef DEBUG
-        DINFO("2flag: %s\n", formatb(maskflag, masklen, buf, 128));
-#endif
+        //DINFO("2flag: %s\n", formatb(maskflag, masklen, buf, 128));
         for (j = 0; j < masknum; j++) {
             maskflag[j] = ~maskflag[j];
         }
         maskflag[0] = maskflag[0] & 0xfc;
 
-#ifdef DEBUG
-        DINFO("^2flag: %s\n", formatb(maskflag, masklen, buf, 128));
-#endif
-
+        //DINFO("^2flag: %s\n", formatb(maskflag, masklen, buf, 128));
     }else{
         masknum = 0;
     }
@@ -1259,6 +1251,7 @@ hashtable_range_over:
     return MEMLINK_OK;
 }
 
+
 int
 hashtable_clean(HashTable *ht, char *key)
 {
@@ -1286,14 +1279,16 @@ hashtable_clean(HashTable *ht, char *key)
     }
 
     DataBlock   *newroot = NULL, *newlast = NULL;
-	//DataBlock	*linklast = NULL;
+	DataBlock	*linklast = NULL;
+    DataBlock   *oldbk, *tmp;
+
     char        *itemdata; // = dbk->data;
     int         i, dataall = g_cf->block_data_count;
-	int			count = 0;
 
     DataBlock *newdbk     = mempool_get(g_runtime->mpool, dlen);
     char      *newdbk_end = newdbk->data + g_cf->block_data_count * dlen;
     char      *newdbk_pos = newdbk->data;
+	int		  count = 1;
 
     newroot = newdbk;
     
@@ -1302,24 +1297,24 @@ hashtable_clean(HashTable *ht, char *key)
         for (i = 0; i < g_cf->block_data_count; i++) {
             if (dataitem_have_data(node, itemdata, 0)) {
                 if (newdbk_pos >= newdbk_end) {
-                    newlast = newdbk;
-
+                    newlast    = newdbk;
                     newdbk     = mempool_get(g_runtime->mpool, dlen);
                     newdbk_end = newdbk->data + g_cf->block_data_count * dlen;
                     newdbk_pos = newdbk->data;
 
-                    newdbk->next  = NULL;
+                    //newdbk->next  = NULL;
                     newlast->next = newdbk; 
 
                     dataall += g_cf->block_data_count;
-
 					count += 1;
                 }
-
                 unsigned char v = *(itemdata + node->valuesize) & 0x02;
                 memcpy(newdbk_pos, itemdata, dlen);
-                newdbk_pos += dlen;
 
+                //char buf[16] = {0};
+                //memcpy(buf, itemdata, node->valuesize);
+                //DINFO("clean copy item: %s\n", buf);
+                newdbk_pos += dlen;
                 if (v == 2) {
                     newdbk->mask_count++;
                 }else{
@@ -1328,11 +1323,48 @@ hashtable_clean(HashTable *ht, char *key)
             }
             itemdata += dlen;
         }
+        if (count > 0 && count % 3 == 0) {
+            if (linklast == NULL) { 
+                oldbk = node->data;
+                node->data = newroot;
+            }else{
+                oldbk = linklast->next; 
+                linklast->next = newroot;
+            }
+            newdbk->next = dbk->next;
+            linklast = newdbk;
+
+            while (oldbk && oldbk != dbk) {
+                tmp = oldbk->next;
+                mempool_put(g_runtime->mpool, oldbk, dlen);
+                oldbk = tmp;
+            }
+            newdbk     = mempool_get(g_runtime->mpool, dlen);
+            newdbk_end = newdbk->data + g_cf->block_data_count * dlen;
+            newdbk_pos = newdbk->data;
+
+            dataall += g_cf->block_data_count;
+            newroot = newdbk;
+
+            count += 1;
+        }
         dbk = dbk->next;
     }
 
-    node->data = newroot;
-    node->all  = dataall;
+    if (linklast == NULL) {
+        oldbk = node->data;
+        node->data = newroot;
+    }else{
+        oldbk = linklast->next;
+        linklast->next = newroot;
+    }
+    while (oldbk && oldbk != dbk) {
+        tmp = oldbk->next;
+        mempool_put(g_runtime->mpool, oldbk, dlen);
+        oldbk = tmp;
+    }
+
+    node->all = dataall;
 
     return MEMLINK_OK;
 } 
