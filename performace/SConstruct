@@ -1,5 +1,14 @@
+import os, sys
+
 hiredis_home = "/www/zhaowei/soft/hiredis"
 hiredis_linkpath = '-Wl,-R' + hiredis_home
+
+#mysql_home = '/www/zhaowei/mysql'
+mysql_home = '/usr'
+mysql_include	= mysql_home + '/include/mysql'
+mysql_lib		= mysql_home + '/lib/mysql'
+mysql_linkpath	= '-Wl,-R' + mysql_home + '/lib/mysql'
+
 
 cflags   = '-ggdb -DDEBUG -O2 -pthread'
 #cflags   = '-ggdb'
@@ -8,12 +17,29 @@ ldflags  = ['']
 libpath  = ['/Developer/usr/lib', '../client/c']
 libs	 = ['m', 'pthread']
 
+files    = ['testframe.c', '../utils.c', '../logfile.c']
+
 env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
-env.Program("test", ["test.c", env.Object("test-testframe", "testframe.c"), "../client/c/libmemlink.a"])
+
+testfiles = ['test.c', '../client/c/libmemlink.a']
+for fn in files[:1]:
+	name = os.path.basename(fn)[:-2]
+	testfiles.append(env.Object('test-'+name, fn))
+
+#env.Program("test", ["test.c", env.Object("test-testframe", "testframe.c"), env.Object("test-utils", "../utils.c"), "../client/c/libmemlink.a"])
+env.Program("test", testfiles)
+
 
 env2 = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
+
+redisfiles = ['testredis.c']
+for fn in files:
+	name = os.path.basename(fn)[:-2]
+	redisfiles.append(env2.Object('testreids-'+name, fn))
+
 env2.Program("testredis", 
-	["testredis.c", env2.Object("testredis-testframe", "testframe.c"), env2.Object("testredis-logfile", "../logfile.c"), env2.Object("test-zzmalloc", "../zzmalloc.c"), env2.Object("testredis-utils", "../utils.c")], 
+	redisfiles,
+	#["testredis.c", env2.Object("testredis-testframe", "testframe.c"), env2.Object("testredis-logfile", "../logfile.c"), env2.Object("test-zzmalloc", "../zzmalloc.c"), env2.Object("testredis-utils", "../utils.c")], 
 	CCFLAGS='-ggdb -DDEBUG',
 	CPPPATH=[hiredis_home, '../'],
 	LIBPATH=[hiredis_home],
@@ -21,13 +47,14 @@ env2.Program("testredis",
 	LINKFLAGS=[hiredis_linkpath])
 
 
-mysql_home = '/www/zhaowei/mysql'
-#mysql_home = '/usr'
-mysql_include	= mysql_home + '/include/mysql'
-mysql_lib		= mysql_home + '/lib/mysql'
-mysql_linkpath	= '-Wl,-R' + mysql_home + '/lib/mysql'
 
 env3 = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
+
+mysqlfiles = ['testmysql.c']
+for fn in files:
+	name = os.path.basename(fn)[:-2]
+	redisfiles.append(env3.Object('testmysql-'+name, fn))
+
 env3.Program("testmysql", 
 	["testmysql.c", env3.Object("testmysql-testframe", "testframe.c"), env3.Object("testmysql-logfile", "../logfile.c"), env3.Object("testmysql-zzmalloc", "../zzmalloc.c"), env3.Object("testmysql-utils", "../utils.c")], 
 	CCFLAGS='-ggdb -DDEBUG',
@@ -35,5 +62,3 @@ env3.Program("testmysql",
 	LIBPATH=[mysql_lib],
 	LIBS=['mysqlclient_r', 'm', 'pthread'], 
 	LINKFLAGS=[mysql_linkpath])
-
-
