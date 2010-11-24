@@ -203,12 +203,12 @@ dataitem_lookup_pos_mask(HashNode *node, int pos, int visible, char *maskval, ch
 					continue;
 				}
 
-				n += 1;
 				if (n >= pos) {
 					*dbk  = root;
 					*addr = itemdata;
 					return startn;
 				}
+				n += 1;
 			}
 			itemdata += datalen;
 		}
@@ -1129,6 +1129,10 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
 	char maskflag[HASHTABLE_MASK_MAX_LEN * sizeof(int)];
     HashNode    *node;
 	int			startn;
+	
+	if (len <= 0) {
+		return MEMLINK_ERR_RANGE_SIZE;
+	}
 
     node = hashtable_find(ht, key);
     if (NULL == node) {
@@ -1179,6 +1183,7 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
         for (i = 0; i < g_cf->block_data_count; i++) {
 			if (addr) {
 				if (itemdata != addr) {
+					skipn -= 1;
 					itemdata += datalen;
 					continue;
 				}else{
@@ -1202,6 +1207,7 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
 					}
 				}
 				if (skipn > 0) {
+					DINFO("== skipn: %d\n", skipn);
 					skipn -= 1;
 					itemdata += datalen;
 					continue;
@@ -1280,8 +1286,10 @@ hashtable_clean(HashTable *ht, char *key)
     }
 
     DataBlock   *newroot = NULL, *newlast = NULL;
+	//DataBlock	*linklast = NULL;
     char        *itemdata; // = dbk->data;
     int         i, dataall = g_cf->block_data_count;
+	int			count = 0;
 
     DataBlock *newdbk     = mempool_get(g_runtime->mpool, dlen);
     char      *newdbk_end = newdbk->data + g_cf->block_data_count * dlen;
@@ -1293,7 +1301,6 @@ hashtable_clean(HashTable *ht, char *key)
         itemdata = dbk->data;
         for (i = 0; i < g_cf->block_data_count; i++) {
             if (dataitem_have_data(node, itemdata, 0)) {
-
                 if (newdbk_pos >= newdbk_end) {
                     newlast = newdbk;
 
@@ -1305,6 +1312,8 @@ hashtable_clean(HashTable *ht, char *key)
                     newlast->next = newdbk; 
 
                     dataall += g_cf->block_data_count;
+
+					count += 1;
                 }
 
                 unsigned char v = *(itemdata + node->valuesize) & 0x02;
