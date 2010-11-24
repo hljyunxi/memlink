@@ -115,7 +115,7 @@ int alltest_insert()
 #ifdef STAT_MIDDLE
 			}
 #endif
-            DINFO("\33[31m====== sum: %d, ave: %.2f ======\33[0m\n", g_tcf->testnum[i], sum, av);
+            DINFO("\33[31m====== %d sum: %d, ave: %.2f ======\33[0m\n", g_tcf->testnum[i], sum, av);
         }
     }
 	
