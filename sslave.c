@@ -54,7 +54,7 @@ sslave_recv_log(SSlave *ss)
         DINFO("recv log len:%d\n", rlen);
         memcpy(&logver, recvbuf, sizeof(int));
         memcpy(&logline, recvbuf + sizeof(int), sizeof(int));
-        
+		DINFO("logver:%d, logline:%d\n", logver, logline); 
         if (logver == ss->logver && logline == ss->logline) {
             //skip first one
             continue;
@@ -62,6 +62,7 @@ sslave_recv_log(SSlave *ss)
 
 		unsigned int size = checksize + rlen;	
 		ret = wdata_apply(recvbuf + SYNCPOS_LEN, rlen, 0);
+		DINFO("wdata_apply return:%d\n", ret);
 		if (ret == 0) {
 			synclog_write(g_runtime->synclog, recvbuf, size);
 		}
@@ -157,6 +158,7 @@ sslave_prev_sync_pos(SSlave *ss)
                 DERROR("synclog_prevlog error: %d\n", ret);
                 return -1;
             }
+			DINFO("prev binlog: %d, current binlog: %d\n", ret, ss->binlog_ver);
             ss->binlog_ver   = ret;
             ss->binlog_index = 0;
 
@@ -174,6 +176,21 @@ sslave_prev_sync_pos(SSlave *ss)
 
             ss->binlog_index = ss->binlog->index_pos;
         }
+		
+		if (NULL == ss->binlog) {
+			if (ss->binlog_ver > 0) {
+                snprintf(filepath, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, bver);
+            }else{
+                snprintf(filepath, PATH_MAX, "%s/bin.log", g_cf->datadir);
+            }
+			
+			DINFO("open synclog: %s\n", filepath);
+            ss->binlog = synclog_open(filepath);
+            if (NULL == ss->binlog) {
+                DERROR("open synclog error: %s\n", filepath);
+                return -1;
+            }
+		}
 
         ss->binlog_index -= 1;
         int pos = ss->binlog_index - 1;

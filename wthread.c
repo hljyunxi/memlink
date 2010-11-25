@@ -199,11 +199,12 @@ wdata_do_clean(void *args)
 {
 	HashNode	*node = (HashNode*)args;
 	int			ret;
-	
+
 	pthread_mutex_lock(&g_runtime->mutex);
 	//g_runtime->inclean = 1;
 	//snprintf(g_runtime->cleankey, 512, "%s", node->key);
-
+	
+	DINFO("start clean ...\n");
 	ret = hashtable_clean(g_runtime->ht, node->key);
 	if (ret != 0) {
 		DERROR("wdata_do_clean error: %d\n", ret);
@@ -231,13 +232,13 @@ wdata_check_clean(char *key)
 	if (NULL == node)
 		return;
 
-	DINFO("check clean cond: all:%d, blocks:%d\n", node->all, node->all / g_cf->block_data_count);
+	DINFO("check clean cond, used:%d, all:%d, blocks:%d\n", node->used, node->all, node->all / g_cf->block_data_count);
 	// not do clean, when blocks is small than 3
 	if (node->all / g_cf->block_data_count < 3) {
 		return;
 	}
 
-	double rate = (double)node->used / node->all;
+	double rate = 1.0 - (double)node->used / node->all;
 	DINFO("check clean rate: %f\n", rate);
 	
 	if (g_cf->block_clean_cond < 0.01 || g_cf->block_clean_cond > rate) {
@@ -375,7 +376,7 @@ wdata_apply(char *data, int datalen, int writelog)
 				break;
 			}
 
-            DINFO("unpak key:%s, value:%s, pos:%d, mask: %d, array:%d,%d,%d\n", key, value, pos, masknum, maskarray[0], maskarray[1], maskarray[2]);
+            DINFO("unpack key:%s, value:%s, pos:%d, mask: %d, array:%d,%d,%d\n", key, value, pos, masknum, maskarray[0], maskarray[1], maskarray[2]);
             ret = hashtable_add_mask(g_runtime->ht, key, value, maskarray, masknum, pos);
             DINFO("hashtable_add_mask: %d\n", ret);
            
