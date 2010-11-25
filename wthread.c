@@ -640,6 +640,12 @@ client_write(int fd, short event, void *arg)
     Conn  *conn = (Conn*)arg;
     int ret;
     
+	if (event & EV_TIMEOUT) {
+		DWARNING("write timeout:%d, close\n", fd);
+		conn->destroy(conn);
+		return;
+	}
+
     if (conn->wpos == conn->wlen) {
         conn->wlen = conn->wpos = 0;
 		DINFO("change event to read.\n");
