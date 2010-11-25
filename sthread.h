@@ -26,7 +26,9 @@ typedef struct _syncConn
     struct event sync_write_evt;
     struct event sync_interval_evt;
     struct event sync_read_evt;
+
     struct timeval interval;
+    struct timeval timeout;
 
     int status;                 
     int sync_fd;                // file descriptor for sync log or dump
