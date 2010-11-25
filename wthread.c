@@ -563,6 +563,11 @@ client_read(int fd, short event, void *arg)
     int     ret;
     unsigned short   datalen = 0;
 
+	if (event & EV_TIMEOUT) {
+		DWARNING("read timeout:%d, close\n", fd);
+		conn->destroy(conn);
+		return;
+	}
     /*
      * Called more than one time for the same command and aready receive the 
      * 2-byte command length.
