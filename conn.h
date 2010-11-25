@@ -41,7 +41,8 @@
     struct event_base   *base;\
     struct timeval      ctime;\
 	void	(*destroy)(struct _conn *conn);\
-	int		(*ready)(struct _conn *conn, char *data, int datalen);
+	int		(*ready)(struct _conn *conn, char *data, int datalen);\
+	int		(*wrote)(struct _conn *conn);
 
 typedef struct _conn
 {
@@ -50,6 +51,7 @@ typedef struct _conn
 
 Conn*   conn_create(int svrfd, int connsize);
 void    conn_destroy(Conn *conn);
+int     conn_wrote(Conn *conn);
 
 
 

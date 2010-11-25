@@ -53,7 +53,7 @@ conn_create(int svrfd, int connsize)
     memset(conn, 0, connsize); 
     conn->sock = newfd;
 	conn->destroy = conn_destroy;
-    
+	conn->wrote = conn_wrote;    
     gettimeofday(&conn->ctime, NULL);
 
     return conn;
@@ -68,6 +68,18 @@ conn_destroy(Conn *conn)
 	event_del(&conn->evt);
     close(conn->sock);
     zz_free(conn);
+}
+
+int
+conn_wrote(Conn *conn)
+{
+	DINFO("change event to read.\n");
+	int ret = change_event(conn, EV_READ|EV_PERSIST, g_cf->timeout, 0);
+	if (ret < 0) {
+		DERROR("change event error:%d close socket\n", ret);
+		conn->destroy(conn);
+	}
+	return 0;
 }
 
 
