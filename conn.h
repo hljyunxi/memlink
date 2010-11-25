@@ -50,6 +50,7 @@ typedef struct _conn
 }Conn;
 
 Conn*   conn_create(int svrfd, int connsize);
+void conn_write(Conn *conn);
 void    conn_destroy(Conn *conn);
 int     conn_wrote(Conn *conn);
 
