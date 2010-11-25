@@ -259,7 +259,11 @@ load_data()
 		return -1;
 	}
     DINFO("dumplogver: %d, n: %d\n", g_runtime->dumplogver, n);
-    for (i = g_runtime->dumplogver; i < n; i++) {
+	
+    for (i = 0; i < n; i++) {
+		if (logids[i] < g_runtime->dumplogver) {
+			continue;
+		}
         snprintf(logname, PATH_MAX, "%s/data/bin.log.%d", g_runtime->home, logids[i]);
         DINFO("load synclog: %s\n", logname);
         load_synclog(logname);
@@ -340,7 +344,10 @@ load_data_slave()
 
 	if (load_master_dump == 0) {
 		int i;
-		for (i = g_runtime->dumplogver; i < n; i++) {
+		for (i = 0; i < n; i++) {
+			if (logids[i] < g_runtime->dumplogver) {
+				continue;
+			}
 			snprintf(logname, PATH_MAX, "%s/data/bin.log.%d", g_runtime->home, logids[i]);
 			DINFO("load synclog: %s\n", logname);
 			ret = load_synclog(logname);

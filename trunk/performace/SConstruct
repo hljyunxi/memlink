@@ -21,13 +21,13 @@ files    = ['testframe.c', '../utils.c', '../logfile.c']
 
 env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
 
-testfiles = ['test.c', '../client/c/libmemlink.a']
+testfiles = ['testmemlink.c', '../client/c/libmemlink.a']
 for fn in files[:1]:
 	name = os.path.basename(fn)[:-2]
 	testfiles.append(env.Object('test-'+name, fn))
 
-#env.Program("test", ["test.c", env.Object("test-testframe", "testframe.c"), env.Object("test-utils", "../utils.c"), "../client/c/libmemlink.a"])
-env.Program("test", testfiles)
+#env.Program("testmemlink", ["testmemlink.c", env.Object("test-testframe", "testframe.c"), env.Object("test-utils", "../utils.c"), "../client/c/libmemlink.a"])
+env.Program("testmemlink", testfiles)
 
 
 env2 = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)

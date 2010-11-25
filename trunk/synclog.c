@@ -563,7 +563,7 @@ synclog_scan_binlog(int *result, int rsize)
         //DINFO("name: %s\n", nodes->d_name);
         if (strncmp(nodes->d_name, "bin.log.", 8) == 0) {
             int binid = atoi(&nodes->d_name[8]);
-            if (binid > minid) {
+            if (binid >= minid) {
                 //logids[i] = binid;
 				if (i >= rsize) {
 					DERROR("array to store binlog, too small.\n");

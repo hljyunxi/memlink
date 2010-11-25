@@ -3,7 +3,10 @@ import os, sys
 import struct
 import getopt
 
+onlyheader = False
+
 def binlog(filename='bin.log'):
+    global onlyheader
     f = open(filename, 'rb')
 
     s = f.read(2 + 4 + 1 + 4)
@@ -18,7 +21,7 @@ def binlog(filename='bin.log'):
     print '====================== bin log   ========================='
     #print 'head:', repr(s)
     print 'format:%d, logver:%d, role:%d, index:%d, data:%d' % tuple(v)
-
+    
     indexes = []
     while True:
         ns = f.read(4)
@@ -27,6 +30,10 @@ def binlog(filename='bin.log'):
             break
         else:
             indexes.append(v[0])
+
+    if onlyheader:
+        print 'index:', len(indexes)
+        return
 
     if indexes:
         dlen = len(indexes)
@@ -45,6 +52,7 @@ def binlog(filename='bin.log'):
 
 
 def dumpfile(filename):
+    global onlyheader
     if not os.path.isfile(filename):
         return
     f = open(filename, "rb") 
@@ -55,6 +63,9 @@ def dumpfile(filename):
     size = struct.unpack('Q', headstr[11:])[0]
     print '====================== dump file ========================='
     print 'format:%d, dumpver:%d, logver:%d, role:%d, size:%d' % (dformat, dfver, dlogver, role, size)
+
+    if onlyheader:
+        return
 
     while True:
         klenstr = f.read(1)
@@ -90,13 +101,15 @@ def show_help():
     print 'options:'
     print '\t-b binlog file name'
     print '\t-d dump file name'
+    print '\t-h only print header'
 
 def main():
+    global onlyheader
     binlog_filename = ''
     dump_filename   = ''
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'b:d:')
+        opts, args = getopt.getopt(sys.argv[1:], 'b:d:h')
     except:
         show_help()
         return
@@ -106,6 +119,8 @@ def main():
             binlog_filename = arg
         elif opt == '-d':
             dump_filename = arg
+        elif opt == '-h':
+            onlyheader = True
            
     if not binlog_filename and not dump_filename:
         show_help()
