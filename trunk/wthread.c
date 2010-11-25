@@ -648,12 +648,14 @@ client_write(int fd, short event, void *arg)
 
     if (conn->wpos == conn->wlen) {
         conn->wlen = conn->wpos = 0;
+		conn->wrote(conn);
+		/*
 		DINFO("change event to read.\n");
         ret = change_event(conn, EV_READ|EV_PERSIST, g_cf->timeout, 0);
         if (ret < 0) {
             DERROR("change event error:%d close socket\n", ret);
             conn->destroy(conn);
-        }
+        }*/
         return;
     }
     DINFO("client write: %d\n", conn->wlen); 
