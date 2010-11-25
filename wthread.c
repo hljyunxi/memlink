@@ -575,7 +575,7 @@ client_read(int fd, short event, void *arg)
     if (conn->rlen >= 2) {
         memcpy(&datalen, conn->rbuf, sizeof(short)); 
     }
-    DINFO("client read datalen: %d, fd: %d\n", datalen, fd);
+    DINFO("client read datalen: %d, fd: %d, event:%x\n", datalen, fd, event);
     DINFO("conn rlen: %d\n", conn->rlen);
 
     while (1) {
@@ -596,7 +596,7 @@ client_read(int fd, short event, void *arg)
                 conn->destroy(conn);
                 return;
             }else{
-                DERROR("%d read error, error %d: %s\n", fd, errno, strerror(errno));
+                DERROR("%d read EAGAIN, error %d: %s\n", fd, errno, strerror(errno));
             }
         }else if (ret == 0) {
             DINFO("read 0, close conn %d.\n", fd);
