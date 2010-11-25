@@ -112,7 +112,7 @@ myconfig_create(char *filename)
             mcf->block_clean_cond = atof(start);
         }else if (strcmp(buffer, "block_clean_start") == 0) {
             mcf->block_clean_start = atoi(start);
-        }else if (strcmp(buffer, "block_clean_start") == 0) {
+        }else if (strcmp(buffer, "block_clean_num") == 0) {
             mcf->block_clean_num = atoi(start);
         }else if (strcmp(buffer, "read_port") == 0) {
             mcf->read_port = atoi(start);
