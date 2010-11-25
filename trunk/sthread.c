@@ -321,12 +321,18 @@ sync_read(int fd, short event, void *arg)
 }
 
 static void
+set_timeval(struct timeval *tm_ptr, unsigned int seconds) 
+{
+    evutil_timerclear(tm_ptr);
+    tm_ptr->tv_sec = seconds;
+}
+
+static void
 interval_event_init(SyncConn *conn)
 {
     evtimer_set(&conn->sync_interval_evt, sync_write, conn);
     event_base_set(conn->base, &conn->sync_interval_evt);
-    evutil_timerclear(&conn->interval);
-    conn->interval.tv_sec = g_cf->sync_interval;
+    set_timeval(&conn->interval, g_cf->sync_interval);
 }
 
 static void
@@ -334,6 +340,7 @@ write_event_init(SyncConn *conn)
 {
     event_set(&conn->sync_write_evt, conn->sock, EV_WRITE | EV_PERSIST, sync_write, conn);
     event_base_set(conn->base, &conn->sync_write_evt);
+    set_timeval(&conn->timeout, g_cf->timeout);
 }
 
 static void
@@ -389,21 +396,6 @@ get_synclog_record(SyncConn *conn)
 }
 
 static void
-set_timeout(struct timeval *tm_ptr) 
-{
-    evutil_timerclear(tm_ptr);
-    tm_ptr->tv_sec = g_cf->timeout;
-}
-
-static void
-write_event_add(SyncConn *conn)
-{
-    struct timeval tm;
-    set_timeout(&tm);
-    event_add(&conn->sync_write_evt, &tm);
-}
-
-static void
 read_synclog(int fd, short event, void *arg) 
 {
     SyncConn *conn = arg;
@@ -414,14 +406,15 @@ read_synclog(int fd, short event, void *arg)
             conn->log_index_pos = get_index_pos(0);
             open_synclog(conn);
         } else {
-            if (event == EV_WRITE)
+            if (event == EV_WRITE) 
                 event_del(&conn->sync_write_evt);
-            evtimer_add(&conn->sync_interval_evt, &(conn->interval));
+            evtimer_add(&conn->sync_interval_evt, &conn->interval);
             return;
         }
     } 
-    if (event == EV_TIMEOUT)
-        write_event_add(conn);
+    if (event == EV_TIMEOUT) {
+        event_add(&conn->sync_write_evt, &conn->timeout);
+    }
 }
 
 static void
@@ -597,7 +590,7 @@ sthread_create()
     event_set(&st->event, st->sock, EV_READ | EV_PERSIST, sthread_read, st);
     event_base_set(st->base, &st->event);
     struct timeval tm;
-    set_timeout(&tm);
+    set_timeval(&tm, g_cf->timeout);
     event_add(&st->event, &tm);
 
     g_runtime->sthread = st;
