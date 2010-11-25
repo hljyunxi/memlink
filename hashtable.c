@@ -1283,7 +1283,7 @@ hashtable_clean(HashTable *ht, char *key)
     DataBlock   *oldbk, *tmp;
 
     char        *itemdata; // = dbk->data;
-    int         i, dataall = g_cf->block_data_count;
+    int         i, dataall = 0;
 
     DataBlock *newdbk     = NULL;
     char      *newdbk_end = NULL;
