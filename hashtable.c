@@ -171,7 +171,7 @@ datablock_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk)
 }
 
 
-static int
+int
 dataitem_lookup_pos_mask(HashNode *node, int pos, int visible, char *maskval, char *maskflag, DataBlock **dbk, char **addr)
 {
     DataBlock *root = node->data;
@@ -276,7 +276,7 @@ datablock_lookup_valid_pos(HashNode *node, int pos, int visible, DataBlock **dbk
     return -2;
 }
 
-static int
+int
 dataitem_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk, DataBlock **last, char **data)
 {
     int ret;
