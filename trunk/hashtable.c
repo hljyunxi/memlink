@@ -1271,7 +1271,7 @@ hashtable_clean(HashTable *ht, char *key)
         while (dbk) {
             tmp = dbk; 
             dbk = dbk->next;
-            mempool_put(g_runtime->mpool, dbk, dlen);
+            mempool_put(g_runtime->mpool, tmp, dlen);
         }
         node->all  = 0;
         node->data = NULL;
@@ -1285,25 +1285,28 @@ hashtable_clean(HashTable *ht, char *key)
     char        *itemdata; // = dbk->data;
     int         i, dataall = g_cf->block_data_count;
 
-    DataBlock *newdbk     = mempool_get(g_runtime->mpool, dlen);
-    char      *newdbk_end = newdbk->data + g_cf->block_data_count * dlen;
-    char      *newdbk_pos = newdbk->data;
-	int		  count = 1;
+    DataBlock *newdbk     = NULL;
+    char      *newdbk_end = NULL;
+    char      *newdbk_pos = NULL;
+	int		  count = 0;
 
-    newroot = newdbk;
-    
     while (dbk) {
         itemdata = dbk->data;
         for (i = 0; i < g_cf->block_data_count; i++) {
             if (dataitem_have_data(node, itemdata, 0)) {
-                if (newdbk_pos >= newdbk_end) {
+                if (newdbk == NULL || newdbk_pos >= newdbk_end) {
                     newlast    = newdbk;
                     newdbk     = mempool_get(g_runtime->mpool, dlen);
                     newdbk_end = newdbk->data + g_cf->block_data_count * dlen;
                     newdbk_pos = newdbk->data;
 
-                    //newdbk->next  = NULL;
-                    newlast->next = newdbk; 
+                    newdbk->next  = NULL;
+
+					if (newlast) {
+						newlast->next = newdbk; 
+					}else{
+						newroot = newdbk;
+					}
 
                     dataall += g_cf->block_data_count;
 					count += 1;
@@ -1311,9 +1314,10 @@ hashtable_clean(HashTable *ht, char *key)
                 unsigned char v = *(itemdata + node->valuesize) & 0x02;
                 memcpy(newdbk_pos, itemdata, dlen);
 
-                //char buf[16] = {0};
-                //memcpy(buf, itemdata, node->valuesize);
-                //DINFO("clean copy item: %s\n", buf);
+                /*char buf[16] = {0};
+                memcpy(buf, itemdata, node->valuesize);
+                DINFO("clean copy item: %s\n", buf);
+				*/
                 newdbk_pos += dlen;
                 if (v == 2) {
                     newdbk->mask_count++;
@@ -1324,6 +1328,7 @@ hashtable_clean(HashTable *ht, char *key)
             itemdata += dlen;
         }
         if (count > 0 && count % g_cf->block_clean_num == 0) {
+            newdbk->next = dbk->next;
             if (linklast == NULL) { 
                 oldbk = node->data;
                 node->data = newroot;
@@ -1331,7 +1336,6 @@ hashtable_clean(HashTable *ht, char *key)
                 oldbk = linklast->next; 
                 linklast->next = newroot;
             }
-            newdbk->next = dbk->next;
             linklast = newdbk;
 
             while (oldbk && oldbk != dbk) {
@@ -1339,14 +1343,8 @@ hashtable_clean(HashTable *ht, char *key)
                 mempool_put(g_runtime->mpool, oldbk, dlen);
                 oldbk = tmp;
             }
-            newdbk     = mempool_get(g_runtime->mpool, dlen);
-            newdbk_end = newdbk->data + g_cf->block_data_count * dlen;
-            newdbk_pos = newdbk->data;
-
-            dataall += g_cf->block_data_count;
-            newroot = newdbk;
-
-            count += 1;
+			newdbk  = NULL;
+			newroot = NULL;
         }
         dbk = dbk->next;
     }
@@ -1356,7 +1354,7 @@ hashtable_clean(HashTable *ht, char *key)
         node->data = newroot;
     }else{
         oldbk = linklast->next;
-        linklast->next = newroot;
+		linklast->next = newroot;
     }
     while (oldbk && oldbk != dbk) {
         tmp = oldbk->next;
