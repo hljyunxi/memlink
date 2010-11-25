@@ -109,7 +109,7 @@ create_thread(SThread* st)
 }
 
 static void 
-reset_fd(SyncConn *conn)
+close_if_open(SyncConn *conn)
 {
     if (conn->sync_fd >= 0)
         close(conn->sync_fd);
@@ -186,7 +186,7 @@ open_synclog(SyncConn *conn)
         DERROR("sync log with version %u does not exist\n", conn->log_ver);
         MEMLINK_EXIT;
     }
-    reset_fd(conn);
+    close_if_open(conn);
     conn->sync_fd = open_or_exit(conn->log_name);
 }
 
@@ -389,10 +389,18 @@ get_synclog_record(SyncConn *conn)
 }
 
 static void
-create_timeout(struct timeval *tm_ptr) 
+set_timeout(struct timeval *tm_ptr) 
 {
     evutil_timerclear(tm_ptr);
     tm_ptr->tv_sec = g_cf->timeout;
+}
+
+static void
+write_event_add(SyncConn *conn)
+{
+    struct timeval tm;
+    set_timeout(&tm);
+    event_add(&conn->sync_write_evt, &tm);
 }
 
 static void
@@ -406,13 +414,14 @@ read_synclog(int fd, short event, void *arg)
             conn->log_index_pos = get_index_pos(0);
             open_synclog(conn);
         } else {
+            if (event == EV_WRITE)
+                event_del(&conn->sync_write_evt);
             evtimer_add(&conn->sync_interval_evt, &(conn->interval));
             return;
         }
     } 
-    struct timeval tm;
-    create_timeout(&tm);
-    event_add(&conn->sync_write_evt, &tm);
+    if (event == EV_TIMEOUT)
+        write_event_add(conn);
 }
 
 static void
@@ -436,7 +445,6 @@ read_dump(int fd, short event, void *arg)
         reset_conn_wbuf(conn, buf, ret);
     } else if (ret == 0) {
         conn->log_index_pos = get_index_pos(0);
-        reset_fd(conn);
         open_synclog(conn);
         read_synclog_init(conn);
     } else {
@@ -589,7 +597,7 @@ sthread_create()
     event_set(&st->event, st->sock, EV_READ | EV_PERSIST, sthread_read, st);
     event_base_set(st->base, &st->event);
     struct timeval tm;
-    create_timeout(&tm);
+    set_timeout(&tm);
     event_add(&st->event, &tm);
 
     g_runtime->sthread = st;
@@ -637,6 +645,6 @@ sync_conn_destroy(Conn *c)
     event_del(&conn->sync_write_evt);
     event_del(&conn->evt);
     close(conn->sock);
-    reset_fd(conn);
+    close_if_open(conn);
     zz_free(conn);
 }
