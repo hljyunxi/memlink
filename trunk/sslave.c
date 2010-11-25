@@ -64,9 +64,10 @@ sslave_recv_log(SSlave *ss)
 		ret = wdata_apply(recvbuf + SYNCPOS_LEN, rlen, 0);
 		DINFO("wdata_apply return:%d\n", ret);
 		if (ret == 0) {
+			DINFO("synclog index_pos:%d, pos:%d\n", g_runtime->synclog->index_pos, g_runtime->synclog->pos);
 			synclog_write(g_runtime->synclog, recvbuf, size);
 		}
-
+	
         ss->logver  = logver;
         ss->logline = logline;
 	}
@@ -483,6 +484,7 @@ sslave_run(void *args)
 			}
 			//break;
 		}
+		
 		// recv sync log from master
 		ret = sslave_recv_log(ss);
 	}
