@@ -82,4 +82,27 @@ conn_wrote(Conn *conn)
 	return 0;
 }
 
+void 
+conn_write(Conn *conn)
+{
+    int ret;
 
+    DINFO("connection write: %d\n", conn->wlen);
+    while (1) {
+        ret = write(conn->sock, &conn->wbuf[conn->wpos], conn->wlen - conn->wpos);
+        DINFO("write: %d\n", ret);
+        if (ret == -1) {
+            if (errno == EINTR) {
+                continue;
+            }else if (errno != EAGAIN) {
+                // maybe close conn?
+                DERROR("write error! %s\n", strerror(errno)); 
+                conn->destroy(conn);
+                break;
+            }
+        }else{
+            conn->wpos += ret;
+            break;
+        }
+    } 
+}

@@ -27,8 +27,8 @@
  *
  * @param conn
  * @param newflag EV_READ or EV_WRITE
- * @param isnew 1 if the connection event has not been registered before. 0 if 
- * registered.
+ * @param isnew 1 if the connection event has not been added before. 0 if not 
+ * added.
  * @param timeout if positive, the event is added with a timeout.
  */
 int
@@ -638,8 +638,6 @@ void
 client_write(int fd, short event, void *arg)
 {
     Conn  *conn = (Conn*)arg;
-    int ret;
-    
 	if (event & EV_TIMEOUT) {
 		DWARNING("write timeout:%d, close\n", fd);
 		conn->destroy(conn);
@@ -649,37 +647,10 @@ client_write(int fd, short event, void *arg)
     if (conn->wpos == conn->wlen) {
         conn->wlen = conn->wpos = 0;
 		conn->wrote(conn);
-		/*
-		DINFO("change event to read.\n");
-        ret = change_event(conn, EV_READ|EV_PERSIST, g_cf->timeout, 0);
-        if (ret < 0) {
-            DERROR("change event error:%d close socket\n", ret);
-            conn->destroy(conn);
-        }*/
         return;
     }
-    DINFO("client write: %d\n", conn->wlen); 
-
-    while (1) {
-        ret = write(fd, &conn->wbuf[conn->wpos], conn->wlen - conn->wpos);
-        DINFO("write: %d\n", ret);
-        if (ret == -1) {
-            if (errno == EINTR) {
-                continue;
-            }else if (errno != EAGAIN) {
-                // maybe close conn?
-                DERROR("write error! %s\n", strerror(errno)); 
-                conn->destroy(conn);
-                break;
-            }
-        }else{
-            conn->wpos += ret;
-        }
-        break;
-    } 
-    
+    conn_write(conn);
 }
-
 
 WThread*
 wthread_create()
@@ -757,5 +728,3 @@ wthread_destroy(WThread *wt)
 {
     zz_free(wt);
 }
-
-

@@ -18,7 +18,44 @@
 
 #define BUF_SIZE 4096
 #define SYNCLOG_MAX_INDEX_POS (get_index_pos(SYNCLOG_INDEXNUM))
+#define RECORD_HEAD_LEN (sizeof(int) * 2 + sizeof(short))
+#define RECORD_LEN_POS  (sizeof(int) * 2)
 
+/** read n bytes, exit if error */
+static int
+try_read(int fd, void *ptr, size_t n)
+{
+    int ret;
+    if ((ret = read(fd, ptr, n)) < 0)
+        MEMLINK_EXIT;
+     else
+        return ret;
+}
+
+/** read, exit if error or n bytes can't be read */
+static void
+read_or_exit(int fd, void *ptr, size_t n)
+{
+    int ret;
+    if ((ret = read(fd, ptr, n)) != n) {
+        DERROR("Unable to read %d bytes, only %d bytes are read.\n", (int)n, ret);
+        MEMLINK_EXIT;
+    }
+}
+
+/** open readonly, exit if error */
+static int 
+open_or_exit(char *path)
+{
+    int fd;
+    if ((fd = open(path, O_RDONLY)) == -1) {
+        DERROR("open %s error! %s\n", path, strerror(errno));
+        MEMLINK_EXIT;
+    }
+    return fd;
+}
+
+/** thread event loop */
 static void*
 sthread_loop(void *arg) 
 {
@@ -28,6 +65,7 @@ sthread_loop(void *arg)
     return NULL;
 }
 
+/** create sthread's thread */
 static SThread* 
 create_thread(SThread* st) 
 {
@@ -50,6 +88,7 @@ create_thread(SThread* st)
     return st;
 }
 
+/** seek, exit if error */
 static off_t
 lseek_or_exit(int fd, off_t offset, int whence) 
 {
@@ -57,12 +96,12 @@ lseek_or_exit(int fd, off_t offset, int whence)
     if ((pos = lseek(fd, offset, whence)) == -1) {
         DERROR("lseek error: {fd: %d, offset: %u, whence: %d}! %s\n", fd, 
                 (unsigned int)offset, whence, strerror(errno));
-        close(fd);
         MEMLINK_EXIT;    
     }
     return pos;
 }
 
+/** seek with SEEK_SET, exit if error */
 static off_t
 lseek_set(int fd, off_t offset)
 {
@@ -139,11 +178,7 @@ open_synclog(SyncConn *conn)
         DERROR("sync log with version %u does not exist\n", conn->log_ver);
         MEMLINK_EXIT;
     }
-    conn->sync_fd = open(conn->log_name, O_RDONLY);
-    if (conn->sync_fd == -1) {
-        DERROR("open file %s error! %s\n", conn->log_name, strerror(errno));
-        MEMLINK_EXIT;
-    }
+    conn->sync_fd = open_or_exit(conn->log_name);
 }
 
 /**
@@ -166,11 +201,7 @@ seek_and_read_int(int fd, unsigned int offset)
 {
     unsigned int integer;
     lseek_set(fd, offset);
-    if (read(fd, &integer, sizeof(int)) == -1) {
-        DERROR("read error! %s\n", strerror(errno));
-        close(fd);
-        MEMLINK_EXIT;    
-    }
+    read_or_exit(fd, &integer, sizeof(int));
     return integer;
 }
 
@@ -188,12 +219,7 @@ get_synclog_record_pos(SyncConn *conn, unsigned int log_no)
     if (get_synclog_filename(conn) != 1)
         return 0;
 
-    conn->sync_fd = open(conn->log_name, O_RDONLY);
-    if (conn->sync_fd == -1) {
-        DERROR("open file %s error! %s\n", conn->log_name, strerror(errno));
-        MEMLINK_EXIT;
-    }
-
+    conn->sync_fd = open_or_exit(conn->log_name);
     conn->log_index_pos = get_index_pos(log_no);
     unsigned int log_pos = seek_and_read_int(conn->sync_fd, conn->log_index_pos);
     if (log_pos > 0) {
@@ -202,123 +228,6 @@ get_synclog_record_pos(SyncConn *conn, unsigned int log_no)
         DERROR("log record %u does not exist in log file %s\n", log_no, conn->log_name);
     }
     return log_pos;
-}
-
-static void
-reset_interval(struct timeval *tv_ptr, unsigned int seconds)
-{
-    evutil_timerclear(tv_ptr);
-    tv_ptr->tv_sec = seconds;
-}
-
-/**
- * Read n bytes. Terminate program if error.
- */
-static int
-try_readn(int fd, void *ptr, size_t n)
-{
-    int ret;
-    if ((ret = readn(fd, ptr, n, 0)) < 0)
-        MEMLINK_EXIT;
-     else
-        return ret;
-}
-
-/**
- * Write n bytes with a timeout. Terminate program if writing error or n bytes 
- * can't all be written. 
- */
-static void 
-writen_or_destroy(SyncConn *conn, void *ptr, size_t n)
-{
-    int ret;
-    if ((ret = writen(conn->sock, ptr, n, g_cf->timeout)) != n) {
-        DERROR("Unable to write %d bytes, only %d bytes are written.\n", (int)n, ret);
-        sync_conn_destroy((Conn*)conn);
-    }
-}
-
-/**
- * Read n bytes from the synclog file and write them to sync connection socket.
- */
-static void 
-transfer(SyncConn *conn,  void *ptr, size_t n)
-{
-    int ret;
-    if ((ret = try_readn(conn->sync_fd, ptr, n)) != n) {
-        DERROR("Unable to read %d bytes, only %d bytes are read.\n", (int)n, ret);
-        MEMLINK_EXIT;
-    }
-    writen_or_destroy(conn, ptr, n);
-}
-
-
-/**
- * Send available synclog records in the current open synclog file in 
- * SyncConn.
- */
-static void
-send_synclog_record(SyncConn *conn)
-{
-    unsigned int log_pos;
-    unsigned int master_log_ver;
-    unsigned int master_log_pos;
-
-    unsigned short len;
-    int buf_len = 256;
-    char buf[buf_len];
-    char p_buf[buf_len];
-
-    DINFO("sending sync log in %s\n", conn->log_name);
-    while (conn->log_index_pos < SYNCLOG_MAX_INDEX_POS 
-            && (log_pos = seek_and_read_int(conn->sync_fd, conn->log_index_pos)) > 0) {
-        lseek_set(conn->sync_fd, log_pos);
-        transfer(conn, &master_log_ver, sizeof(int)); // log version
-        transfer(conn, &master_log_pos, sizeof(int)); // log position 
-        transfer(conn, &len, sizeof(short)); // log record length
-
-        // log record
-        transfer(conn, buf, len);
-        formath(buf, len, p_buf, buf_len);
-
-        DINFO("sent {log version %u, log position: %u, log record (%u): %s}\n", 
-                master_log_ver, master_log_pos, len, p_buf);
-
-        conn->log_index_pos += sizeof(int);
-    }
-}
-
-static void
-send_synclog(int fd, short event, void *arg) 
-{
-    DINFO("sending sync log...\n");
-    SyncConn *conn = arg;
-    /*
-     * Send history synclog files and open the current synclog file.
-     */
-    while (conn->log_ver < g_runtime->logver) {
-        send_synclog_record(conn);
-        (conn->log_ver)++;
-        conn->log_index_pos = get_index_pos(0);
-        open_synclog(conn);
-    }
-
-    /*
-     * Send available records in the current synclog file
-     */
-    send_synclog_record(conn);
-
-    reset_interval(&(conn->interval), g_cf->timeout);
-    event_add(&conn->sync_evt, &(conn->interval));
-}
-
-static void 
-send_synclog_init(SyncConn* conn) 
-{
-    evtimer_set(&conn->sync_evt, send_synclog, conn);
-    event_base_set(conn->base, &conn->sync_evt);
-    reset_interval(&(conn->interval), 0);
-    event_add(&conn->sync_evt, &(conn->interval));
 }
 
 static int
@@ -330,12 +239,12 @@ cmd_sync(SyncConn *conn, char *data, int datalen)
     DINFO("log version: %u, log record number: %u\n", conn->log_ver, log_no);
     if ((get_synclog_record_pos(conn, log_no)) > 0
             || (conn->log_ver == g_runtime->logver && log_no == 0)) {
+        conn->status = SEND_LOG;
         ret = data_reply((Conn*)conn, 0, NULL, 0);
         DINFO("Found sync log file (version = %u)\n", conn->log_ver);
-        send_synclog_init(conn);
     } else { 
+        conn->status = NOT_SEND;
         ret = data_reply((Conn*)conn, 1, NULL, 0);
-        close(conn->sync_fd);
         DINFO("Not found syn log file (version %u) having log record %d\n", conn->log_ver, log_no);
     }
     return ret;
@@ -346,12 +255,7 @@ open_dump()
 {
     char dump_filename[PATH_MAX];
     snprintf(dump_filename, PATH_MAX, "%s/dump.dat", g_cf->datadir);
-    int fd;
-    if ((fd = open(dump_filename, O_RDONLY)) == -1) {
-        DERROR("open %s error! %s\n", dump_filename, strerror(errno));
-        MEMLINK_EXIT;
-    }
-    return fd;
+    return open_or_exit(dump_filename);
 }
 
 static off_t
@@ -361,40 +265,203 @@ get_file_size(int fd)
 }
 
 static void 
+sync_write(int fd, short event, void *arg)
+{
+    SyncConn *conn = (SyncConn*) arg;
+    if (event & EV_TIMEOUT) {
+        DWARNING("write timeout:%d, close\n", fd);
+        conn->destroy((Conn*)conn);
+        return;
+    }
+    if (conn->wpos == conn->wlen) {
+        conn->wlen = conn->wpos = 0;
+        DINFO("finished sending sync log in buffer\n");
+        conn->fill_wbuf(0, 0, conn);
+        return;
+    }
+    conn_write((Conn*)conn);
+}
+
+static void 
+sync_read(int fd, short event, void *arg)
+{
+    SyncConn *conn = (SyncConn*) arg;
+    int ret = read(fd, 0, 0);
+    if (ret == 0) {
+        DERROR("read 0, close conn %d.\n", fd);
+        conn->destroy((Conn*)conn);
+    }
+}
+
+static void
+interval_event_init(SyncConn *conn)
+{
+    evtimer_set(&conn->sync_interval_evt, sync_write, conn);
+    event_base_set(conn->base, &conn->sync_interval_evt);
+    evutil_timerclear(&conn->interval);
+    conn->interval.tv_sec = g_cf->sync_interval;
+}
+
+static void
+write_event_init(SyncConn *conn)
+{
+    event_set(&conn->sync_write_evt, conn->sock, EV_WRITE | EV_PERSIST, sync_write, conn);
+    event_base_set(conn->base, &conn->sync_write_evt);
+}
+
+static void
+read_event_init(SyncConn *conn) 
+{
+    event_set(&conn->sync_read_evt, conn->sock, EV_READ | EV_PERSIST, sync_read, conn);
+    event_base_set(conn->base, &conn->sync_read_evt);
+}
+
+static void 
+reset_conn_wbuf(SyncConn *conn, char *wbuf, int wlen) 
+{
+    if (conn->wbuf) {
+        zz_free(conn->wbuf);
+    }
+    conn->wbuf = wbuf;
+    conn->wlen = wlen;
+    conn->wpos = 0;
+}
+
+
+static void
+read_record(SyncConn *conn, 
+            unsigned int log_pos, 
+            char **wbuf_ptr, 
+            unsigned short *wlen_ptr)
+{
+    unsigned short len;
+    char head_buf[RECORD_HEAD_LEN] = {0};
+
+    lseek_set(conn->sync_fd, log_pos);
+    read_or_exit(conn->sync_fd, head_buf, RECORD_HEAD_LEN);
+
+    len = *((char *)(head_buf + RECORD_LEN_POS));
+    *wlen_ptr = RECORD_HEAD_LEN + len;
+    *wbuf_ptr = zz_malloc(*wlen_ptr);
+
+    memcpy(*wbuf_ptr, head_buf, RECORD_HEAD_LEN);
+    read_or_exit(conn->sync_fd, (void *)(*wlen_ptr + RECORD_HEAD_LEN), len);
+
+    DINFO("read synclog record at %u\n",  log_pos);
+}
+
+
+/**
+ * Read a log record from the open sync log file.
+ * @return 1 if such a log record can be read. Otherwise 0.
+ */
+static int
+get_synclog_record(SyncConn *conn)
+{
+    unsigned int log_pos;
+    unsigned short wlen;
+    char *wbuf;
+    DINFO("read a sync log record in %s.\n", conn->log_name);
+    if (conn->log_index_pos < SYNCLOG_MAX_INDEX_POS 
+            && (log_pos = seek_and_read_int(conn->sync_fd, conn->log_index_pos)) > 0) {
+        conn->log_index_pos += sizeof(int);
+        read_record(conn, log_pos, &wbuf, &wlen);
+        reset_conn_wbuf(conn, wbuf, wlen);
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+static void
+create_timeout(struct timeval *tm_ptr) 
+{
+    evutil_timerclear(tm_ptr);
+    tm_ptr->tv_sec = g_cf->timeout;
+}
+
+static void
+read_synclog(int fd, short event, void *arg) 
+{
+    SyncConn *conn = arg;
+    DINFO("reading sync log...\n");
+    while (!get_synclog_record(conn)) {
+        if (conn->log_ver < g_runtime->logver) {
+            (conn->log_ver)++;
+            conn->log_index_pos = get_index_pos(0);
+            open_synclog(conn);
+        } else {
+            evtimer_add(&conn->sync_interval_evt, &(conn->interval));
+            return;
+        }
+    } 
+    struct timeval tm;
+    create_timeout(&tm);
+    event_add(&conn->sync_write_evt, &tm);
+}
+
+static void
+read_synclog_init(SyncConn *conn)
+{
+    interval_event_init(conn);
+    conn->fill_wbuf = read_synclog;
+    read_synclog(0, 0, conn);
+}
+
+static void
+read_dump(int fd, short event, void *arg)
+{
+    SyncConn *conn = (SyncConn*) arg;
+    char buf[BUF_SIZE];
+    int ret;
+
+    DINFO("reading dump...");
+    ret = try_read(conn->sync_fd, buf, BUF_SIZE);
+
+    if (ret > 0) {
+        reset_conn_wbuf(conn, buf, ret);
+    } else if (ret == 0) {
+        conn->log_index_pos = get_index_pos(0);
+        open_synclog(conn);
+        read_synclog_init(conn);
+    } else {
+        DERROR("read dump error! %s", strerror(errno));
+        MEMLINK_EXIT;
+    }
+}
+
+static void
+read_dump_init(SyncConn *conn) 
+{
+    read_event_init(conn);
+    event_add(&conn->sync_read_evt, 0); 
+    conn->fill_wbuf = read_dump;
+    read_dump(0, 0, conn);
+}
+
+static void 
+common_event_init(SyncConn *conn) 
+{
+    write_event_init(conn);
+    read_event_init(conn);
+}
+
+
+static void 
 send_dump(int fd, short event, void *arg)
 {
     SyncConn* conn = arg;
-    char buf[BUF_SIZE];
-    int p_buf_size = BUF_SIZE * 3;
-    char p_buf[p_buf_size];
-    int ret;
     /*
      * The current log version may be changed if dump event happends. So it is 
      * saved here.
      */
     conn->log_ver = g_runtime->logver;
 
-    DINFO("sending dump...\n");
-    while ((ret = try_readn(conn->sync_fd, buf, BUF_SIZE)) > 0) {
-        DINFO("dump data: %s\n", formath(buf, ret, p_buf, p_buf_size));
-        writen_or_destroy(conn, buf, ret);
-    }
-    // close dump file
-    close(conn->sync_fd);
+    event_del(&conn->evt);
+    read_dump_init(conn);
+    close(conn->sync_fd); // close dump file
 
-    conn->log_index_pos = get_index_pos(0);
-
-    open_synclog(conn);
-    send_synclog_init(conn); 
-}
-
-static void 
-send_dump_init(SyncConn *conn)
-{
-    evtimer_set(&conn->sync_evt, send_dump, conn);
-    event_base_set(conn->base, &conn->sync_evt);
-    reset_interval(&(conn->interval), 0);
-    event_add(&conn->sync_evt, &(conn->interval));
+    read_synclog_init(conn); 
 }
 
 static void
@@ -440,13 +507,38 @@ cmd_get_dump(SyncConn* conn, char *data, int datalen)
     char retrc[retlen];
     memcpy(retrc, &g_runtime->dumpver, sizeof(int));
     memcpy(retrc + sizeof(int), &remaining_size, sizeof(long long));
-    ret = data_reply((Conn*)conn, retcode, retrc, retlen);
-
     if (offset < file_size) {
+        conn->status = SEND_DUMP;
         lseek_set(conn->sync_fd, offset);
-        send_dump_init(conn);
+        send_dump(0, 0, conn);
+    } else {
+        conn->status = NOT_SEND;
     }
+    ret = data_reply((Conn*)conn, retcode, retrc, retlen);
     return ret;
+}
+
+static int 
+sync_conn_wrote(Conn *c)
+{
+    SyncConn *conn = (SyncConn*) c;
+    switch (conn->status) {
+        case NOT_SEND:
+            conn_wrote(c);
+            break;
+        case SEND_LOG:
+            common_event_init(conn);
+            read_synclog_init(conn);
+            break;
+        case SEND_DUMP:
+            common_event_init(conn);
+            read_dump_init(conn);
+            break;
+        default:
+            DERROR("illegal sync connectoin status %d\n", conn->status);
+            MEMLINK_EXIT;
+    }
+    return 0;
 }
 
 static void 
@@ -464,6 +556,7 @@ sthread_read(int fd, short event, void *arg)
         conn->base = st->base;
         conn->ready = sdata_ready;
         conn->destroy = sync_conn_destroy;
+        conn->wrote = sync_conn_wrote;
 
         DINFO("new conn: %d\n", conn->sock);
         DINFO("change event to read.\n");
@@ -493,7 +586,9 @@ sthread_create()
     st->base = event_base_new();
     event_set(&st->event, st->sock, EV_READ | EV_PERSIST, sthread_read, st);
     event_base_set(st->base, &st->event);
-    event_add(&st->event, 0);
+    struct timeval tm;
+    create_timeout(&tm);
+    event_add(&st->event, &tm);
 
     g_runtime->sthread = st;
 
@@ -536,9 +631,11 @@ sync_conn_destroy(Conn *c)
 {
     DINFO("destroy sync connection\n");
     SyncConn *conn = (SyncConn*) c;
-    event_del(&conn->sync_evt);
+    event_del(&conn->sync_interval_evt);
+    event_del(&conn->sync_write_evt);
     event_del(&conn->evt);
     close(conn->sock);
+    // close file descriptor if opened
     if (conn->sync_fd >= 0)
         close(conn->sync_fd);
     zz_free(conn);
