@@ -85,7 +85,7 @@ int test_insert_long(int count, int docreate)
 
 	sprintf(key, "haha");
     if (docreate == 1) {
-        ret = memlink_cmd_create(m, key, 6, "4:3:1");
+        ret = memlink_cmd_create(m, key, VALUE_SIZE, "4:3:1");
 
         if (ret != MEMLINK_OK) {
             DERROR("create %s error: %d\n", key, ret);

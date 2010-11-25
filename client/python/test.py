@@ -5,21 +5,13 @@ from memlinkclient import *
 READ_PORT  = 11001
 WRITE_PORT = 11002
 
-def test():
-    m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
-    #print dir(m)
+def insert(*args):
+    try:
+        num = int(args[0])
+    except:
+        num = 1000
+    print 'insert:', num
 
-    key = 'haha'
-    ret, result = m.stat(key)
-    print result
-
-    #ret, result = m.range(key, "::", 2, 10) 
-    #print ret, result
-    #del result
-
-    m.destroy()
-
-def insert():
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
    
     ret = m.create('haha', 12, "1")
@@ -27,7 +19,7 @@ def insert():
         print 'create haha error!', ret
         return
 
-    for i in xrange(0, 1000):
+    for i in xrange(0, num):
         ret = m.insert('haha', '%012d' % i, "1", 0)
         if ret != MEMLINK_OK:
             print 'insert error:', ret, i
@@ -48,7 +40,18 @@ def delete():
     m.destroy()
 
 
-def range():
+def range(*args):
+    try:
+        frompos = int(args[0])
+        slen    = int(args[1])
+        mask    = args[2]
+    except:
+        frompos = 0
+        slen    = 1000
+        mask    = '1'
+
+    print 'range from:%d, len:%d, mask:%d' % (frompos, slen, mask)
+
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
     
     ret, recs = m.range('haha', '1', 0, 1000)
@@ -62,7 +65,7 @@ def range():
 
     m.destroy()
 
-def dump():
+def dump(*args):
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
     ret = m.dump()
     if ret != MEMLINK_OK:
@@ -70,14 +73,14 @@ def dump():
     m.destroy()
 
 
-def clean():
+def clean(*args):
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
     ret = m.clean('haha')
     if ret != MEMLINK_OK:
         print 'clean error!', ret
     m.destroy()
 
-def stat():
+def stat(*args):
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
     ret, stat = m.stat('haha')
     if ret != MEMLINK_OK:
@@ -86,28 +89,14 @@ def stat():
     m.destroy()
 
 
-def insert_haha():
-    m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
- 
-    ret = m.create('haha1', 12, "1")
-    if ret != MEMLINK_OK:
-        print 'create haha error!', ret
-  
-    for i in xrange(0, 1):
-        print 'insert:', '%012d' % i
-        ret = m.insert('haha1', '%012d' % i, "1", 0)
-        if ret != MEMLINK_OK:
-            print 'insert error:', ret, i
-            return
-    
-    m.destroy()
-
-
 if __name__ == '__main__':
     action = sys.argv[1]
+    args = []
+    if len(sys.argv) > 2:
+        args.extend(sys.argv[2:])
 
     func = globals()[action]
-    func()
+    func(*args)
         
 
 
