@@ -136,16 +136,12 @@ synclog_create()
 		char role = *(slog->index + SYNCLOG_HEAD_LEN - sizeof(int));
 		if (role != g_cf->role) {
             synclog_rotate(slog);
-		}else{
-			DINFO("validate synclog ...\n");
-			int ret;
-			if ((ret = synclog_validate(slog)) < 0) {
-				DERROR("synclog_validate error: %d\n", ret);
-			}
-			/*
-			if (synclog_validate(slog) == SYNCLOG_FULL) {
-				synclog_rotate(slog);
-			}*/
+		}
+		
+		DINFO("validate synclog ...\n");
+		int ret;
+		if ((ret = synclog_validate(slog)) < 0) {
+			DERROR("synclog_validate error: %d\n", ret);
 		}
     }
 

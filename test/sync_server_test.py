@@ -64,10 +64,11 @@ class SyncServer:
         while (True):
             dlen, cmd, param1, param2 = self.recv_cmd(sock)
             print 'recv len:%d, cmd:%d, %d %d' % (dlen, cmd, param1, param2)
-
+            print 'local logver:%d, logline:%d' % (self.logver, self.logline)
             if cmd == CMD_SYNC:
-                if self.logver == param1 and self.logline <= param2:
+                if self.logver == param1 and self.logline >= param2:
                     cli_logline = param2
+                    self.seqid = param2
                     self.send_sync_cmd(sock, 0) 
                     break
                 else:
@@ -78,13 +79,13 @@ class SyncServer:
                 print 'send dump ok!'
 
         while True:
-            print 'send data ...', self.logver, self.logline, cli_logline
+            print 'send data logver:%d, logline:%d, client_loglien:%d' % (self.logver, self.logline, cli_logline)
             s = self.send_data(sock, self.logver, cli_logline)
-            time.sleep(1)
+            time.sleep(2)
             if cli_logline > self.logline:
                 print 'add to dumpdatalist:', repr(s)
                 self.dumpdatalist.append(s) 
-                self.logline += 1
+                self.logline = len(self.dumpdatalist)
             cli_logline += 1
 
     def recv_cmd(self, sock):
