@@ -138,10 +138,14 @@ synclog_create()
             synclog_rotate(slog);
 		}else{
 			DINFO("validate synclog ...\n");
-			if (synclog_validate(slog) == SYNCLOG_FULL) {
-				// start a new synclog
-				synclog_rotate(slog);
+			int ret;
+			if ((ret = synclog_validate(slog)) < 0) {
+				DERROR("synclog_validate error: %d\n", ret);
 			}
+			/*
+			if (synclog_validate(slog) == SYNCLOG_FULL) {
+				synclog_rotate(slog);
+			}*/
 		}
     }
 
@@ -324,7 +328,7 @@ synclog_validate(SyncLog *slog)
 
     unsigned int oldidx = lastidx; 
     while (lastidx < filelen) {
-        DINFO("check offset: %d\n", lastidx);
+        //DINFO("check offset: %d\n", lastidx);
 		// skip logver and logline
 		lastidx += sizeof(int) + sizeof(int);
         int cur = lseek(slog->fd, lastidx, SEEK_SET);
@@ -379,7 +383,7 @@ synclog_write(SyncLog *slog, char *data, int datalen)
     //int pos = lseek(slog->fd, 0, SEEK_CUR);
     //char buf[128];
 	
-	if (slog->index_pos == SYNCLOG_INDEXNUM) {
+	if (slog->index_pos == SYNCLOG_INDEXNUM - 1) {
 		synclog_rotate(slog);
 	}
 

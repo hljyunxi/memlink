@@ -54,6 +54,7 @@ def binlog(filename='bin.log'):
 def dumpfile(filename):
     global onlyheader
     if not os.path.isfile(filename):
+        print 'not found:', filename
         return
     f = open(filename, "rb") 
     headstr = f.read(2 + 4 + 4 + 1 + 8)
@@ -71,16 +72,21 @@ def dumpfile(filename):
         klenstr = f.read(1)
         if not klenstr:
             break
+        # key len (1B)
         klen = struct.unpack('B', klenstr)[0]
+        # key string (keylen B)
         key  = struct.unpack(str(klen) + 's', f.read(klen))[0]
+        # valuesize (1B)
         valuelen = struct.unpack('B', f.read(1))[0]
+        # masksize (1B)
         masklen  = struct.unpack('B', f.read(1))[0]
+        # masknum (1B)
         masknum  = struct.unpack('B', f.read(1))[0]
+        # maskformat (masknum B)
         s = f.read(masknum)
         maskformat = []
-        maskformat.append(struct.unpack('B', s[0])[0]) 
-        maskformat.append(struct.unpack('B', s[1])[0]) 
-        maskformat.append(struct.unpack('B', s[2])[0]) 
+        for i in range(0, masknum):
+            maskformat.append(struct.unpack('B', s[i])[0]) 
 
         itemnum  = struct.unpack('I', f.read(4))[0] 
         
