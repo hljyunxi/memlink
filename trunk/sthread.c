@@ -691,6 +691,7 @@ sync_conn_destroy(Conn *c)
     SyncConn *conn = (SyncConn*) c;
     event_del(&conn->sync_interval_evt);
     event_del(&conn->sync_write_evt);
+    event_del(&conn->sync_read_evt);
     event_del(&conn->evt);
     close(conn->sock);
     close_if_open(conn);
