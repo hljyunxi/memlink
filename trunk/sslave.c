@@ -64,7 +64,7 @@ sslave_recv_log(SSlave *ss)
 		ret = wdata_apply(recvbuf + SYNCPOS_LEN, rlen, 0);
 		DINFO("wdata_apply return:%d\n", ret);
 		if (ret == 0) {
-			DINFO("synclog index_pos:%d, pos:%d\n", g_runtime->synclog->index_pos, g_runtime->synclog->pos);
+			//DINFO("synclog index_pos:%d, pos:%d\n", g_runtime->synclog->index_pos, g_runtime->synclog->pos);
 			synclog_write(g_runtime->synclog, recvbuf, size);
 		}
 	
@@ -133,7 +133,6 @@ sslave_load_master_dump_info(SSlave *ss, char *dumpfile, long long *filesize, lo
 	}
 	fclose(dumpf);
 
-
 	return 0;
 }
 
@@ -194,7 +193,10 @@ sslave_prev_sync_pos(SSlave *ss)
 		}
 
         ss->binlog_index -= 1;
-        int pos = ss->binlog_index - 1;
+        char *data = ss->binlog->index + ss->binlog->len;
+        int pos = data[ss->binlog_index];
+        
+        DINFO("binlog_index:%d, pos: %d\n", ss->binlog_index, pos);
 
         lseek(ss->binlog->fd, pos, SEEK_SET);
         unsigned int logver, logline;
@@ -233,7 +235,6 @@ sslave_do_cmd(SSlave *ss, char *sendbuf, int buflen, char *recvbuf, int recvlen)
         return -1;
     }
     
-    //char recv[1024];
     ret = readn(ss->sock, recvbuf, sizeof(int), ss->timeout);
     if (ret != sizeof(int)) {
         sslave_close(ss);
