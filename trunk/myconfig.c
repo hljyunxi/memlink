@@ -264,12 +264,14 @@ load_data()
 		if (logids[i] < g_runtime->dumplogver) {
 			continue;
 		}
-        snprintf(logname, PATH_MAX, "%s/data/bin.log.%d", g_runtime->home, logids[i]);
+        //snprintf(logname, PATH_MAX, "%s/data/bin.log.%d", g_runtime->home, logids[i]);
+        snprintf(logname, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, logids[i]);
         DINFO("load synclog: %s\n", logname);
         load_synclog(logname);
     }
 
-    snprintf(logname, PATH_MAX, "%s/data/bin.log", g_runtime->home);
+    //snprintf(logname, PATH_MAX, "%s/data/bin.log", g_runtime->home);
+    snprintf(logname, PATH_MAX, "%s/bin.log", g_cf->datadir);
     DINFO("load synclog: %s\n", logname);
     load_synclog(logname);
 	
@@ -344,11 +346,13 @@ load_data_slave()
 
 	if (load_master_dump == 0) {
 		int i;
+		DINFO("load binlog ...\n");
 		for (i = 0; i < n; i++) {
 			if (logids[i] < g_runtime->dumplogver) {
 				continue;
 			}
-			snprintf(logname, PATH_MAX, "%s/data/bin.log.%d", g_runtime->home, logids[i]);
+			//snprintf(logname, PATH_MAX, "%s/data/bin.log.%d", g_runtime->home, logids[i]);
+			snprintf(logname, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, logids[i]);
 			DINFO("load synclog: %s\n", logname);
 			ret = load_synclog(logname);
 			if (ret > 0 && g_cf->role == ROLE_SLAVE) {
@@ -356,7 +360,8 @@ load_data_slave()
 			}
 		}
 
-		snprintf(logname, PATH_MAX, "%s/data/bin.log", g_runtime->home);
+		//snprintf(logname, PATH_MAX, "%s/data/bin.log", g_runtime->home);
+		snprintf(logname, PATH_MAX, "%s/bin.log", g_cf->datadir);
 		DINFO("load synclog: %s\n", logname);
 		ret = load_synclog(logname);
 		if (ret > 0 && g_cf->role == ROLE_SLAVE) {
@@ -368,7 +373,7 @@ load_data_slave()
         dumpfile(g_runtime->ht);
     }
 	
-	DINFO("slave binlog_ver:%d, binlog_index:%d, logver:%d, logline:%d, dump_logver:%d, dumpsize:%lld, dumpfile_size:%lld\n", g_runtime->slave->binlog_ver, g_runtime->slave->binlog_index, g_runtime->slave->logver, g_runtime->slave->logline, g_runtime->slave->dump_logver, g_runtime->slave->dumpsize, g_runtime->slave->dumpfile_size);
+	DINFO("======== slave binlog_ver:%d, binlog_index:%d, logver:%d, logline:%d, dump_logver:%d, dumpsize:%lld, dumpfile_size:%lld\n", g_runtime->slave->binlog_ver, g_runtime->slave->binlog_index, g_runtime->slave->logver, g_runtime->slave->logline, g_runtime->slave->dump_logver, g_runtime->slave->dumpsize, g_runtime->slave->dumpfile_size);
 
     return 0;
 }
@@ -434,6 +439,7 @@ runtime_create_common(char *pgname)
         return NULL;
     }
     DINFO("synclog open ok!\n");
+	DINFO("synclog index_pos:%d, pos:%d\n", g_runtime->synclog->index_pos, g_runtime->synclog->pos);
 
     return rt;
 }
