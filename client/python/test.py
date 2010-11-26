@@ -51,11 +51,11 @@ def range(*args):
         slen    = 1000
         mask    = '1'
 
-    print 'range from:%d, len:%d, mask:%d' % (frompos, slen, mask)
+    print 'range from:%d, len:%d, mask:%s' % (frompos, slen, mask)
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
     
-    ret, recs = m.range('haha', '1', 0, 1000)
+    ret, recs = m.range('haha', mask, frompos, slen)
     if ret != MEMLINK_OK:
         print 'range error:', ret
     print recs.count
