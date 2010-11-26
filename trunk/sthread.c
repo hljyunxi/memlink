@@ -21,6 +21,19 @@
 #define RECORD_HEAD_LEN (sizeof(int) * 2 + sizeof(short))
 #define RECORD_LEN_POS  (sizeof(int) * 2)
 
+/** malloc size bytes, exit if error */
+static void *
+malloc_or_exit(size_t size)
+{
+    void *ptr = zz_malloc(size);
+    if (ptr == NULL) {
+        DERROR("sthread malloc error.\n");
+        MEMLINK_EXIT;
+    }
+    memset(ptr, 0, size);
+    return ptr;
+}
+
 /** read n bytes, exit if error */
 static int
 try_read(int fd, void *ptr, size_t n)
@@ -301,7 +314,10 @@ sync_write(int fd, short event, void *arg)
         return;
     }
     if (conn->wpos == conn->wlen) {
-        DINFO("finished sending sync log in buffer\n");
+        if (conn->wlen == 0)
+            DINFO("no data in wbuf\n");
+        else
+            DINFO("finished sending %d bytes of data in wbuf\n", conn->wlen);
         clear_conn_wbuf(conn);
         conn->fill_wbuf(0, EV_WRITE, conn);
         return;
@@ -337,7 +353,7 @@ static void
 sthread_dinfo(char *buf, int len) 
 {
     int p_len = len * 3 + 1;
-    char *p_buf = zz_malloc(p_len);
+    char *p_buf = (char *)malloc_or_exit(p_len);
     formath(buf, len, p_buf, 196609);
     DINFO("data: %s\n", p_buf);
     zz_free(p_buf);
@@ -358,7 +374,7 @@ read_record(SyncConn *conn,
 
     datalen = *((unsigned short *)(head_buf + RECORD_LEN_POS));
     *wdatalen_ptr = RECORD_HEAD_LEN + datalen;
-    *wbuf_ptr = zz_malloc(*wdatalen_ptr);
+    *wbuf_ptr = malloc_or_exit(*wdatalen_ptr);
 
     memcpy(*wbuf_ptr, head_buf, RECORD_HEAD_LEN);
     read_or_exit(conn->sync_fd, (void *)(*wbuf_ptr + RECORD_HEAD_LEN), datalen);
@@ -449,11 +465,12 @@ interval_event_init(SyncConn *conn)
  * slave.
  */
 static void
-write_event_init(SyncConn *conn)
+write_event_init_and_add(SyncConn *conn)
 {
     event_set(&conn->sync_write_evt, conn->sock, EV_WRITE | EV_PERSIST, sync_write, conn);
     event_base_set(conn->base, &conn->sync_write_evt);
     set_timeval(&conn->timeout, g_cf->timeout);
+    event_add(&conn->sync_write_evt, &conn->timeout);
 }
 
 /** 
@@ -473,18 +490,16 @@ read_synclog_init(SyncConn *conn)
 {
     conn->fill_wbuf = read_synclog;
     interval_event_init(conn);
-    if (conn->status == SEND_LOG)
-        event_add(&conn->sync_write_evt, &conn->timeout);
 }
 
 static void
 read_dump(int fd, short event, void *arg)
 {
     SyncConn *conn = (SyncConn*) arg;
-    char buf[BUF_SIZE];
+    char *buf = malloc_or_exit(BUF_SIZE);
     int ret;
 
-    DINFO("reading dump...");
+    DINFO("reading dump...\n");
     ret = try_read(conn->sync_fd, buf, BUF_SIZE);
     if (ret > 0) {
         reset_conn_wbuf(conn, buf, ret);
@@ -492,6 +507,7 @@ read_dump(int fd, short event, void *arg)
         sthread_dinfo(conn->wbuf, conn->wlen);
 #endif
     } else if (ret == 0) {
+        DINFO("finished sending dump\n");
         conn->log_index_pos = get_index_pos(0);
         open_synclog(conn);
         read_synclog_init(conn);
@@ -505,7 +521,6 @@ static void
 read_dump_init(SyncConn *conn) 
 {
     conn->fill_wbuf = read_dump;
-    event_add(&conn->sync_write_evt, &conn->timeout);
 }
 
 /**
@@ -515,7 +530,7 @@ static void
 common_event_init(SyncConn *conn) 
 {
     event_del(&conn->evt);
-    write_event_init(conn);
+    write_event_init_and_add(conn);
     read_event_init_and_add(conn);
 }
 
@@ -587,12 +602,12 @@ sync_conn_wrote(Conn *c)
             conn_wrote(c);
             break;
         case SEND_LOG:
-            common_event_init(conn);
             read_synclog_init(conn);
+            common_event_init(conn);
             break;
         case SEND_DUMP:
-            common_event_init(conn);
             read_dump_init(conn);
+            common_event_init(conn);
             break;
         default:
             DERROR("illegal sync connectoin status %d\n", conn->status);
@@ -631,12 +646,7 @@ sthread_read(int fd, short event, void *arg)
 SThread*
 sthread_create() 
 {
-    SThread *st = (SThread*)zz_malloc(sizeof(SThread));
-    if (st == NULL) {
-        DERROR("sthread malloc error.\n");
-        MEMLINK_EXIT;
-    }
-    memset(st, 0, sizeof(SThread));
+    SThread *st = (SThread*) malloc_or_exit(sizeof(SThread));
 
     st->sock = tcp_socket_server(g_cf->sync_port);
     if (st->sock == -1) 
