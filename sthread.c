@@ -461,7 +461,7 @@ write_event_init(SyncConn *conn)
  * connection.
  */
 static void
-read_event_init(SyncConn *conn) 
+read_event_init_and_add(SyncConn *conn) 
 {
     event_set(&conn->sync_read_evt, conn->sock, EV_READ | EV_PERSIST, sync_read, conn);
     event_base_set(conn->base, &conn->sync_read_evt);
@@ -516,7 +516,7 @@ common_event_init(SyncConn *conn)
 {
     event_del(&conn->evt);
     write_event_init(conn);
-    read_event_init(conn);
+    read_event_init_and_add(conn);
 }
 
 static void
