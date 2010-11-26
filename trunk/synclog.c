@@ -193,7 +193,7 @@ synclog_open(char *filename)
     }
 
     slog->index_pos = 0;
-    slog->pos       = slog->len;
+    slog->pos       = lseek(slog->fd, 0, SEEK_END);
 
 	int i;
 	int *idxdata = (int*)(slog->index + SYNCLOG_HEAD_LEN);
@@ -203,6 +203,9 @@ synclog_open(char *filename)
 			break;
 		}
 	}
+    if (slog->index_pos == 0 && i == SYNCLOG_INDEXNUM) {
+        slog->index_pos = SYNCLOG_INDEXNUM;
+    }
 
 	return slog;
 }

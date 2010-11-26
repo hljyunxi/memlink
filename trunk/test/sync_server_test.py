@@ -81,7 +81,8 @@ class SyncServer:
         while True:
             print 'send data logver:%d, logline:%d, client_loglien:%d' % (self.logver, self.logline, cli_logline)
             s = self.send_data(sock, self.logver, cli_logline)
-            time.sleep(2)
+            time.sleep(1)
+
             if cli_logline > self.logline:
                 print 'add to dumpdatalist:', repr(s)
                 self.dumpdatalist.append(s) 

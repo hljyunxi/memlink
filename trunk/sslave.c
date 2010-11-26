@@ -200,7 +200,7 @@ sslave_prev_sync_pos(SSlave *ss)
         int *idxdata = (int*)(ss->binlog->index + SYNCLOG_HEAD_LEN);
         int pos      = idxdata[ss->binlog_index];
         
-        DINFO("binlog_index:%d, pos: %d\n", ss->binlog_index, pos);
+        DINFO("=== binlog_index:%d, pos: %d ===\n", ss->binlog_index, pos);
 
         lseek(ss->binlog->fd, pos, SEEK_SET);
         unsigned int logver, logline;
