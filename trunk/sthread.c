@@ -589,9 +589,7 @@ sthread_create()
     st->base = event_base_new();
     event_set(&st->event, st->sock, EV_READ | EV_PERSIST, sthread_read, st);
     event_base_set(st->base, &st->event);
-    struct timeval tm;
-    set_timeval(&tm, g_cf->timeout);
-    event_add(&st->event, &tm);
+    event_add(&st->event, 0);
 
     g_runtime->sthread = st;
 
