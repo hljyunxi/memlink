@@ -106,7 +106,7 @@ data_set_reply(Conn *conn, short retcode, char *retdata, int retlen)
 
     // package length + retcode + retdata
     datalen = CMD_REPLY_HEAD_LEN + retlen;
-    DINFO("datalen: %d, retcode: %d, conn->wsize:%d\n", datalen, retcode, conn->wsize); 
+    DINFO("datalen: %d, retcode: %d, conn->wsize: %d\n", datalen, retcode, conn->wsize); 
     
     if (conn->wsize >= datalen) {
         wdata = conn->wbuf;
