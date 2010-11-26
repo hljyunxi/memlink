@@ -1,4 +1,5 @@
 import os, sys
+import time
 from memlinkclient import *
 #print dir(memlink)
 
