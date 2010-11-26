@@ -11,7 +11,7 @@
  scons地址http://www.scons.org/
 
 = 4 编译memlink =
- * 库依赖libevent http://monkey.org/~provos/libevent/ 版本
+ * 库依赖libevent http://monkey.org/~provos/libevent/ 版本1.4.14b
  去google code上面check 一份代码， 进入memlink目录下， 直接运行scons，就能编译。再该目录下面会出现可执行文件memlink。
 
 = 5 编译用户接口 =
