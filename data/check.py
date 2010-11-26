@@ -15,6 +15,7 @@ def binlog(filename='bin.log'):
     v.extend(struct.unpack('I', s[2:6]))
     v.extend(struct.unpack('B', s[6]))
     v.extend(struct.unpack('I', s[7:]))
+    maxdata = v[-1]
     d = f.tell() + 4 * v[-1]
     v.append(d)
 
@@ -23,13 +24,15 @@ def binlog(filename='bin.log'):
     print 'format:%d, logver:%d, role:%d, index:%d, data:%d' % tuple(v)
     
     indexes = []
-    while True:
+    rdc = 0
+    while rdc < maxdata * 4:
         ns = f.read(4)
         v = struct.unpack('I', ns)
         if v[0] == 0:
             break
         else:
             indexes.append(v[0])
+        rdc += 4
 
     if onlyheader:
         print 'index:', len(indexes)
