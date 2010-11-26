@@ -317,6 +317,11 @@ sync_read(int fd, short event, void *arg)
     if (ret == 0) {
         DINFO("read 0, close conn %d.\n", fd);
         conn->destroy((Conn*)conn);
+    } else if (ret < 0) {
+        DINFO("read %d error: (%d) %s\n", fd, errno, strerror(errno)); 
+        conn->destroy((Conn*)conn);
+    } else {
+        DINFO("ignore received data\n");
     }
 }
 
@@ -325,40 +330,6 @@ set_timeval(struct timeval *tm_ptr, unsigned int seconds)
 {
     evutil_timerclear(tm_ptr);
     tm_ptr->tv_sec = seconds;
-}
-
-/**
- * Initialize the sync interval event.
- */
-static void
-interval_event_init(SyncConn *conn)
-{
-    evtimer_set(&conn->sync_interval_evt, sync_write, conn);
-    event_base_set(conn->base, &conn->sync_interval_evt);
-    set_timeval(&conn->interval, g_cf->sync_interval);
-}
-
-/** 
- * Initialize sync write event which is used for sending sync log or dump to 
- * slave.
- */
-static void
-write_event_init(SyncConn *conn)
-{
-    event_set(&conn->sync_write_evt, conn->sock, EV_WRITE | EV_PERSIST, sync_write, conn);
-    event_base_set(conn->base, &conn->sync_write_evt);
-    set_timeval(&conn->timeout, g_cf->timeout);
-}
-
-/** 
- * Initialized sync read event which is used to monitor the timeout of sync 
- * connection.
- */
-static void
-read_event_init(SyncConn *conn) 
-{
-    event_set(&conn->sync_read_evt, conn->sock, EV_READ | EV_PERSIST, sync_read, conn);
-    event_base_set(conn->base, &conn->sync_read_evt);
 }
 
 #ifdef DEBUG
@@ -423,7 +394,6 @@ get_synclog_record(SyncConn *conn)
     }
 }
 
-
 static void
 read_synclog(int fd, short event, void *arg) 
 {
@@ -448,6 +418,7 @@ read_synclog(int fd, short event, void *arg)
                 event_del(&conn->sync_write_evt);
             }
             // If a log record can't be read, add interval event.
+            DINFO("add interval event\n");
             evtimer_add(&conn->sync_interval_evt, &conn->interval);
             return;
         }
@@ -456,8 +427,44 @@ read_synclog(int fd, short event, void *arg)
      * If invoked by interval event and a log record record is read, add write 
      * event.
      */ 
-    if (event == EV_TIMEOUT)
+    if (event == EV_TIMEOUT) {
+        DINFO("add write event");
         event_add(&conn->sync_write_evt, &conn->timeout);
+    }
+}
+
+/**
+ * Initialize the sync interval event.
+ */
+static void
+interval_event_init(SyncConn *conn)
+{
+    evtimer_set(&conn->sync_interval_evt, read_synclog, conn);
+    event_base_set(conn->base, &conn->sync_interval_evt);
+    set_timeval(&conn->interval, g_cf->sync_interval);
+}
+
+/** 
+ * Initialize sync write event which is used for sending sync log or dump to 
+ * slave.
+ */
+static void
+write_event_init(SyncConn *conn)
+{
+    event_set(&conn->sync_write_evt, conn->sock, EV_WRITE | EV_PERSIST, sync_write, conn);
+    event_base_set(conn->base, &conn->sync_write_evt);
+    set_timeval(&conn->timeout, g_cf->timeout);
+}
+
+/** 
+ * Initialized sync read event which is used to monitor the timeout of sync 
+ * connection.
+ */
+static void
+read_event_init(SyncConn *conn) 
+{
+    event_set(&conn->sync_read_evt, conn->sock, EV_READ | EV_PERSIST, sync_read, conn);
+    event_base_set(conn->base, &conn->sync_read_evt);
 }
 
 static void
