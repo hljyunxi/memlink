@@ -34,6 +34,17 @@ malloc_or_exit(size_t size)
     return ptr;
 }
 
+static void 
+sthread_change_event(SyncConn *conn)
+{
+    DINFO("change event to read.\n");
+    int ret = change_event((Conn*)conn, EV_READ | EV_PERSIST, 0, 1);
+    if (ret < 0) {
+        DERROR("change_event error: %d, close conn.\n", ret);
+        sync_conn_destroy((Conn*)conn);
+    }
+}
+
 /** read n bytes, exit if error */
 static int
 try_read(int fd, void *ptr, size_t n)
@@ -300,7 +311,7 @@ clear_conn_wbuf(SyncConn *conn)
     if (conn->wbuf) {
         zz_free(conn->wbuf);
     }
-    conn->wlen = conn->wpos = 0;
+    conn->wsize = conn->wlen = conn->wpos = 0;
     conn->wbuf = NULL;
 }
 
@@ -493,6 +504,14 @@ read_synclog_init(SyncConn *conn)
 }
 
 static void
+common_event_destroy(SyncConn *conn)
+{
+    event_del(&conn->sync_write_evt);
+    event_del(&conn->sync_read_evt);
+    sthread_change_event(conn);
+}
+
+static void
 read_dump(int fd, short event, void *arg)
 {
     SyncConn *conn = (SyncConn*) arg;
@@ -508,9 +527,7 @@ read_dump(int fd, short event, void *arg)
 #endif
     } else if (ret == 0) {
         DINFO("finished sending dump\n");
-        conn->log_index_pos = get_index_pos(0);
-        open_synclog(conn);
-        read_synclog_init(conn);
+        common_event_destroy(conn);
     } else {
         DERROR("read dump error! %s", strerror(errno));
         MEMLINK_EXIT;
@@ -616,12 +633,12 @@ sync_conn_wrote(Conn *c)
     return 0;
 }
 
+
 static void 
 sthread_read(int fd, short event, void *arg) 
 {
     SThread *st = (SThread*) arg;
     SyncConn *conn;
-    int ret;
 
     DINFO("sthread_read...\n");
     conn = (SyncConn *)conn_create(fd, sizeof(SyncConn));
@@ -634,12 +651,7 @@ sthread_read(int fd, short event, void *arg)
         conn->wrote = sync_conn_wrote;
 
         DINFO("new conn: %d\n", conn->sock);
-        DINFO("change event to read.\n");
-        ret = change_event((Conn*)conn, EV_READ | EV_PERSIST, 0, 1);
-        if (ret < 0) {
-            DERROR("change_event error: %d, close conn.\n", ret);
-            sync_conn_destroy((Conn*)conn);
-        }
+        sthread_change_event(conn);
     }
 }
 
