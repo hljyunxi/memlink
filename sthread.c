@@ -296,14 +296,14 @@ sync_write(int fd, short event, void *arg)
 {
     SyncConn *conn = (SyncConn*) arg;
     if (event & EV_TIMEOUT) {
-        DWARNING("write timeout:%d, close\n", fd);
+        DWARNING("write timeout: %d, close\n", fd);
         conn->destroy((Conn*)conn);
         return;
     }
     if (conn->wpos == conn->wlen) {
-        clear_conn_wbuf(conn);
         DINFO("finished sending sync log in buffer\n");
-        conn->fill_wbuf(0, 0, conn);
+        clear_conn_wbuf(conn);
+        conn->fill_wbuf(0, EV_WRITE, conn);
         return;
     }
     conn_write((Conn*)conn);
@@ -327,6 +327,9 @@ set_timeval(struct timeval *tm_ptr, unsigned int seconds)
     tm_ptr->tv_sec = seconds;
 }
 
+/**
+ * Initialize the sync interval event.
+ */
 static void
 interval_event_init(SyncConn *conn)
 {
@@ -335,6 +338,10 @@ interval_event_init(SyncConn *conn)
     set_timeval(&conn->interval, g_cf->sync_interval);
 }
 
+/** 
+ * Initialize sync write event which is used for sending sync log or dump to 
+ * slave.
+ */
 static void
 write_event_init(SyncConn *conn)
 {
@@ -343,6 +350,10 @@ write_event_init(SyncConn *conn)
     set_timeval(&conn->timeout, g_cf->timeout);
 }
 
+/** 
+ * Initialized sync read event which is used to monitor the timeout of sync 
+ * connection.
+ */
 static void
 read_event_init(SyncConn *conn) 
 {
@@ -350,28 +361,45 @@ read_event_init(SyncConn *conn)
     event_base_set(conn->base, &conn->sync_read_evt);
 }
 
+#ifdef DEBUG
+static void 
+sthread_dinfo(char *buf, int len) 
+{
+    int p_len = len * 3 + 1;
+    char *p_buf = zz_malloc(p_len);
+    formath(buf, len, p_buf, 196609);
+    DINFO("data: %s\n", p_buf);
+    zz_free(p_buf);
+}
+#endif
+
 static void
 read_record(SyncConn *conn, 
             unsigned int log_pos, 
             char **wbuf_ptr, 
-            unsigned short *wlen_ptr)
+            unsigned short *wdatalen_ptr)
 {
-    unsigned short len;
+    unsigned short datalen;
     char head_buf[RECORD_HEAD_LEN] = {0};
 
     lseek_set(conn->sync_fd, log_pos);
     read_or_exit(conn->sync_fd, head_buf, RECORD_HEAD_LEN);
 
-    len = *((char *)(head_buf + RECORD_LEN_POS));
-    *wlen_ptr = RECORD_HEAD_LEN + len;
-    *wbuf_ptr = zz_malloc(*wlen_ptr);
+    datalen = *((unsigned short *)(head_buf + RECORD_LEN_POS));
+    *wdatalen_ptr = RECORD_HEAD_LEN + datalen;
+    *wbuf_ptr = zz_malloc(*wdatalen_ptr);
 
     memcpy(*wbuf_ptr, head_buf, RECORD_HEAD_LEN);
-    read_or_exit(conn->sync_fd, (void *)(*wlen_ptr + RECORD_HEAD_LEN), len);
-
-    DINFO("read synclog record at %u\n",  log_pos);
+    read_or_exit(conn->sync_fd, (void *)(*wbuf_ptr + RECORD_HEAD_LEN), datalen);
+#ifdef DEBUG
+    int len = datalen + sizeof(short);
+    DINFO("read sync log record (ver: %u, i: %u, %u): \n", 
+            *((int *)head_buf), 
+            *((int *)(head_buf + sizeof(int))), 
+            len);
+    sthread_dinfo(*wbuf_ptr + RECORD_LEN_POS, len);
+#endif
 }
-
 
 /**
  * Return a log record from the open sync log file.
@@ -387,13 +415,14 @@ get_synclog_record(SyncConn *conn)
     if (conn->log_index_pos < SYNCLOG_MAX_INDEX_POS 
             && (log_pos = seek_and_read_int(conn->sync_fd, conn->log_index_pos)) > 0) {
         read_record(conn, log_pos, &wbuf, &wlen);
-        conn->log_index_pos += sizeof(int);
         reset_conn_wbuf(conn, wbuf, wlen);
+        conn->log_index_pos += sizeof(int);
         return 1;
     } else {
         return 0;
     }
 }
+
 
 static void
 read_synclog(int fd, short event, void *arg) 
@@ -401,20 +430,34 @@ read_synclog(int fd, short event, void *arg)
     SyncConn *conn = arg;
     DINFO("reading sync log...\n");
     while (!get_synclog_record(conn)) {
+        /*
+         * If the requested log is a sync log in the format of bin.log.<xxx>, 
+         * increase log version until reaching the log version in bin.log.
+         */
         if (conn->log_ver < g_runtime->logver) {
             (conn->log_ver)++;
             conn->log_index_pos = get_index_pos(0);
             open_synclog(conn);
         } else {
-            if (event == EV_WRITE) 
+            /*
+             * If invoked by write event and a log record can't be read, remove 
+             * write event.
+             */
+            if (event == EV_WRITE) {
+                DINFO("remove write event\n");
                 event_del(&conn->sync_write_evt);
+            }
+            // If a log record can't be read, add interval event.
             evtimer_add(&conn->sync_interval_evt, &conn->interval);
             return;
         }
-    } 
-    if (event == EV_TIMEOUT) {
-        event_add(&conn->sync_write_evt, &conn->timeout);
     }
+    /*
+     * If invoked by interval event and a log record record is read, add write 
+     * event.
+     */ 
+    if (event == EV_TIMEOUT)
+        event_add(&conn->sync_write_evt, &conn->timeout);
 }
 
 static void
@@ -422,7 +465,8 @@ read_synclog_init(SyncConn *conn)
 {
     conn->fill_wbuf = read_synclog;
     interval_event_init(conn);
-    read_synclog(0, 0, conn);
+    if (conn->status == SEND_LOG)
+        event_add(&conn->sync_write_evt, &conn->timeout);
 }
 
 static void
@@ -436,6 +480,9 @@ read_dump(int fd, short event, void *arg)
     ret = try_read(conn->sync_fd, buf, BUF_SIZE);
     if (ret > 0) {
         reset_conn_wbuf(conn, buf, ret);
+#ifdef DEBUG
+        sthread_dinfo(conn->wbuf, conn->wlen);
+#endif
     } else if (ret == 0) {
         conn->log_index_pos = get_index_pos(0);
         open_synclog(conn);
@@ -449,12 +496,13 @@ read_dump(int fd, short event, void *arg)
 static void
 read_dump_init(SyncConn *conn) 
 {
-    read_event_init(conn);
-    event_add(&conn->sync_read_evt, 0); 
     conn->fill_wbuf = read_dump;
-    read_dump(0, 0, conn);
+    event_add(&conn->sync_write_evt, &conn->timeout);
 }
 
+/**
+ * Event initialization common to sync log and dump sending.
+ */
 static void 
 common_event_init(SyncConn *conn) 
 {
@@ -525,6 +573,7 @@ static int
 sync_conn_wrote(Conn *c)
 {
     SyncConn *conn = (SyncConn*) c;
+    DINFO("response finished with status %d\n", conn->status);
     switch (conn->status) {
         case NOT_SEND:
             conn_wrote(c);
