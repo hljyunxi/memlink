@@ -53,7 +53,7 @@ synclog_create()
     snprintf(slog->filename, PATH_MAX, "%s/%s", g_cf->datadir, SYNCLOG_NAME);
     DINFO("synclog filename: %s\n", slog->filename);
 
-    //int ret;
+    int ret;
     //struct stat stbuf;
 
     // check file exist
@@ -85,6 +85,7 @@ synclog_create()
     DINFO("synclog end: %d\n", end);
     lseek(slog->fd, 0, SEEK_SET);
 
+	//Fixme: maybe SYNCLOG_INDEXNUM changed.
     if (end == 0 || end < len) { // new file
         g_runtime->logver = synclog_lastlog();
 
@@ -139,7 +140,6 @@ synclog_create()
 		}
 		
 		DINFO("validate synclog ...\n");
-		int ret;
 		if ((ret = synclog_validate(slog)) < 0) {
 			DERROR("synclog_validate error: %d\n", ret);
 		}
@@ -175,7 +175,7 @@ synclog_open(char *filename)
 		snprintf(slog->filename, PATH_MAX, "%s", filename);
 	}
     
-	slog->fd = open(slog->filename, O_RDWR|O_CREAT, 0644);
+	slog->fd = open(slog->filename, O_RDWR);
     if (slog->fd == -1) {
         DERROR("open synclog %s error: %s\n", slog->filename, strerror(errno));
         zz_free(slog);
@@ -196,7 +196,7 @@ synclog_open(char *filename)
     slog->pos       = slog->len;
 
 	int i;
-	char *idxdata = slog->index + SYNCLOG_HEAD_LEN;
+	int *idxdata = (int*)(slog->index + SYNCLOG_HEAD_LEN);
 	for (i = 0; i < SYNCLOG_INDEXNUM; i++) {
 		if (idxdata[i] == 0) {
 			slog->index_pos = i;
@@ -379,7 +379,7 @@ synclog_write(SyncLog *slog, char *data, int datalen)
     //int pos = lseek(slog->fd, 0, SEEK_CUR);
     //char buf[128];
 	
-	if (slog->index_pos == SYNCLOG_INDEXNUM - 1) {
+	if (slog->index_pos == SYNCLOG_INDEXNUM) {
 		synclog_rotate(slog);
 	}
 

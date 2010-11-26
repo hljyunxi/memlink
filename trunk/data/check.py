@@ -42,9 +42,13 @@ def binlog(filename='bin.log'):
         dlen = len(indexes)
         print 'index:', dlen, indexes
         f.seek(d)
-        for i in range(0, dlen):
-            log_ver = struct.unpack('I', f.read(4))
-            log_pos = struct.unpack('I', f.read(4))
+        #for i in range(0, dlen):
+        while True:
+            s1 = f.read(8)
+            if not s1 or len(s1) != 8:
+                break
+            log_ver = struct.unpack('I', s1[0:4])
+            log_pos = struct.unpack('I', s1[4:])
             s1 = f.read(2)
             slen = struct.unpack('H', s1)[0]
             s2 = f.read(slen)
