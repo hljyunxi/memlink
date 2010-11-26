@@ -28,4 +28,4 @@
   进入memlink/client/php目录， 直接运行scons.该目录下面有一个叫SConstruct的文件， 里面有个配置选项叫php_config的，这个是php-config文件的路径。
 
 = 6 memlink运行 =
- 编译之后，在memlink目录下面，会出现memlink的可执行文件，在memlink/etc下面是memlink的配置文件，memlink.conf，描述了一些配置信息， 可以修改， 日志文件在memlink/data/bin.log下面。
+ 编译之后，在memlink目录下面，会出现memlink的可执行文件，在memlink/etc下面是memlink的配置文件，memlink.conf，描述了一些配置信息，关于配置项的描述参http://code.google.com/p/memlink/wiki/DesignDocument 日志文件在memlink/data/bin.log下面。
