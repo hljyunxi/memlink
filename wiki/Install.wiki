@@ -1,13 +1,28 @@
 #summary memlink编译安装文档
 
-= Introduction =
+= 1 编译和安装介绍 =
+本文档着重介绍memlink的安装和编译，描述memlink编译过程中依赖的一些库，编译用户接口目录client需要的一些模块。方便用户能够方便快捷的使用memlink。
 
-Add your content here.
+= 2 操作系统平台 =
+目前支持的操作系统是linux， 内核版本需要2.6以上，64bit， 32bit的系统都可以。
 
+= 3 编译工具scons =
+ * 编译环境依赖python http://www.python.org/
+ scons地址http://www.scons.org/
 
-= Details =
+= 4 编译memlink =
+ * 库依赖libevent http://monkey.org/~provos/libevent/
+ 去google code上面check 一份代码， 进入memlink目录下， 直接运行scons，就能编译。再该目录下面会出现可执行文件memlink。
 
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+= 5 编译用户接口 =
+memlink的用户接口能支持不同的语言， 包括C， PHP, PYTHON等， 
+ == 编译C接口 ==
+ 要编译C的接口， 先进入memlink/client/c目录，直接运行scons。
+ == 编译安装python接口 ==
+ * 依赖python
+ * 依赖swig http://www.swig.org/
+ 有了这两个模块之后， 进入memlink/client/python目录， 直接运行scons,注意在该目录下面有一个SConstruct的文件，里面有个配置选项python_config, 这个是python2.6-config文件的路径.
+ == 编译安装PHP接口 ==
+ * 依赖PHP模块
+ * 依赖swig
+ 进入memlink/client/php目录， 直接运行scons.该目录下面有一个叫SConstruct的文件， 里面有个配置选项叫php_config的，这个是php-config文件的路径。
