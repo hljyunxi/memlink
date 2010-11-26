@@ -38,7 +38,7 @@ def binlog(filename='bin.log'):
     if indexes:
         dlen = len(indexes)
         print 'index:', dlen, indexes
-        f.seek(4000011)
+        f.seek(d)
         for i in range(0, dlen):
             log_ver = struct.unpack('I', f.read(4))
             log_pos = struct.unpack('I', f.read(4))
