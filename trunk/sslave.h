@@ -24,9 +24,9 @@ typedef struct _sslave
     unsigned int logver; // last logver
     unsigned int logline; // last logline
 
-	unsigned int dump_logver; // logver in dumpfile
-    long long    dumpsize; // size in dumpfile
-    long long    dumpfile_size;
+	unsigned int dump_logver; // logver in master dumpfile
+    long long    dumpsize; // size in master dumpfile
+    long long    dumpfile_size; // master dumpfile size
 
     int			 trycount; // count of get last sync position
 	volatile int isrunning;

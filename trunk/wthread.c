@@ -678,12 +678,14 @@ wthread_create()
     event_base_set(wt->base, &wt->event);
     event_add(&wt->event, 0);
 
-    struct timeval tm;
-    evtimer_set(&wt->dumpevt, dumpfile_call_loop, &wt->dumpevt);
-    evutil_timerclear(&tm);
-    tm.tv_sec = g_cf->dump_interval * 60; 
-    event_base_set(wt->base, &wt->dumpevt);
-    event_add(&wt->dumpevt, &tm);
+    if (g_cf->dump_interval > 0) {
+        struct timeval tm;
+        evtimer_set(&wt->dumpevt, dumpfile_call_loop, &wt->dumpevt);
+        evutil_timerclear(&tm);
+        tm.tv_sec = g_cf->dump_interval * 60; 
+        event_base_set(wt->base, &wt->dumpevt);
+        event_add(&wt->dumpevt, &tm);
+    }
 
     g_runtime->wthread = wt;
 
