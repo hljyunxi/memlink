@@ -371,8 +371,8 @@ sslave_conn_init(SSlave *ss)
     char recvbuf[1024];
     //int  recvlen;
     int  ret;
-    //unsigned int  logver;
-    //unsigned int  logline;
+    unsigned int  logver_start;
+    unsigned int  logline_start;
     //unsigned int  dumpver;
     //long long     dumpsize;
 	char    mdumpfile[PATH_MAX];
@@ -394,6 +394,9 @@ sslave_conn_init(SSlave *ss)
 		ss->logver  = ss->dump_logver;
 		ss->logline = 0;
 	}
+
+    logver_start  = ss->logver;
+    logline_start = ss->logline;
 
     if (ss->dumpsize == ss->dumpfile_size) { // have master dumpfile, and size ok or not have master dumpfile
         // send sync command 
@@ -420,6 +423,10 @@ sslave_conn_init(SSlave *ss)
             DINFO("sync return code:%d\n", syncret);
             if (syncret == CMD_SYNC_OK) { // ok, recv synclog
                 DINFO("sync ok! try recv push message.\n");
+
+                if (ss->logver < logver_start || ss->logline < logline_start) {
+                    synclog_resize(ss->logver, ss->logline);
+                }
                 return 0;
             }else if (syncret == CMD_SYNC_FAILED && \
 					  is_getdump == 1 && ss->logline == 0) {

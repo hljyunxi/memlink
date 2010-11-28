@@ -13,7 +13,7 @@ CMD_DEL     = 5
 CMD_INSERT  = 6
 
 class SyncServer:
-    def __init__(self, host, port):
+    def __init__(self, host, port, size=0):
         self.host = host
         self.port = port
 
@@ -30,6 +30,23 @@ class SyncServer:
         self.dumpdatalist = []
 
         self.seqid = 0
+
+        f = open(self.dump_filename, 'rb')
+        self.dumpdata = f.read()
+        f.close()
+
+        self.dumpfile_format = struct.unpack("H", self.dumpdata[:2])[0]
+        self.dumpfile_ver    = struct.unpack('I', self.dumpdata[2:6])[0]
+        self.dumpfile_logver = struct.unpack('I', self.dumpdata[6:10])[0]
+        print 'dump format:%d ver:%d' % (self.dumpfile_format, self.dumpfile_ver)
+        
+        self.logver  = self.dumpfile_logver
+        self.logline = len(self.dumpdatalist)
+
+        for i in xrange(0, size):
+            self.dumpdatalist.append(self.make_data(self.logver, self.logline))
+            self.logline = len(self.dumpdatalist)
+
 
     def loop(self):
         while True:
@@ -48,23 +65,12 @@ class SyncServer:
                 newsock.close()
     
     def run(self, sock):
-        f = open(self.dump_filename, 'rb')
-        dumpdata = f.read()
-        f.close()
-
-        dumpformat = struct.unpack("H", dumpdata[:2])[0]
-        dumpver    = struct.unpack('I', dumpdata[2:6])[0]
-        dumplogver = struct.unpack('I', dumpdata[6:10])[0]
-        print 'dump format:%d ver:%d' % (dumpformat, dumpver)
-        
-        self.logver = dumplogver
-        self.logline = len(self.dumpdatalist)
-
         cli_logline = 0
         while (True):
             dlen, cmd, param1, param2 = self.recv_cmd(sock)
             print 'recv len:%d, cmd:%d, %d %d' % (dlen, cmd, param1, param2)
             print 'local logver:%d, logline:%d' % (self.logver, self.logline)
+
             if cmd == CMD_SYNC:
                 if self.logver == param1 and self.logline >= param2:
                     cli_logline = param2
@@ -74,8 +80,8 @@ class SyncServer:
                 else:
                     self.send_sync_cmd(sock, 1) 
             else:
-                self.send_getdump_cmd(sock, 1, dumpver, len(dumpdata))
-                print 'send dump:', sock.send(dumpdata)
+                self.send_getdump_cmd(sock, 1, self.dumpfile_ver, len(self.dumpdata))
+                print 'send dump:', sock.send(self.dumpdata)
                 print 'send dump ok!'
 
         while True:
@@ -115,15 +121,20 @@ class SyncServer:
     def send_data(self, sock, logver, logline):
         '''logver(4B) + logline(4B) + len(2B) + cmd(1B) + data''' 
         print 'send data:', logver, logline
-        #s  = struct.pack('BB4sB12s', CMD_DEL, 4, 'haha', 12, 'abcdefghijkl')
+        #s  = struct.pack('BB4sB12sBII', CMD_INSERT, 4, 'haha', 12, 'xx%010d' % self.seqid, 1, 1, 0)
         #ss = struct.pack('IIH', logver, logline, len(s)) + s
+        #self.seqid += 1
 
-        #s  = struct.pack('BB4sB12sBIIII', CMD_INSERT, 4, 'haha', 12, 'xx%010d' % self.seqid, 3, 4, 1, 0, 0)
+        ss = self.make_data(logver, logline)
+        print 'push:', repr(ss)
+        sock.send(ss)
+        return ss
+
+    def make_data(self, logver, logline):
         s  = struct.pack('BB4sB12sBII', CMD_INSERT, 4, 'haha', 12, 'xx%010d' % self.seqid, 1, 1, 0)
         ss = struct.pack('IIH', logver, logline, len(s)) + s
         self.seqid += 1
-        print 'push:', repr(ss)
-        sock.send(ss)
+
         return ss
 
     def decode(self, data):
@@ -143,7 +154,13 @@ class SyncServer:
 
     
 def main():
-    ss = SyncServer("127.0.0.1", 11005)
+    try:
+        size = int(sys.argv[1])
+    except:
+        size = 0
+    
+    print 'size:', size
+    ss = SyncServer("127.0.0.1", 11005, size)
     ss.loop()
 
 if __name__ == '__main__':
