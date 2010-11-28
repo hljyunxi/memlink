@@ -20,7 +20,6 @@ typedef struct _synclog
     int     fd;                 // open file descriptor
     char    *index;             // mmap addr
     int     len;                // mmap len
-    //int     headlen;            // header length
     unsigned int    index_pos;  // last index pos
     unsigned int    pos;        // last write data pos
 }SyncLog;
@@ -36,5 +35,6 @@ int			synclog_version(SyncLog *slog, unsigned int *logver);
 int         synclog_lastlog();
 int			synclog_prevlog(int curid);
 int			synclog_scan_binlog(int *result, int rsize);
+int         synclog_resize(unsigned int logver, unsigned int logline);
 
 #endif

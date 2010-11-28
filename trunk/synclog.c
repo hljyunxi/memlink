@@ -584,4 +584,92 @@ synclog_scan_binlog(int *result, int rsize)
 	return i;
 }
 
+/**
+ * only used by slave
+ */
+int
+synclog_resize(unsigned int logver, unsigned int logline)
+{
+    char logname[PATH_MAX];
+    char logname_new[PATH_MAX];
+    int  i, ret;
+
+    if (logver < g_runtime->logver) {
+        synclog_destroy(g_runtime->synclog);
+        
+        snprintf(logname, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, logver);
+        
+        g_runtime->synclog = synclog_open(logname);
+        if (NULL == g_runtime->synclog) {
+            DERROR("open synclog error: %s\n", logname);
+            MEMLINK_EXIT;
+            return -1;
+        }
+    
+        for (i = logver + 1; i <= g_runtime->logver; i++) {
+            if (i != g_runtime->logver) {
+                snprintf(logname, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, i);
+                snprintf(logname_new, PATH_MAX, "%s/rm.bin.log.%d", g_cf->datadir, i);
+            }else{
+                snprintf(logname, PATH_MAX, "%s/bin.log", g_cf->datadir);
+                snprintf(logname_new, PATH_MAX, "%s/rm.bin.log", g_cf->datadir);
+            }
+            if (isfile(logname)) {
+                //ret = unlink(logname);
+                ret = rename(logname, logname_new);
+                if (ret < 0) {
+                    DERROR("unlink %s error: %d, %s\n", logname, ret, strerror(errno));
+                    MEMLINK_EXIT;
+                }
+            }
+        }
+
+        g_runtime->logver = logver;
+    }
+
+    if (logline < g_runtime->synclog->index_pos) {
+        int *idxdata = (int*)(g_runtime->synclog->index + SYNCLOG_HEAD_LEN);
+
+        for (i = logline + 1; i < g_runtime->synclog->index_pos; i++) {
+            idxdata[i] = 0; 
+        }
+
+        unsigned int lastpos = idxdata[logline];
+        
+        ret = lseek(g_runtime->synclog->fd, lastpos + SYNCPOS_LEN, SEEK_SET);
+        if (ret < 0) {
+            DERROR("lseek error: %u, %s\n", lastpos + SYNCPOS_LEN, strerror(errno));
+            MEMLINK_EXIT;
+        }
+        
+        unsigned short len;
+
+        ret = readn(g_runtime->synclog->fd, &len, sizeof(short), 0);
+        if (ret != sizeof(short)) {
+            DERROR("read len error: %d\n", ret);
+            MEMLINK_EXIT;
+        }
+
+        lastpos += SYNCPOS_LEN + sizeof(short) + len;
+      
+        /*
+        ret = lseek(g_runtime->synclog, lastpos, SEEK_SET);
+        if (ret < 0) {
+            DERROR("lseek error: %u, %s\n", lastpos, strerror(errno));
+            MEMLINK_EXIT;
+        }*/
+
+        ret = ftruncate(g_runtime->synclog->fd, lastpos);
+        if (ret == -1) {
+            DERROR("ftruncate synclog error: %s\n", strerror(errno));
+            MEMLINK_EXIT;
+        }
+    }
+    
+
+    return 0;
+}
+
+
+
 
