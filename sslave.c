@@ -164,7 +164,7 @@ sslave_prev_sync_pos(SSlave *ss)
             ss->binlog_ver   = ret;
             ss->binlog_index = 0;
 
-            if (ss->binlog_ver > 0) {
+            if (ss->binlog_ver != g_runtime->logver) {
                 snprintf(filepath, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, ss->binlog_ver);
             }else{
                 snprintf(filepath, PATH_MAX, "%s/bin.log", g_cf->datadir);
@@ -180,7 +180,7 @@ sslave_prev_sync_pos(SSlave *ss)
         }
 		
 		if (NULL == ss->binlog) {
-			if (ss->binlog_ver > 0) {
+			if (ss->binlog_ver != g_runtime->logver) {
                 snprintf(filepath, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, ss->binlog_ver);
             }else{
                 snprintf(filepath, PATH_MAX, "%s/bin.log", g_cf->datadir);
@@ -289,8 +289,8 @@ sslave_do_getdump(SSlave *ss)
     char recvbuf[1024];
 
 	// do getdump
-    DINFO("try getdump, dumpver:%d, dumpsize:%lld\n", logver, dumpsize);
-    sndlen = cmd_getdump_pack(sndbuf, logver, dumpsize); 
+    DINFO("try getdump, dumpver:%d, dumpsize:%lld, filesize:%lld\n", logver, dumpsize, tmpsize);
+    sndlen = cmd_getdump_pack(sndbuf, logver, tmpsize); 
     ret = sslave_do_cmd(ss, sndbuf, sndlen, recvbuf, 1024); 
     if (ret < 0) {
         DERROR("cmd getdump error: %d\n", ret);
@@ -371,8 +371,8 @@ sslave_conn_init(SSlave *ss)
     char recvbuf[1024];
     //int  recvlen;
     int  ret;
-    unsigned int  logver_start;
-    unsigned int  logline_start;
+    unsigned int  local_logver_start;
+    unsigned int  local_logpos_start;
     //unsigned int  dumpver;
     //long long     dumpsize;
 	char    mdumpfile[PATH_MAX];
@@ -395,8 +395,8 @@ sslave_conn_init(SSlave *ss)
 		ss->logline = 0;
 	}
 
-    logver_start  = ss->logver;
-    logline_start = ss->logline;
+    local_logver_start = ss->binlog_ver;
+    local_logpos_start = ss->binlog_index;
 
     if (ss->dumpsize == ss->dumpfile_size) { // have master dumpfile, and size ok or not have master dumpfile
         // send sync command 
@@ -422,11 +422,12 @@ sslave_conn_init(SSlave *ss)
             syncret = recvbuf[i];
             DINFO("sync return code:%d\n", syncret);
             if (syncret == CMD_SYNC_OK) { // ok, recv synclog
-                DINFO("sync ok! try recv push message.\n");
-
-                if (ss->logver < logver_start || ss->logline < logline_start) {
-                    synclog_resize(ss->logver, ss->logline);
+                DINFO("sync ok, logver:%d, logline:%d, logver_start:%d, logline_start:%d\n", ss->binlog_ver, ss->binlog_index, local_logver_start, local_logpos_start);
+                //if (ss->logver < logver_start || ss->logline < logline_start) {
+                if (ss->binlog_ver < local_logver_start || ss->binlog_index < local_logpos_start) {
+                    synclog_resize(ss->binlog_ver, ss->binlog_index);
                 }
+                DINFO("sync ok! try recv push message.\n");
                 return 0;
             }else if (syncret == CMD_SYNC_FAILED && \
 					  is_getdump == 1 && ss->logline == 0) {

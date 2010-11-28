@@ -5,8 +5,8 @@
 #include <limits.h>
 
 
-#define SYNCLOG_OK   0
-#define SYNCLOG_FULL 1
+//#define SYNCLOG_OK   0
+//#define SYNCLOG_FULL 1
 
 #define SYNCLOG_NAME "bin.log"
 
@@ -22,6 +22,7 @@ typedef struct _synclog
     int     len;                // mmap len
     unsigned int    index_pos;  // last index pos
     unsigned int    pos;        // last write data pos
+    unsigned int    version;
 }SyncLog;
 
 SyncLog*    synclog_create();
@@ -35,6 +36,7 @@ int			synclog_version(SyncLog *slog, unsigned int *logver);
 int         synclog_lastlog();
 int			synclog_prevlog(int curid);
 int			synclog_scan_binlog(int *result, int rsize);
+int         synclog_truncate(SyncLog *slog, int index);
 int         synclog_resize(unsigned int logver, unsigned int logline);
 
 #endif

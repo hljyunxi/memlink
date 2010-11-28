@@ -123,6 +123,7 @@ synclog_create()
         slog->pos = slog->len;
 
         g_runtime->logver = newver;
+        slog->version = newver;
     }
        
     DINFO("mmap file ... len:%d, fd:%d\n", slog->len, slog->fd);
@@ -134,6 +135,8 @@ synclog_create()
 
     if (end >= len) {
         g_runtime->logver = *(unsigned int*)(slog->index + sizeof(short));
+        slog->version = g_runtime->logver;
+
 		char role = *(slog->index + SYNCLOG_HEAD_LEN - sizeof(int));
 		if (role != g_cf->role) {
             synclog_rotate(slog);
@@ -207,6 +210,8 @@ synclog_open(char *filename)
         slog->index_pos = SYNCLOG_INDEXNUM;
     }
 
+    slog->version = *(unsigned int*)(slog->index + sizeof(short));
+
 	return slog;
 }
 
@@ -224,6 +229,8 @@ synclog_new(SyncLog *slog)
     unsigned short format = DUMP_FORMAT_VERSION;
     unsigned int   newver = g_runtime->logver + 1;
     unsigned int   synlen = SYNCLOG_INDEXNUM;
+  
+    slog->version = newver;
     
     DINFO("synclog new ver: %d, %x, synlen: %d, %x\n", newver, newver, synlen, synlen);
     if (writen(slog->fd, &format, sizeof(short), 0) < 0) {
@@ -585,6 +592,55 @@ synclog_scan_binlog(int *result, int rsize)
 }
 
 /**
+ * truncate bin.log
+ * @param slog
+ * @param index  last used index, have data
+ */
+int
+synclog_truncate(SyncLog *slog, int index)
+{
+    if (NULL == slog || index >= SYNCLOG_INDEXNUM - 1) {
+        DERROR("synclog truncate error, slog:%p, index:%d\n", slog, index);
+        return -1;
+    }
+
+    int *idxdata = (int*)(slog->index + SYNCLOG_HEAD_LEN);
+    int i, ret;
+    for (i = index + 1; i < slog->index_pos; i++) {
+        idxdata[i] = 0; 
+    }
+
+    unsigned int lastpos = idxdata[index];
+
+    ret = lseek(slog->fd, lastpos + SYNCPOS_LEN, SEEK_SET);
+    if (ret < 0) {
+        DERROR("lseek error: %u, %s\n", lastpos + SYNCPOS_LEN, strerror(errno));
+        MEMLINK_EXIT;
+    }
+
+    unsigned short len;
+    ret = readn(slog->fd, &len, sizeof(short), 0);
+    if (ret != sizeof(short)) {
+        DERROR("read len error: %d\n", ret);
+        MEMLINK_EXIT;
+    }
+
+    lastpos += SYNCPOS_LEN + sizeof(short) + len;
+
+    DINFO("truncate synclog to %d\n", lastpos);
+    ret = ftruncate(slog->fd, lastpos);
+    if (ret == -1) {
+        DERROR("ftruncate synclog error: %s\n", strerror(errno));
+        MEMLINK_EXIT;
+    }
+
+    slog->index_pos = index + 1;
+    slog->pos       = lastpos;
+
+    return 0;
+}
+
+/**
  * only used by slave
  */
 int
@@ -594,40 +650,67 @@ synclog_resize(unsigned int logver, unsigned int logline)
     char logname_new[PATH_MAX];
     int  i, ret;
 
+    // find the binlog file
+    DINFO("resize logver:%d, runtime logver:%d\n", logver, g_runtime->logver);
     if (logver < g_runtime->logver) {
         synclog_destroy(g_runtime->synclog);
-        
+       
+        snprintf(logname, PATH_MAX, "%s/bin.log", g_cf->datadir);
+        snprintf(logname_new, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, g_runtime->synclog->version);
+
+        DINFO("rotate bin.log to %s\n", logname_new);
+        ret = rename(logname, logname_new);
+        if (ret < 0) {
+            DERROR("rename %s error: %d, %s\n", logname, ret, strerror(errno));
+            MEMLINK_EXIT;
+        }
+
         snprintf(logname, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, logver);
-        
-        g_runtime->synclog = synclog_open(logname);
+        snprintf(logname_new, PATH_MAX, "%s/bin.log", g_cf->datadir);
+
+        DINFO("restore %s to bin.log\n", logname);
+        ret = rename(logname, logname_new);
+        if (ret < 0) {
+            DERROR("rename %s error: %d, %s\n", logname, ret, strerror(errno));
+            MEMLINK_EXIT;
+        }
+
+        unsigned int oldlogver = g_runtime->logver;
+        //snprintf(logname, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, logver);
+        //g_runtime->synclog = synclog_open(logname);
+        DINFO("open synclog ...\n");
+        g_runtime->synclog = synclog_create();
         if (NULL == g_runtime->synclog) {
             DERROR("open synclog error: %s\n", logname);
             MEMLINK_EXIT;
             return -1;
         }
-    
-        for (i = logver + 1; i <= g_runtime->logver; i++) {
-            if (i != g_runtime->logver) {
-                snprintf(logname, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, i);
-                snprintf(logname_new, PATH_MAX, "%s/rm.bin.log.%d", g_cf->datadir, i);
-            }else{
-                snprintf(logname, PATH_MAX, "%s/bin.log", g_cf->datadir);
-                snprintf(logname_new, PATH_MAX, "%s/rm.bin.log", g_cf->datadir);
-            }
+        //g_runtime->logver = logver;
+  
+        
+        for (i = logver + 1; i <= oldlogver; i++) {
+            snprintf(logname, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, i);
+            snprintf(logname_new, PATH_MAX, "%s/rm.bin.log.%d", g_cf->datadir, i);
+
+            DINFO("try rename %s to %s\n", logname, logname_new);
             if (isfile(logname)) {
                 //ret = unlink(logname);
+                DINFO("ok, rename %s to %s\n", logname, logname_new);
                 ret = rename(logname, logname_new);
                 if (ret < 0) {
-                    DERROR("unlink %s error: %d, %s\n", logname, ret, strerror(errno));
+                    DERROR("rename %s error: %d, %s\n", logname, ret, strerror(errno));
                     MEMLINK_EXIT;
                 }
             }
         }
-
-        g_runtime->logver = logver;
     }
 
+    // find position in binlog file
+    DINFO("resize logline:%d, runtime logline:%d\n", logline, g_runtime->synclog->index_pos);
     if (logline < g_runtime->synclog->index_pos) {
+        synclog_truncate(g_runtime->synclog, logline);
+
+        /*
         int *idxdata = (int*)(g_runtime->synclog->index + SYNCLOG_HEAD_LEN);
 
         for (i = logline + 1; i < g_runtime->synclog->index_pos; i++) {
@@ -643,7 +726,6 @@ synclog_resize(unsigned int logver, unsigned int logline)
         }
         
         unsigned short len;
-
         ret = readn(g_runtime->synclog->fd, &len, sizeof(short), 0);
         if (ret != sizeof(short)) {
             DERROR("read len error: %d\n", ret);
@@ -652,18 +734,13 @@ synclog_resize(unsigned int logver, unsigned int logline)
 
         lastpos += SYNCPOS_LEN + sizeof(short) + len;
       
-        /*
-        ret = lseek(g_runtime->synclog, lastpos, SEEK_SET);
-        if (ret < 0) {
-            DERROR("lseek error: %u, %s\n", lastpos, strerror(errno));
-            MEMLINK_EXIT;
-        }*/
-
+        DINFO("truncate synclog to %d\n", lastpos);
         ret = ftruncate(g_runtime->synclog->fd, lastpos);
         if (ret == -1) {
             DERROR("ftruncate synclog error: %s\n", strerror(errno));
             MEMLINK_EXIT;
         }
+        */
     }
     
 

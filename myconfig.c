@@ -365,14 +365,18 @@ load_data_slave()
 		DINFO("load synclog: %s\n", logname);
 		ret = load_synclog(logname);
 		if (ret > 0 && g_cf->role == ROLE_SLAVE) {
-			g_runtime->slave->binlog_ver = 0;
+			g_runtime->slave->binlog_ver = g_runtime->synclog->version;
 		}
 	}
 
     if (havedump == 0) {
         dumpfile(g_runtime->ht);
     }
-	
+
+    if (load_master_dump == 1) {
+        g_runtime->slave->binlog_ver = g_runtime->logver;
+    }
+
 	DINFO("======== slave binlog_ver:%d, binlog_index:%d, logver:%d, logline:%d, dump_logver:%d, dumpsize:%lld, dumpfile_size:%lld\n", g_runtime->slave->binlog_ver, g_runtime->slave->binlog_index, g_runtime->slave->logver, g_runtime->slave->logline, g_runtime->slave->dump_logver, g_runtime->slave->dumpsize, g_runtime->slave->dumpfile_size);
 
     return 0;

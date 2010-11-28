@@ -53,7 +53,7 @@ def binlog(filename='bin.log'):
             slen = struct.unpack('H', s1)[0]
             s2 = f.read(slen)
             s = s1 + s2 
-            print 'ver:%d, i:%d, %d:' % \
+            print 'ver:%d, ln:%d, %d:' % \
                 (log_ver[0], log_pos[0], len(s)), repr(s), f.tell()
     f.close()
 

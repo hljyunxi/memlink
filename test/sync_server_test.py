@@ -80,8 +80,14 @@ class SyncServer:
                 else:
                     self.send_sync_cmd(sock, 1) 
             else:
-                self.send_getdump_cmd(sock, 1, self.dumpfile_ver, len(self.dumpdata))
-                print 'send dump:', sock.send(self.dumpdata)
+                if param2 > 0:
+                    self.send_getdump_cmd(sock, 1, self.dumpfile_ver, len(self.dumpdata) - param2)
+                    print 'send dump:', sock.send(self.dumpdata[param2:])
+                else:
+                    self.send_getdump_cmd(sock, 1, self.dumpfile_ver, len(self.dumpdata))
+                    print 'send dump:', sock.send(self.dumpdata[:len(self.dumpdata)/2])
+                    #self.sock.close()
+                    #sys.exit()
                 print 'send dump ok!'
 
         while True:
