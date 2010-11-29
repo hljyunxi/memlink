@@ -9,10 +9,12 @@
 = 3 编译环境 =
  * 依赖python http://www.python.org/ 版本2.6
  * 依赖scons http://www.scons.org/
+  
+ scons相当于make。它依赖于python。
 
 = 4 编译memlink =
  * 库依赖libevent http://monkey.org/~provos/libevent/ 版本1.4.14b
-  去google code上面check 一份代码， 进入memlink目录下， 直接运行scons，就能编译。再该目录下面会出现可执行文件memlink。
+ 去google code上面check 一份代码， 进入memlink目录下， 直接运行scons，就能编译。再该目录下面会出现可执行文件memlink。
 
 = 5 编译客户端模块 =
  memlink的客户端能支持不同的语言， 包括C， PHP, PYTHON等， 
