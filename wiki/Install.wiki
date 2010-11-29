@@ -59,4 +59,4 @@
 
  表示memlink的配置文件在 ../etc/memlink.conf
 
- 一些配置信息，描述在这里有描述：<a href ="http://code.google.com/p/memlink/wiki/DesignDocument#8_配置信息">点击这里</a>
+ 一些配置信息，这里有描述：<a href ="http://code.google.com/p/memlink/wiki/DesignDocument#8_配置信息">点击这里</a>
