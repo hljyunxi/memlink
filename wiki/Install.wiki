@@ -13,7 +13,7 @@
  scons相当于make。它依赖于python。它基本命令和make对比：<br/>
  scons         => make<br/>
  scons -c      => make clean<br/>
- scons  => make install<br/>
+ scons  安装路径 => make install<br/>
 
 = 4 编译memlink =
  * 库依赖libevent http://monkey.org/~provos/libevent/ 版本1.4.14b
