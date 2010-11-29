@@ -42,4 +42,11 @@
    (memlink运行过程中产生的日志)
       
 = 7 memlink运行 =
- 编译之后，在memlink目录下面，会出现memlink的可执行文件，在memlink/etc下面是memlink的配置文件，memlink.conf，描述了一些配置信息，关于配置项的描述参http://code.google.com/p/memlink/wiki/DesignDocument 日志文件在memlink/data/bin.log下面。
+ memlink可以带一个参数，就是配置文件的路径。比如：
+
+ memlink etc/memlink.conf
+
+ 表示memlink的配置文件在 etc/memlink.conf
+
+ 一些配置信息，描述在这里有描述：http://code.google.com/p/memlink/wiki/DesignDocument
+
