@@ -4,7 +4,7 @@
 #include "memlink_client.h"
 #include "logfile.h"
 
-Memlink *m;
+MemLink *m;
 
 int test_init()
 {
@@ -14,6 +14,8 @@ int test_init()
 	if (m == NULL) {
 		printf("memlink_create error!\n");
 	}
+
+	return 1;
 }
 
 //create example
@@ -40,7 +42,7 @@ int my_test_insert_key_value()
 	snprintf(buf, 128, "%s", "myvalue");
 	DINFO("INSERT test mykey %s\n");
 
-	ret = memlink_com_insert(m, "test", buf, strlen(buf), "1:2:0", 0);
+	ret = memlink_cmd_insert(m, "test", buf, strlen(buf), "1:2:0", 0);
 
 	DINFO("memlink_cmd_insert: %d\n", ret);
 
@@ -51,6 +53,7 @@ int my_test_insert_key_value()
 int my_test_stat()
 {
 	MemLinkStat stat;
+	int ret;
 	
 	ret = memlink_cmd_stat(m, "test", &stat);
 	DINFO("memlink_cmd_stat: %d\n", ret);
@@ -106,7 +109,8 @@ int my_test_count()
 int my_test_del_value()
 {
 	int ret;
-	char key[10], value[10];
+	char key[10];
+    char value[10];
 
 	sprintf(key, "%s", "test");
 	sprintf(value, "%s" "myvalue");
@@ -120,7 +124,8 @@ int my_test_del_value()
 int my_test_mask()
 {
 	int ret;
-	char key[10], value[10];
+	char key[10];
+	char value[10];
 
 	sprintf(key, "%s", "test");
 	sprintf(value, "%s" "myvalue");
@@ -145,6 +150,16 @@ int my_test_dump()
 int test_destroy()
 {
 	memlink_destroy(m);
+	return 1;
+}
+
+
+int main(int argc, char **argv)
+{
+	test_init();
+
+	test_destroy();
+
 	return 1;
 }
 
