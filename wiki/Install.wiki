@@ -10,7 +10,10 @@
  * 依赖python http://www.python.org/ 版本2.6
  * 依赖scons http://www.scons.org/
   
- scons相当于make。它依赖于python。
+ scons相当于make。它依赖于python。它基本命令和make对比：
+ scons         => make
+ scons -c      => make clean
+ scons install => make install
 
 = 4 编译memlink =
  * 库依赖libevent http://monkey.org/~provos/libevent/ 版本1.4.14b
@@ -49,4 +52,3 @@
  表示memlink的配置文件在 etc/memlink.conf
 
  一些配置信息，描述在这里有描述：http://code.google.com/p/memlink/wiki/DesignDocument
-
