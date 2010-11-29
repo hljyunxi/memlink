@@ -30,7 +30,7 @@
    进入memlink/client/php目录， 直接运行scons.该目录下面有一个叫SConstruct的文件， 里面有个配置选项叫php_config的，这个是php-config文件的路径。
 
 = 6 memlink安装 =
- memlink安装的目录结构大概是这个样子的：
+ memlink安装的目录结构大概是这个样子的：<br/>
  /memlink
   /bin
    memlink
