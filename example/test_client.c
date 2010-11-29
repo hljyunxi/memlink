@@ -63,9 +63,88 @@ int my_test_stat()
 //range example
 int my_test_range()
 {
+	int ret;
 	MemLinkResult result;
+	MemLinkItem *p ;
 
-	ret = memlink_cmd_range(m, "test", "::", 0, 
+	ret = memlink_cmd_range(m, "test", "::", 0, 2, &result);
+	DINFO("valuesize:%d, masksize:%d, count:%d\n", result.valuesize, result.masksize,
+		result.count);
 
-
+	p = result.root;
+	while (p != NULL) {
+		DINFO("value: %s, mask: %s\n", p->value, p->mask);
+		p = p->next;
+	}
+	return 1;
 }
+
+//rmkey example
+int my_test_rm_key()
+{
+	int ret;
+
+	ret = memlink_cmd_rmkey(m, "test");
+	DINFO("memlink_cmd_rmkey:%d\n", ret);
+
+	return 1;
+}
+
+//count example
+int my_test_count()
+{
+	int ret;
+	MemLinkCount count;
+
+	ret = memlink_cmd_count(m, "test", "::", &count);
+
+	DINFO("memlink_cmd_count: ret: %d, visible_count: %d, tagdel_count: %d\n", ret, count.visible_count, count.tagdel_count);
+	return 1;
+}
+
+//del example
+int my_test_del_value()
+{
+	int ret;
+	char key[10], value[10];
+
+	sprintf(key, "%s", "test");
+	sprintf(value, "%s" "myvalue");
+
+	ret = memlink_cmd_del(m, key, value, strlen(value));
+	DINFO("memlink_cmd_del: %d", ret);
+	return 1;
+}
+
+//mask example
+int my_test_mask()
+{
+	int ret;
+	char key[10], value[10];
+
+	sprintf(key, "%s", "test");
+	sprintf(value, "%s" "myvalue");
+
+	ret = memlink_cmd_mask(m, key, value, strlen(value), "1:1:1");
+	DINFO("memlink_cmd_mask: %d\n", ret);
+	return 1;
+}
+
+//dump example
+int my_test_dump()
+{
+	int ret;
+	
+	ret = memlink_cmd_dump(m);
+	if (ret != MEMLINK_OK) {
+		DERROR("dump error: %d\n", ret);
+	}
+	return 1;
+}
+
+int test_destroy()
+{
+	memlink_destroy(m);
+	return 1;
+}
+
