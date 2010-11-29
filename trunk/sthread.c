@@ -176,7 +176,8 @@ get_synclog_filename(SyncConn *conn)
          * If conn->log_ver < g_runtime->log_ver, <conn->log_ver>.log must 
          * exist if not deleted by users.
          */
-        snprintf(conn->log_name, PATH_MAX, "%s/data/bin.log.%u", g_runtime->home, conn->log_ver);
+        //snprintf(conn->log_name, PATH_MAX, "%s/data/bin.log.%u", g_runtime->home, conn->log_ver);
+        snprintf(conn->log_name, PATH_MAX, "%s/bin.log.%u", g_cf->datadir, conn->log_ver);
         return isfile(conn->log_name);
     } else if (conn->log_ver == g_runtime->logver) {
         /*
@@ -184,9 +185,11 @@ get_synclog_filename(SyncConn *conn)
          * <conn->log_ver>.log if it exists. This happens for state 2 and state 
          * 3.  Otherwise, return bin.log. This happends for state 1.
          */
-        snprintf(conn->log_name, PATH_MAX, "%s/data/bin.log.%u", g_runtime->home, conn->log_ver);
+        //snprintf(conn->log_name, PATH_MAX, "%s/data/bin.log.%u", g_runtime->home, conn->log_ver);
+        snprintf(conn->log_name, PATH_MAX, "%s/bin.log.%u", g_cf->datadir, conn->log_ver);
         if (isfile(conn->log_name) != 1) {
-            snprintf(conn->log_name, PATH_MAX, "%s/data/bin.log", g_runtime->home);
+            //snprintf(conn->log_name, PATH_MAX, "%s/data/bin.log", g_runtime->home);
+            snprintf(conn->log_name, PATH_MAX, "%s/bin.log", g_cf->datadir);
             return isfile(conn->log_name);
         } else {
             return 1;
