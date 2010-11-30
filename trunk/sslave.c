@@ -55,7 +55,8 @@ sslave_recv_log(SSlave *ss)
         memcpy(&logver, recvbuf, sizeof(int));
         memcpy(&logline, recvbuf + sizeof(int), sizeof(int));
 		DINFO("logver:%d, logline:%d\n", logver, logline); 
-        if (logver == ss->logver && logline == ss->logline) {
+		// after getdump, must not skip first one
+        if (logver == ss->logver && logline == ss->logline && g_runtime->synclog->index_pos != 0) {
             //skip first one
             continue;
         }

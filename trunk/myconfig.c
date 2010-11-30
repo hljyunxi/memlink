@@ -38,8 +38,8 @@ myconfig_create(char *filename)
     mcf->block_clean_num = 100;
     mcf->dump_interval = 60;
     mcf->sync_interval = 60;
-    mcf->write_port = 11212;
-    mcf->sync_port  = 11213;
+    mcf->write_port = 11002;
+    mcf->sync_port  = 11003;
     mcf->log_level  = 3; 
     mcf->timeout    = 30;
 
