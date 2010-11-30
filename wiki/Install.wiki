@@ -8,8 +8,14 @@
 
 == 编译环境 ==
  * 依赖python http://www.python.org/ 版本2.6
- * 依赖scons http://www.scons.org/
+ * 依赖scons http://www.scons.org/ 版本为2.0.1
   
+ scons是个python模块。安装方法为，解压缩后，进入该目录，运行：
+ {{{
+ python setup.py install
+ }}}
+ 注意python的版本。
+
  scons相当于make。它依赖于python。它基本命令和make对比：<br/>
  scons         => make<br/>
  scons -c      => make clean<br/>
