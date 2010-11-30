@@ -9,14 +9,16 @@
 #include "logfile.h"
 #include "server.h"
 #include "daemon.h"
+#include "common.h"
 
-
-static void sig_handler(const int sig) {
+static void 
+sig_handler(const int sig) {
     printf("SIGINT handled.\n");
     exit(EXIT_SUCCESS);
 }
 
-int signal_install()
+int 
+signal_install()
 {
     struct sigaction sigact;
 
@@ -31,7 +33,8 @@ int signal_install()
     return 0;
 }
 
-void master(char *pgname) 
+void 
+master(char *pgname) 
 {
     logfile_create(g_cf->log_name, g_cf->log_level);
     DINFO("logfile ok!\n");
@@ -41,13 +44,20 @@ void master(char *pgname)
     mainserver_loop(g_runtime->server);
 }
 
-void slave(char *pgname) 
+void 
+slave(char *pgname) 
 {
     logfile_create(g_cf->log_name, g_cf->log_level);
     runtime_create_slave(pgname);
     DINFO("slave runtime ok!\n");
 
     mainserver_loop(g_runtime->server);
+}
+
+void 
+usage()
+{
+	fprintf(stderr, "usage: memlink [config file path]\n");
 }
 
 int main(int argc, char *argv[])
@@ -59,7 +69,9 @@ int main(int argc, char *argv[])
 	if (argc == 2) {
 		conffile = argv[1];
 	}else{
-		conffile = "etc/memlink.conf";
+		//conffile = "etc/memlink.conf";
+		usage();
+		return 0;
 	}
 	
 	DINFO("config file: %s\n", conffile);
@@ -117,7 +129,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (g_cf->role == 1) {
+    if (g_cf->role == ROLE_MASTER) {
         master(argv[0]);
     }else{
         slave(argv[0]);
