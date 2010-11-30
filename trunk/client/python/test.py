@@ -18,9 +18,10 @@ def insert(*args):
     ret = m.create('haha', 12, "1")
     if ret != MEMLINK_OK:
         print 'create haha error!', ret
-        return
+        #return
 
     for i in xrange(0, num):
+        print 'insert:', '%012d' % i
         ret = m.insert('haha', '%012d' % i, "1", 0)
         if ret != MEMLINK_OK:
             print 'insert error:', ret, i
