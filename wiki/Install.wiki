@@ -23,7 +23,7 @@
  去google code上面check 一份代码， 进入memlink目录下， 直接运行scons，正常情况，在该目录下面会出现可执行文件memlink。
 
 == 编译客户端模块 ==
- memlink的客户端能支持不同的语言， 包括C， PHP, PYTHON, Java等， 
+ memlink的客户端能支持不同的语言， 包括C， PHP, Python, Java等， 
 
  == 编译C客户端 ==
   要编译C的客户端， 先进入client/c目录，直接运行scons，会生成libmemlink.so和libmemlink.a，分别为动态库和静态库。
