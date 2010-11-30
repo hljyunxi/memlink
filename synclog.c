@@ -614,7 +614,7 @@ synclog_truncate(SyncLog *slog, int index)
 
     ret = lseek(slog->fd, lastpos + SYNCPOS_LEN, SEEK_SET);
     if (ret < 0) {
-        DERROR("lseek error: %u, %s\n", lastpos + SYNCPOS_LEN, strerror(errno));
+        DERROR("lseek error: %u, %s\n", (unsigned int)(lastpos + SYNCPOS_LEN), strerror(errno));
         MEMLINK_EXIT;
     }
 
