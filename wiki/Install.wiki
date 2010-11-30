@@ -48,6 +48,7 @@
   memlink安装需要执行 "scons 安装路径" 这个命令。其中的安装路径在SConstruct文件中有配置，必须和里面的install_dir一致。这里默认是/opt/memlink，可以根据情况修改。
 
  memlink安装的目录结构是这个样子的：<br/>
+
  /memlink
   /bin
    memlink
