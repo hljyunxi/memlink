@@ -1,12 +1,12 @@
 #summary memlink编译安装文档
 
-= 1 编译和安装介绍 =
+= 编译和安装介绍 =
  本文档着重介绍memlink的安装和编译，描述memlink编译过程中依赖的一些库，编译客户端需要的一些模块。方便用户能够方便快捷的使用memlink。
 
-= 2 操作系统平台 =
+== 操作系统平台 ==
  目前支持的操作系统是linux， 内核版本需要2.6以上，64bit， 32bit的系统都可以。
 
-= 3 编译环境 =
+= 编译环境 =
  * 依赖python http://www.python.org/ 版本2.6
  * 依赖scons http://www.scons.org/
   
@@ -15,14 +15,14 @@
  scons -c      => make clean<br/>
  scons  安装路径 => make install<br/>
 
-= 4 编译memlink =
+= 编译memlink =
  * 库依赖libevent http://monkey.org/~provos/libevent/ 版本1.4.14b
  
  编译需要先安装libevent。
 
  去google code上面check 一份代码， 进入memlink目录下， 直接运行scons，正常情况，在该目录下面会出现可执行文件memlink。
 
-= 5 编译客户端模块 =
+= 编译客户端模块 =
  memlink的客户端能支持不同的语言， 包括C， PHP, PYTHON, Java等， 
 
  == 编译C客户端 ==
@@ -38,7 +38,7 @@
   * 依赖swig http://www.swig.org/ 版本1.3.40
    进入memlink/client/php目录， 直接运行scons.该目录下面有一个叫SConstruct的文件， 里面有个配置选项叫php_config的，这个是php-config文件的路径。
 
-= 6 memlink安装 =
+= memlink安装 =
   memlink安装需要执行 "scons 安装路径" 这个命令。其中的安装路径在SConstruct文件中有配置，必须和里面的install_dir一致。这里默认是/opt/memlink，可以根据情况修改。
 
  memlink安装的目录结构是这个样子的：<br/>
@@ -52,7 +52,7 @@
   /log
    (memlink运行过程中产生的日志，运行时生成)
       
-= 7 memlink运行 =
+= memlink运行 =
  memlink可以带一个参数，就是配置文件的路径。不写默认会取当前路径下的etc/memlink.conf。比如：
 
  memlink ../etc/memlink.conf
