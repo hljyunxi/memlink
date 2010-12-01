@@ -126,7 +126,6 @@ data_set_reply(Conn *conn, short retcode, char *retdata, int retlen)
     conn->wlen = conn->wpos = 0;
 
     int count = 0; 
-
     unsigned int dlen = datalen - sizeof(int);
     memcpy(wdata, &dlen, sizeof(int));
     count += sizeof(int);
@@ -134,28 +133,11 @@ data_set_reply(Conn *conn, short retcode, char *retdata, int retlen)
     memcpy(wdata + count, &retcode, sizeof(short));
     count += sizeof(short);
   
-	/*
-    unsigned char msglen = mlen;
-    memcpy(wdata + count, &msglen, sizeof(char));
-    count += sizeof(char);
-    if (msglen > 0) {
-        memcpy(wdata + count, msg, msglen);
-        count += msglen;
-    }*/
-
     DINFO("retlen: %d, retdata:%p, count:%d\n", retlen, retdata, count);
     if (retlen > 0) {
         memcpy(wdata + count, retdata, retlen);
         count += retlen;
     }
-
-    /*
-    if (conn->wbuf) {
-        zz_free(conn->wbuf);
-        conn->wlen = conn->wpos = 0;
-    }
-    conn->wbuf = wdata;
-    */
     conn->wlen = datalen;
 /*
 #ifdef DEBUG
@@ -163,14 +145,6 @@ data_set_reply(Conn *conn, short retcode, char *retdata, int retlen)
     DINFO("reply %s\n", formath(conn->wbuf, conn->wlen, buf, 10240));
 #endif
 */
-
-	/*
-	DINFO("change event to write.\n");
-	int ret = change_event(conn, EV_WRITE|EV_PERSIST, g_cf->timeout, 0);
-	if (ret < 0) {
-		DERROR("change_event error: %d, close conn.\n", ret);
-		conn->destroy(conn);
-	}*/
 
     return 0;
 }
@@ -286,8 +260,8 @@ wdata_apply(char *data, int datalen, int writelog)
     int  ret = 0;
     unsigned char   valuelen;
     unsigned char   masknum;
-    unsigned int    maskformat[HASHTABLE_MASK_MAX_LEN];
-    unsigned int    maskarray[HASHTABLE_MASK_MAX_LEN];
+    unsigned int    maskformat[HASHTABLE_MASK_MAX_ITEM];
+    unsigned int    maskarray[HASHTABLE_MASK_MAX_ITEM];
     unsigned int    pos;
     unsigned char   tag;
     int             vnum;
@@ -329,8 +303,8 @@ wdata_apply(char *data, int datalen, int writelog)
 			}
 
             DINFO("unpack key: %s, valuelen: %d, masknum: %d, maskarray: %d,%d,%d\n", key, valuelen, masknum, maskformat[0], maskformat[1], maskformat[2]);
-			if (masknum > HASHTABLE_MASK_MAX_LEN) {
-				DERROR("create mask too long: %d, max:%d\n", masknum, HASHTABLE_MASK_MAX_LEN);
+			if (masknum > HASHTABLE_MASK_MAX_ITEM) {
+				DERROR("create mask too long: %d, max:%d\n", masknum, HASHTABLE_MASK_MAX_ITEM);
 				ret = MEMLINK_ERR_MASK;
 			}else{
 				vnum = valuelen;

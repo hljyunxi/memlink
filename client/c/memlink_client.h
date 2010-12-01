@@ -32,7 +32,7 @@ typedef struct _memlink_stat
     unsigned int    data;   // all alloc data item
     unsigned int    data_used; // all data item used
     unsigned int    mem;       // all alloc mem
-    unsigned int    mem_used;  // all used mem
+    //unsigned int    mem_used;  // all used mem
 }MemLinkStat;
 
 typedef struct _memlink_count

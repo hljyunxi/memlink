@@ -155,7 +155,7 @@ sslave_prev_sync_pos(SSlave *ss)
     int i;
 
     for (i = ss->trycount; i < MAX_SYNC_PREV; i++) {
-		ss->trycount += 1;		
+	    ss->trycount += 1;		
 
         if (ss->binlog_index == 0) {
             if (ss->binlog) {
