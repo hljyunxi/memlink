@@ -5,6 +5,7 @@
 #include "hashtable.h"
 #include "test.h"
 
+
 int check(MemLinkStat *stat, int vs, int ms, int blocks, int data, int datau, int mem, int memu)
 {
 	if (stat->valuesize != vs) {
@@ -28,7 +29,7 @@ int check(MemLinkStat *stat, int vs, int ms, int blocks, int data, int datau, in
 	}
 	
 	if (stat->mem != mem) {
-		DERROR("mem  error: %d\n", stat->mem);
+		DERROR("mem  error: %d,  %d\n", stat->mem, mem);
 	}
 
 	if (stat->mem_used != memu) {
@@ -62,14 +63,16 @@ int main()
 	}
 
 	MemLinkStat stat;
-
+	
+	int ms  = sizeof(HashNode);
+	int mus = 0;
 	ret = memlink_cmd_stat(m, buf, &stat);
 	if (ret != MEMLINK_OK) {
 		DERROR("stat error, key:%s, ret:%d\n", buf, ret);
 		return -3;
 	}
 
-	check(&stat, 6, 2, 0, 0, 0, 0, 0);
+	check(&stat, 6, 2, 0, 0, 0, ms, 0);
 
 	char *val		= "111111";
 	char *maskstr	= "8:3:1";
@@ -85,8 +88,8 @@ int main()
 		DERROR("stat error, key:%s, ret:%d\n", buf, ret);
 		return -3;
 	}
-	int ms  = sizeof(HashNode) + 8 * 100;
-	int mus = sizeof(HashNode) + 8;
+	ms  = sizeof(HashNode) + (8 * 100 + sizeof(DataBlock));
+	mus = 0;
 
 	check(&stat2, 6, 2, 1, 100, 1, ms, mus);
 

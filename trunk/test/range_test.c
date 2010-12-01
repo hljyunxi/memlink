@@ -30,7 +30,7 @@ int main()
 	int i;
 	char val[64];
 	char *maskstr = "7:1:1";
-	int  insertnum = 200;
+	int  insertnum = 100;
 
 	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
@@ -45,10 +45,10 @@ int main()
 	
 	
 	MemLinkResult	result;
-	int				range_start = insertnum - 20;
-	int				range_count = 10;
+	int				range_start = 50;
+	int				range_count = 50;
 
-	ret = memlink_cmd_range(m, buf, "", range_start, range_count, &result);
+	ret = memlink_cmd_range(m, buf, "7:1:1", range_start, range_count, &result);
 	if (ret != MEMLINK_OK) {
 		DERROR("range error, key:%s, ret:%d\n", buf, ret);
 		return -4;
