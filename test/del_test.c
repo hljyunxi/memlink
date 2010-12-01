@@ -40,8 +40,7 @@ int main()
 			return -3;
 		}
 	}
-	
-	char buf2[64];
+	printf("insert 100!\n");
 
 	ret = memlink_cmd_del(m, buf, "xxxx", 4);
 	if (ret != MEMLINK_ERR_NOVAL) {
@@ -104,10 +103,15 @@ int main()
 	
 		memlink_result_free(&result);
 	}
+	//printf("del 500!\n");
 
 	i = 99;
 	sprintf(val, "%06d", i);
-	ret = memlink_cmd_del(m, buf, val, strlen(val));		
+	ret = memlink_cmd_del(m, buf, val, strlen(val));	
+	if (ret != MEMLINK_OK) {
+		DERROR("del error, key:%s, val:%s, ret: %d\n", buf, val, ret);
+		return -5;
+	}
 	ret = memlink_cmd_del(m, buf, val, strlen(val));
 	//DINFO("ret:%d, val:%d \n", ret, i);
 	if (ret == MEMLINK_OK) {

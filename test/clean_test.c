@@ -35,7 +35,7 @@ int main()
 	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
 		//DINFO("====== try insert %s %s %d======\n", key, val, i);
-		ret = memlink_cmd_insert(m, key, val, strlen(val), maskstr, i*2);
+		ret = memlink_cmd_insert(m, key, val, strlen(val), maskstr, i);
 		if (ret != MEMLINK_OK) {
 			DERROR("insert error, key:%s, val:%s, mask:%s, i:%d, ret:%d\n", key, val, maskstr, i, ret);
 
@@ -52,6 +52,14 @@ int main()
 		return -4;
 	}
 */	
+	MemLinkStat stat;
+	
+	ret = memlink_cmd_stat(m, key, &stat);
+	if (ret != MEMLINK_OK) {
+		DERROR("stat error, key:%s, ret:%d\n", key, ret);
+		return -4;
+	}
+	
     for (i = 0; i < insertnum/2; i++) {
         sprintf(val, "%06d", i);
 		//DINFO("====== try del %s %s %d======\n", key, val, i);
@@ -62,13 +70,7 @@ int main()
 		}
     }
 	
-	MemLinkStat	stat;
 
-	ret = memlink_cmd_stat(m, key, &stat);
-	if (ret != MEMLINK_OK) {
-		DERROR("stat error, key:%s, ret:%d\n", key, ret);
-		return -4;
-	}
 
 	ret = memlink_cmd_clean(m, "HAHAHAH");
 	if (ret == MEMLINK_OK) {
@@ -89,12 +91,12 @@ int main()
 		return -6;
 	}
 
-	if (stat2.data_used != stat.data_used || stat.data_used != insertnum/2) {
-		DERROR("stat data_used error, must equal. %d, %d\n", stat.data_used, stat2.data_used);
+	if (stat2.data_used != insertnum/2 || stat.data_used != insertnum) {
+		DERROR("stat data_used error. %d, %d\n", stat.data_used, stat2.data_used);
 		return -7;
 	}
 
-	//DINFO("stat.data: %d, stat2.data: %d\n", stat.data, stat2.data);
+	printf("stat.data: %d, stat2.data: %d\n", stat.data, stat2.data);
 	if (stat2.data >= stat.data) {
 		DERROR("stat data error! stat2 must smaller than stat.\n");
 		return -8;

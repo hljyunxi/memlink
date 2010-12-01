@@ -37,7 +37,7 @@ int main()
 		sprintf(val, "%06d", i);
 
 		int k = i%2;
-		ret = memlink_cmd_insert(m, key, val, strlen(val), maskstr, i * 2);
+		ret = memlink_cmd_insert(m, key, val, strlen(val), maskstr, i);
 		if (ret != MEMLINK_OK) {
 			DERROR("insert error, key:%s, value:%s, mask:%s, i:%d\n", key, val, maskstr, i);
 			return -3;
@@ -65,16 +65,16 @@ int main()
         return -5;
     }
 /////////////////////added by wyx
-    /*MemLinkCount    count1; //count key 的 mask 为 "8:3:1" 条目数
+    MemLinkCount    count1; //count key 的 mask 为 "8:3:1" 条目数
 	ret = memlink_cmd_count(m, key, "8:3:1", &count1); 
     if (ret != MEMLINK_OK) { //err: memlink 挂掉
         DERROR("count error, ret:%d\n", ret);
         return -4;
     }
-    if (count1.visible_count != insertnum/2) {
-        DERROR("count1 visible_count error: %d\n", count1.visible_count);
+    if (count1.visible_count != insertnum) {
+        printf("count1 visible_count error: %d\n", count1.visible_count);
         return -5;
-    }*/
+    }
 //end
 
 //////////////////// TAG_DEL 10个

@@ -34,7 +34,7 @@ int main()
 
 	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
-		ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr, i * 2);
+		ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr, i);
 		if (ret != MEMLINK_OK) {
 			DERROR("insert error, key:%s,val:%s, ret:%d\n", buf, val, ret);
 			return -3;

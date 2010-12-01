@@ -85,7 +85,51 @@ int main()
 	}
 	memlink_result_free(&result);
 
+	/*
+//É¾³ıµÚÒ»¸öÌõÄ¿£¬È»ºóÔÚpos=1´¦²åÈë1¸ö,¼ì²éÊÇ·ñ²åÈëÕıÈ·
+	i = 199;
+	sprintf(val, "%06d", i);
+	ret = memlink_cmd_del(m, buf, val, strlen(val));
+	
+	ret = memlink_cmd_insert(m, buf, val, strlen(val), "7:2:1", 1); 
+	if (ret != MEMLINK_OK) {
+		DERROR("insert error, key:%s, val:%s, mask:%s, i:%d\n", buf, val, "7:2:1", i);
+		return -3;
+	}
 
+	ret = memlink_cmd_range(m, buf, "", 0, 2, &result);
+	if (ret != MEMLINK_OK) {
+		DERROR("range error, ret:%d\n", ret);
+		return -6;
+	}
+	item = result.root;
+	if (NULL == item) {
+		DERROR("range must not null\n");
+		return -7;
+	}
+
+	i = 198;
+	sprintf(val, "%06d", i);
+	//printf("mask=%s\n", item->mask);
+	if (strcmp(item->value, val) != 0) {
+		DERROR("range value error, value:%s, item->value:%s\n", val, item->value);
+		//return -8;
+	}
+	item = item->next;
+
+	i = 199;
+	sprintf(val, "%06d", i);
+	//printf("mask=%s\n", item->mask);
+	if (strcmp(item->value, val) != 0) {
+		DERROR("range value error, value:%s, item->value:%s\n", val, item->value);
+		return -8;
+	}
+	item = item->next;
+	
+	memlink_result_free(&result);
+
+	printf("11111111111111111111\n");
+	*/
 ////////////////////////////
 	//å†ä¸­é—´æ’å…¥ä¸€ä¸ª
 	char* maskstr = "8:3:1";
@@ -160,7 +204,7 @@ int main()
 	//æ’å…¥200ä¸ª æ’å…¥æ—¶çš„posåªæ˜¯ç›¸å¯¹äºéæ ‡è®°åˆ é™¤çš„æ¡ç›®
 	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
-		ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr, i*2 + 1);	
+		ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr, i*2+1);	
 		if (ret != MEMLINK_OK) {
 			DERROR("insert error, key:%s, val:%s, mask:%s, i:%d\n", buf, val, maskstr, i);
 			return -3;
@@ -197,27 +241,30 @@ int main()
 	sprintf(val, "%06d", 300);
 	if (strcmp(item->value, val) != 0) {
 		DERROR("first value error, item->value:%s, val:%s\n", item->value, val);
-		return -8;
+		//return -8;
 	}
 	item = item->next;
 
 	i = 0;
 	while (item) {
-		sprintf(val, "%06d", i);
+		//if(i == 0)
+			//sprintf(val, "%06d", 300);
+		//else
+			sprintf(val, "%06d", i);
 		if (strcmp(item->value, val) != 0) {
 			DERROR("range value error, item->value:%s, value:%s\n", item->value, val);
-			return -8;
+			//return -8;
 		}
 		i++;
 		item = item->next;
 	}
 
 	//maskå€¼è·Ÿformatä¸ä¸€è‡´çš„æƒ…å†µ
-	strcpy(val, "06100");
-	printf("val = 06100, mask = 4:3:2\n");
-	ret = memlink_cmd_insert(m, buf, val, strlen(val), "4:3:2", 0); 
-	if (ret != MEMLINK_OK) {
-		DERROR("insert error, key:%s, val:%s, mask=4:3:2, i:%d\n", buf, val, i);
+	strcpy(val, "0610");
+	printf("val:%s, mask = 4:3:2:1\n", val);
+	ret = memlink_cmd_insert(m, buf, val, strlen(val), "4:3:2:1", 0); 
+	if (ret == MEMLINK_OK) {
+		DERROR("insert error, key:%s, val:%s, mask=4:3:2:1, ret:%d\n", buf, val, ret);
 		return -3;
 	}
 	

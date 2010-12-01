@@ -161,20 +161,45 @@ int linkNodeMask(LinkNode* l, char* key, char* val, char* mask)
 	return 0;
 }
 
-int LinkListPrint(LinkNode* l)
+int check_result(LinkNode* l)
 {
 	LinkNode* p = l->next;
 	int ret = -1;
 	int i = 0;
 	
 	DINFO("key: %s\n", p->key);
+	
+	MemLinkResult	result;
+	int				range_start = 0;
+	int				range_count = 2000;
+	
+	ret = memlink_cmd_range(m, key, "", range_start, range_count, &result);
+	if (ret != MEMLINK_OK) {
+		DERROR("range error, key:%s, ret:%d\n", key, ret);
+		return -4;
+	}
+	MemLinkItem	*item = result.root;
 	while( p != NULL )
 	{	
+		/*
 		DINFO("i: %d, value:%s, mask:%s ", i, p->val, p->mask);
 		if(p->flag)
 			printf(" del\n");
 		else
 			printf(" \n");
+		*/
+		if(p->flag == MEMLINK_TAG_DEL)
+		{
+			p = p->next;
+			continue;
+		}
+		if (strcmp(item->value, p->val) != 0) {
+			DERROR("range value error, value:%s, listvalue:%s\n", item->value, p->val);
+		}
+		if (strcmp(item->mask, p->mask) != 0) {
+			DERROR("range mask error, mask:%s, listmask:%s\n", item->mask, p->mask);
+		}
+		item = item->next;
 		l = p;
 		p = p->next;
 		i++;
@@ -368,7 +393,7 @@ int main()
 	}
 	printf("createKey:%d, delVal:%d, insertVal:%d, updateVal:%d, tagVal:%d, maskVal:%d, cleanKey:%d\n", 
 		opNum[0], opNum[1],opNum[2],opNum[3],opNum[4],opNum[5],opNum[6]);
-	LinkListPrint(list);
+	check_result(list);
 
 	destroyList(list);
 	memlink_destroy(m);
