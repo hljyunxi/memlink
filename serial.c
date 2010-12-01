@@ -55,7 +55,7 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
     // 前两位分别表示真实删除和标记删除，跳过
     // mask[idx] = mask[idx] & 0xfc;
 
-    memset(mask, 0, masknum);
+    //memset(mask, 0, masknum);
     
     mask[0] = 0x01;  // 默认设置数据有效，非标记删除
     b += 2;
