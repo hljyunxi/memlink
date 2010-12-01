@@ -17,7 +17,7 @@ ldflags  = ['']
 libpath  = ['/Developer/usr/lib', '../client/c']
 libs	 = ['m', 'pthread']
 
-files    = ['testframe.c', '../utils.c', '../logfile.c']
+files    = ['testframe.c', '../utils.c', '../logfile.c', '../zzmalloc.c']
 
 env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
 
@@ -30,35 +30,36 @@ for fn in files[:1]:
 env.Program("testmemlink", testfiles)
 
 
-env2 = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
+if os.path.isdir(hiredis_home):
+	env2 = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
 
-redisfiles = ['testredis.c']
-for fn in files:
-	name = os.path.basename(fn)[:-2]
-	redisfiles.append(env2.Object('testreids-'+name, fn))
+	redisfiles = ['testredis.c']
+	for fn in files:
+		name = os.path.basename(fn)[:-2]
+		redisfiles.append(env2.Object('testreids-'+name, fn))
 
-env2.Program("testredis", 
-	redisfiles,
-	#["testredis.c", env2.Object("testredis-testframe", "testframe.c"), env2.Object("testredis-logfile", "../logfile.c"), env2.Object("test-zzmalloc", "../zzmalloc.c"), env2.Object("testredis-utils", "../utils.c")], 
-	CCFLAGS='-ggdb -DDEBUG',
-	CPPPATH=[hiredis_home, '../'],
-	LIBPATH=[hiredis_home],
-	LIBS=['hiredis', 'm', 'pthread'], 
-	LINKFLAGS=[hiredis_linkpath])
+	env2.Program("testredis", 
+		redisfiles,
+		#["testredis.c", env2.Object("testredis-testframe", "testframe.c"), env2.Object("testredis-logfile", "../logfile.c"), env2.Object("test-zzmalloc", "../zzmalloc.c"), env2.Object("testredis-utils", "../utils.c")], 
+		CCFLAGS='-ggdb -DDEBUG',
+		CPPPATH=[hiredis_home, '../'],
+		LIBPATH=[hiredis_home],
+		LIBS=['hiredis', 'm', 'pthread'], 
+		LINKFLAGS=[hiredis_linkpath])
 
 
+if os.path.isfile(mysql_include + 'mysql.h'):
+	env3 = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
 
-env3 = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
+	mysqlfiles = ['testmysql.c']
+	for fn in files:
+		name = os.path.basename(fn)[:-2]
+		redisfiles.append(env3.Object('testmysql-'+name, fn))
 
-mysqlfiles = ['testmysql.c']
-for fn in files:
-	name = os.path.basename(fn)[:-2]
-	redisfiles.append(env3.Object('testmysql-'+name, fn))
-
-env3.Program("testmysql", 
-	["testmysql.c", env3.Object("testmysql-testframe", "testframe.c"), env3.Object("testmysql-logfile", "../logfile.c"), env3.Object("testmysql-zzmalloc", "../zzmalloc.c"), env3.Object("testmysql-utils", "../utils.c")], 
-	CCFLAGS='-ggdb -DDEBUG',
-	CPPPATH=[mysql_include, '../'],
-	LIBPATH=[mysql_lib],
-	LIBS=['mysqlclient_r', 'm', 'pthread'], 
-	LINKFLAGS=[mysql_linkpath])
+	env3.Program("testmysql", 
+		["testmysql.c", env3.Object("testmysql-testframe", "testframe.c"), env3.Object("testmysql-logfile", "../logfile.c"), env3.Object("testmysql-zzmalloc", "../zzmalloc.c"), env3.Object("testmysql-utils", "../utils.c")], 
+		CCFLAGS='-ggdb -DDEBUG',
+		CPPPATH=[mysql_include, '../'],
+		LIBPATH=[mysql_lib],
+		LIBS=['mysqlclient_r', 'm', 'pthread'], 
+		LINKFLAGS=[mysql_linkpath])
