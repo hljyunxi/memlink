@@ -225,7 +225,7 @@ dataitem_lookup_pos_mask(HashNode *node, int pos, int visible, char *maskval, ch
 }
 
 /**
- * find a insert pos in DataBlock link
+ * find a insert pos in DataBlock link. skip DataBlock
  */
 static int
 datablock_lookup_valid_pos(HashNode *node, int pos, int visible, DataBlock **dbk, DataBlock **prev)
@@ -252,6 +252,7 @@ datablock_lookup_valid_pos(HashNode *node, int pos, int visible, DataBlock **dbk
 			return startn;
 		}
 
+        // if last block
         if (root->next == NULL) {
             if (startn + g_cf->block_data_count > n) { // last DataBlock have idle space
                 *dbk = root;
@@ -307,13 +308,15 @@ dataitem_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk, DataB
 		}
 	}
 
+    // position out of block used count, find last idle address
 	if (skipn >= n) {
         char *enddata = item + datalen * g_cf->block_data_count;
         item = enddata;
         
         for (i = 0; i < g_cf->block_data_count; i++) {
             item  -= datalen;
-            if (dataitem_have_data(node, item, 0)) {
+            //if (dataitem_have_data(node, item, 0)) {
+            if (dataitem_have_data(node, item, visible)) {
                 *data = item + datalen;
                 break;
             }
@@ -324,16 +327,13 @@ dataitem_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk, DataB
 
     // find special pos
     DINFO("skipn: %d\n", skipn);
-	char	*prevaddr = NULL;
-
     for (i = 0; i < g_cf->block_data_count; i++) {
         if (skipn == 0) {
             *data = item;
             return MEMLINK_OK;
-        }else if (skipn == 1) {
-			prevaddr = item;
-		}
-		if (dataitem_have_data(node, item, 0)) {
+        }
+		//if (dataitem_have_data(node, item, 0)) {
+		if (dataitem_have_data(node, item, visible)) {
 			skipn -= 1;
 		}
         item  += datalen;
@@ -461,19 +461,20 @@ hashtable_clear_all(HashTable *ht)
 int
 hashtable_add_info(HashTable *ht, char *key, int valuesize, char *maskstr)
 {
-    unsigned int format[HASHTABLE_MASK_MAX_LEN] = {0};
+    unsigned int format[HASHTABLE_MASK_MAX_ITEM] = {0};
     int  masknum = mask_string2array(maskstr, format);
     int  i; 
     
-    if (masknum > HASHTABLE_MASK_MAX_LEN) {
+    if (masknum > HASHTABLE_MASK_MAX_ITEM) {
         return MEMLINK_ERR_MASK;
     }
 
     for (i = 0; i < masknum; i++) {
-        if (format[i] == UINT_MAX) {
+        if (format[i] == UINT_MAX || format[i] > HASHTABLE_MASK_MAX_BIT) {
             DERROR("maskformat error: %s\n", maskstr);
             return MEMLINK_ERR_MASK;
         }
+
     }
 
     return hashtable_add_info_mask(ht, key, valuesize, format, masknum);
@@ -625,7 +626,7 @@ hashtable_hash(char *str, int len)
 /*int
 hashtable_add_first(HashTable *ht, char *key, void *value, char *maskstr)
 {
-    unsigned int maskarray[HASHTABLE_MASK_MAX_LEN];
+    unsigned int maskarray[HASHTABLE_MASK_MAX_ITEM];
     char masknum;
 
     masknum = mask_string2array(maskstr, maskarray);
@@ -643,7 +644,7 @@ hashtable_add_first(HashTable *ht, char *key, void *value, char *maskstr)
 /*int 
 hashtable_add_first_mask(HashTable *ht, char *key, void *value, unsigned int *maskarray, char masknum)
 {
-    char mask[HASHTABLE_MASK_MAX_LEN * sizeof(int)];
+    char mask[HASHTABLE_MASK_MAX_ITEM * sizeof(int)];
     int  ret;
     HashNode *node = hashtable_find(ht, key);
     if (NULL == node) {
@@ -703,7 +704,7 @@ hashtable_add_first_mask(HashTable *ht, char *key, void *value, unsigned int *ma
 int
 hashtable_add(HashTable *ht, char *key, void *value, char *maskstr, int pos)
 {
-    unsigned int maskarray[HASHTABLE_MASK_MAX_LEN];
+    unsigned int maskarray[HASHTABLE_MASK_MAX_ITEM];
     char masknum;
 
     masknum = mask_string2array(maskstr, maskarray);
@@ -766,6 +767,13 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
             node->data = newbk;
         }
     }else{ //
+        if (dataitem_have_data(node, posaddr, 0) == MEMLINK_FALSE) {
+            DINFO("posaddr have no data, insert !\n");
+            dataitem_copy(node, posaddr, value, mask);
+            dbk->visible_count++;
+            return MEMLINK_OK;
+        }
+
         char *todata  = newbk->data;
         char *enddata = todata + g_cf->block_data_count * datalen;
         itemdata    = dbk->data;
@@ -874,7 +882,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 int
 hashtable_add_mask(HashTable *ht, char *key, void *value, unsigned int *maskarray, char masknum, int pos)
 {
-    char mask[HASHTABLE_MASK_MAX_LEN * sizeof(int)] = {0};
+    char mask[HASHTABLE_MASK_MAX_ITEM * sizeof(int)] = {0};
     int  ret;
     HashNode *node = hashtable_find(ht, key);
     if (NULL == node) {
@@ -901,7 +909,7 @@ hashtable_add_mask(HashTable *ht, char *key, void *value, unsigned int *maskarra
 int
 hashtable_update(HashTable *ht, char *key, void *value, int pos)
 {
-    char mask[HASHTABLE_MASK_MAX_LEN * sizeof(int)] = {0};
+    char mask[HASHTABLE_MASK_MAX_ITEM * sizeof(int)] = {0};
     HashNode *node = NULL;
     DataBlock *dbk = NULL;
     char     *item = NULL; 
@@ -1058,8 +1066,8 @@ hashtable_mask(HashTable *ht, char *key, void *value, unsigned int *maskarray, i
 		return MEMLINK_ERR_MASK;
 	}
 
-    char mask[HASHTABLE_MASK_MAX_LEN * sizeof(int)] = {0};
-    char maskflag[HASHTABLE_MASK_MAX_LEN * sizeof(int)] = {0};
+    char mask[HASHTABLE_MASK_MAX_ITEM * sizeof(int)] = {0};
+    char maskflag[HASHTABLE_MASK_MAX_ITEM * sizeof(int)] = {0};
 
     int  len = mask_array2binary(node->maskformat, maskarray, masknum, mask);
     if (len <= 0) {
@@ -1129,8 +1137,8 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
                 char *data, int *datanum, 
                 unsigned char *valuesize, unsigned char *masksize)
 {
-    char maskval[HASHTABLE_MASK_MAX_LEN * sizeof(int)];
-	char maskflag[HASHTABLE_MASK_MAX_LEN * sizeof(int)];
+    char maskval[HASHTABLE_MASK_MAX_ITEM * sizeof(int)];
+	char maskflag[HASHTABLE_MASK_MAX_ITEM * sizeof(int)];
     HashNode    *node;
 	int			startn;
 	
@@ -1421,8 +1429,8 @@ hashtable_stat(HashTable *ht, char *key, HashTableStat *stat)
 int
 hashtable_count(HashTable *ht, char *key, unsigned int *maskarray, int masknum, int *visible_count, int *mask_count)
 {
-    char maskval[HASHTABLE_MASK_MAX_LEN * sizeof(int)];
-	char maskflag[HASHTABLE_MASK_MAX_LEN * sizeof(int)];
+    char maskval[HASHTABLE_MASK_MAX_ITEM * sizeof(int)];
+	char maskflag[HASHTABLE_MASK_MAX_ITEM * sizeof(int)];
     HashNode    *node;
     int         vcount = 0, mcount = 0;
 

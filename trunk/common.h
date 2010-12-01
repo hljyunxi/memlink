@@ -27,7 +27,7 @@
 #define MEMLINK_ERR_PACKAGE			-21
 // 该项已删除
 #define MEMLINK_ERR_REMOVED         -22
-// 
+// RANGE条目错误
 #define MEMLINK_ERR_RANGE_SIZE		-23
 // 发送数据错误
 #define MEMLINK_ERR_SEND            -24
@@ -75,6 +75,24 @@
 
 #define CMD_SYNC_OK		0
 #define CMD_SYNC_FAILED	1
+
+#define CMD_RANGE_MAX_SIZE      1024000
+
+/// HashTable中桶的数量
+#define HASHTABLE_BUNKNUM           1000000
+/// 最大允许的mask项数
+#define HASHTABLE_MASK_MAX_BIT      32
+#define HASHTABLE_MASK_MAX_ITEM     16
+// key最大长度
+#define HASHTABLE_KEY_MAX           255
+// value最大长度
+#define HASHTABLE_VALUE_MAX         255
+
+// value item removed
+#define MEMLINK_ITEM_REMOVED        1
+#define MEMLINK_ITEM_TAGDEL         2
+#define MEMLINK_ITEM_VISIBLE        4 
+#define MEMLINK_ITEM_ALL            0
 
 
 #endif

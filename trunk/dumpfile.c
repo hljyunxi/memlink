@@ -193,7 +193,7 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
     unsigned char keylen;
     unsigned char masklen;
     unsigned char masknum;
-    unsigned char maskformat[HASHTABLE_MASK_MAX_LEN];
+    unsigned char maskformat[HASHTABLE_MASK_MAX_ITEM];
     unsigned char valuelen;
     unsigned int  itemnum;
     char          key[256];
@@ -224,7 +224,7 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
         datalen = valuelen + masklen;
 		DINFO("itemnum: %d, datalen: %d\n", itemnum, datalen);
 
-        unsigned int maskarray[HASHTABLE_MASK_MAX_LEN];
+        unsigned int maskarray[HASHTABLE_MASK_MAX_ITEM];
         for (i = 0; i < masknum; i++) {
             maskarray[i] = maskformat[i];
         }

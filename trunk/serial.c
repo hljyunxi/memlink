@@ -122,7 +122,7 @@ int
 mask_string2binary(unsigned char *maskformat, char *maskstr, char *mask)
 {
     int masknum;
-    unsigned int maskarray[HASHTABLE_MASK_MAX_LEN];
+    unsigned int maskarray[HASHTABLE_MASK_MAX_ITEM];
 
     masknum = mask_string2array(maskstr, maskarray);
     if (masknum <= 0)
