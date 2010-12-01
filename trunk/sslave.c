@@ -22,6 +22,9 @@
 #define MAX_SYNC_PREV   100
 #define SYNCPOS_LEN   (sizeof(int)+sizeof(int))
 
+/**\
+ * recv server push log
+ */
 static int
 sslave_recv_log(SSlave *ss)
 {
@@ -76,6 +79,9 @@ sslave_recv_log(SSlave *ss)
 	return 0;
 }
 
+/**
+ * load master dump info
+ */
 int
 sslave_load_master_dump_info(SSlave *ss, char *dumpfile, long long *filesize, long long *dumpsize, unsigned int *logver)
 {
@@ -138,7 +144,7 @@ sslave_load_master_dump_info(SSlave *ss, char *dumpfile, long long *filesize, lo
 }
 
 /* 
- *
+ * find previous binlog position for sync
  */
 static int 
 sslave_prev_sync_pos(SSlave *ss)
@@ -229,6 +235,9 @@ sslave_prev_sync_pos(SSlave *ss)
 }
 
 
+/**
+ * send command and recv response
+ */
 int 
 sslave_do_cmd(SSlave *ss, char *sendbuf, int buflen, char *recvbuf, int recvlen)
 {
@@ -269,6 +278,9 @@ sslave_do_cmd(SSlave *ss, char *sendbuf, int buflen, char *recvbuf, int recvlen)
     return len + sizeof(int);
 }
 
+/**
+ * get dump.dat from master
+ */
 int
 sslave_do_getdump(SSlave *ss)
 {
@@ -364,6 +376,9 @@ sslave_do_getdump_error:
     return -1;
 }
 
+/**
+ * apply sync,getdump commands before recv server push log
+ */
 int
 sslave_conn_init(SSlave *ss)
 {
@@ -465,15 +480,16 @@ sslave_conn_init(SSlave *ss)
 /**
  * slave sync thread
  * 1.find local sync logver/logline 
- * 2.send sync command to server 
- * 3.get dump/sync message
+ * 2.send sync command to server or get dump
+ * 3.recv server push log
  */
 void*
 sslave_run(void *args)
 {
 	SSlave	*ss = (SSlave*)args;
 	int		ret;
-	
+
+    // do not start immediately, wait for some initialize
 	while (ss->isrunning == 0) {
 		sleep(1);
 	}

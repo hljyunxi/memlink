@@ -277,12 +277,12 @@ datablock_lookup_valid_pos(HashNode *node, int pos, int visible, DataBlock **dbk
 }
 
 int
-dataitem_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk, DataBlock **last, char **data)
+dataitem_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk, DataBlock **prev, char **data)
 {
     int ret;
 
-    ret = datablock_lookup_valid_pos(node, pos, visible, dbk, last);
-    DINFO("datablock_lookup_pos, pos:%d, dbk:%p, last:%p, ret:%d\n", pos, *dbk, *last, ret);
+    ret = datablock_lookup_valid_pos(node, pos, visible, dbk, prev);
+    DINFO("datablock_lookup_pos, pos:%d, dbk:%p, prev:%p, ret:%d\n", pos, *dbk, *prev, ret);
     if (ret < 0 || *dbk == NULL) {
         *data = 0;
         return ret;
@@ -324,12 +324,16 @@ dataitem_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk, DataB
 
     // find special pos
     DINFO("skipn: %d\n", skipn);
+	char	*prevaddr = NULL;
+
     for (i = 0; i < g_cf->block_data_count; i++) {
         if (skipn == 0) {
             *data = item;
             return MEMLINK_OK;
-        }
-		if (dataitem_have_data(node, item, 0) == MEMLINK_TRUE) {
+        }else if (skipn == 1) {
+			prevaddr = item;
+		}
+		if (dataitem_have_data(node, item, 0)) {
 			skipn -= 1;
 		}
         item  += datalen;
@@ -737,6 +741,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
     }*/
 
     DINFO("dataitem_lookup_pos, dbk:%p, last:%p, posaddr:%p\n", dbk, last, posaddr);
+	
     // create new block for copy item
     DataBlock *newbk = mempool_get(g_mpool, datalen);
     if (NULL == newbk) {
@@ -876,7 +881,10 @@ hashtable_add_mask(HashTable *ht, char *key, void *value, unsigned int *maskarra
         DERROR("hashtable_add not found node\n");
         return MEMLINK_ERR_NOKEY;
     }
-    
+   
+	if (node->masknum != masknum) {
+		return MEMLINK_ERR_MASK;
+	}
     ret = mask_array2binary(node->maskformat, maskarray, masknum, mask);
     if (ret <= 0) {
         DERROR("mask_array2binary error: %d\n", ret);
@@ -1045,6 +1053,10 @@ hashtable_mask(HashTable *ht, char *key, void *value, unsigned int *maskarray, i
     if (ret < 0) {
         return ret;
     }
+	
+	if (node->masknum != masknum) {
+		return MEMLINK_ERR_MASK;
+	}
 
     char mask[HASHTABLE_MASK_MAX_LEN * sizeof(int)] = {0};
     char maskflag[HASHTABLE_MASK_MAX_LEN * sizeof(int)] = {0};
@@ -1077,7 +1089,7 @@ mask_array2_binary_flag(unsigned char *maskformat, unsigned int *maskarray, int 
         if (maskarray[j] != UINT_MAX)
             break;
     }
-    DINFO("j: %d, masknum: %d\n", j, masknum);
+    //DINFO("j: %d, masknum: %d\n", j, masknum);
     
     int masklen;
     if (j < masknum) {
