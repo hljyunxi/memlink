@@ -89,7 +89,8 @@ dataitem_lookup(HashNode *node, void *value, DataBlock **dbk)
 
     while (root) {
         char *data = root->data;
-        DINFO("data: %p\n", data);
+		DINFO("root: %p, data: %p, next: %p\n", root, data, root->next);
+        //DINFO("data: %p\n", data);
         for (i = 0; i < g_cf->block_data_count; i++) {
             if (dataitem_have_data(node, data, 0) && memcmp(value, data, node->valuesize) == 0) {
                 if (dbk) {
@@ -766,7 +767,6 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 		DINFO("create newbk:%p, dbk:%p\n", newbk, dbk);
 
 		node->all += g_cf->block_data_count;
-
         DINFO("not found the same hash, create new\n");
         newbk->next  = NULL;
 
@@ -802,7 +802,6 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
         newbk->next = dbk->next;
 
         DINFO("found exist hash, newbk: %p, dbk: %p, todata:%p, enddata:%p\n", newbk, dbk, todata, enddata);
-
         DataBlock   *lastnewbk = newbk;
         for (i = 0; i < g_cf->block_data_count; i++) {
             //char buf[128] = {0};
@@ -815,8 +814,8 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 
             if (dataitem_have_data(node, itemdata, 0)) { 
                 if (todata >= enddata) { // at the end of new datablock, must create another datablock
-                    DINFO("create a new datablock.\n");
                     DataBlock *newbk2 = mempool_get(g_mpool, datalen);
+                    DINFO("create a new datablock. %p\n", newbk2);
                     if (NULL == newbk2) {
                         DERROR("hashtable_add error!\n");
                         //mempool_put(g_mpool, newbk, datalen);
@@ -825,11 +824,9 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
                     }
                     newbk2->next = newbk->next;
                     newbk->next  = newbk2;
-
+					//DINFO("newbk: %p, next: %p\n", newbk2, newbk2->next);
                     lastnewbk = newbk2;
-
                     node->all += g_cf->block_data_count;
-
                     todata  = newbk2->data;
                     enddata = todata + g_cf->block_data_count * datalen;
                 }
@@ -849,7 +846,6 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
         }
 
         // insert to last
-		
 		DINFO("pasaddr:%p, end:%p\n", posaddr, dbk->data + g_cf->block_data_count * datalen);
         if (posaddr == dbk->data + g_cf->block_data_count * datalen) {
             dataitem_copy(node, todata, value, mask);
@@ -858,10 +854,11 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
         }
     
         if (dbk->next != newbk->next) { // create two datablock
-            DataBlock   *nextbk = dbk->next; 
-            DataBlock   *new_nextbk = newbk->next;
+            DataBlock   *nextbk = dbk->next;  // after 1
+            DataBlock   *new_nextbk = newbk->next; // new 2
             itemdata = nextbk->data;
-
+			
+			DINFO("merge block: %p %p\n", newbk->next, newbk->next->next);
             if (nextbk && nextbk->visible_count + nextbk->mask_count < g_cf->block_data_count) {
                 for (i = 0; i < g_cf->block_data_count; i++) {
                     ret = dataitem_check_data(node, itemdata);
@@ -876,8 +873,8 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
                     }
                     itemdata += datalen;
                 }
-
                 new_nextbk->next = nextbk->next;
+				//DINFO("put to pool: %p\n", nextbk);
                 mempool_put(g_runtime->mpool, nextbk, datalen);
 				node->all -= g_cf->block_data_count;	
             }
@@ -935,7 +932,7 @@ hashtable_update(HashTable *ht, char *key, void *value, int pos)
     HashNode *node = NULL;
     DataBlock *dbk = NULL;
     char     *item = NULL; 
-
+	
     char ret = hashtable_find_value(ht, key, value, &node, &dbk, &item);
     if (ret < 0) {
         DWARNING("not found value: %d, %s\n", ret, key);
@@ -973,12 +970,13 @@ hashtable_find_value(HashTable *ht, char *key, void *value, HashNode **node, Dat
         *node = fnode;
     }
 
-    DINFO("find dataitem ...\n");
+    DINFO("find dataitem ... node: %p\n", fnode);
     char *item = dataitem_lookup(fnode, value, dbk);
     if (NULL == item) {
         DWARNING("dataitem_lookup error: %s, %x\n", key, *(unsigned int*)value);
         return MEMLINK_ERR_NOVAL;
     }
+	DINFO("find dataitem ok!\n");
     *data = item;
 
     return MEMLINK_OK; 

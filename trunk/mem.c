@@ -56,7 +56,14 @@ mempool_get(MemPool *mp, int blocksize)
 
         return dbk;
     }
-        
+    
+#ifdef DEBUG
+    dbn = dbk;
+    while (dbn) {
+	DINFO("mem get dbks: %p\n", dbn);
+	dbn = dbn->next;
+    }
+#endif    
     
     dbn = dbk->next;
     mp->freemem[i].data = dbn; 
@@ -71,6 +78,7 @@ mempool_put(MemPool *mp, DataBlock *dbk, int blocksize)
 {
     int i;
 
+	DINFO("mem put: %p\n", dbk);
     for (i = 0; i < mp->idxused; i++) {
         if (mp->freemem[i].memsize == blocksize) {
             dbk->next = mp->freemem[i].data;
@@ -79,6 +87,7 @@ mempool_put(MemPool *mp, DataBlock *dbk, int blocksize)
         }
     }
     
+	dbk->next = NULL;
     if (i < mp->idxnum) {
         mp->freemem[i].data = dbk;
         mp->freemem[i].memsize = blocksize;
