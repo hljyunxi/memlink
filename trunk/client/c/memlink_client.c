@@ -323,9 +323,9 @@ memlink_cmd_stat(MemLink *m, char *key, MemLinkStat *stat)
     char buf[512] = {0};
     DINFO("stat buf: %s\n", formath((char *)stat, sizeof(MemLinkStat), buf, 512));
 
-    DINFO("stat blocks:%d, data:%d, data_used:%d, mem:%d, mem_used:%d, valuesize:%d, masksize:%d\n", 
+    DINFO("stat blocks:%d, data:%d, data_used:%d, mem:%d, valuesize:%d, masksize:%d\n", 
                     stat->blocks, stat->data, stat->data_used, 
-                    stat->mem, stat->mem_used, stat->valuesize, stat->masksize);
+                    stat->mem, stat->valuesize, stat->masksize);
     
 #endif
     return MEMLINK_OK;
