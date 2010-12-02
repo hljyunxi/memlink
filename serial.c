@@ -43,6 +43,9 @@ mask_string2array(char *maskstr, unsigned int *result)
     return i;
 }
 
+/**
+ * mask必须先初始化为0
+ */
 int
 mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char masknum, char *mask)
 {
@@ -118,6 +121,9 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
     return idx + 1; 
 }
 
+/**
+ * mask必须先初始化为0
+ */
 int
 mask_string2binary(unsigned char *maskformat, char *maskstr, char *mask)
 {
@@ -216,6 +222,9 @@ mask_binary2string(unsigned char *maskformat, int masknum, char *mask, int maskl
 	return widx;
 }
 
+/**
+ * mask必须先初始化为0
+ */
 int 
 mask_array2flag(unsigned char *maskformat, unsigned int *maskarray, char masknum, char *mask)
 {
