@@ -8,10 +8,12 @@ WRITE_PORT = 11002
 
 def insert(*args):
     try:
-        num = int(args[0])
+        start = int(args[0])
+        num   = int(args[1])
     except:
-        num = 1000
-    print 'insert:', num
+        start = 0
+        num   = 1000
+    print 'insert:', start, num
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
    
@@ -20,7 +22,7 @@ def insert(*args):
         print 'create haha error!', ret
         #return
 
-    for i in xrange(0, num):
+    for i in xrange(start, start + num):
         print 'insert:', '%012d' % i
         ret = m.insert('haha', '%012d' % i, "1", 0)
         if ret != MEMLINK_OK:
@@ -59,6 +61,8 @@ def range(*args):
     ret, recs = m.range('haha', mask, frompos, slen)
     if ret != MEMLINK_OK:
         print 'range error:', ret
+        return
+
     print recs.count
     items = recs.root
     while items:
