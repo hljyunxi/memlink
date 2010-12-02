@@ -150,7 +150,7 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
     
     //snprintf(filename, PATH_MAX, "%s/%s", g_cf->datadir, DUMP_FILE_NAME);
     //snprintf(filename, PATH_MAX, "%s/%s", g_cf->datadir, dumpfile_name);
-    fp = fopen(filename, "r");
+    fp = fopen(filename, "rb");
     if (NULL == fp) {
         DERROR("open dumpfile %s error: %s\n", filename, strerror(errno));
         return -1;
