@@ -1405,7 +1405,7 @@ hashtable_stat(HashTable *ht, char *key, HashTableStat *stat)
     stat->data      = node->all;
     stat->data_used = node->used;
     stat->mem       = 0;
-    stat->mem_used  = 0;
+    //stat->mem_used  = 0;
 
     int blockmem = sizeof(DataBlock) + (node->masksize + node->valuesize) * g_cf->block_data_count;
     stat->mem = stat->blocks * blockmem + sizeof(HashNode);
@@ -1419,9 +1419,9 @@ hashtable_stat(HashTable *ht, char *key, HashTableStat *stat)
 
     //stat->mem_used = stat->blocks * sizeof(DataBlock) + (node->masksize + node->valuesize) * stat->data_used;
     
-    DINFO("valuesize:%d, masksize:%d, blocks:%d, data:%d, data_used:%d, mem:%d, mem_used:%d\n", 
+    DINFO("valuesize:%d, masksize:%d, blocks:%d, data:%d, data_used:%d, mem:%d\n", 
             stat->valuesize, stat->masksize, stat->blocks, stat->data, stat->data_used,
-            stat->mem, stat->mem_used);
+            stat->mem);
 
     return MEMLINK_OK;
 }
