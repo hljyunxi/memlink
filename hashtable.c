@@ -705,7 +705,7 @@ hashtable_add_first_mask(HashTable *ht, char *key, void *value, unsigned int *ma
 int
 hashtable_add(HashTable *ht, char *key, void *value, char *maskstr, int pos)
 {
-    unsigned int maskarray[HASHTABLE_MASK_MAX_ITEM];
+    unsigned int maskarray[HASHTABLE_MASK_MAX_ITEM] = {0};
     char masknum;
 
     masknum = mask_string2array(maskstr, maskarray);
@@ -1035,23 +1035,22 @@ hashtable_tag(HashTable *ht, char *key, void *value, unsigned char tag)
         DERROR("not found key: %s\n", key);
         return ret;
     }
-    DINFO("tag: %d, %d\n", tag, tag<<1);
+    //DINFO("tag: %d, %d\n", tag, tag<<1);
     
     char *data = item + node->valuesize;
     unsigned char v = *data & 0x3; 
 
-    DINFO("tag v:%x\n", v);
+    //DINFO("tag v:%x\n", v);
 
     if ( (v & 0x01) == 1) { // data not real delete
-        DINFO("tag data:%x\n", *data);
+        //DINFO("tag data:%x\n", *data);
         if (tag == MEMLINK_TAG_DEL) {
             *data |= 0x02; 
         }else{
             *data &= 0xfd; 
         }
     
-        DINFO("tag data:%x\n", *data);
-            
+        //DINFO("tag data:%x\n", *data);
         if ( (v & 0x02) == 2 && tag == MEMLINK_TAG_RESTORE) {
             dbk->mask_count --;
             dbk->visible_count ++;
@@ -1157,8 +1156,8 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
                 char *data, int *datanum, 
                 unsigned char *valuesize, unsigned char *masksize)
 {
-    char maskval[HASHTABLE_MASK_MAX_ITEM * sizeof(int)];
-	char maskflag[HASHTABLE_MASK_MAX_ITEM * sizeof(int)];
+    char maskval[HASHTABLE_MASK_MAX_ITEM * sizeof(int)] = {0};
+	char maskflag[HASHTABLE_MASK_MAX_ITEM * sizeof(int)] = {0};
     HashNode    *node;
 	int			startn;
 	
@@ -1449,8 +1448,8 @@ hashtable_stat(HashTable *ht, char *key, HashTableStat *stat)
 int
 hashtable_count(HashTable *ht, char *key, unsigned int *maskarray, int masknum, int *visible_count, int *mask_count)
 {
-    char maskval[HASHTABLE_MASK_MAX_ITEM * sizeof(int)];
-	char maskflag[HASHTABLE_MASK_MAX_ITEM * sizeof(int)];
+    char maskval[HASHTABLE_MASK_MAX_ITEM * sizeof(int)] = {0};
+	char maskflag[HASHTABLE_MASK_MAX_ITEM * sizeof(int)] = {0};
     HashNode    *node;
     int         vcount = 0, mcount = 0;
 

@@ -30,7 +30,7 @@ rdata_ready(Conn *conn, char *data, int datalen)
 
     //unsigned char   valuelen;
     unsigned char   masknum;
-    unsigned int    maskarray[HASHTABLE_MASK_MAX_ITEM];
+    unsigned int    maskarray[HASHTABLE_MASK_MAX_ITEM] = {0};
     unsigned int    frompos, len;
 
     memcpy(&cmd, data + sizeof(short), sizeof(char));
@@ -97,7 +97,7 @@ rdata_ready(Conn *conn, char *data, int datalen)
         case CMD_COUNT: {
             DINFO("<<< cmd COUNT >>>\n");
 			unsigned char masknum;
-			unsigned int  maskarray[HASHTABLE_MASK_MAX_ITEM * sizeof(int)];
+			//unsigned int  maskarray[HASHTABLE_MASK_MAX_ITEM * sizeof(int)];
 
             ret = cmd_count_unpack(data, key, &masknum, maskarray);
             DINFO("unpack count return: %d, key: %s, mask:%d:%d:%d\n", ret, key, maskarray[0], maskarray[1], maskarray[2]);
