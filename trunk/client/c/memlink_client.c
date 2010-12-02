@@ -527,7 +527,7 @@ memlink_cmd_range(MemLink *m, char *key, char *maskstr, unsigned int frompos, un
     //int  retlen = 3 + maskn + 256 * len + maskn * sizeof(int) * len + CMD_REPLY_HEAD_LEN;
 
     // len(4B) + retcode(2B) + valuesize(1B) + masksize(1B) + masknum(1B) + maskformat(masknum B) + value.mask * len
-    int retlen = sizeof(int) + sizeof(short) + sizeof(char) + sizeof(char) + sizeof(char) + maskn * sizeof(int) + (HASHTABLE_VALUE_MAX + HASHTABLE_MASK_MAX_BIT * maskn) * len;
+    int retlen = sizeof(int) + sizeof(short) + sizeof(char) + sizeof(char) + sizeof(char) + maskn * sizeof(int) + (HASHTABLE_VALUE_MAX + (HASHTABLE_MASK_MAX_BIT/8 + 2) * maskn) * len;
     DINFO("retlen: %d\n", retlen);
 	if (retlen > 1024000) { // do not more than 1M
 		return MEMLINK_ERR_RANGE_SIZE;

@@ -85,7 +85,7 @@ MemLinkResult.__del__ = memlinkresult_free
 MemLinkResult.__str__ = memlinkresult_print
 
 def memlinkstat_print(self):
-    s = 'valuesize:%d\nmasksize:%d\nblocks:%d\ndata:%d\ndata_used:%d\nmem:%d\nmem_used:%d\n' % (self.valuesize, self.masksize, self.blocks, self.data, self.data_used, self.mem, self.mem_used)
+    s = 'valuesize:%d\nmasksize:%d\nblocks:%d\ndata:%d\ndata_used:%d\nmem:%d\n' % (self.valuesize, self.masksize, self.blocks, self.data, self.data_used, self.mem)
 
     return s
 
