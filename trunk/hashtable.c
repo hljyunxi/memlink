@@ -744,7 +744,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
     DINFO("dataitem_lookup_pos, dbk:%p, last:%p, posaddr:%p\n", dbk, last, posaddr);
 	
     // create new block for copy item
-    DataBlock *newbk = mempool_get(g_mpool, datalen);
+    /*DataBlock *newbk = mempool_get(g_mpool, datalen);
     if (NULL == newbk) {
         DERROR("hashtable_add get new DataBlock error!\n");
         MEMLINK_EXIT;
@@ -753,8 +753,20 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
     DINFO("create newbk:%p, dbk:%p\n", newbk, dbk);
 
     node->all += g_cf->block_data_count;
+	*/
 
     if (posaddr == NULL) { // position out of link, only create a new block
+		// create new block for copy item
+		DataBlock *newbk = mempool_get(g_mpool, datalen);
+		if (NULL == newbk) {
+			DERROR("hashtable_add get new DataBlock error!\n");
+			MEMLINK_EXIT;
+			return MEMLINK_ERR_MEM;
+		}
+		DINFO("create newbk:%p, dbk:%p\n", newbk, dbk);
+
+		node->all += g_cf->block_data_count;
+
         DINFO("not found the same hash, create new\n");
         newbk->next  = NULL;
 
@@ -773,6 +785,15 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
             dbk->visible_count++;
             return MEMLINK_OK;
         }
+		
+		DataBlock *newbk = mempool_get(g_mpool, datalen);
+		if (NULL == newbk) {
+			DERROR("hashtable_add get new DataBlock error!\n");
+			MEMLINK_EXIT;
+			return MEMLINK_ERR_MEM;
+		}
+		DINFO("create newbk:%p, dbk:%p\n", newbk, dbk);
+		node->all += g_cf->block_data_count;
 
         char *todata  = newbk->data;
         char *enddata = todata + g_cf->block_data_count * datalen;
