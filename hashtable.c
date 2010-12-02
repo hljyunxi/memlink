@@ -783,6 +783,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
             DINFO("posaddr have no data, insert !\n");
             dataitem_copy(node, posaddr, value, mask);
             dbk->visible_count++;
+			node->used++;
             return MEMLINK_OK;
         }
 		
