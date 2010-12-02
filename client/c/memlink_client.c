@@ -24,6 +24,10 @@ memlink_create(char *host, int readport, int writeport, int timeout)
 {
     MemLink *m;
 
+#ifdef DEBUG
+	logfile_create("stdout", 3);
+#endif
+
     m = (MemLink*)zz_malloc(sizeof(MemLink));
     if (NULL == m) {
         DERROR("malloc MemLink error!\n"); 
