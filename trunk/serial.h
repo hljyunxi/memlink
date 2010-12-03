@@ -2,7 +2,6 @@
 #define MEMLINK_SERIAL_H
 
 #include <stdio.h>
-//#include "hashtable.h"
 
 #define CMD_DUMP		1
 #define CMD_CLEAN		2
@@ -16,18 +15,19 @@
 #define CMD_RANGE		10
 #define CMD_RMKEY       11
 #define CMD_COUNT		12
-
-/*
 #define CMD_LPUSH		13
 #define CMD_LPOP		14
 #define CMD_RPUSH		15
 #define CMD_RPOP		16
-*/
 
 #define CMD_SYNC        100 
 #define CMD_GETDUMP		101
 
-
+typedef struct _ht_stat_sys
+{
+	unsigned int keys;
+	unsigned int values;
+}HashTableStatSys;
 
 typedef struct _ht_stat
 {
@@ -37,7 +37,6 @@ typedef struct _ht_stat
     unsigned int    data;   // all alloc data item
     unsigned int    data_used; // all data item used
     unsigned int    mem;       // all alloc mem
-    //unsigned int    mem_used;  // all used mem
 }HashTableStat;
 
 

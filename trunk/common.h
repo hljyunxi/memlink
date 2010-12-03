@@ -35,6 +35,9 @@
 #define MEMLINK_ERR_RECV            -25
 // 命令执行超时
 #define MEMLINK_ERR_TIMEOUT         -26
+// key错误 
+#define MEMLINK_ERR_KEY				-27
+
 
 // 其他错误
 #define MEMLINK_ERR                 -1

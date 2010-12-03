@@ -544,13 +544,56 @@ hashtable_add_info_mask(HashTable *ht, char *key, int valuesize, unsigned int *m
 }
 
 int
+hashtable_remove_list(HashTable *ht, char *key)
+{
+    int             keylen; // = strlen(key);
+    unsigned int    hash; //   = hashtable_hash(key, keylen);
+    HashNode        *node; //  = ht->bunks[hash];
+	//HashNode		*last  = NULL;
+
+	if (NULL == key) {
+		return MEMLINK_ERR_KEY;
+	}
+	keylen = strlen(key);
+	hash   = hashtable_hash(key, keylen);
+	node   = ht->bunks[hash];
+
+	node = hashtable_find(ht, key);
+	if (NULL == node) {
+		return MEMLINK_ERR_NOKEY;
+	}
+	
+	DataBlock	*dbk = node->data;
+	DataBlock	*tmp;
+	int			datalen = node->valuesize + node->masksize;
+
+	node->data = NULL;
+	node->used = 0;
+	node->all  = 0;
+	
+	while (dbk) {
+		tmp = dbk;
+		dbk = dbk->next;
+		mempool_put(g_runtime->mpool, tmp, datalen);	
+	}
+	return MEMLINK_OK;
+}
+
+int
 hashtable_remove_key(HashTable *ht, char *key)
 {
-    int             keylen = strlen(key);
-    unsigned int    hash   = hashtable_hash(key, keylen);
-    //HashNode        *root  = ht->bunks[hash];
-    HashNode        *node  = ht->bunks[hash];
+    int             keylen; // = strlen(key);
+    unsigned int    hash; //   = hashtable_hash(key, keylen);
+    HashNode        *node; //  = ht->bunks[hash];
 	HashNode		*last  = NULL;
+
+	if (NULL == key) {
+		return MEMLINK_ERR_KEY;
+	}
+	keylen = strlen(key);
+	hash   = hashtable_hash(key, keylen);
+	node   = ht->bunks[hash];
+
 
     while (node) {
         if (strcmp(key, node->key) == 0) {
@@ -1407,10 +1450,16 @@ hashtable_clean(HashTable *ht, char *key)
 } 
 
 int
+hashtable_stat_sys(HashTable *ht, HashTableStatSys *stat)
+{
+	return MEMLINK_OK;
+}
+
+int
 hashtable_stat(HashTable *ht, char *key, HashTableStat *stat)
 {
     HashNode    *node;
-
+	
     node = hashtable_find(ht, key);
     if (NULL == node) {
         DWARNING("hashtable_stat not found key: %s\n", key);
