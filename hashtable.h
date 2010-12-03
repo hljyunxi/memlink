@@ -32,6 +32,7 @@ HashTable*      hashtable_create();
 void            hashtable_destroy(HashTable *ht);
 void			hashtable_clear_all(HashTable *ht);
 int				hashtable_remove_key(HashTable *ht, char *key);
+int				hashtable_remove_list(HashTable *ht, char *key);
 int             hashtable_add_info(HashTable *ht, char *key, int valuesize, char *maskstr);
 int             hashtable_add_info_mask(HashTable *ht, char *key, int valuesize, 
                                         unsigned int *maskarray, char masknum);
