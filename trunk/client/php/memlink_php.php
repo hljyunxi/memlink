@@ -270,7 +270,7 @@ class MemLinkCount {
 	}
 }
 
-class MemLinkItem {
+class MemLink_Item {
 	public $_cPtr=null;
 	protected $_pData=array();
 
@@ -307,6 +307,8 @@ class MemLinkItem {
 		$this->_cPtr=new_MemLinkItem();
 	}
 }
+
+$MemLinkItem = MemLink_Item;
 
 class MemLinkResult {
 	public $_cPtr=null;
