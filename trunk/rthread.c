@@ -51,7 +51,6 @@ rdata_ready(Conn *conn, char *data, int datalen)
             //old: int rlen = sizeof(char) * 2 + 256 * len + HASHTABLE_MASK_MAX_ITEM * sizeof(int) * len;
             // len(4B) + retcode(2B) + valuesize(1B) + masksize(1B) + masknum(1B) + maskformat(masknum B) + value.mask * le
             int rlen = sizeof(int) + sizeof(short) + sizeof(char) + sizeof(char) + sizeof(char) + masknum * sizeof(int) + (HASHTABLE_VALUE_MAX + (HASHTABLE_MASK_MAX_BIT/8 + 2) * masknum) * len;
-
             if (rlen >= CMD_RANGE_MAX_SIZE) {
                 return MEMLINK_ERR_RANGE_SIZE;
             }

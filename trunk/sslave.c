@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <arpa/inet.h>
@@ -97,7 +98,8 @@ sslave_load_master_dump_info(SSlave *ss, char *dumpfile, long long *filesize, lo
 	}
 
 	FILE	*dumpf;	
-	dumpf = fopen(dumpfile, "r");
+	//dumpf = fopen(dumpfile, "r");
+	dumpf = (FILE*)fopen64(dumpfile, "r");
 	if (dumpf == NULL) {
 		DERROR("open file %s error! %s\n", dumpfile, strerror(errno));
 		return -1;
