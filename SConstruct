@@ -2,7 +2,7 @@ import os
 install_dir = '/opt/memlink'
 bin      = "memlink"
 #defs     = ['DEBUG', 'RANGE_MASK_STR']
-defs     = ['DEBUG', "_FILE_OFFSET_BITS=64", "_LARGE_FILE"]
+defs     = ['DEBUG', "__USE_FILE_OFFSET64", "__USE_LARGEFILE64", "_LARGEFILE_SOURCE", "_LARGEFILE64_SOURCE", "_FILE_OFFSET_BITS=64"]
 includes = ['/Developer/usr/include', '.']
 libpath  = ['/Developer/usr/lib']
 libs     = ['event', 'm']
