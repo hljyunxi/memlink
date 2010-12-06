@@ -50,6 +50,14 @@ while ($item) {
 	$item = $item->next;
 }
 
+for ($i = 0; $i < 100; $i++) {
+	$val = sprintf("%012d", $i);
+	$ret = $m->delete($key, $val, strlen($val));
+	if ($ret != MEMLINK_OK) {
+		echo "delete error!", ret;
+	}
+}
+
 $m->destroy();
 
 ?>

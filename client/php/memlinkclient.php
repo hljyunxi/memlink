@@ -60,7 +60,7 @@ class MemLinkClient
 
     function delete($key, $value, $valuelen)
     {
-        return memlink_cmd_delete($this->client, $key, $value, $valuelen);
+        return memlink_cmd_del($this->client, $key, $value, $valuelen);
     }
 
     function insert($key, $value, $valuelen, $maskstr, $pos)
