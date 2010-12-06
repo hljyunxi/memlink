@@ -110,7 +110,8 @@ static void
 thserver_notify(int fd, short event, void *arg)
 {
     ThreadServer    *ts   = (ThreadServer*)arg;
-    QueueItem       *item = queue_get(ts->cq);
+    QueueItem       *itemhead = queue_get(ts->cq);
+	QueueItem		*item = itemhead;
     Conn            *conn;
 	int				ret;
 
@@ -129,13 +130,12 @@ thserver_notify(int fd, short event, void *arg)
 			DERROR("change event error: %d, close conn\n", ret);
 			conn->destroy(conn);
 		}
-       
         item = item->next;
-    }
-    
-    if (item) {
-        queue_free(ts->cq, item); 
-    }
+	}
+
+	if (itemhead) {
+		queue_free(ts->cq, itemhead); 
+	}
 }
 
 static void*
