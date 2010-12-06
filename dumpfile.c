@@ -1,7 +1,3 @@
-#define _LARGEFILE_SOURCE
-#define _LARGEFILE64_SOURCE
-#define _FILE_OFFSET_BITS 64
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,7 +42,8 @@ dumpfile(HashTable *ht)
 
     DINFO("dumpfile to tmp: %s\n", tmpfile);
     
-    FILE    *fp = fopen(tmpfile, "wb");
+    //FILE    *fp = fopen(tmpfile, "wb");
+    FILE    *fp = fopen64(tmpfile, "wb");
 
     unsigned short formatver = DUMP_FORMAT_VERSION;
     fwrite(&formatver, sizeof(short), 1, fp);
@@ -150,7 +147,8 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
     
     //snprintf(filename, PATH_MAX, "%s/%s", g_cf->datadir, DUMP_FILE_NAME);
     //snprintf(filename, PATH_MAX, "%s/%s", g_cf->datadir, dumpfile_name);
-    fp = fopen(filename, "rb");
+    //fp = fopen(filename, "rb");
+    fp = fopen64(filename, "rb");
     if (NULL == fp) {
         DERROR("open dumpfile %s error: %s\n", filename, strerror(errno));
         return -1;
@@ -290,7 +288,8 @@ dumpfile_logver(char *filename)
     int  ret;
     FILE    *dumpf;
 
-    dumpf = fopen(filename, "r");
+    //dumpf = fopen(filename, "r");
+    dumpf = fopen64(filename, "r");
     if (dumpf == NULL) {
         DERROR("open file %s error! %s\n", filename, strerror(errno));
         return -1;
