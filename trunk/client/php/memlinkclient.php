@@ -108,7 +108,7 @@ class MemLinkClient
 	function count($key, $maskstr)
 	{
 		$count = new MemLinkCount();
-		$ret = memlink_cmd_range($this->client, $key, $maskstr, $result);
+		$ret = memlink_cmd_count($this->client, $key, $maskstr, $count);
 		if ($ret == MEMLINK_OK) {
 			return $count;
 		}
