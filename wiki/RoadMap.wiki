@@ -23,5 +23,5 @@ V 0.3:(2010.12)
   * ordered list
 
 V 0.4:(2011.2)
-  * client api(php/java)
-  * memlink system command(status/master-slaver...)
+  * released client api(php/java)
+  * memlink system command(status/master-slaver info/...)
