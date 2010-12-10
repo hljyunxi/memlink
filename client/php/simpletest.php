@@ -24,7 +24,7 @@ for ($i = 0; $i < 100; $i++) {
 	$val = sprintf("%012d", $i);
 	$ret = $m->insert($key, $val, strlen($val), "8:1:1", 0);
 	if ($ret != MEMLINK_OK) {
-		echo "insert error!", ret;
+		echo "insert error! $ret";
 	}
 }
 
