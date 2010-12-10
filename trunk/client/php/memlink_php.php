@@ -308,7 +308,7 @@ class MemLink_Item {
 	}
 }
 
-$MemLinkItem = MemLink_Item;
+//$MemLinkItem = MemLink_Item;
 
 class MemLinkResult {
 	public $_cPtr=null;
