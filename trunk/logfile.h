@@ -10,6 +10,7 @@ typedef struct _logfile
     char    filename[PATH_MAX];
     int     loglevel;
     int     logfd;
+	int		maxsize; // logfile max size
 }LogFile;
 
 LogFile*    logfile_create(char *filename, int loglevel);

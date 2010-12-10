@@ -20,7 +20,7 @@
 int
 rdata_ready(Conn *conn, char *data, int datalen)
 {
-    char key[1024]; 
+    char key[512]; 
     //char value[1024];
     char cmd;
     int  ret = 0;
@@ -31,7 +31,7 @@ rdata_ready(Conn *conn, char *data, int datalen)
     //unsigned char   valuelen;
     unsigned char   masknum;
     unsigned int    maskarray[HASHTABLE_MASK_MAX_ITEM] = {0};
-    unsigned int    frompos, len;
+    int    frompos, len;
 
     memcpy(&cmd, data + sizeof(short), sizeof(char));
     char buf[256] = {0};
@@ -42,6 +42,17 @@ rdata_ready(Conn *conn, char *data, int datalen)
             DINFO("<<< cmd RANGE >>>\n");
             ret = cmd_range_unpack(data, key, &masknum, maskarray, &frompos, &len);
             DINFO("unpack range return:%d, key:%s, masknum:%d, frompos:%d, len:%d\n", ret, key, masknum, frompos, len);
+
+			if (frompos < 0 || len <= 0) {
+				DERROR("from or len small than 0. from:%d, len:%d\n", frompos, len);
+				ret = MEMLINK_ERR_RANGE_SIZE;
+				goto rdata_ready_error;
+			}
+
+			if (key[0] == 0) {
+				ret = MEMLINK_ERR_PARAM;
+				goto rdata_ready_error;
+			}
 			/*
             int i;
             for (i = 0; i < masknum; i++) {
@@ -52,7 +63,8 @@ rdata_ready(Conn *conn, char *data, int datalen)
             // len(4B) + retcode(2B) + valuesize(1B) + masksize(1B) + masknum(1B) + maskformat(masknum B) + value.mask * le
             int rlen = sizeof(int) + sizeof(short) + sizeof(char) + sizeof(char) + sizeof(char) + masknum * sizeof(int) + (HASHTABLE_VALUE_MAX + (HASHTABLE_MASK_MAX_BIT/8 + 2) * masknum) * len;
             if (rlen >= CMD_RANGE_MAX_SIZE) {
-                return MEMLINK_ERR_RANGE_SIZE;
+				ret = MEMLINK_ERR_RANGE_SIZE;
+				goto rdata_ready_error;
             }
             DINFO("ret buffer len: %d\n", rlen);
             char retrec[rlen];
@@ -80,6 +92,11 @@ rdata_ready(Conn *conn, char *data, int datalen)
             ret = cmd_stat_unpack(data, key);
             DINFO("unpack stat return: %d, key: %s\n", ret, key);
 
+			if (key[0] == 0) {
+				ret = MEMLINK_ERR_PARAM;
+				goto rdata_ready_error;
+			}
+
             ret = hashtable_stat(g_runtime->ht, key, &stat);
             DINFO("hashtable stat: %d\n", ret);
             DINFO("stat blocks: %d\n", stat.blocks);
@@ -101,6 +118,11 @@ rdata_ready(Conn *conn, char *data, int datalen)
             ret = cmd_count_unpack(data, key, &masknum, maskarray);
             DINFO("unpack count return: %d, key: %s, mask:%d:%d:%d\n", ret, key, maskarray[0], maskarray[1], maskarray[2]);
            
+			if (key[0] == 0) {
+				ret = MEMLINK_ERR_PARAM;
+				goto rdata_ready_error;
+			}
+
             int vcount = 0, mcount = 0;
             retlen = sizeof(int) * 2;
             char retrec[retlen];
@@ -123,6 +145,12 @@ rdata_ready(Conn *conn, char *data, int datalen)
 
         }
     }
+
+    return 0;
+
+rdata_ready_error:
+	ret = data_reply(conn, ret, NULL, 0);
+	DINFO("data_reply return: %d\n", ret);
 
     return 0;
 }

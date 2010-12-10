@@ -394,9 +394,10 @@ read_record(SyncConn *conn,
     read_or_exit(conn->sync_fd, (void *)(*wbuf_ptr + RECORD_HEAD_LEN), datalen);
 #ifdef DEBUG
     int len = datalen + sizeof(short);
+	char *head = head_buf;
     DINFO("read sync log record (ver: %u, i: %u, %u): \n", 
-            *((int *)head_buf), 
-            *((int *)(head_buf + sizeof(int))), 
+            *((unsigned int*)head), 
+            *((unsigned int*)(head + sizeof(int))), 
             len);
     sthread_dinfo(*wbuf_ptr + RECORD_LEN_POS, len);
 #endif
