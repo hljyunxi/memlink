@@ -20,8 +20,8 @@ V 0.2:
 
 V 0.3:(2010.12)
   * memory queue
-  * authentication
+  * ordered list
 
 V 0.4:(2011.2)
-  * thrift interface
-  * example
+  * client api(php/java)
+  * memlink system command(status/master-slaver...)
