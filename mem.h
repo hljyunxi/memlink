@@ -22,8 +22,9 @@ typedef struct _mem_item
 typedef struct _mempool
 {
     MemItem     *freemem;
-    int         idxnum;
-    int         idxused;
+    int         idxnum;  // freemem size
+    int         idxused; // freemem used size
+	int			blocks;
 }MemPool;
 
 extern MemPool  *g_mpool;

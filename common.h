@@ -37,7 +37,8 @@
 #define MEMLINK_ERR_TIMEOUT         -26
 // key错误 
 #define MEMLINK_ERR_KEY				-27
-
+// 客户端传递参数错误 
+#define MEMLINK_ERR_PARAM			-28
 
 // 其他错误
 #define MEMLINK_ERR                 -1
@@ -79,12 +80,13 @@
 #define CMD_SYNC_OK		0
 #define CMD_SYNC_FAILED	1
 
-#define CMD_RANGE_MAX_SIZE      1024000
+#define CMD_RANGE_MAX_SIZE			1024000
 
 /// HashTable中桶的数量
 #define HASHTABLE_BUNKNUM           1000000
 /// 最大允许的mask项数
 #define HASHTABLE_MASK_MAX_BIT      32
+#define HASHTABLE_MASK_MAX_BYTE     4
 #define HASHTABLE_MASK_MAX_ITEM     16
 // key最大长度
 #define HASHTABLE_KEY_MAX           255

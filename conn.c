@@ -102,7 +102,7 @@ conn_write(Conn *conn)
             }
         }else{
             conn->wpos += ret;
-            break;
         }
+        break;
     } 
 }

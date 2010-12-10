@@ -944,7 +944,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 int
 hashtable_add_mask(HashTable *ht, char *key, void *value, unsigned int *maskarray, char masknum, int pos)
 {
-    char mask[HASHTABLE_MASK_MAX_ITEM * sizeof(int)] = {0};
+    char mask[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
     int  ret;
     HashNode *node = hashtable_find(ht, key);
     if (NULL == node) {
@@ -971,7 +971,7 @@ hashtable_add_mask(HashTable *ht, char *key, void *value, unsigned int *maskarra
 int
 hashtable_update(HashTable *ht, char *key, void *value, int pos)
 {
-    char mask[HASHTABLE_MASK_MAX_ITEM * sizeof(int)] = {0};
+    char mask[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
     HashNode *node = NULL;
     DataBlock *dbk = NULL;
     char     *item = NULL; 
@@ -1128,8 +1128,8 @@ hashtable_mask(HashTable *ht, char *key, void *value, unsigned int *maskarray, i
 		return MEMLINK_ERR_MASK;
 	}
 
-    char mask[HASHTABLE_MASK_MAX_ITEM * sizeof(int)] = {0};
-    char maskflag[HASHTABLE_MASK_MAX_ITEM * sizeof(int)] = {0};
+    char mask[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
+    char maskflag[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
 
     int  len = mask_array2binary(node->maskformat, maskarray, masknum, mask);
     if (len <= 0) {
@@ -1199,8 +1199,9 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
                 char *data, int *datanum, 
                 unsigned char *valuesize, unsigned char *masksize)
 {
-    char maskval[HASHTABLE_MASK_MAX_ITEM * sizeof(int)] = {0};
-	char maskflag[HASHTABLE_MASK_MAX_ITEM * sizeof(int)] = {0};
+    char maskval[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
+	char maskflag[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
+
     HashNode    *node;
 	int			startn;
 	
@@ -1452,6 +1453,34 @@ hashtable_clean(HashTable *ht, char *key)
 int
 hashtable_stat_sys(HashTable *ht, HashTableStatSys *stat)
 {
+	HashNode	*node;
+	int			node_block = 0;
+	int			i;
+	int			keys	= 0;
+	int			blocks	= 0;
+	int			data	= 0;
+	int			datau   = 0;
+	int			memu    = 0;
+	int			mpools  = 0;  // blocks in mem pool
+
+	for (i = 0; i < HASHTABLE_BUNKNUM; i++) {
+		node = ht->bunks[i];
+		while (node) {
+			keys++;	
+			node_block = node->all / g_cf->block_data_count;
+			blocks += node_block;
+			data   += node->all;
+			datau  += node->used;
+
+			memu   += node_block * (sizeof(DataBlock) + (node->masksize + node->valuesize) * g_cf->block_data_count) + sizeof(HashNode);
+
+			node = node->next;
+		}
+	}
+
+	mpools = g_runtime->mpool->blocks;
+	
+
 	return MEMLINK_OK;
 }
 
@@ -1497,8 +1526,8 @@ hashtable_stat(HashTable *ht, char *key, HashTableStat *stat)
 int
 hashtable_count(HashTable *ht, char *key, unsigned int *maskarray, int masknum, int *visible_count, int *mask_count)
 {
-    char maskval[HASHTABLE_MASK_MAX_ITEM * sizeof(int)] = {0};
-	char maskflag[HASHTABLE_MASK_MAX_ITEM * sizeof(int)] = {0};
+    char maskval[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
+	char maskflag[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
     HashNode    *node;
     int         vcount = 0, mcount = 0;
 

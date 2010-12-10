@@ -118,7 +118,7 @@ thserver_notify(int fd, short event, void *arg)
     DINFO("thserver_notify: %d\n", fd);
 
     char buf;
-    read(ts->notify_recv_fd, &buf, 1);
+    ret = read(ts->notify_recv_fd, &buf, 1);
 
     while (item) {
         conn = item->conn; 

@@ -356,7 +356,7 @@ load_data_slave()
 			DINFO("load synclog: %s\n", logname);
 			ret = load_synclog(logname);
 			if (ret > 0 && g_cf->role == ROLE_SLAVE) {
-				g_runtime->slave->binlog_ver = i;
+				g_runtime->slave->binlog_ver = logids[i];
 			}
 		}
 
@@ -396,7 +396,10 @@ runtime_create_common(char *pgname)
     memset(rt, 0, sizeof(Runtime));
     g_runtime = rt;
 
-    realpath(pgname, rt->home);
+    if (realpath(pgname, rt->home) == NULL) {
+		DERROR("realpath error: %s\n", strerror(errno));
+		MEMLINK_EXIT;
+	}
     char *last = strrchr(rt->home, '/');  
     if (last != NULL) {
         *last = 0;
@@ -404,6 +407,15 @@ runtime_create_common(char *pgname)
     DINFO("home: %s\n", rt->home);
 
     int ret;
+	// create data and log dir
+	if (!isdir(g_cf->datadir)) {
+		ret = mkdir(g_cf->datadir, 0644);
+		if (ret == -1) {
+			DERROR("create dir %s error! %s\n", g_cf->datadir, strerror(errno));
+			MEMLINK_EXIT;
+		}
+	}
+
     ret = pthread_mutex_init(&rt->mutex, NULL);
     if (ret != 0) {
         DERROR("pthread_mutex_init error: %s\n", strerror(errno));

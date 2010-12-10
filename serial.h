@@ -70,12 +70,12 @@ int cmd_del_pack(char *data, char *key, char *value, unsigned char valuelen);
 int cmd_del_unpack(char *data, char *key, char *value, unsigned char *valuelen);
 
 int cmd_insert_pack(char *data, char *key, char *value, unsigned char valuelen, 
-                    unsigned char masknum, unsigned int *maskarray, unsigned int pos);  
+                    unsigned char masknum, unsigned int *maskarray, int pos);  
 int cmd_insert_unpack(char *data, char *key, char *value, unsigned char *valuelen,
-                      unsigned char *masknum, unsigned int *maskarray, unsigned int *pos);
+                      unsigned char *masknum, unsigned int *maskarray, int *pos);
 
-int cmd_update_pack(char *data, char *key, char *value, unsigned char valuelen, unsigned int pos);
-int cmd_update_unpack(char *data, char *key, char *value, unsigned char *valuelen, unsigned int *pos);
+int cmd_update_pack(char *data, char *key, char *value, unsigned char valuelen, int pos);
+int cmd_update_unpack(char *data, char *key, char *value, unsigned char *valuelen, int *pos);
 
 int cmd_mask_pack(char *data, char *key, char *value, unsigned char valuelen, 
                   unsigned char masknum, unsigned int *maskarray);
@@ -86,9 +86,9 @@ int cmd_tag_pack(char *data, char *key, char *value, unsigned char valuelen, uns
 int cmd_tag_unpack(char *data, char *key, char *value, unsigned char *valuelen, unsigned char *tag);
 
 int cmd_range_pack(char *data, char *key, unsigned char masknum, unsigned int *maskarray, 
-                   unsigned int frompos, unsigned int len);
+                   int frompos, int len);
 int cmd_range_unpack(char *data, char *key, unsigned char *masknum, unsigned int*maskarray, 
-                     unsigned int *frompos, unsigned int *len);
+                     int *frompos, int *len);
 
 // for sync client
 int cmd_sync_pack(char *data, unsigned int logver, unsigned int logpos);

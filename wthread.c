@@ -262,8 +262,8 @@ wdata_apply(char *data, int datalen, int writelog)
     unsigned char   masknum;
     unsigned int    maskformat[HASHTABLE_MASK_MAX_ITEM];
     unsigned int    maskarray[HASHTABLE_MASK_MAX_ITEM];
-    unsigned int    pos;
     unsigned char   tag;
+    int				pos;
     int             vnum;
 
     memcpy(&cmd, data + sizeof(short), sizeof(char));
@@ -281,6 +281,11 @@ wdata_apply(char *data, int datalen, int writelog)
             ret = cmd_clean_unpack(data, key);
 			if (ret != 0) {
 				DERROR("unpack clean error! ret: %d\n", ret);
+				break;
+			}
+
+			if (key[0] == 0) {
+				ret = MEMLINK_ERR_PARAM;
 				break;
 			}
 #ifdef DEBUG
@@ -303,6 +308,11 @@ wdata_apply(char *data, int datalen, int writelog)
 			}
 
             DINFO("unpack key: %s, valuelen: %d, masknum: %d, maskarray: %d,%d,%d\n", key, valuelen, masknum, maskformat[0], maskformat[1], maskformat[2]);
+			if (key[0] == 0) {
+				ret = MEMLINK_ERR_PARAM;
+				break;
+			}
+
 			if (masknum > HASHTABLE_MASK_MAX_ITEM) {
 				DERROR("create mask too long: %d, max:%d\n", masknum, HASHTABLE_MASK_MAX_ITEM);
 				ret = MEMLINK_ERR_MASK;
@@ -328,6 +338,11 @@ wdata_apply(char *data, int datalen, int writelog)
 			}
 
             DINFO("unpack del, key: %s, value: %s, valuelen: %d\n", key, value, valuelen);
+			if (key[0] == 0) {
+				ret = MEMLINK_ERR_PARAM;
+				break;
+			}
+
             ret = hashtable_del(g_runtime->ht, key, value);
             DINFO("hashtable_del: %d\n", ret);
 #ifdef DEBUG
@@ -351,6 +366,20 @@ wdata_apply(char *data, int datalen, int writelog)
 			}
 
             DINFO("unpack key:%s, value:%s, pos:%d, mask: %d, array:%d,%d,%d\n", key, value, pos, masknum, maskarray[0], maskarray[1], maskarray[2]);
+			if (key[0] == 0) {
+				ret = MEMLINK_ERR_PARAM;
+				break;
+			}
+
+			if (pos == -1) {
+				pos = INT_MAX;
+			} else if (pos < 0) {
+				ret = MEMLINK_ERR_PARAM;
+				DERROR("update pos < 0, %d", pos);
+				break;
+			}
+
+
             ret = hashtable_add_mask(g_runtime->ht, key, value, maskarray, masknum, pos);
             DINFO("hashtable_add_mask: %d\n", ret);
            
@@ -378,8 +407,20 @@ wdata_apply(char *data, int datalen, int writelog)
 				DERROR("unpack update error! ret: %d\n", ret);
 				break;
 			}
-
             DINFO("unpack update, key:%s, value:%s, pos:%d\n", key, value, pos);
+			if (key[0] == 0) {
+				ret = MEMLINK_ERR_PARAM;
+				break;
+			}
+	
+			if (pos == -1) {
+				pos = INT_MAX;
+			} else if (pos < 0) {
+				ret = MEMLINK_ERR_PARAM;
+				DERROR("update pos < 0, %d", pos);
+				break;
+			}
+
             ret = hashtable_update(g_runtime->ht, key, value, pos);
             DINFO("hashtable_update: %d\n", ret);
             //hashtable_print(g_runtime->ht, key);
@@ -402,6 +443,11 @@ wdata_apply(char *data, int datalen, int writelog)
 
             DINFO("unpack mask key: %s, valuelen: %d, masknum: %d, maskarray: %d,%d,%d\n", key, valuelen, 
                     masknum, maskarray[0], maskarray[1], maskarray[2]);
+			if (key[0] == 0) {
+				ret = MEMLINK_ERR_PARAM;
+				break;
+			}
+
             ret = hashtable_mask(g_runtime->ht, key, value, maskarray, masknum);
             DINFO("hashtable_mask: %d\n", ret);
 #ifdef DEBUG
@@ -425,6 +471,11 @@ wdata_apply(char *data, int datalen, int writelog)
 			}
 
             DINFO("unpack tag, key:%s, value:%s, tag:%d\n", key, value, tag);
+			if (key[0] == 0) {
+				ret = MEMLINK_ERR_PARAM;
+				break;
+			}
+
             ret = hashtable_tag(g_runtime->ht, key, value, tag);
             DINFO("hashtable_tag: %d\n", ret);
 
@@ -449,6 +500,11 @@ wdata_apply(char *data, int datalen, int writelog)
 			}
 
             DINFO("unpack rmkey, key:%s\n", key);
+			if (key[0] == 0) {
+				ret = MEMLINK_ERR_PARAM;
+				break;
+			}
+
             ret = hashtable_remove_key(g_runtime->ht, key);
             DINFO("hashtable_remove_key ret: %d\n", ret);
             if (ret >= 0 && writelog) {

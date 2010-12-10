@@ -624,7 +624,7 @@ cmd_del_unpack(char *data, char *key, char *value, unsigned char *valuelen)
 
 int 
 cmd_insert_pack(char *data, char *key, char *value, unsigned char valuelen, 
-                unsigned char masknum, unsigned int *maskarray, unsigned int pos)
+                unsigned char masknum, unsigned int *maskarray, int pos)
 {
     unsigned char cmd = CMD_INSERT;
     unsigned short len;
@@ -647,7 +647,7 @@ cmd_insert_pack(char *data, char *key, char *value, unsigned char valuelen,
 
 int 
 cmd_insert_unpack(char *data, char *key, char *value, unsigned char *valuelen,
-                  unsigned char *masknum, unsigned int *maskarray, unsigned int *pos)
+                  unsigned char *masknum, unsigned int *maskarray, int *pos)
 {
     int count = sizeof(short) + sizeof(char);
 
@@ -665,7 +665,7 @@ cmd_insert_unpack(char *data, char *key, char *value, unsigned char *valuelen,
 
 
 int 
-cmd_update_pack(char *data, char *key, char *value, unsigned char valuelen, unsigned int pos)
+cmd_update_pack(char *data, char *key, char *value, unsigned char valuelen, int pos)
 {
     unsigned char cmd = CMD_UPDATE;
     unsigned short len;
@@ -685,7 +685,7 @@ cmd_update_pack(char *data, char *key, char *value, unsigned char valuelen, unsi
 }
 
 int 
-cmd_update_unpack(char *data, char *key, char *value, unsigned char *valuelen, unsigned int *pos)
+cmd_update_unpack(char *data, char *key, char *value, unsigned char *valuelen, int *pos)
 {
     int count = sizeof(short) + sizeof(char);
     unsigned char vlen;
@@ -771,7 +771,7 @@ cmd_tag_unpack(char *data, char *key, char *value, unsigned char *valuelen, unsi
 
 int 
 cmd_range_pack(char *data, char *key, unsigned char masknum, unsigned int *maskarray, 
-               unsigned int frompos, unsigned int rlen)
+               int frompos, int rlen)
 {
     unsigned char cmd = CMD_RANGE;
     unsigned short len;
@@ -795,7 +795,7 @@ cmd_range_pack(char *data, char *key, unsigned char masknum, unsigned int *maska
 
 int 
 cmd_range_unpack(char *data, char *key, unsigned char *masknum, unsigned int *maskarray, 
-                 unsigned int *frompos, unsigned int *len)
+                 int *frompos, int *len)
 {
     int count = sizeof(short) + sizeof(char);
     //unsigned char mlen;

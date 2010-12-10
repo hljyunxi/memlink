@@ -144,7 +144,8 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
     FILE    *fp;
     //char    filename[PATH_MAX];
     int     filelen;
-    
+	int		ret;
+
     //snprintf(filename, PATH_MAX, "%s/%s", g_cf->datadir, DUMP_FILE_NAME);
     //snprintf(filename, PATH_MAX, "%s/%s", g_cf->datadir, dumpfile_name);
     //fp = fopen(filename, "rb");
@@ -159,7 +160,7 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
     DINFO("filelen: %d\n", filelen);
     fseek(fp, 0, SEEK_SET);
     unsigned short dumpfver;
-    fread(&dumpfver, sizeof(short), 1, fp);
+    ret = fread(&dumpfver, sizeof(short), 1, fp);
 	DINFO("load format ver: %d\n", dumpfver);
 
     if (dumpfver != DUMP_FORMAT_VERSION) {
@@ -169,24 +170,24 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
     }
     
     unsigned int dumpver;
-    fread(&dumpver, sizeof(int), 1, fp);
+    ret = fread(&dumpver, sizeof(int), 1, fp);
     DINFO("load dumpfile ver: %u\n", dumpver);
     if (localdump) {
         g_runtime->dumpver = dumpver;
     }
 
     unsigned int dumplogver;
-    fread(&dumplogver, sizeof(int), 1, fp);
+    ret = fread(&dumplogver, sizeof(int), 1, fp);
     DINFO("load dumpfile log ver: %u\n", dumplogver);
     if (localdump) {
         g_runtime->dumplogver = dumplogver;
     }
 
 	char role;
-	fread(&role, sizeof(char), 1, fp);
+	ret = fread(&role, sizeof(char), 1, fp);
 
 	long long size;
-	fread(&size, sizeof(long long), 1, fp);
+	ret = fread(&size, sizeof(long long), 1, fp);
 
     unsigned char keylen;
     unsigned char masklen;
@@ -197,28 +198,28 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
     char          key[256];
     int           i;
     int           datalen;
-    int           ret;
+    //int           ret;
     int           load_count = 0;
 
     while (ftell(fp) < filelen) {
         DINFO("cur: %d, filelen: %d, %d\n", (int)ftell(fp), filelen, feof(fp));
         ret = fread(&keylen, sizeof(unsigned char), 1, fp);
         DINFO("keylen: %d\n", keylen);
-        fread(key, keylen, 1, fp);
+        ret = fread(key, keylen, 1, fp);
         key[keylen] = 0;
         DINFO("key: %s\n", key);
         
-        fread(&valuelen, sizeof(unsigned char), 1, fp);
+        ret = fread(&valuelen, sizeof(unsigned char), 1, fp);
 		DINFO("valuelen: %d\n", valuelen);
-        fread(&masklen, sizeof(unsigned char), 1, fp);
+        ret = fread(&masklen, sizeof(unsigned char), 1, fp);
 		DINFO("masklen: %d\n", masklen);
-        fread(&masknum, sizeof(char), 1, fp);
+        ret = fread(&masknum, sizeof(char), 1, fp);
 		DINFO("masknum: %d\n", masknum);
-        fread(maskformat, sizeof(char) * masknum, 1, fp);
+        ret = fread(maskformat, sizeof(char) * masknum, 1, fp);
         /*for (i = 0; i < masknum; i++) {
             DINFO("maskformat, i:%d, mask:%d\n", i, maskformat[i]);
         }*/
-        fread(&itemnum, sizeof(unsigned int), 1, fp);
+        ret = fread(&itemnum, sizeof(unsigned int), 1, fp);
         datalen = valuelen + masklen;
 		DINFO("itemnum: %d, datalen: %d\n", itemnum, datalen);
 
@@ -257,7 +258,7 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
                 itemdata = dbk->data;
             }
 
-            fread(itemdata, datalen, 1, fp);
+            ret = fread(itemdata, datalen, 1, fp);
            
 			ret = dataitem_check_data(node, itemdata);
 			if (ret == MEMLINK_ITEM_VISIBLE) {
