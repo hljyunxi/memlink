@@ -810,6 +810,102 @@ cmd_range_unpack(char *data, char *key, unsigned char *masknum, unsigned int *ma
 }
 
 int 
+cmd_push_pack(char *data, unsigned char cmd, char *key, char *value, unsigned char valuelen, 
+                unsigned char masknum, unsigned *maskarray)
+{
+    unsigned short len;
+    int count = sizeof(short);
+
+    memcpy(data + count, &cmd, sizeof(char));
+    count += sizeof(char);
+    count += pack_string(data + count, key, 0);  
+    count += pack_string(data + count, value, valuelen);
+    count += pack_mask(data + count, maskarray, masknum);
+
+    len = count - sizeof(short);
+    memcpy(data, &len, sizeof(short));
+
+    return count;
+}
+
+
+int
+cmd_push_unpack(char *data, char *key, char *value, unsigned char *valuelen,
+            unsigned char *masknum, unsigned int *maskarray)
+{
+    int count = sizeof(short) + sizeof(char);
+
+    //memcpy(cmd, data + count, sizeof(char));
+    //count += sizeof(char);
+    unsigned char vlen;
+    count += unpack_string(data + count, key, NULL);
+    count += unpack_string(data + count, value, &vlen);
+    count += unpack_mask(data + count, maskarray, masknum);
+
+    *valuelen = vlen;
+    return 0;
+}
+
+int 
+cmd_lpush_pack(char *data, char *key, char *value, unsigned char valuelen, 
+                unsigned char masknum, unsigned *maskarray)
+{
+    return cmd_push_pack(data, CMD_LPUSH, key, value, valuelen, masknum, maskarray);
+}
+
+int 
+cmd_rpush_pack(char *data, char *key, char *value, unsigned char valuelen, 
+                unsigned char masknum, unsigned *maskarray)
+{
+    return cmd_push_pack(data, CMD_RPUSH, key, value, valuelen, masknum, maskarray);
+}
+
+
+int
+cmd_pop_pack(char *data, unsigned char cmd, char *key, int num)
+{
+    unsigned short len;
+    int count = sizeof(short);
+
+    memcpy(data + count, &cmd, sizeof(char));
+    count += sizeof(char);
+
+    count += pack_string(data + count, key, 0);
+    memcpy(data + count, &num, sizeof(int));
+
+    len = count - sizeof(short);
+    memcpy(data, &len, sizeof(short));
+    return count;
+}
+
+int
+cmd_lpop_pack(char *data, char *key, int num)
+{
+    return cmd_pop_pack(data, CMD_LPOP, key, num);
+}
+
+int
+cmd_rpop_pack(char *data, char *key, int num)
+{
+    return cmd_pop_pack(data, CMD_RPOP, key, num);
+}
+
+
+
+int 
+cmd_pop_unpack(char *data, char *key, int *num)
+{
+    int count = sizeof(short) + sizeof(char);
+
+    //memcpy(cmd, data + count, sizeof(char));
+    //count += sizeof(char);
+    count += unpack_string(data + count, key, NULL); 
+    memcpy(num, data + count, sizeof(int));
+
+    return 0;
+}
+
+int 
 cmd_sync_pack(char *data, unsigned int logver, unsigned int logpos)
 {
     unsigned char cmd = CMD_SYNC;

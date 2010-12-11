@@ -515,6 +515,14 @@ wdata_apply(char *data, int datalen, int writelog)
                 }
             }
             break;
+        case CMD_LPUSH:
+            break;
+        case CMD_RPUSH:
+            break;
+        case CMD_LPOP:
+            break;
+        case CMD_RPOP:
+            break;
         default:
             ret = MEMLINK_ERR_CLIENT_CMD;
             break;
