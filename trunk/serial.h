@@ -23,6 +23,12 @@
 #define CMD_SYNC        100 
 #define CMD_GETDUMP		101
 
+#define cmd_lpush_unpack    cmd_push_unpack
+#define cmd_rpush_unpack    cmd_push_unpack
+
+#define cmd_lpop_unpack     cmd_pop_unpack
+#define cmd_rpop_unpack     cmd_pop_unpack
+
 typedef struct _ht_stat_sys
 {
 	unsigned int keys;
@@ -89,6 +95,20 @@ int cmd_range_pack(char *data, char *key, unsigned char masknum, unsigned int *m
                    int frompos, int len);
 int cmd_range_unpack(char *data, char *key, unsigned char *masknum, unsigned int*maskarray, 
                      int *frompos, int *len);
+
+int cmd_push_pack(char *data, unsigned char cmd, char *key, char *value, unsigned char valuelen, 
+                    unsigned char masknum, unsigned int *maskarray);
+int cmd_lpush_pack(char *data, char *key, char *value, unsigned char valuelen, 
+                    unsigned char masknum, unsigned int *maskarray);
+int cmd_rpush_pack(char *data, char *key, char *value, unsigned char valuelen, 
+                    unsigned char masknum, unsigned int *maskarray);
+int cmd_push_unpack(char *data, char *key, char *value, unsigned char *valuelen,
+                    unsigned char *masknum, unsigned int *maskarray);
+
+int cmd_pop_pack(char *data, unsigned char cmd, char *key, int num);
+int cmd_lpop_pack(char *data, char *key, int num);
+int cmd_rpop_pack(char *data, char *key, int num);
+int cmd_pop_unpack(char *data, char *key, int *num);
 
 // for sync client
 int cmd_sync_pack(char *data, unsigned int logver, unsigned int logpos);

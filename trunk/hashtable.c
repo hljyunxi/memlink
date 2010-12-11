@@ -567,9 +567,10 @@ hashtable_remove_list(HashTable *ht, char *key)
 	DataBlock	*tmp;
 	int			datalen = node->valuesize + node->masksize;
 
-	node->data = NULL;
-	node->used = 0;
-	node->all  = 0;
+	node->data      = NULL;
+	node->data_tail = NULL;
+	node->used      = 0;
+	node->all       = 0;
 	
 	while (dbk) {
 		tmp = dbk;
@@ -1587,6 +1588,31 @@ hashtable_count(HashTable *ht, char *key, unsigned int *maskarray, int masknum, 
     return MEMLINK_OK;
 }
 
+int 
+hashtable_lpush(HashTable *ht, char *key, void *value, unsigned int *maskarray, char masknum)
+{
+    return MEMLINK_OK;
+}
+
+int 
+hashtable_rpush(HashTable *ht, char *key, void *value, unsigned int *maskarray, char masknum)
+{
+    return MEMLINK_OK;
+}
+
+int
+hashtable_lpop(HashTable *ht, char *key, int num, char *data, int *datanum,
+                unsigned char *valuesize, unsigned char *masksize)
+{
+    return MEMLINK_OK;
+}
+
+int
+hashtable_rpop(HashTable *ht, char *key, int num, char *data, int *datanum,
+                unsigned char *valuesize, unsigned char *masksize)
+{
+    return MEMLINK_OK;
+}
 
 int 
 hashtable_print(HashTable *ht, char *key)
