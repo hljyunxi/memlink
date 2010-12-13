@@ -208,7 +208,7 @@ wdata_check_clean(char *key)
 
 	DINFO("check clean cond, used:%d, all:%d, blocks:%d\n", node->used, node->all, node->all / g_cf->block_data_count);
 	// not do clean, when blocks is small than 3
-	if (node->all / g_cf->block_data_count < 3) {
+	if (node->all / g_cf->block_data_count < g_cf->block_clean_start) {
 		return;
 	}
 
