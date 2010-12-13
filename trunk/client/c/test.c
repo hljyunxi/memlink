@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
     MemLinkStat stat;
     ret = memlink_cmd_stat(m, "haha1", &stat);
     DINFO("memlink_cmd_stat: %d\n", ret);
-    DINFO("valuesize:%d, masksize:%d, blocks:%d, data:%d, data_used:%d, mem:%d, mem_used:%d\n", stat.valuesize, stat.masksize, stat.blocks, stat.data, stat.data_used, stat.mem, stat.mem_used);
+    DINFO("valuesize:%d, masksize:%d, blocks:%d, data:%d, data_used:%d, mem:%d\n", stat.valuesize, stat.masksize, stat.blocks, stat.data, stat.data_used, stat.mem);
 
 
     /*
