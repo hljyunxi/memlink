@@ -267,10 +267,12 @@ wdata_apply(char *data, int datalen, int writelog)
     int             vnum;
 
     memcpy(&cmd, data + sizeof(short), sizeof(char));
-    char buf[256] = {0};
-    DINFO("data ready cmd: %d, data: %s\n", cmd, formath(data, datalen, buf, 256));
+	if (g_cf->role == ROLE_SLAVE && (cmd != CMD_DUMP || cmd != CMD_CLEAN)) {
+		return MEMLINK_ERR_CLIENT_CMD;
+	}
+    //char buf[256] = {0};
+    //DINFO("data ready cmd: %d, data: %s\n", cmd, formath(data, datalen, buf, 256));
 
-    //pthread_mutex_lock(&g_runtime->mutex);
     switch(cmd) {
         case CMD_DUMP:
             DINFO("<<< cmd DUMP >>>\n");
@@ -528,7 +530,9 @@ wdata_apply(char *data, int datalen, int writelog)
             break;
     }
 	
-	wdata_check_clean(key);
+	if (g_cf->role == ROLE_MASTER) {
+		wdata_check_clean(key);
+	}
 
     return ret;
 }
