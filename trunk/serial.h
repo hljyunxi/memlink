@@ -2,26 +2,29 @@
 #define MEMLINK_SERIAL_H
 
 #include <stdio.h>
+#include "common.h"
 
-#define CMD_DUMP		1
-#define CMD_CLEAN		2
-#define CMD_STAT		3
-#define CMD_CREATE		4
-#define CMD_DEL			5
-#define CMD_INSERT		6
-#define CMD_UPDATE		7
-#define CMD_MASK		8
-#define CMD_TAG			9
-#define CMD_RANGE		10
-#define CMD_RMKEY       11
-#define CMD_COUNT		12
-#define CMD_LPUSH		13
-#define CMD_LPOP		14
-#define CMD_RPUSH		15
-#define CMD_RPOP		16
+#define CMD_DUMP		    1
+#define CMD_CLEAN		    2
+#define CMD_STAT		    3
+#define CMD_CREATE		    4
+#define CMD_DEL			    5
+#define CMD_INSERT		    6
+#define CMD_UPDATE		    7
+#define CMD_MASK		    8
+#define CMD_TAG			    9
+#define CMD_RANGE		    10
+#define CMD_RMKEY           11
+#define CMD_COUNT		    12
+#define CMD_LPUSH		    13
+#define CMD_LPOP		    14
+#define CMD_RPUSH		    15
+#define CMD_RPOP		    16
+#define CMD_INSERT_MVALUE   17
+#define CMD_INSERT_MKEY     18
 
-#define CMD_SYNC        100 
-#define CMD_GETDUMP		101
+#define CMD_SYNC            100 
+#define CMD_GETDUMP		    101
 
 #define cmd_lpush_unpack    cmd_push_unpack
 #define cmd_rpush_unpack    cmd_push_unpack
@@ -117,5 +120,7 @@ int cmd_sync_unpack(char *data, unsigned int *logver, unsigned int *logpos);
 int cmd_getdump_pack(char *data, unsigned int dumpver, unsigned long long size);
 int cmd_getdump_unpack(char *data, unsigned int *dumpver, unsigned long long *size);
 
+int cmd_insert_mvalue_pack(char *data, char *key, MemLinkInsertVal *items, int num);
+int cmd_insert_mvalue_unpack(char *data, char *key, MemLinkInsertVal **items, int *num);
 
 #endif

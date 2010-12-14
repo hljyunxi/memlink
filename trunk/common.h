@@ -99,5 +99,14 @@
 #define MEMLINK_ITEM_VISIBLE        4 
 #define MEMLINK_ITEM_ALL            0
 
+typedef struct _memlink_insert_mvalue_item
+{
+    char            value[255];
+    unsigned char   valuelen;
+    unsigned int    maskstr[HASHTABLE_MASK_MAX_ITEM * 3];
+    unsigned int    maskarray[HASHTABLE_MASK_MAX_ITEM];
+    unsigned char   masknum;
+    int             pos;
+}MemLinkInsertVal;
 
 #endif

@@ -24,6 +24,7 @@ typedef struct _memlink_client
     int     timeout;
 }MemLink;
 
+
 typedef struct _memlink_stat
 {
     unsigned char   valuesize;
@@ -56,6 +57,7 @@ typedef struct _memlink_result
     MemLinkItem     *root;
 }MemLinkResult;
 
+
 void        memlink_result_free(MemLinkResult *result);
 
 MemLink*    memlink_create(char *host, int readport, int writeport, int timeout);
@@ -79,6 +81,9 @@ int			memlink_cmd_range(MemLink *m, char *key, char *maskstr,
                               MemLinkResult *result);
 int         memlink_cmd_rmkey(MemLink *m, char *key);
 int         memlink_cmd_count(MemLink *m, char *key, char *maskstr, MemLinkCount *count);
+int         memlink_cmd_insert_mvalue(MemLink *m, char *key, MemLinkInsertVal *values, int num);
+
+
 
 #endif
 

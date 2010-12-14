@@ -641,6 +641,46 @@ memlink_cmd_range(MemLink *m, char *key, char *maskstr, unsigned int frompos, un
     return MEMLINK_OK;
 }
 
+int
+memlink_cmd_insert_mvalue(MemLink *m, char *key, MemLinkInsertVal *values, int num)
+{
+    int  len;
+    int  pkgsize = sizeof(int) + sizeof(char) + 256;
+    int  i;
+    char *data;
+
+    MemLinkInsertVal    *item; 
+    for (i = 0; i < num; i++) {
+        item = &values[i];
+        item->masknum = mask_string2array(item->maskstr, item->maskarray);
+        pkgsize += item->valuelen + sizeof(char) + item->masknum * sizeof(int) + sizeof(char) + sizeof(int);
+    }
+    
+    if (pkgsize > 1024000) {
+        data = (char *)zz_malloc(pkgsize); 
+        if (NULL == data) {
+            DERROR("malloc pkgsize:%d error!\n", pkgsize);
+            MEMLINK_EXIT;
+        }
+    }else{
+        data = (char *)alloca(pkgsize);
+    }
+
+
+    len = cmd_insert_mvalue_pack(data, key, values, num);
+    DINFO("pack del len: %d\n", len);
+
+    char retdata[1024];
+    int ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
+
+    if (pkgsize > 1024000) {
+        zz_free(data);
+    }
+
+	if (ret < 0) 
+		return ret;
+	return MEMLINK_OK;
+}
 
 void
 memlink_close(MemLink *m)
