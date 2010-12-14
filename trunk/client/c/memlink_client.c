@@ -138,6 +138,13 @@ memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
     DINFO("read head: %d\n", ret);
     if (ret != RECV_PKG_SIZE_LEN) {
         DERROR("read head error!\n");
+        close(fd);
+
+        if (fd == m->readfd) {
+            m->readfd = 0;
+        }else{
+            m->writefd = 0;
+        }
         return -2;
     }
     memcpy(&datalen, rbuf, RECV_PKG_SIZE_LEN);
@@ -159,6 +166,8 @@ memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
         }else{
             m->writefd = 0;
         }
+
+		return -4;
     }
 
     return ret + RECV_PKG_SIZE_LEN;

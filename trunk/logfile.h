@@ -24,6 +24,14 @@ extern LogFile *g_log;
 
 #ifdef DEBUG
 
+#define DFATALERR(format,args...) do{\
+        if (!g_log) {\
+            fprintf(stderr, format, ##args);\
+        }else if(g_log->loglevel >= 0) {\
+            logfile_write(g_log, "FATAL", __FILE__, __LINE__, format, ##args);\
+        }\
+    }while(0)
+
 #define DERROR(format,args...) do{\
         if (!g_log) {\
             fprintf(stderr, format, ##args);\
@@ -40,18 +48,29 @@ extern LogFile *g_log;
         }\
     }while(0)
 
-#define DINFO(format,args...) do{\
+#define DNOTE(format,args...) do{\
         if (!g_log) {\
             fprintf(stderr, format, ##args);\
         }else if (g_log->loglevel >= 3) {\
+            logfile_write(g_log, "NOTE", __FILE__, __LINE__, format, ##args);\
+        }\
+    }while(0)
+
+
+#define DINFO(format,args...) do{\
+        if (!g_log) {\
+            fprintf(stderr, format, ##args);\
+        }else if (g_log->loglevel >= 4) {\
             logfile_write(g_log, "INFO", __FILE__, __LINE__, format, ##args);\
         }\
     }while(0)
 
 #else
 
+#define DFATALERR(format,args...) 
 #define DERROR(format,args...) 
 #define DWARNING(format,args...) 
+#define DNOTE(format,args...) 
 #define DINFO(format,args...) 
 
 #endif

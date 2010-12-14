@@ -485,6 +485,14 @@ runtime_create_slave(char *pgname)
     }
     DINFO("load_data ok!\n");
 	
+	rt->wthread = wthread_create();
+    if (NULL == rt->wthread) {
+        DERROR("wthread_create error!\n");
+        MEMLINK_EXIT;
+        return NULL;
+    }
+    DINFO("write thread create ok!\n");
+ 
 	sslave_go(rt->slave);
 	
 	DINFO("create slave runtime ok!\n");
