@@ -4,7 +4,7 @@
 #include "logfile.h"
 #include "serial.h"
 #include "utils.h"
-
+#include "zzmalloc.h"
 /**
  * 把字符串形式的mask转换为数组形式
  */
@@ -967,6 +967,62 @@ cmd_getdump_unpack(char *data, unsigned int *dumpver, unsigned long long *size)
 	memcpy(size, data + count, sizeof(long long));
 
 	return 0;
+}
+
+int 
+cmd_insert_mvalue_pack(char *data, char *key, MemLinkInsertVal *items, int num)
+{
+    unsigned char cmd = CMD_INSERT_MVALUE;
+    unsigned short len;
+    int count = sizeof(short);
+
+    memcpy(data + count, &cmd, sizeof(char));
+    count += sizeof(char);
+    
+    count += pack_string(data + count, key, 0);
+    int i;
+
+    memcpy(data + count, &num, sizeof(int));
+    count += sizeof(int);
+
+    for (i = 0; i < num; i++) {
+        MemLinkInsertVal *item = &items[i];
+        count += pack_string(data + count, item->value, item->valuelen);
+        count += pack_mask(data + count, item->maskarray, item->masknum);
+        memcpy(data + count, &item->pos, sizeof(int));
+        count += sizeof(int);
+    }
+    len = count - sizeof(short);
+    memcpy(data, &len, sizeof(short));
+
+    return count;
+}
+
+int 
+cmd_insert_mvalue_unpack(char *data, char *key, MemLinkInsertVal **items, int *num)
+{
+    int count = sizeof(short) + sizeof(char);
+    MemLinkInsertVal  *values;
+
+    count += unpack_string(data + count, key, NULL);
+    memcpy(num, data + count, sizeof(int));
+
+    values = (MemLinkInsertVal*)zz_malloc(sizeof(MemLinkInsertVal) * *num);
+    if (NULL == values) {
+        DERROR("malloc MemLinkInsertVal %d error!\n", sizeof(MemLinkInsertVal) * *num);
+        MEMLINK_EXIT;
+    }
+    
+    int i;
+    for (i = 0; i < *num; i++) {
+        MemLinkInsertVal *item = &values[i];
+        count += unpack_string(data + count, item->value, &item->valuelen);
+        count += unpack_mask(data + count, item->maskarray, &item->masknum);
+        memcpy(data + count, &item->pos, sizeof(int));
+        count += sizeof(int);
+    }
+
+    return 0;
 }
 
 

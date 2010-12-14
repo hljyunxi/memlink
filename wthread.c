@@ -402,6 +402,57 @@ wdata_apply(char *data, int datalen, int writelog)
 
             break;
         }
+        case CMD_INSERT_MVALUE: {
+            MemLinkInsertVal    *values = NULL;
+            int                 vnum;
+
+            DINFO("<<< cmd INSERT MVALUE >>>\n");
+            ret = cmd_insert_mvalue_unpack(data, key, &values, &vnum);
+			if (ret != 0) {
+				DERROR("unpack insert error! ret: %d\n", ret);
+                zz_free(values);
+				break;
+			}
+
+            DINFO("unpack key:%s, vnum:%d\n", key, vnum);
+			if (key[0] == 0) {
+				ret = MEMLINK_ERR_PARAM;
+                zz_free(values);
+				break;
+			}
+
+            int i;
+
+            for (i = 0; i < vnum; i++) {
+                if (values[i].pos == -1) {
+                    values[i].pos = INT_MAX;
+                } else if (values[i].pos < 0) {
+                    ret = MEMLINK_ERR_PARAM;
+                    DERROR("update %d pos < 0, %d", i, pos);
+                    zz_free(values);
+                    break;
+                }
+            }
+
+            for (i = 0; i < vnum; i++) {
+                MemLinkInsertVal *item = &values[i];
+                ret = hashtable_add_mask(g_runtime->ht, key, item->value, item->maskarray, item->masknum, item->pos);
+                DINFO("hashtable_add_mask: %d\n", ret);
+            }
+
+            if (ret >= 0 && writelog) {
+                int sret = synclog_write(g_runtime->synclog, data, datalen);
+                if (sret < 0) {
+                    DERROR("synclog_write error: %d\n", sret);
+                    MEMLINK_EXIT;
+                }
+            }
+            
+
+            zz_free(values);
+
+            break;
+        }
         case CMD_UPDATE:
             DINFO("<<< cmd UPDATE >>>\n");
             ret = cmd_update_unpack(data, key, value, &valuelen, &pos);
