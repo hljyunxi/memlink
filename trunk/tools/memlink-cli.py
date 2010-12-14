@@ -1,5 +1,7 @@
 #coding:utf-8
 import os, sys
+clientpath = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'client/python')
+sys.path.append(clientpath)
 import time
 from memlinkclient import *
 import string
