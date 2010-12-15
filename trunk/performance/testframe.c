@@ -481,7 +481,7 @@ int show_help()
 int main(int argc, char *argv[])
 {
 #ifdef DEBUG
-	logfile_create("stdout", 3);
+	logfile_create("stdout", 4);
 #endif
 
 	int     optret;
