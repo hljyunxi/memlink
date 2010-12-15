@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include "logfile.h"
 #include "rthread.h"
@@ -27,12 +28,13 @@ rdata_ready(Conn *conn, char *data, int datalen)
     //char *msg = NULL;
     char *retdata = NULL;
     int  retlen = 0;
-
     //unsigned char   valuelen;
     unsigned char   masknum;
     unsigned int    maskarray[HASHTABLE_MASK_MAX_ITEM] = {0};
     int    frompos, len;
+    struct timeval start, end;
 
+    gettimeofday(&start, NULL);
     memcpy(&cmd, data + sizeof(short), sizeof(char));
     char buf[256] = {0};
     DINFO("data ready cmd: %d, data: %s\n", cmd, formath(data, datalen, buf, 256));
@@ -146,10 +148,16 @@ rdata_ready(Conn *conn, char *data, int datalen)
         }
     }
 
+    gettimeofday(&end, NULL);
+    DNOTE("%s:%d cmd:%d use %u us\n", conn->client_ip, conn->client_port, cmd, timediff(&start, &end));
+
     return 0;
 
 rdata_ready_error:
 	ret = data_reply(conn, ret, NULL, 0);
+    gettimeofday(&end, NULL);
+    DNOTE("%s:%d cmd:%d use %u us\n", conn->client_ip, conn->client_port, cmd, timediff(&start, &end));
+
 	DINFO("data_reply return: %d\n", ret);
 
     return 0;
