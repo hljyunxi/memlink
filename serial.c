@@ -1009,7 +1009,7 @@ cmd_insert_mvalue_unpack(char *data, char *key, MemLinkInsertVal **items, int *n
 
     values = (MemLinkInsertVal*)zz_malloc(sizeof(MemLinkInsertVal) * *num);
     if (NULL == values) {
-        DERROR("malloc MemLinkInsertVal %d error!\n", sizeof(MemLinkInsertVal) * *num);
+        DERROR("malloc MemLinkInsertVal %d error!\n", (int)sizeof(MemLinkInsertVal) * *num);
         MEMLINK_EXIT;
     }
     
