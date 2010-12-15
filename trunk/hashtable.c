@@ -341,7 +341,7 @@ dataitem_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk, DataB
     }
 
     *data = NULL;
-    DERROR("dataitem_lookup_pos error! pos error! pos: %d\n", pos);
+    //DERROR("dataitem_lookup_pos error! pos error! pos: %d\n", pos);
 
     return MEMLINK_OK;
 }
