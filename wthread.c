@@ -8,6 +8,7 @@
 #endif
 #include <sys/un.h>
 #include <sys/types.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <sys/time.h>
 #include <netdb.h>
@@ -168,23 +169,56 @@ data_reply(Conn *conn, short retcode, char *retdata, int retlen)
     return 0;
 }
 
+/* is clean?
+ */
+int
+is_clean_cond(HashNode *node)
+{
+	DINFO("check clean cond, used:%d, all:%d, blocks:%d\n", node->used, node->all, node->all / g_cf->block_data_count);
+	// not do clean, when blocks is small than 3
+	if (node->all / g_cf->block_data_count < g_cf->block_clean_start) {
+		return 0;
+	}
+
+	double rate = 1.0 - (double)node->used / node->all;
+	DINFO("check clean rate: %f\n", rate);
+
+	if (g_cf->block_clean_cond < 0.01 || g_cf->block_clean_cond > rate) {
+		return 0;
+	}
+
+	return 1;
+}
+
+
 void*
 wdata_do_clean(void *args)
 {
 	HashNode	*node = (HashNode*)args;
 	int			ret;
+	struct timeval start, end;
 
 	pthread_mutex_lock(&g_runtime->mutex);
 	//g_runtime->inclean = 1;
 	//snprintf(g_runtime->cleankey, 512, "%s", node->key);
 	
-	DINFO("start clean ...\n");
+	if (is_clean_cond(node) == 0) {
+		DNOTE("not need clean %s\n", node->key);
+		goto wdata_do_clean_over;
+	}
+
+	DNOTE("start clean %s ...\n", node->key);
+	gettimeofday(&start, NULL);
 	ret = hashtable_clean(g_runtime->ht, node->key);
 	if (ret != 0) {
 		DERROR("wdata_do_clean error: %d\n", ret);
 	}
+	gettimeofday(&end, NULL);
+	DNOTE("clean %s ok, use %u us\n", node->key, timediff(&start, &end));
 	//g_runtime->cleankey[0] = 0;
 	//g_runtime->inclean = 0;
+
+wdata_do_clean_over:
 	pthread_mutex_unlock(&g_runtime->mutex);
 
 	return NULL;
@@ -195,10 +229,6 @@ wdata_check_clean(char *key)
 {
 	HashNode	*node;
 	
-	/*if (g_runtime->inclean == 1) {
-		return;
-	}*/
-
 	if (key	== NULL || key[0] == 0) 
 		return;
 
@@ -206,16 +236,7 @@ wdata_check_clean(char *key)
 	if (NULL == node)
 		return;
 
-	DINFO("check clean cond, used:%d, all:%d, blocks:%d\n", node->used, node->all, node->all / g_cf->block_data_count);
-	// not do clean, when blocks is small than 3
-	if (node->all / g_cf->block_data_count < g_cf->block_clean_start) {
-		return;
-	}
-
-	double rate = 1.0 - (double)node->used / node->all;
-	DINFO("check clean rate: %f\n", rate);
-	
-	if (g_cf->block_clean_cond < 0.01 || g_cf->block_clean_cond > rate) {
+	if (is_clean_cond(node) == 0) {
 		return;
 	}
 
@@ -267,9 +288,6 @@ wdata_apply(char *data, int datalen, int writelog)
     int             vnum;
 
     memcpy(&cmd, data + sizeof(short), sizeof(char));
-	if (g_cf->role == ROLE_SLAVE && (cmd != CMD_DUMP || cmd != CMD_CLEAN)) {
-		return MEMLINK_ERR_CLIENT_CMD;
-	}
     //char buf[256] = {0};
     //DINFO("data ready cmd: %d, data: %s\n", cmd, formath(data, datalen, buf, 256));
 
@@ -377,7 +395,7 @@ wdata_apply(char *data, int datalen, int writelog)
 				pos = INT_MAX;
 			} else if (pos < 0) {
 				ret = MEMLINK_ERR_PARAM;
-				DERROR("update pos < 0, %d", pos);
+				DERROR("insert pos < 0, %d", pos);
 				break;
 			}
 
@@ -422,13 +440,12 @@ wdata_apply(char *data, int datalen, int writelog)
 			}
 
             int i;
-
             for (i = 0; i < vnum; i++) {
                 if (values[i].pos == -1) {
                     values[i].pos = INT_MAX;
                 } else if (values[i].pos < 0) {
                     ret = MEMLINK_ERR_PARAM;
-                    DERROR("update %d pos < 0, %d", i, pos);
+                    DERROR("insert mvalue %d pos < 0, %d", i, pos);
                     zz_free(values);
                     break;
                 }
@@ -448,9 +465,7 @@ wdata_apply(char *data, int datalen, int writelog)
                 }
             }
             
-
             zz_free(values);
-
             break;
         }
         case CMD_UPDATE:
@@ -599,14 +614,24 @@ static int
 wdata_ready(Conn *conn, char *data, int datalen)
 {
     struct timeval start, end;
+	char cmd;
+	int ret;
+
+	memcpy(&cmd, data + sizeof(short), sizeof(char));
+	if (g_cf->role == ROLE_SLAVE && (cmd != CMD_DUMP || cmd != CMD_CLEAN)) {
+		ret = MEMLINK_ERR_CLIENT_CMD;
+		goto wdata_ready_over;
+	}
 
     gettimeofday(&start, NULL);
     pthread_mutex_lock(&g_runtime->mutex);
-    int ret = wdata_apply(data, datalen, 1);
+    ret = wdata_apply(data, datalen, 1);
     pthread_mutex_unlock(&g_runtime->mutex);
 
+wdata_ready_over:
     ret = data_reply(conn, ret, NULL, 0);
     gettimeofday(&end, NULL);
+	DNOTE("%s:%d cmd:%d use %u us\n", conn->client_ip, conn->client_port, cmd, timediff(&start, &end));
     DINFO("data_reply return: %d\n", ret);
 
     return 0;

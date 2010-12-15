@@ -37,6 +37,8 @@
     int     wlen;\
     int     wpos;\
     int     port;\
+	char	client_ip[16];\
+	int     client_port;\
 	struct event		evt;\
     struct event_base   *base;\
     struct timeval      ctime;\

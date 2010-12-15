@@ -62,7 +62,9 @@
 
 // 命令执行返回信息头部长度
 // datalen(4B) + retcode(2B)
-#define CMD_REPLY_HEAD_LEN     (sizeof(int)+sizeof(short))
+#define CMD_REPLY_HEAD_LEN  (sizeof(int)+sizeof(short))
+#define CMD_REQ_HEAD_LEN	(sizeof(short)+sizeof(char))
+#define CMD_REQ_SIZE_LEN	sizeof(short)
 
 // format + version + log version + ismaster + size
 #define DUMP_HEAD_LEN	    (sizeof(short)+sizeof(int)+sizeof(int)+sizeof(char)+sizeof(long long))
@@ -103,7 +105,7 @@ typedef struct _memlink_insert_mvalue_item
 {
     char            value[255];
     unsigned char   valuelen;
-    unsigned int    maskstr[HASHTABLE_MASK_MAX_ITEM * 3];
+    char			maskstr[HASHTABLE_MASK_MAX_ITEM * 3];
     unsigned int    maskarray[HASHTABLE_MASK_MAX_ITEM];
     unsigned char   masknum;
     int             pos;

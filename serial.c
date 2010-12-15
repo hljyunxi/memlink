@@ -94,7 +94,7 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
         m = m << y;
         x = mask[idx + n - 1] & m;
 
-        DINFO("copy idx:%d, v:%d, n:%d\n", idx, v, n);
+        //DINFO("copy idx:%d, v:%d, n:%d\n", idx, v, n);
         //printb((char *)&v, n);
         memcpy(&mask[idx], &v, n);
 
@@ -370,10 +370,10 @@ cmd_dump_pack(char *data)
     unsigned short len = sizeof(char);
     unsigned char  cmd = CMD_DUMP;
 
-    memcpy(data, &len, sizeof(short));
-    memcpy(data + sizeof(short), &cmd, sizeof(char));
+    memcpy(data, &len, CMD_REQ_SIZE_LEN);
+    memcpy(data + CMD_REQ_SIZE_LEN, &cmd, sizeof(char));
 
-    return len + sizeof(short);
+    return len + CMD_REQ_SIZE_LEN;
 }
 
 int 
@@ -391,7 +391,7 @@ cmd_clean_pack(char *data, char *key)
 {
     unsigned char  cmd = CMD_CLEAN;
     unsigned short  len;
-    int count = sizeof(short);
+    int count = CMD_REQ_SIZE_LEN;
     int ret;
 
     memcpy(data + count, &cmd, sizeof(char)); 
@@ -410,7 +410,7 @@ int
 cmd_clean_unpack(char *data, char *key)
 {
     unsigned char keylen;
-    int count = sizeof(short) + sizeof(char);
+    int count = CMD_REQ_HEAD_LEN;
 
     unpack_string(data + count, key, &keylen);
 
@@ -422,7 +422,7 @@ cmd_rmkey_pack(char *data, char *key)
 {
     unsigned char  cmd = CMD_RMKEY;
     unsigned short  len;
-    int count = sizeof(short);
+    int count = CMD_REQ_SIZE_LEN;
     int ret;
 
     memcpy(data + count, &cmd, sizeof(char)); 
@@ -430,9 +430,9 @@ cmd_rmkey_pack(char *data, char *key)
 
     ret = pack_string(data + count, key, 0);
     count += ret;
-    len = count - sizeof(short);
+    len = count - CMD_REQ_SIZE_LEN;
     //DINFO("clean len: %d, count: %d\n", len, count);
-    memcpy(data, &len, sizeof(short));
+    memcpy(data, &len, CMD_REQ_SIZE_LEN);
     
     return count;
 }
@@ -441,7 +441,7 @@ int
 cmd_rmkey_unpack(char *data, char *key)
 {
     unsigned char keylen;
-    int count = sizeof(short) + sizeof(char);
+    int count = CMD_REQ_HEAD_LEN;
 
     unpack_string(data + count, key, &keylen);
 
@@ -454,7 +454,7 @@ cmd_count_pack(char *data, char *key, unsigned char masknum, unsigned int *maska
 {
     unsigned char  cmd = CMD_COUNT;
     unsigned short  len;
-    int count = sizeof(short);
+    int count = CMD_REQ_SIZE_LEN;
     int ret;
 
     memcpy(data + count, &cmd, sizeof(char)); 
@@ -464,8 +464,8 @@ cmd_count_pack(char *data, char *key, unsigned char masknum, unsigned int *maska
     count += ret;
 	count += pack_mask(data + count, maskarray, masknum);
 
-    len = count - sizeof(short);
-    memcpy(data, &len, sizeof(short));
+    len = count - CMD_REQ_SIZE_LEN;
+    memcpy(data, &len, CMD_REQ_SIZE_LEN);
     
     return count;
 }
@@ -474,7 +474,7 @@ int
 cmd_count_unpack(char *data, char *key, unsigned char *masknum, unsigned int *maskarray)
 {
     unsigned char keylen;
-    int count = sizeof(short) + sizeof(char);
+    int count = CMD_REQ_HEAD_LEN;
 
     count += unpack_string(data + count, key, &keylen);
 	unpack_mask(data + count, maskarray, masknum);
@@ -487,7 +487,7 @@ int
 cmd_stat_pack(char *data, char *key)  //, HashTableStat  *stat)
 {
     unsigned char  cmd = CMD_STAT;
-    unsigned short count = sizeof(short);
+    unsigned short count = CMD_REQ_SIZE_LEN;
     unsigned short len;
 
     memcpy(data + count, &cmd, sizeof(char)); 
@@ -497,8 +497,8 @@ cmd_stat_pack(char *data, char *key)  //, HashTableStat  *stat)
     //memcpy(data + count, stat, sizeof(HashTableStat)); 
     //count += sizeof(HashTableStat);
 
-    len = count - sizeof(short);
-    memcpy(data, &len, sizeof(short));
+    len = count - CMD_REQ_SIZE_LEN;
+    memcpy(data, &len, CMD_REQ_SIZE_LEN);
     
     return count;
 }
@@ -507,7 +507,7 @@ int
 cmd_stat_unpack(char *data, char *key)  //, HashTableStat *stat)
 {
     unsigned char keylen;
-    int count = sizeof(short) + sizeof(char);
+    int count = CMD_REQ_HEAD_LEN;
 
     count = unpack_string(data + count, key, &keylen);
     //memcpy(stat, data + count, sizeof(HashTableStat)); 
@@ -536,7 +536,7 @@ int
 cmd_create_pack(char *data, char *key, unsigned char valuelen, unsigned char masknum, unsigned int *maskarray)
 {
     unsigned char  cmd = CMD_CREATE;
-    unsigned short count = sizeof(short);
+    unsigned short count = CMD_REQ_SIZE_LEN;
     unsigned short len;
 
     memcpy(data + count, &cmd, sizeof(char)); 
@@ -547,9 +547,9 @@ cmd_create_pack(char *data, char *key, unsigned char valuelen, unsigned char mas
 
     //count += pack_string(data + count, maskarray, masknum);
     count += pack_mask(data + count, maskarray, masknum);
-    len = count - sizeof(short);
+    len = count - CMD_REQ_SIZE_LEN;
 
-    memcpy(data, &len, sizeof(short));
+    memcpy(data, &len, CMD_REQ_SIZE_LEN);
     
     return count;
 }
@@ -557,7 +557,7 @@ cmd_create_pack(char *data, char *key, unsigned char valuelen, unsigned char mas
 int 
 cmd_create_unpack(char *data, char *key, unsigned char *valuelen, unsigned char *masknum, unsigned int *maskarray)
 {
-    int count = sizeof(short) + sizeof(char);
+    int count = CMD_REQ_HEAD_LEN;
     unsigned char len;
 
     count += unpack_string(data + count, key, &len);

@@ -3,6 +3,7 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #ifdef __linux
 #include <linux/if.h>
 #endif
@@ -39,7 +40,10 @@ conn_create(int svrfd, int connsize)
         }
         break;
     }
-    DINFO("accept newfd: %d\n", newfd);
+	//char ip[16] = {0};
+	//int  port   = ntohs((short)clientaddr.sin_port);
+	//inet_ntop(AF_INET, &(clientaddr.sin_addr), ip, slen);
+    //DINFO("accept newfd: %d, %s\n", newfd, inet_ntoa(clientaddr.sin_addr));
 
     tcp_server_setopt(newfd);
 
@@ -54,7 +58,11 @@ conn_create(int svrfd, int connsize)
     conn->sock = newfd;
 	conn->destroy = conn_destroy;
 	conn->wrote = conn_wrote;    
+	inet_ntop(AF_INET, &(clientaddr.sin_addr), conn->client_ip, slen);	
+	conn->client_port = ntohs((short)clientaddr.sin_port);
     gettimeofday(&conn->ctime, NULL);
+
+    DINFO("accept newfd: %d, %s:%d\n", newfd, conn->client_ip, conn->client_port);
 
     return conn;
 }
