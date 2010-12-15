@@ -393,7 +393,7 @@ memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen)
 }
 
 int
-memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen, char *maskstr, unsigned int pos)
+memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen, char *maskstr, int pos)
 {
     char data[1024];
     int  len;

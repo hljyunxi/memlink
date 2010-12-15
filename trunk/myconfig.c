@@ -525,7 +525,8 @@ runtime_create_master(char *pgname)
         return NULL;
     }
     DINFO("write thread create ok!\n");
-    
+   
+	/*
     rt->sthread = sthread_create();
     if (NULL == rt->sthread) {
      DERROR("sthread_create error!\n");
@@ -533,6 +534,7 @@ runtime_create_master(char *pgname)
      return NULL;
     }
     DINFO("sync thread create ok!\n");
+	*/
 
     DINFO("create master Runtime ok!\n");
     return rt;

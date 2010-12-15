@@ -70,7 +70,7 @@ int			memlink_cmd_stat(MemLink *m, char *key, MemLinkStat *stat);
 int			memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr);
 int			memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen);
 int			memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen, 
-                               char *maskstr, unsigned int pos);
+                               char *maskstr, int pos);
 int			memlink_cmd_update(MemLink *m, char *key, char *value, int valuelen, 
                                unsigned int pos);
 int			memlink_cmd_mask(MemLink *m, char *key, char *value, int valuelen, 

@@ -53,7 +53,7 @@ typedef struct _runtime
     SyncLog         *synclog;  // current synclog
     MemPool         *mpool; 
     HashTable       *ht;
-	//volatile int	inclean;
+	volatile int	inclean;
     //char			cleankey[512];
     WThread         *wthread;
     MainServer      *server;
