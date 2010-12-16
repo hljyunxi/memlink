@@ -32,7 +32,7 @@ int main()
 	for(i = 0; i < num; i++)
 	{
 		sprintf(key, "heihei%03d", i);
-		hashtable_add_info_mask(ht, key, valuesize, maskformat, masknum);
+		hashtable_key_create_mask(ht, key, valuesize, maskformat, masknum);
 	}
 	for(i = 0; i < num; i++)
 	{
@@ -85,7 +85,7 @@ int main()
 				break;
 		}
 		printf("hashtable_update val:%s, pos:%d\n", val, pos);
-		int ret = hashtable_update(ht, key, val, pos);
+		int ret = hashtable_move(ht, key, val, pos);
 		if(MEMLINK_OK != ret)
 		{
 			printf("err hashtable_update value:%s, pos:%d\n", val, pos);

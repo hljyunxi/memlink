@@ -32,7 +32,7 @@ int main()
 	for(i = 0; i < num; i++)
 	{
 		sprintf(key, "heihei%03d", i);
-		hashtable_add_info_mask(ht, key, valuesize, maskformat, masknum);
+		hashtable_key_create_mask(ht, key, valuesize, maskformat, masknum);
 	}
 	for(i = 0; i < num; i++)
 	{
@@ -95,7 +95,7 @@ int main()
 			DERROR("not found value: %d, %s\n", ret, key);
 			return ret;
 		}
-		char mask[HASHTABLE_MASK_MAX_LEN * sizeof(int)] = {0};
+		char mask[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
 		char *mdata = item + node->valuesize;
 		memcpy(mask, mdata, node->masksize); 
 		char flag = *(mask + 0) & 0x02;
