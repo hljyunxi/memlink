@@ -1025,4 +1025,33 @@ cmd_insert_mvalue_unpack(char *data, char *key, MemLinkInsertVal **items, int *n
     return 0;
 }
 
+//add by lanwenhong
+int
+cmd_del_by_mask_pack(char *data, char *key, unsigned int *maskarray, unsigned char masknum)
+{
+	unsigned char cmd = CMD_DEL_BY_MASK;
+	int count = sizeof(short);
+	int len;
+
+	memcpy(data + count, &cmd, sizeof(char));
+	count += sizeof(char);
+	count += pack_string(data + count, key, 0);
+	count += pack_mask(data + count, maskarray, masknum);
+
+	len = count - sizeof(short);
+	memcpy(data, &len, sizeof(short));
+
+	return count;
+}
+
+int
+cmd_del_by_mask_unpack(char *data, char *key, unsigned int *maskarray, unsigned char *masknum)
+{
+	int count = sizeof(short) + sizeof(char);
+
+	count += unpack_string(data + count, key, NULL);
+	count += unpack_mask(data + count, maskarray, masknum);
+
+	return 0;
+}
 
