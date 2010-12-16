@@ -618,7 +618,7 @@ wdata_ready(Conn *conn, char *data, int datalen)
 	int ret;
 
 	memcpy(&cmd, data + sizeof(short), sizeof(char));
-	if (g_cf->role == ROLE_SLAVE && (cmd != CMD_DUMP || cmd != CMD_CLEAN)) {
+	if (g_cf->role == ROLE_SLAVE && cmd != CMD_DUMP && cmd != CMD_CLEAN) {
 		ret = MEMLINK_ERR_CLIENT_CMD;
 		goto wdata_ready_over;
 	}
