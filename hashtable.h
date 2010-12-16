@@ -34,8 +34,8 @@ void            hashtable_destroy(HashTable *ht);
 void			hashtable_clear_all(HashTable *ht);
 int				hashtable_remove_key(HashTable *ht, char *key);
 int				hashtable_remove_list(HashTable *ht, char *key);
-int             hashtable_add_info(HashTable *ht, char *key, int valuesize, char *maskstr);
-int             hashtable_add_info_mask(HashTable *ht, char *key, int valuesize, 
+int             hashtable_key_create(HashTable *ht, char *key, int valuesize, char *maskstr);
+int             hashtable_key_create_mask(HashTable *ht, char *key, int valuesize, 
                                         unsigned int *maskarray, char masknum);
 HashNode*       hashtable_find(HashTable *ht, char *key);
 int             hashtable_find_value(HashTable *ht, char *key, void *value, 
@@ -52,7 +52,7 @@ int             hashtable_add_mask(HashTable *ht, char *key, void *value,
 int             hashtable_add_mask_bin(HashTable *ht, char *key, void *value, 
                                        void *mask, int pos);
 
-int             hashtable_update(HashTable *ht, char *key, void *value, int pos);
+int             hashtable_move(HashTable *ht, char *key, void *value, int pos);
 int             hashtable_del(HashTable *ht, char *key, void *value);
 int             hashtable_tag(HashTable *ht, char *key, void *value, unsigned char tag);
 int             hashtable_mask(HashTable *ht, char *key, void *value, unsigned int *maskarray, int masknum);
@@ -62,7 +62,7 @@ int             hashtable_range(HashTable *ht, char *key, unsigned int *maskarra
 int             hashtable_clean(HashTable *ht, char *key);
 int             hashtable_stat(HashTable *ht, char *key, HashTableStat *stat);
 int             hashtable_count(HashTable *ht, char *key, unsigned int *maskarray, int masknum, 
-                                int *visible_count, int *mask_count);
+                                int *visible_count, int *tagdel_count);
 int             hashtable_lpush(HashTable *ht, char *key, void *value, unsigned int *maskarray, char masknum);
 int             hashtable_rpush(HashTable *ht, char *key, void *value, unsigned int *maskarray, char masknum);
 

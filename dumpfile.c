@@ -228,9 +228,9 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
             maskarray[i] = maskformat[i];
         }
         DINFO("create info, key:%s, valuelen:%d, masknum:%d\n", key, valuelen, masknum);
-        ret = hashtable_add_info_mask(ht, key, valuelen, maskarray, masknum);
+        ret = hashtable_key_create_mask(ht, key, valuelen, maskarray, masknum);
         if (ret != MEMLINK_OK) {
-            DERROR("hashtable_add_info_mask error, ret:%d\n", ret);
+            DERROR("hashtable_key_create_mask error, ret:%d\n", ret);
             return -2;
         }
         HashNode    *node = hashtable_find(ht, key);
@@ -264,7 +264,7 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
 			if (ret == MEMLINK_ITEM_VISIBLE) {
 				dbk->visible_count++;
 			}else{
-				dbk->mask_count++;
+				dbk->tagdel_count++;
 			}
 			node->used++;
 
