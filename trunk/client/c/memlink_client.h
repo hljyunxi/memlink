@@ -83,7 +83,8 @@ int         memlink_cmd_rmkey(MemLink *m, char *key);
 int         memlink_cmd_count(MemLink *m, char *key, char *maskstr, MemLinkCount *count);
 int         memlink_cmd_insert_mvalue(MemLink *m, char *key, MemLinkInsertVal *values, int num);
 
-
+//add by lanwenhong
+int         memlink_cmd_del_by_mask(MemLink *m, char *key, char *maskstr);
 
 #endif
 
