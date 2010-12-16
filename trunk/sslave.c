@@ -232,6 +232,8 @@ sslave_prev_sync_pos(SSlave *ss)
 
         break;
     }
+	if (ss->trycount >= MAX_SYNC_PREV)
+		return -1;
 
 	return 0;
 }
