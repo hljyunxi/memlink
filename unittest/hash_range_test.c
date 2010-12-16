@@ -33,7 +33,7 @@ int main()
 	for(i = 0; i < num; i++)
 	{
 		sprintf(key, "heihei%03d", i);
-		hashtable_add_info_mask(ht, key, valuesize, maskformat, masknum);
+		hashtable_key_create_mask(ht, key, valuesize, maskformat, masknum);
 	}
 	for(i = 0; i < num; i++)
 	{

@@ -102,7 +102,7 @@ int main()
 	for(i = 0; i < num; i++)
 	{
 		sprintf(key, "heihei%03d", i);
-		ret = hashtable_add_info_mask(ht, key, valuesize, maskformat, masknum);
+		ret = hashtable_key_create_mask(ht, key, valuesize, maskformat, masknum);
 		if(ret < 0)
 		{
 			DERROR("hashtable_add_info_mask error. %s\n", key);
