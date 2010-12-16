@@ -929,7 +929,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
         }
     
         if (dbk->next != newbk->next) { // create two datablock
-            DataBlock   *nextbk = dbk->next;  // after 1
+            DataBlock   *nextbk = dbk->next;  // old after 1
             DataBlock   *new_nextbk = newbk->next; // new 2
             itemdata = nextbk->data;
 			
@@ -949,7 +949,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
                     itemdata += datalen;
                 }
                 new_nextbk->next = nextbk->next;
-				//DINFO("put to pool: %p\n", nextbk);
+				DINFO("put to pool: %p\n", nextbk);
                 mempool_put(g_runtime->mpool, nextbk, datalen);
 				node->all -= g_cf->block_data_count;	
             }
@@ -1008,34 +1008,47 @@ hashtable_move(HashTable *ht, char *key, void *value, int pos)
     DataBlock *dbk = NULL, *prev = NULL;
     char     *item = NULL; 
 	
-    char ret = hashtable_find_value_prev(ht, key, value, &node, &dbk, &prev, &item);
+    char ret = hashtable_find_value(ht, key, value, &node, &dbk, &item);
     if (ret < 0) {
         DWARNING("not found value: %d, %s\n", ret, key);
         return ret;
     }
-    
+	
+	DINFO("move find dbk:%p, prev:%p\n", dbk, prev);
     char *mdata = item + node->valuesize;
     memcpy(mask, mdata, node->masksize);  
 
     datablock_del(node, dbk, item);
 
     int retv = hashtable_add_mask_bin(ht, key, value, mask, pos);
-
     if (retv != MEMLINK_OK) {
         datablock_del_restore(node, dbk, item);
         return retv;
     }
    
     // remove null block
+	//DINFO("dbk:%p, count:%d, prev:%p, dbk->next:%p\n", dbk, dbk->tagdel_count + dbk->visible_count, prev, dbk->next);
 	if (dbk->tagdel_count + dbk->visible_count == 0) {
-		if (prev) {
-			prev->next = dbk->next;
-		}else{
-			node->data = dbk->next;		
+		DataBlock *ckdbk = node->data;	
+		while (ckdbk && ckdbk != dbk) {
+			prev  = ckdbk;
+			ckdbk = ckdbk->next;
 		}
-		mempool_put(g_runtime->mpool, dbk, node->valuesize + node->masksize);
-	}
+		if (ckdbk == NULL) {
+			DERROR("not found current dbk! %p\n", dbk);
+		}else{
+			if (prev) {
+				prev->next = dbk->next;
+			}else{
+				node->data = dbk->next;		
+			}
+			DINFO("update release null block: %p\n", dbk);
+			mempool_put(g_runtime->mpool, dbk, node->valuesize + node->masksize);
+		}
 
+		hashtable_print(ht, key);
+	}
+	
     return MEMLINK_OK;
 }
 
@@ -1052,7 +1065,7 @@ hashtable_del(HashTable *ht, char *key, void *value)
 
     DINFO("hashtable_find_value: %s, value: %s\n", key, (char*)value);
     int ret = hashtable_find_value_prev(ht, key, value, &node, &dbk, &prev, &item);
-    DINFO("hashtable_find_value ret: %d\n", ret);
+    //DINFO("hashtable_find_value ret: %d, dbk:%p, prev:%p\n", ret, dbk, prev);
     if (ret < 0) {
         DERROR("hashtable_del find error!\n");
         return ret;
@@ -1061,7 +1074,6 @@ hashtable_del(HashTable *ht, char *key, void *value)
     unsigned char v = *data & 0x3; 
 
     *data &= 0xfe;
-
     if ( (v & 0x01) == 1) {
         if ( (v & 0x02) == 2) {
             dbk->tagdel_count --;
@@ -1072,6 +1084,7 @@ hashtable_del(HashTable *ht, char *key, void *value)
     }
 
 	if (dbk->tagdel_count + dbk->visible_count == 0) {
+		DINFO("del release null block: %p\n", dbk);
 		if (prev) {
 			prev->next = dbk->next;
 		}else{
