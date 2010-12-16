@@ -47,7 +47,7 @@ class MemLinkTest:
     def create(self, args):
         '''Command -- create.
 
-        create key valuesize maskformat , for instance : create haha 12 4:3:1
+        create key valuesize maskformat -- for instance : create haha 12 4:3:1
         '''
         try:
             argc = len(args)
@@ -64,22 +64,26 @@ class MemLinkTest:
         except ShortInputException, x:
             print 'bad input! expected at least %d' % x.atleast
             return -1
-            
-        ret = self.m.create(key, valuesize, maskformat)
-        if ret != MEMLINK_OK:
-            if ret == MEMLINK_ERR_EKEY:
+        
+        opnum = 0
+        while 1:
+            opnum += 1
+            ret = self.m.create(key, valuesize, maskformat)
+            if ret == MEMLINK_OK:
+                print 'create %s ok!'% key
+                return 0
+            elif ret == MEMLINK_ERR_RECV:
+                if opnum < 2:
+                    continue
+                else:
+                    print 'create %s err:%d'% (key, ret)
+                    return -1
+            elif ret == MEMLINK_ERR_EKEY:
                 print '%s existed' % key
-                ret, stat = self.m.stat(key)
-                if ret == MEMLINK_OK:
-                    valuesize = stat.valuesize
+                return -1
             else:
                 print 'create %s err:%d'% (key, ret)
                 return ret
-        else:
-            print 'create %s ok!'% key
-
-        self.allkey[key] = (valuesize, maskformat)
-        return 0
 
     def rmkey(self, args):
         '''Command -- rmkey.
@@ -95,14 +99,23 @@ class MemLinkTest:
         except ShortInputException, x:
             print 'bad input! expected at least %d' % x.atleast
             return -1
-         
-        ret = self.m.rmkey(key)
-        if ret != MEMLINK_OK:
-            print 'rmkey %s err:%d'% (key, ret)
-            return ret
-        else:
-            print 'rmkey %s ok!'% key
-        return 0
+
+        opnum = 0
+        while 1:
+            opnum += 1
+            ret = self.m.rmkey(key)
+            if ret == MEMLINK_OK:
+                print 'rmkey %s ok!'% key
+                return 0
+            elif ret == MEMLINK_ERR_RECV:
+                if opnum < 2:
+                    continue
+                else:
+                    print 'rmkey %s err:%d'% (key, ret)
+                    return -1
+            else:
+                print 'rmkey %s err:%d'% (key, ret)
+                return ret
                 
     def insert(self, args):
         '''Command -- create.
@@ -127,7 +140,7 @@ class MemLinkTest:
                     if numstr: num = int(numstr)
                     del args[i]
                 i += 1
-            print num
+            #print num
             if argv == 2:
                 key = args[0]
                 value = args[1]
@@ -147,7 +160,9 @@ class MemLinkTest:
             print 'bad input! expected at least %d' % x.atleast
             return -1
             
-        if key not in self.allkey:
+        '''if key not in self.allkey:
+            #print 'key does not exist!'
+            print 'key does not exist! do you want to create it as default'
             ret = self.m.create(key, 12, '4:3:1')
             keyinfo = (12, '4:3:1')
             if ret == MEMLINK_OK:
@@ -159,8 +174,28 @@ class MemLinkTest:
                 self.allkey[key] = keyinfo
             else:
                 print 'create:%s error:%d!'% (key, ret)
-                return ret
-
+                return ret'''
+                
+        if key not in self.allkey:
+            opnum = 0
+            while 1:
+                opnum += 1
+                ret, stat = self.m.stat(key)
+                if ret == MEMLINK_ERR_RECV:
+                    if opnum < 2:
+                        continue
+                    else:
+                        print 'err %d', ret
+                        return -1
+                elif ret == MEMLINK_OK:
+                    keyinfo = [12, '4:3:1']
+                    keyinfo[0] = stat.valuesize
+                    self.allkey[key] = keyinfo
+                elif ret == MEMLINK_ERR_NOKEY:
+                    print 'key does not exist!'
+                    return -1
+                break;
+        
         for i in xrange(0, num):
             myvalue = value
             if pos == -1:
@@ -175,7 +210,7 @@ class MemLinkTest:
             myvalue += '0'*n + sstr
             ret = self.m.insert(key, myvalue, maskstr, pos)
             if ret != MEMLINK_OK:
-                print 'insert error:', myvalue, ret
+                print 'insert:', (key, myvalue, maskstr, pos, i), 'err:%d!'%ret
                 return ret
             else:
                 print 'insert:', (key, myvalue, maskstr, pos, i), 'ok!'
@@ -185,7 +220,7 @@ class MemLinkTest:
     def range(self, args):
         '''Command range.
     
-        range key frompos llen maskstr , for instance : 
+        range key frompos llen maskstr -- for instance : 
         range haha
         range haha 10 1000
         range haha 10 1000 8::1
@@ -209,28 +244,42 @@ class MemLinkTest:
                 frompos = int(args[1])
                 llen = int(args[2])
                 maskstr = args[3]
+            else:
+                print 'bad input!'
+                return -1
         except ShortInputException, x:
             print 'bad input! expected at least %d' % x.atleast
             return -1
 
-        print 'range %s, %d, %d, "%s"' % (key, frompos, llen, maskstr)
-
-        ret, recs = self.m.range(key, maskstr, frompos, llen)
-        if ret != MEMLINK_OK:
-            print 'range error:', ret
-            return ret
+        opnum = 0
+        while 1:
+            opnum += 1
+            ret, recs = self.m.range(key, maskstr, frompos, llen)
+            if ret == MEMLINK_OK:
+                print 'range (%s, %d, %d, "%s") ok"' % (key, frompos, llen, maskstr)
+                break
+            elif ret == MEMLINK_ERR_RECV:
+                if opnum < 2:
+                    continue
+                else:
+                    print 'range %s err:%d'% (key, ret)
+                    return ret
+            else:
+                print 'range %s err:%d'% (key, ret)
+                return ret
             
         print 'range count:', recs.count
         items = recs.root
         while items:
             print items.value, items.mask
             items = items.next
+            
         return 0
 
     def update(self, args):
         '''Command update.
 
-        update key value pos , for instance : update haha 123 0
+        update key value pos -- for instance : update haha 123 0
         '''
         try:
             argc = len(args)
@@ -262,14 +311,25 @@ class MemLinkTest:
         except:
             print 'bad input! stat must have one param!'
             return -1
-        print 'stat %s...' % key
-        ret, stat = self.m.stat(key)
-        if ret != MEMLINK_OK:
-            print 'stat err:', ret
-            return -1
-        print stat
-        return 0
         
+        opnum = 0
+        while 1:
+            opnum += 1
+            ret, stat = self.m.stat(key)
+            if ret == MEMLINK_OK:
+                print 'stat %s ok' % key
+                print stat
+                return 0
+            elif ret == MEMLINK_ERR_RECV:
+                if opnum < 2:
+                    continue
+                else:
+                    print 'stat err:', ret
+                    return -1
+            else:
+                print 'stat err:', ret
+                return -1
+     
     def dump(self, args):
         '''Command dump.
 
@@ -286,7 +346,6 @@ class MemLinkTest:
 
         clean key
         '''
-    
         try:
             argc = len(args)
             if argc < 1:
@@ -383,10 +442,8 @@ class MemLinkTest:
     def mask(self, args):
         '''Command mask.
     
-        mask key value maskstr
-
+        mask key value maskstr -- for instance: mask haha 123 4::1
         '''
-    
         try:
             argv = len(args)
             if argv < 3:
@@ -411,9 +468,7 @@ class MemLinkTest:
     
         count key
         count key maskstr
-
         '''
-        
         try:
             argv = len(args)
             if argv < 1:
@@ -427,17 +482,34 @@ class MemLinkTest:
         except ShortInputException, x:
             print 'bad input! expected at least %d' % x.atleast
             return -1
-        print 'count (%s, "%s")' % (key, maskstr) 
-        ret, count = self.m.count(key, maskstr)
-        if ret != MEMLINK_OK:
-            print 'count err:', ret
-            return -1
-        print 'visible_count:%d, tagdel_count:%d' % (count.visible_count, count.tagdel_count)
-        return 0
+            
+        opnum = 0
+        while 1:
+            opnum += 1
+            ret, count = self.m.count(key, maskstr)
+            if ret == MEMLINK_OK:
+                print 'count (%s, "%s") ok.' % (key, maskstr) 
+                print 'visible_count:%d, tagdel_count:%d' % (count.visible_count, count.tagdel_count)
+                return 0
+            elif ret == MEMLINK_ERR_RECV:
+                if opnum < 2:
+                    continue
+                else:
+                    print 'count err:', ret
+                    return -1
+            else:
+                print 'count err:', ret
+                return -1
 
 def test_main(args):
-    all_the_cmd = ('create', 'rmkey', 'insert', 'del', 'range', 'update', 'tag', 'mask')
+    all_the_cmd = ('create', 'rmkey', 'insert', 'delete', 'range', 'update', 'tag', 'mask', 'count', 'stat', 'dump', 'clean')
     mtest = MemLinkTest(args)
+    print ''
+    print 'help -- type "help command" for some help. for instance: help insert.'
+    print 'list -- type "list" to list all the commands that are supported.'
+    print '   q -- quit.'
+    print ''
+    
     while 1:
         try:
             sstr = raw_input('memlink> ')
@@ -450,13 +522,15 @@ def test_main(args):
         cmd_str = string.split(sstr)
         cmd = cmd_str[0]
         if not hasattr(mtest, cmd) and cmd != 'help'and cmd != 'list':            
-            print 'Bad input, input "help command" for some help.'
+            print 'Bad input. DO NOT have this command.'
             continue
 
         if cmd == 'list':
             print all_the_cmd
         elif cmd == 'help':
-            if hasattr(mtest, cmd_str[1]):
+            if len(cmd_str) < 2:
+                print 'type "help command" for some help. for instance: help insert'
+            elif hasattr(mtest, cmd_str[1]):
                 print getattr(mtest, cmd_str[1]).__doc__
             else:
                 print 'command "%s" don\'t exist! All are as follows:', cmd_str[1], all_the_cmd
@@ -472,4 +546,5 @@ if __name__ == '__main__':
         args.extend(sys.argv[1:])
     #print args
     test_main(args)
+
 
