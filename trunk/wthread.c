@@ -338,8 +338,8 @@ wdata_apply(char *data, int datalen, int writelog)
 				ret = MEMLINK_ERR_MASK;
 			}else{
 				vnum = valuelen;
-				ret = hashtable_add_info_mask(g_runtime->ht, key, vnum, maskformat, masknum);
-				DINFO("hashtabl_add_info return: %d\n", ret);
+				ret = hashtable_key_create_mask(g_runtime->ht, key, vnum, maskformat, masknum);
+				DINFO("hashtable_key_create_mask return: %d\n", ret);
 				if (ret >= 0 && writelog) {
 					int sret = synclog_write(g_runtime->synclog, data, datalen);
 					if (sret < 0) {
@@ -489,8 +489,8 @@ wdata_apply(char *data, int datalen, int writelog)
 				break;
 			}
 
-            ret = hashtable_update(g_runtime->ht, key, value, pos);
-            DINFO("hashtable_update: %d\n", ret);
+            ret = hashtable_move(g_runtime->ht, key, value, pos);
+            DINFO("hashtable_move: %d\n", ret);
             //hashtable_print(g_runtime->ht, key);
             if (ret >= 0 && writelog) {
                 int sret = synclog_write(g_runtime->synclog, data, datalen);

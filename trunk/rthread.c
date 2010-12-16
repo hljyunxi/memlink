@@ -130,7 +130,7 @@ rdata_ready(Conn *conn, char *data, int datalen)
             char retrec[retlen];
 
             ret = hashtable_count(g_runtime->ht, key, maskarray, masknum, &vcount, &mcount);
-            DINFO("hashtable count, ret:%d, visible_count:%d, mask_count:%d\n", ret, vcount, mcount);
+            DINFO("hashtable count, ret:%d, visible_count:%d, tagdel_count:%d\n", ret, vcount, mcount);
             memcpy(retrec, &vcount, sizeof(int));
             memcpy(retrec + sizeof(int), &mcount, sizeof(int));
             //retlen = sizeof(int) + sizeof(int);
