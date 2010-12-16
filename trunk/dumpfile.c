@@ -261,7 +261,7 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
             ret = fread(itemdata, datalen, 1, fp);
            
 			ret = dataitem_check_data(node, itemdata);
-			if (ret == MEMLINK_ITEM_VISIBLE) {
+			if (ret == MEMLINK_VALUE_VISIBLE) {
 				dbk->visible_count++;
 			}else{
 				dbk->tagdel_count++;

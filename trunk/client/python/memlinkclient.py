@@ -39,6 +39,9 @@ class MemLinkClient:
     def delete(self, key, value):
         return memlink_cmd_del(self.client, key, value, len(value))
 
+    def delete_by_mask(self, key, mask):
+        return memlink_cmd_del_by_mask(self.client, key, mask)
+
     def insert(self, key, value, maskstr, pos):
         return memlink_cmd_insert(self.client, key, value, len(value), maskstr, pos)
 
