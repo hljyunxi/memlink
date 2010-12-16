@@ -13,8 +13,14 @@
 
 static void 
 sig_handler(const int sig) {
-    printf("SIGINT handled.\n");
+    DFATALERR("====== SIGNAL %d handled ======\n", sig);
     exit(EXIT_SUCCESS);
+}
+
+static void 
+sig_handler_segv(const int sig) {
+    DFATALERR("====== SIGSEGV handled ======\n");
+	abort();
 }
 
 int 
@@ -27,6 +33,10 @@ signal_install()
     sigact.sa_flags = 0;
 
     sigaction(SIGINT, &sigact, NULL);
+    
+	sigact.sa_handler = sig_handler_segv;
+    sigaction(SIGSEGV, &sigact, NULL);
+
     sigact.sa_handler = SIG_IGN;
     sigaction(SIGPIPE, &sigact, NULL);
 
@@ -76,14 +86,9 @@ int main(int argc, char *argv[])
 	
 	DINFO("config file: %s\n", conffile);
     myconfig_create(conffile);
-    //DINFO("config ok!\n");
     
     if (g_cf->max_core) {
         struct rlimit rlim_new;
-        /*
-         * First try raising to infinity; if that fails, try bringing
-         * the soft limit to the hard.
-         */
         if (getrlimit(RLIMIT_CORE, &rlim) == 0) {
             rlim_new.rlim_cur = rlim_new.rlim_max = RLIM_INFINITY;
             if (setrlimit(RLIMIT_CORE, &rlim_new)!= 0) {
@@ -92,20 +97,14 @@ int main(int argc, char *argv[])
                 (void)setrlimit(RLIMIT_CORE, &rlim_new);
             }
         }
-        /*
-         * getrlimit again to see what we ended up with. Only fail if
-         * the soft limit ends up 0, because then no core files will be
-         * created at all.
-         */
-
         if ((getrlimit(RLIMIT_CORE, &rlim) != 0) || rlim.rlim_cur == 0) {
-            DERROR("failed to ensure corefile creation\n");
+            DFATALERR("failed to ensure corefile creation\n");
             MEMLINK_EXIT;
         }
     }
 
     if (getrlimit(RLIMIT_NOFILE, &rlim) != 0) { 
-        DERROR("failed to getrlimit number of files\n");
+        DFATALERR("failed to getrlimit number of files\n");
         MEMLINK_EXIT;
     } else {
         int maxfiles = g_cf->max_conn;
@@ -114,7 +113,7 @@ int main(int argc, char *argv[])
         if (rlim.rlim_max < rlim.rlim_cur)
             rlim.rlim_max = rlim.rlim_cur;
         if (setrlimit(RLIMIT_NOFILE, &rlim) != 0) { 
-            DERROR("failed to set rlimit for open files. Try running as root or requesting smaller maxconns value.\n");
+            DFATALERR("failed to set rlimit for open files. Try running as root or requesting smaller maxconns value.\n");
             MEMLINK_EXIT;
         }    
     }
@@ -124,7 +123,7 @@ int main(int argc, char *argv[])
     if (g_cf->is_daemon) {
         ret = daemonize(g_cf->max_core, 0);
         if (ret == -1) {
-            DERROR("daemon error! %s\n", strerror(errno));
+            DFATALERR("daemon error! %s\n", strerror(errno));
             MEMLINK_EXIT;
         }
     }
