@@ -41,12 +41,12 @@ dataitem_check_data(HashNode *node, char *itemdata)
     int  tagm = *maskdata & (unsigned char)0x02;
    
     if (delm == 0)
-        return MEMLINK_ITEM_REMOVED;
+        return MEMLINK_VALUE_REMOVED;
 
     if (tagm == 2)
-        return MEMLINK_ITEM_TAGDEL;
+        return MEMLINK_VALUE_TAGDEL;
 
-    return MEMLINK_ITEM_VISIBLE;
+    return MEMLINK_VALUE_VISIBLE;
 }
 
 /*
@@ -516,7 +516,7 @@ hashtable_key_create(HashTable *ht, char *key, int valuesize, char *maskstr)
 
     for (i = 0; i < masknum; i++) {
         if (format[i] == UINT_MAX || format[i] > HASHTABLE_MASK_MAX_BIT) {
-            DERROR("maskformat error: %s\n", maskstr);
+            DINFO("maskformat error: %s\n", maskstr);
             return MEMLINK_ERR_MASK;
         }
 
@@ -798,7 +798,7 @@ hashtable_add(HashTable *ht, char *key, void *value, char *maskstr, int pos)
 
     masknum = mask_string2array(maskstr, maskarray);
     if (masknum <= 0) {
-        DERROR("mask_string2array error: %s\n", maskstr);
+        DINFO("mask_string2array error: %s\n", maskstr);
         return MEMLINK_ERR_MASK;
     }
 
@@ -810,7 +810,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 {
     HashNode *node = hashtable_find(ht, key);
     if (NULL == node) {
-        DERROR("hashtable_add not found node\n");
+        DINFO("hashtable_add_mask_bin not found node for key:%s\n", key);
         return MEMLINK_ERR_NOKEY;
     }
     
@@ -835,7 +835,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 		// create new block for copy item
 		DataBlock *newbk = mempool_get(g_mpool, datalen);
 		if (NULL == newbk) {
-			DERROR("hashtable_add get new DataBlock error!\n");
+			DERROR("hashtable_add_mask_bin get new DataBlock error!\n");
 			MEMLINK_EXIT;
 			return MEMLINK_ERR_MEM;
 		}
@@ -864,7 +864,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 		
 		DataBlock *newbk = mempool_get(g_mpool, datalen);
 		if (NULL == newbk) {
-			DERROR("hashtable_add get new DataBlock error!\n");
+			DERROR("hashtable_add_mask_bin get new DataBlock error!\n");
 			MEMLINK_EXIT;
 			return MEMLINK_ERR_MEM;
 		}
@@ -892,7 +892,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
                     DataBlock *newbk2 = mempool_get(g_mpool, datalen);
                     DINFO("create a new datablock. %p\n", newbk2);
                     if (NULL == newbk2) {
-                        DERROR("hashtable_add error!\n");
+                        DERROR("hashtable_add_mask_bin get DataBlock error!\n");
                         //mempool_put(g_mpool, newbk, datalen);
                         MEMLINK_EXIT;
                         return MEMLINK_ERR_MEM;
@@ -937,10 +937,10 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
             if (nextbk && nextbk->visible_count + nextbk->tagdel_count < g_cf->block_data_count) {
                 for (i = 0; i < g_cf->block_data_count; i++) {
                     ret = dataitem_check_data(node, itemdata);
-                    if (ret != MEMLINK_ITEM_REMOVED) {
+                    if (ret != MEMLINK_VALUE_REMOVED) {
                         memcpy(todata, itemdata, datalen); 
                         todata += datalen;
-                        if (ret == MEMLINK_ITEM_TAGDEL) {
+                        if (ret == MEMLINK_VALUE_TAGDEL) {
                             new_nextbk->tagdel_count ++; 
                         }else{
                             new_nextbk->visible_count ++; 
@@ -980,7 +980,7 @@ hashtable_add_mask(HashTable *ht, char *key, void *value, unsigned int *maskarra
     int  ret;
     HashNode *node = hashtable_find(ht, key);
     if (NULL == node) {
-        DERROR("hashtable_add not found node\n");
+        DINFO("hashtable_add_mask not found node for key:%s\n", key);
         return MEMLINK_ERR_NOKEY;
     }
    
@@ -989,7 +989,7 @@ hashtable_add_mask(HashTable *ht, char *key, void *value, unsigned int *maskarra
 	}
     ret = mask_array2binary(node->maskformat, maskarray, masknum, mask);
     if (ret <= 0) {
-        DERROR("mask_array2binary error: %d\n", ret);
+        DINFO("mask_array2binary error: %d\n", ret);
         return MEMLINK_ERR_MASK;
     }
 
@@ -1010,7 +1010,7 @@ hashtable_move(HashTable *ht, char *key, void *value, int pos)
 	
     char ret = hashtable_find_value(ht, key, value, &node, &dbk, &item);
     if (ret < 0) {
-        DWARNING("not found value: %d, %s\n", ret, key);
+        DWARNING("hashtable_move not found value, ret:%d, key:%s\n", ret, key);
         return ret;
     }
 	
@@ -1035,7 +1035,7 @@ hashtable_move(HashTable *ht, char *key, void *value, int pos)
 			ckdbk = ckdbk->next;
 		}
 		if (ckdbk == NULL) {
-			DERROR("not found current dbk! %p\n", dbk);
+			DWARNING("not found current dbk in list for key:%s ! %p\n", key, dbk);
 		}else{
 			if (prev) {
 				prev->next = dbk->next;
@@ -1067,7 +1067,7 @@ hashtable_del(HashTable *ht, char *key, void *value)
     int ret = hashtable_find_value_prev(ht, key, value, &node, &dbk, &prev, &item);
     //DINFO("hashtable_find_value ret: %d, dbk:%p, prev:%p\n", ret, dbk, prev);
     if (ret < 0) {
-        DERROR("hashtable_del find error!\n");
+        DINFO("hashtable_del find value error! %s\n", key);
         return ret;
     }
     char *data = item + node->valuesize;
@@ -1108,7 +1108,7 @@ hashtable_tag(HashTable *ht, char *key, void *value, unsigned char tag)
 
     int ret = hashtable_find_value(ht, key, value, &node, &dbk, &item);
     if (ret < 0) {
-        DERROR("not found key: %s\n", key);
+        DINFO("hashtable_tag not found key: %s\n", key);
         return ret;
     }
     //DINFO("tag: %d, %d\n", tag, tag<<1);
@@ -1166,7 +1166,7 @@ hashtable_mask(HashTable *ht, char *key, void *value, unsigned int *maskarray, i
 
     int  len = mask_array2binary(node->maskformat, maskarray, masknum, mask);
     if (len <= 0) {
-        DERROR("mask array2binary error: %d\n", masknum);
+        DINFO("mask array2binary error: %d\n", masknum);
         return MEMLINK_ERR_MASK;
     }
     //char buf[128];
@@ -1174,7 +1174,7 @@ hashtable_mask(HashTable *ht, char *key, void *value, unsigned int *maskarray, i
 
     int flen = mask_array2flag(node->maskformat, maskarray, masknum, maskflag);
     if (flen <= 0) {
-        DERROR("mask array2flag error: %d\n", masknum);
+        DINFO("mask array2flag error: %d\n", masknum);
         return MEMLINK_ERR_MASK;
     }
     //DINFO("array2flag: %s\n", formatb(maskflag, flen, buf, 128));
@@ -1198,7 +1198,7 @@ mask_array2_binary_flag(unsigned char *maskformat, unsigned int *maskarray, int 
     if (j < masknum) {
         masklen = mask_array2binary(maskformat, maskarray, masknum, maskval);
         if (masklen <= 0) {
-            DERROR("mask_string2array error\n");
+            DINFO("mask_string2array error\n");
             return -2;
         }
         maskval[0] = maskval[0] & 0xfc;
@@ -1207,7 +1207,7 @@ mask_array2_binary_flag(unsigned char *maskformat, unsigned int *maskarray, int 
         //DINFO("2binary: %s\n", formatb(maskval, masklen, buf, 128));
         masklen = mask_array2flag(maskformat, maskarray, masknum, maskflag);
         if (masklen <= 0) {
-            DERROR("mask_array2flag error\n");
+            DINFO("mask_array2flag error\n");
             return -2;
         }
         //DINFO("2flag: %s\n", formatb(maskflag, masklen, buf, 128));
@@ -1244,7 +1244,7 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
 
     node = hashtable_find(ht, key);
     if (NULL == node) {
-        DERROR("hashtable_find not found node\n");
+        DINFO("hashtable_find not found node for key:%s\n", key);
         return MEMLINK_ERR_NOKEY;
     }
 
@@ -1566,7 +1566,7 @@ hashtable_count(HashTable *ht, char *key, unsigned int *maskarray, int masknum, 
 
     node = hashtable_find(ht, key);
     if (NULL == node) {
-        DERROR("hashtable_add not found node\n");
+        DINFO("hashtable_count not found node for key:%s\n", key);
         return MEMLINK_ERR_NOKEY;
     }
 
@@ -1583,7 +1583,7 @@ hashtable_count(HashTable *ht, char *key, unsigned int *maskarray, int masknum, 
             for (i = 0; i < g_cf->block_data_count; i++) {
 				//DINFO("dbk:%p node:%p, itemdata:%p\n", dbk, node, itemdata);
                 ret = dataitem_check_data(node, itemdata);
-                if (ret != MEMLINK_ITEM_REMOVED) {
+                if (ret != MEMLINK_VALUE_REMOVED) {
                     char *maskdata = itemdata + node->valuesize;
                     // check mask equal
                     for (k = 0; k < node->masksize; k++) {
@@ -1595,7 +1595,7 @@ hashtable_count(HashTable *ht, char *key, unsigned int *maskarray, int masknum, 
 						itemdata += datalen;
                         continue;
                     }
-                    if (ret == MEMLINK_ITEM_VISIBLE) {
+                    if (ret == MEMLINK_VALUE_VISIBLE) {
                         vcount ++;
                     }else{
                         mcount ++;
@@ -1653,7 +1653,7 @@ hashtable_print(HashTable *ht, char *key)
 
     node = hashtable_find(ht, key);
     if (NULL == node) {
-        DERROR("not found key: %s\n", key);
+        DINFO("not found key: %s\n", key);
         return MEMLINK_ERR_NOKEY;
     }
 
@@ -1717,7 +1717,7 @@ hashtable_del_by_mask(HashTable *ht, char *key, unsigned int *maskarray, int mas
 	
 	node = hashtable_find(ht, key);
 	if (NULL == node) {
-		DERROR("hashtable_find not found node\n");
+		DINFO("hashtable_del_by_mask not found node for key:%s\n", key);
 		return MEMLINK_ERR_NOKEY;
 	}
 	
