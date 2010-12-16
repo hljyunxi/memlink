@@ -1690,4 +1690,64 @@ hashtable_print(HashTable *ht, char *key)
     return MEMLINK_OK;
 }
 
+//add by lanwenhong
+int 
+hashtable_del_by_mask(HashTable *ht, char *key, unsigned int *maskarray, int masknum)
+{
+
+	int i, k;
+	int find = 0;
+	int datalen = 0;
+	char maskval[HASHTABLE_MASK_MAX_ITEM * sizeof(int)] = {0};
+	char maskflag[HASHTABLE_MASK_MAX_ITEM * sizeof(int)] = {0};
+	HashNode *node;
+	
+	node = hashtable_find(ht, key);
+	if (NULL == node) {
+		DERROR("hashtable_find not found node\n");
+		return MEMLINK_ERR_NOKEY;
+	}
+	
+	if (node->masknum != masknum) {
+		return MEMLINK_ERR_MASK;
+	}
+	datalen = node->valuesize + node->masksize;
+	if (masknum > 0) {
+		mask_array2_binary_flag(node->maskformat, maskarray, masknum, maskval, maskflag);
+	}
+	DataBlock *root = node->data;
+
+    while (root) {
+        char *itemdata = root->data;
+
+        for (i = 0; i < g_cf->block_data_count; i++) {
+            if (dataitem_have_data(node, itemdata, 0)) {
+                char *maskdata = itemdata + node->valuesize;
+
+                for (k = 0; k < node->masksize; k++) {
+                    if ((maskdata[k] & maskflag[k]) != maskval[k]) {
+                        break;
+                    }
+                }
+                //not equal
+                if (k < node->masksize) {
+                    itemdata += datalen;
+                    continue;
+                } else {//equal
+                    maskdata[0] = maskdata[0] & 0x00;
+                    if (find == 0)
+                        find = 1;
+
+                }
+            }
+            itemdata += datalen;
+
+        }
+        root = root->next;
+    }
+    if (find == 1)
+        return MEMLINK_OK;
+
+    return MEMLINK_ERR_MASK;
+}
 

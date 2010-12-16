@@ -23,6 +23,9 @@
 #define CMD_INSERT_MVALUE   17
 #define CMD_INSERT_MKEY     18
 
+//add by lanwenhong
+#define CMD_DEL_BY_MASK     19
+
 #define CMD_SYNC            100 
 #define CMD_GETDUMP		    101
 
@@ -122,5 +125,9 @@ int cmd_getdump_unpack(char *data, unsigned int *dumpver, unsigned long long *si
 
 int cmd_insert_mvalue_pack(char *data, char *key, MemLinkInsertVal *items, int num);
 int cmd_insert_mvalue_unpack(char *data, char *key, MemLinkInsertVal **items, int *num);
+
+//add by lanwenhong
+int cmd_del_by_mask_pack(char *data, char *key, unsigned int *maskarray, unsigned char masknum);
+int cmd_del_by_mask_unpack(char *data, char *key, unsigned int *maskarray, unsigned char *masknum);
 
 #endif

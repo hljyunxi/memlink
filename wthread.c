@@ -583,6 +583,20 @@ wdata_apply(char *data, int datalen, int writelog)
                 }
             }
             break;
+
+		case CMD_DEL_BY_MASK:
+			DINFO("<<< cmd DEL_BY_MASK >>>\n");
+			ret = cmd_del_by_mask_unpack(data, key, maskarray, &masknum);
+			if (ret != 0) {
+				DERROR("unpack tag error! ret: %d\n", ret);
+				break;
+			}
+			DINFO("unpack key: %s, masknum: %d, maskarray: %d,%d,%d\n", key, masknum, maskarray[0], maskarray[1],maskarray[2]);
+			ret = hashtable_del_by_mask(g_runtime->ht, key, maskarray, masknum);
+			DINFO("hashtable_del_by_mask ret: %d\n", ret);
+			break;
+
+
         case CMD_LPUSH:
             break;
         case CMD_RPUSH:
