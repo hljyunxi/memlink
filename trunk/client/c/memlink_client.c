@@ -25,7 +25,7 @@ memlink_create(char *host, int readport, int writeport, int timeout)
     MemLink *m;
 
 #ifdef DEBUG
-	logfile_create("stdout", 3);
+	logfile_create("stdout", 4);
 #endif
 
     m = (MemLink*)zz_malloc(sizeof(MemLink));
@@ -725,4 +725,27 @@ memlink_result_free(MemLinkResult *result)
     result->root = NULL;
 }
 
+//add by lanwenhong
+int
+memlink_cmd_del_by_mask(MemLink *m, char *key, char *maskstr)
+{
+	char data[1024] = {0};
+	char retdata[1024];
+	unsigned int maskarray[128] = {0};
+	int masknum;
+	int len;
+	int ret;
+
+	masknum = mask_string2array(maskstr, maskarray);
+	DINFO("masknum: %d\n", masknum);
+	len = cmd_del_by_mask_pack(data, key, maskarray, masknum);
+	DINFO("pack del by mask len: %d\n", len);
+
+	ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
+	if (ret < 0)
+		return ret;
+
+	return MEMLINK_OK;
+
+}
 
