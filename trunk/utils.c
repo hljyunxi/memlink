@@ -218,7 +218,7 @@ formath(char *data, int datalen, char *buf, int blen)
     int i;
     unsigned char c;
     int idx = 0;
-	int maxlen = blen - 1;
+	int maxlen = blen - 4;
 
     for (i = datalen - 1; i >= 0; i--) {
 		if (idx >= maxlen)
