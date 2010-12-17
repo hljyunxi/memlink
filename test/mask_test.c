@@ -57,14 +57,30 @@ int main()
 
 	char *val		= "111111";
 	char *maskstr	= "8:3:1";
-
-	ret = memlink_cmd_insert(m, key, val, strlen(val), maskstr, 1);
-	if (ret != MEMLINK_OK) {
-		DERROR("insert error, key:%s, val:%s, mask:%s, i:%d, ret:%d\n", key, val, maskstr, 1, ret);
-		return -3;
+	int i;
+	char value[64];
+	for(i = 0; i < 20; i++)
+	{
+		sprintf(value, "%06d", i);
+		ret = memlink_cmd_insert(m, key, val, strlen(val), maskstr, 0);
+		if (ret != MEMLINK_OK) {
+			DERROR("insert error, key:%s, val:%s, mask:%s, i:%d, ret:%d\n", key, val, maskstr, 1, ret);
+			return -3;
+		}
 	}
 	
 //////added by wyx 
+	maskstr = "1:1:1";
+	for(i = 0; i < 20; i++)
+	{
+		sprintf(value, "%06d", i);
+		ret = memlink_cmd_mask(m, key, "xxxx", 4, maskstr);
+		if (ret != MEMLINK_ERR_NOVAL) {
+			DERROR("mask error, must novalue, key:%s, val:%s, ret:%d\n", key, "xxxx", ret);
+			return -4;
+		}
+	}
+
 	ret = memlink_cmd_mask(m, key, "xxxx", 4, maskstr);
 	if (ret != MEMLINK_ERR_NOVAL) {
 		DERROR("mask error, must novalue, key:%s, val:%s, ret:%d\n", key, "xxxx", ret);

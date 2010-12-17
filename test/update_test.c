@@ -42,6 +42,12 @@ int main()
 	}
 
 //add by wyx
+	ret = memlink_cmd_update(m, buf, val, -1, -10);
+	if (ret == MEMLINK_OK) {
+		DERROR("update error, must novalue, key:%s, val:%s, ret:%d\n", buf, "xxxx", ret);
+		return -4;
+	}
+
 	ret = memlink_cmd_update(m, buf, "xxxx", 4, 0);
 	if (ret != MEMLINK_ERR_NOVAL) {
 		DERROR("update error, must novalue, key:%s, val:%s, ret:%d\n", buf, "xxxx", ret);
@@ -56,13 +62,15 @@ int main()
 	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
         //DINFO("====== insert i:%d\n", i);
-		ret = memlink_cmd_update(m, buf, val, strlen(val), 0);
+		ret = memlink_cmd_update(m, buf, val, strlen(val), -1);
 		if (ret != MEMLINK_OK) {
-			DERROR("update error, key:%s, val:%s, ret:%d\n", buf, val, ret);
+			DERROR("update error, key:%s, val:%s, ret:%d, i:%d\n", buf, val, ret, i);
 			return -4;
 		}
+		else
+			DINFO("update ok, key:%s, val:%s, ret:%d, i:%d\n", buf, val, ret, i);
 
-		MemLinkResult result;
+	/*		MemLinkResult result;
 
 		ret = memlink_cmd_range(m, buf, "", 0, 1, &result);
 		if (ret != MEMLINK_OK) {
@@ -81,7 +89,7 @@ int main()
 			return -7;
 		}
 
-		memlink_result_free(&result);
+		memlink_result_free(&result);*/
 	}
 
     MemLinkStat     stat;
