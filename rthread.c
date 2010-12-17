@@ -40,6 +40,11 @@ rdata_ready(Conn *conn, char *data, int datalen)
     DINFO("data ready cmd: %d, data: %s\n", cmd, formath(data, datalen, buf, 256));
 
     switch(cmd) {
+		case CMD_PING: {
+			ret = MEMLINK_OK;
+			goto rdata_ready_error;
+			break;
+		}
         case CMD_RANGE: {
             DINFO("<<< cmd RANGE >>>\n");
             ret = cmd_range_unpack(data, key, &masknum, maskarray, &frompos, &len);
