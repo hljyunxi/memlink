@@ -444,7 +444,7 @@ sslave_conn_init(SSlave *ss)
             if (syncret == CMD_SYNC_OK) { // ok, recv synclog
                 DINFO("sync ok, logver:%d, logline:%d, logver_start:%d, logline_start:%d\n", ss->binlog_ver, ss->binlog_index, local_logver_start, local_logpos_start);
                 //if (ss->logver < logver_start || ss->logline < logline_start) {
-                if (ss->binlog_ver < local_logver_start || ss->binlog_index < local_logpos_start) {
+                if ((ss->binlog_ver < local_logver_start || ss->binlog_index < local_logpos_start) && is_getdump != 1) {
                     synclog_resize(ss->binlog_ver, ss->binlog_index);
                 }
                 DINFO("sync ok! try recv push message.\n");
