@@ -64,6 +64,7 @@ MemLink*    memlink_create(char *host, int readport, int writeport, int timeout)
 void        memlink_destroy(MemLink *m);
 void		memlink_close(MemLink *m);
 
+int         memlink_cmd_ping(MemLink *m);
 int         memlink_cmd_dump(MemLink *m);
 int			memlink_cmd_clean(MemLink *m, char *key);
 int			memlink_cmd_stat(MemLink *m, char *key, MemLinkStat *stat);

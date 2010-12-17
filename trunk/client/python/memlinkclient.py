@@ -20,6 +20,9 @@ class MemLinkClient:
             memlink_destroy(self.client)
             self.client = None
 
+    def ping(self):
+        return memlink_cmd_ping(self.client)
+
     def dump(self):
         return memlink_cmd_dump(self.client)
 
