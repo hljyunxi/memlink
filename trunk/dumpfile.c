@@ -129,6 +129,8 @@ dumpfile(HashTable *ht)
     // start a new sync log
 	DINFO("start a new synclog.\n");
     synclog_rotate(g_runtime->synclog);
+	DERROR("afert dumpfile:g_runtime->logver: %d\n", g_runtime->logver);
+	DERROR("after dumpfile:g_runtime->synclog->index_pos: %d, g_runtime->synclog->pos: %d\n", g_runtime->synclog->index_pos,g_runtime->synclog->pos);
 
     return ret;
 }
