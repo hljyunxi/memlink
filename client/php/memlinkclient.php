@@ -37,6 +37,11 @@ class MemLinkClient
 		return memlink_cmd_create($this->client, $key, $valuesize, $maskformat);
 	}
 
+	function ping()
+    {
+        return memlink_cmd_ping($this->client);
+    }
+
     function dump()
     {
         return memlink_cmd_dump($this->client);

@@ -25,6 +25,7 @@
 
 //add by lanwenhong
 #define CMD_DEL_BY_MASK     19
+#define CMD_PING			20
 
 #define CMD_SYNC            100 
 #define CMD_GETDUMP		    101
@@ -101,6 +102,9 @@ int cmd_range_pack(char *data, char *key, unsigned char masknum, unsigned int *m
                    int frompos, int len);
 int cmd_range_unpack(char *data, char *key, unsigned char *masknum, unsigned int*maskarray, 
                      int *frompos, int *len);
+
+int cmd_ping_pack(char *data);
+int cmd_ping_unpack(char *data);
 
 int cmd_push_pack(char *data, unsigned char cmd, char *key, char *value, unsigned char valuelen, 
                     unsigned char masknum, unsigned int *maskarray);

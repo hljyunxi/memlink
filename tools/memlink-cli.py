@@ -155,7 +155,7 @@ class MemLinkTest:
                 key = args[0]
                 value = args[1]
                 maskstr = args[2]
-                pos = args[3]
+                pos = int(args[3])
         except ShortInputException, x:
             print 'bad input! expected at least %d' % x.atleast
             return -1

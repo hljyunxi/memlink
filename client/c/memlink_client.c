@@ -271,6 +271,23 @@ memlink_do_cmd(MemLink *m, int fdtype, char *data, int len, char *retdata, int r
 }
 
 int
+memlink_cmd_ping(MemLink *m)
+{
+    char data[1024];
+    int  len, ret;
+
+    len = cmd_ping_pack(data);
+    DINFO("pack ping len: %d\n", len); 
+
+    char retdata[1024];
+    ret = memlink_do_cmd(m, MEMLINK_READER, data, len, retdata, 1024);
+
+	if (ret < 0) 
+		return ret;
+	return MEMLINK_OK;
+}
+
+int
 memlink_cmd_dump(MemLink *m)
 {
     char data[1024];
