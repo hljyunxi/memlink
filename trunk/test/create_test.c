@@ -39,6 +39,14 @@ int main()
 		DERROR("2 memlink_cmd_create %s error: %d\n", key, ret);
 		return -3;
 	}
+
+	strcpy(key, "haha1111");
+	ret = memlink_cmd_create(m, key, -1, "4:3:1");
+	if (ret == MEMLINK_OK) {
+		DERROR("2 memlink_cmd_create %s error: %d\n", key, ret);
+		return -3;
+	}
+
 	
 	memlink_destroy(m);
 

@@ -48,9 +48,17 @@ int main()
 	int				range_start = 50;
 	int				range_count = 50;
 
+	ret = memlink_cmd_range(m, buf, "7:1:1", -1, 0, &result);
+	if (ret == MEMLINK_OK) {
+		DERROR("range error, key:%s, ret:%d\n", buf, ret);
+		printf("err\n");
+		return -4;
+	}
+
 	ret = memlink_cmd_range(m, buf, "7:1:1", range_start, range_count, &result);
 	if (ret != MEMLINK_OK) {
 		DERROR("range error, key:%s, ret:%d\n", buf, ret);
+		printf("err\n");
 		return -4;
 	}
 
@@ -188,7 +196,7 @@ int main()
 			return -9;
 		}
 	}
-	char *masktest3[] = {"8::", "8:2:"};
+	char* masktest3[] = {"8::", "8:2:"};
 	for (i = 0; i < 2; i++) {
 		MemLinkResult	result2;
 
