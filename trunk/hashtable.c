@@ -1045,8 +1045,7 @@ hashtable_move(HashTable *ht, char *key, void *value, int pos)
 			DINFO("update release null block: %p\n", dbk);
 			mempool_put(g_runtime->mpool, dbk, node->valuesize + node->masksize);
 		}
-
-		hashtable_print(ht, key);
+		//hashtable_print(ht, key);
 	}
 	
     return MEMLINK_OK;
