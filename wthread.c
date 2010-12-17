@@ -214,7 +214,7 @@ wdata_do_clean(void *args)
 		DERROR("wdata_do_clean error: %d\n", ret);
 	}
 	gettimeofday(&end, NULL);
-	DNOTE("clean %s ok, use %u us\n", node->key, timediff(&start, &end));
+	DNOTE("clean %s complete, use %u us\n", node->key, timediff(&start, &end));
 	//g_runtime->cleankey[0] = 0;
 	//g_runtime->inclean = 0;
 
@@ -300,7 +300,7 @@ wdata_apply(char *data, int datalen, int writelog)
             DINFO("<<< cmd CLEAN >>>\n");
             ret = cmd_clean_unpack(data, key);
 			if (ret != 0) {
-				DERROR("unpack clean error! ret: %d\n", ret);
+				DINFO("unpack clean error! ret: %d\n", ret);
 				break;
 			}
 
@@ -323,7 +323,7 @@ wdata_apply(char *data, int datalen, int writelog)
 
             ret = cmd_create_unpack(data, key, &valuelen, &masknum, maskformat);
 			if (ret != 0) {
-				DERROR("unpack create error! ret: %d\n", ret);
+				DINFO("unpack create error! ret: %d\n", ret);
 				break;
 			}
 
@@ -335,7 +335,7 @@ wdata_apply(char *data, int datalen, int writelog)
 			}
 
 			if (masknum > HASHTABLE_MASK_MAX_ITEM) {
-				DERROR("create mask too long: %d, max:%d\n", masknum, HASHTABLE_MASK_MAX_ITEM);
+				DINFO("create mask too long: %d, max:%d\n", masknum, HASHTABLE_MASK_MAX_ITEM);
 				ret = MEMLINK_ERR_MASK;
 			}else{
 				vnum = valuelen;
@@ -354,7 +354,7 @@ wdata_apply(char *data, int datalen, int writelog)
             DINFO("<<< cmd DEL >>>\n");
             ret = cmd_del_unpack(data, key, value, &valuelen);
 			if (ret != 0) {
-				DERROR("unpack del error! ret: %d\n", ret);
+				DINFO("unpack del error! ret: %d\n", ret);
 				break;
 			}
 
@@ -382,7 +382,7 @@ wdata_apply(char *data, int datalen, int writelog)
             DINFO("<<< cmd INSERT >>>\n");
             ret = cmd_insert_unpack(data, key, value, &valuelen, &masknum, maskarray, &pos);
 			if (ret != 0) {
-				DERROR("unpack insert error! ret: %d\n", ret);
+				DINFO("unpack insert error! ret: %d\n", ret);
 				break;
 			}
 
@@ -397,7 +397,7 @@ wdata_apply(char *data, int datalen, int writelog)
 				pos = INT_MAX;
 			} else if (pos < 0) {
 				ret = MEMLINK_ERR_PARAM;
-				DERROR("insert pos < 0, %d", pos);
+				DINFO("insert pos < 0, %d", pos);
 				break;
 			}
 
@@ -428,7 +428,7 @@ wdata_apply(char *data, int datalen, int writelog)
             DINFO("<<< cmd INSERT MVALUE >>>\n");
             ret = cmd_insert_mvalue_unpack(data, key, &values, &vnum);
 			if (ret != 0) {
-				DERROR("unpack insert error! ret: %d\n", ret);
+				DINFO("unpack insert error! ret: %d\n", ret);
                 zz_free(values);
 				break;
 			}
@@ -446,7 +446,7 @@ wdata_apply(char *data, int datalen, int writelog)
                     values[i].pos = INT_MAX;
                 } else if (values[i].pos < 0) {
                     ret = MEMLINK_ERR_PARAM;
-                    DERROR("insert mvalue %d pos < 0, %d", i, pos);
+                    DINFO("insert mvalue %d pos < 0, %d", i, pos);
                     zz_free(values);
                     break;
                 }
@@ -473,7 +473,7 @@ wdata_apply(char *data, int datalen, int writelog)
             DINFO("<<< cmd UPDATE >>>\n");
             ret = cmd_update_unpack(data, key, value, &valuelen, &pos);
 			if (ret != 0) {
-				DERROR("unpack update error! ret: %d\n", ret);
+				DINFO("unpack update error! ret: %d\n", ret);
 				break;
 			}
             DINFO("unpack update, key:%s, value:%s, pos:%d\n", key, value, pos);
@@ -486,7 +486,7 @@ wdata_apply(char *data, int datalen, int writelog)
 				pos = INT_MAX;
 			} else if (pos < 0) {
 				ret = MEMLINK_ERR_PARAM;
-				DERROR("update pos < 0, %d", pos);
+				DINFO("update pos < 0, %d", pos);
 				break;
 			}
 
@@ -506,7 +506,7 @@ wdata_apply(char *data, int datalen, int writelog)
             DINFO("<<< cmd MASK >>>\n");
             ret = cmd_mask_unpack(data, key, value, &valuelen, &masknum, maskarray);
 			if (ret != 0) {
-				DERROR("unpack mask error! ret: %d\n", ret);
+				DINFO("unpack mask error! ret: %d\n", ret);
 				break;
 			}
 
@@ -535,7 +535,7 @@ wdata_apply(char *data, int datalen, int writelog)
             DINFO("<<< cmd TAG >>>\n");
             cmd_tag_unpack(data, key, value, &valuelen, &tag);
 			if (ret != 0) {
-				DERROR("unpack tag error! ret: %d\n", ret);
+				DINFO("unpack tag error! ret: %d\n", ret);
 				break;
 			}
 
@@ -564,7 +564,7 @@ wdata_apply(char *data, int datalen, int writelog)
             DINFO("<<< cmd RMKEY >>>\n");
             ret = cmd_rmkey_unpack(data, key);
 			if (ret != 0) {
-				DERROR("unpack tag error! ret: %d\n", ret);
+				DINFO("unpack tag error! ret: %d\n", ret);
 				break;
 			}
 
@@ -589,7 +589,7 @@ wdata_apply(char *data, int datalen, int writelog)
 			DINFO("<<< cmd DEL_BY_MASK >>>\n");
 			ret = cmd_del_by_mask_unpack(data, key, maskarray, &masknum);
 			if (ret != 0) {
-				DERROR("unpack del_by_mask error! ret: %d\n", ret);
+				DINFO("unpack del_by_mask error! ret: %d\n", ret);
 				break;
 			}
 			DINFO("unpack key: %s, masknum: %d, maskarray: %d,%d,%d\n", key, masknum, maskarray[0], maskarray[1],maskarray[2]);

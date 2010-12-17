@@ -33,6 +33,7 @@ class MemLinkClient
     	{
     		return -1;
     	}
+    	
 		return memlink_cmd_create($this->client, $key, $valuesize, $maskformat);
 	}
 
@@ -82,19 +83,18 @@ class MemLinkClient
     	{
     		return -1;
     	}
-    
-    	if( False == is_int($valuelen) )
-    		return -1;
+    	
         return memlink_cmd_del($this->client, $key, $value, $valuelen);
     }
 
     function insert($key, $value, $valuelen, $maskstr, $pos)
     {
-    	if( False == is_string($key) or False == is_int($valuelen) or False == is_int($pos) or False == is_string($maskstr) )
+    	if( False == is_string($key) or False == is_int($valuelen) or\
+    		False == is_int($pos) or False == is_string($maskstr) )
     	{
     		return -1;
     	}
-
+		
         return memlink_cmd_insert($this->client, $key, $value, $valuelen, $maskstr, $pos);
     }
 
@@ -104,7 +104,7 @@ class MemLinkClient
     	{
     		return -1;
     	}
-   
+			
         return memlink_cmd_update($this->client, $key, $value, $valuelen, $pos);
     }
 
@@ -124,19 +124,17 @@ class MemLinkClient
     	{
     		return -1;
     	}
-    
+    	
         return memlink_cmd_tag($this->client, $key, $value, $valuelen, $tag);
     }
 
     function range($key, $maskstr, $frompos, $len)
     {
-    	if( False == is_string($key) or False == is_int($frompos) or False == is_int($len) or False == is_string($maskstr) )
+    	if( False == is_string($key) or False == is_int($frompos) or \
+    		False == is_int($len) or False == is_string($maskstr) )
     	{
     		return NULL;
     	}
-
-		if($frompos < 0 or $len < 0)
-			return NULL;
     	
         $result = new MemLinkResult();
         
@@ -153,9 +151,6 @@ class MemLinkClient
     	{
     		return -1;
     	}
-
-		if($frompos < 0 or $len < 0)
-			return -1;
 	
 		return memlink_cmd_range($this->client, $key, $maskstr, $frompos, $len, $result);
 	}

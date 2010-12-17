@@ -347,6 +347,9 @@ memlink_cmd_stat(MemLink *m, char *key, MemLinkStat *stat)
 int
 memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr)
 {
+	if(valuelen <= 0)
+		return MEMLINK_ERR_PARAM;
+	
     char data[1024];
     int  len;
     int  masknum = 0;
@@ -370,6 +373,9 @@ memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr)
 int
 memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen)
 {
+	if(valuelen <= 0)
+		return MEMLINK_ERR_PARAM;
+
     char data[1024];
     int  len;
 
@@ -395,6 +401,9 @@ memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen)
 int
 memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen, char *maskstr, int pos)
 {
+	if(valuelen <= 0 || pos < -1)
+		return MEMLINK_ERR_PARAM;
+
     char data[1024];
     int  len;
     unsigned int maskarray[128];
@@ -415,8 +424,11 @@ memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen, char *masks
 }
 
 int 
-memlink_cmd_update(MemLink *m, char *key, char *value, int valuelen, unsigned int pos)
+memlink_cmd_update(MemLink *m, char *key, char *value, int valuelen, int pos)
 {
+	if(valuelen <= 0 || pos < -1)
+		return MEMLINK_ERR_PARAM;
+
     char data[1024];
     int  len;
 
@@ -434,6 +446,9 @@ memlink_cmd_update(MemLink *m, char *key, char *value, int valuelen, unsigned in
 int
 memlink_cmd_mask(MemLink *m, char *key, char *value, int valuelen, char *maskstr)
 {
+	if(valuelen <= 0)
+		return MEMLINK_ERR_PARAM;
+
     char data[1024];
     int  len;
     unsigned int maskarray[128];
@@ -456,9 +471,15 @@ memlink_cmd_mask(MemLink *m, char *key, char *value, int valuelen, char *maskstr
 int
 memlink_cmd_tag(MemLink *m, char *key, char *value, int valuelen, int tag)
 {
+	if(valuelen <= 0)
+		return MEMLINK_ERR_PARAM;
+
+	if ( MEMLINK_TAG_DEL != tag && MEMLINK_TAG_RESTORE != tag )
+		return MEMLINK_ERR_PARAM;
+	
     char data[1024];
     int  len;
-
+	
     len = cmd_tag_pack(data, key, value, valuelen, tag);
     DINFO("pack tag len: %d\n", len);
     char retdata[1024];
@@ -482,7 +503,6 @@ memlink_cmd_rmkey(MemLink *m, char *key)
 		return ret;
 	return MEMLINK_OK;
 }
-
 
 int 
 memlink_cmd_count(MemLink *m, char *key, char *maskstr, MemLinkCount *count)
@@ -520,8 +540,11 @@ memlink_cmd_count(MemLink *m, char *key, char *maskstr, MemLinkCount *count)
 }
 
 int 
-memlink_cmd_range(MemLink *m, char *key, char *maskstr, unsigned int frompos, unsigned int len, MemLinkResult *result)
+memlink_cmd_range(MemLink *m, char *key, char *maskstr, int frompos, int len, MemLinkResult *result)
 {
+	if(len <= 0 || frompos < 0)
+		return MEMLINK_ERR_PARAM;
+
     char data[1024];
     int  plen;
     unsigned int maskarray[128];
