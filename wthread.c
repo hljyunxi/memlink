@@ -327,8 +327,9 @@ wdata_apply(char *data, int datalen, int writelog)
 				break;
 			}
 
-            DINFO("unpack key: %s, valuelen: %d, masknum: %d, maskarray: %d,%d,%d\n", key, valuelen, masknum, maskformat[0], maskformat[1], maskformat[2]);
-			if (key[0] == 0) {
+            DINFO("unpack key: %s, valuelen: %d, masknum: %d, maskarray: %d,%d,%d\n", 
+					key, valuelen, masknum, maskformat[0], maskformat[1], maskformat[2]);
+			if (key[0] == 0 || valuelen <= 0) {
 				ret = MEMLINK_ERR_PARAM;
 				break;
 			}
@@ -358,7 +359,7 @@ wdata_apply(char *data, int datalen, int writelog)
 			}
 
             DINFO("unpack del, key: %s, value: %s, valuelen: %d\n", key, value, valuelen);
-			if (key[0] == 0) {
+			if (key[0] == 0 || valuelen <= 0) {
 				ret = MEMLINK_ERR_PARAM;
 				break;
 			}
@@ -385,8 +386,9 @@ wdata_apply(char *data, int datalen, int writelog)
 				break;
 			}
 
-            DINFO("unpack key:%s, value:%s, pos:%d, mask: %d, array:%d,%d,%d\n", key, value, pos, masknum, maskarray[0], maskarray[1], maskarray[2]);
-			if (key[0] == 0) {
+            DINFO("unpack key:%s, value:%s, pos:%d, mask: %d, array:%d,%d,%d\n", 
+					key, value, pos, masknum, maskarray[0], maskarray[1], maskarray[2]);
+			if (key[0] == 0 || valuelen <= 0) {
 				ret = MEMLINK_ERR_PARAM;
 				break;
 			}
@@ -398,7 +400,6 @@ wdata_apply(char *data, int datalen, int writelog)
 				DERROR("insert pos < 0, %d", pos);
 				break;
 			}
-
 
             ret = hashtable_add_mask(g_runtime->ht, key, value, maskarray, masknum, pos);
             DINFO("hashtable_add_mask: %d\n", ret);
@@ -476,7 +477,7 @@ wdata_apply(char *data, int datalen, int writelog)
 				break;
 			}
             DINFO("unpack update, key:%s, value:%s, pos:%d\n", key, value, pos);
-			if (key[0] == 0) {
+			if (key[0] == 0 || valuelen <= 0) {
 				ret = MEMLINK_ERR_PARAM;
 				break;
 			}
@@ -511,7 +512,7 @@ wdata_apply(char *data, int datalen, int writelog)
 
             DINFO("unpack mask key: %s, valuelen: %d, masknum: %d, maskarray: %d,%d,%d\n", key, valuelen, 
                     masknum, maskarray[0], maskarray[1], maskarray[2]);
-			if (key[0] == 0) {
+			if (key[0] == 0 || valuelen <= 0) {
 				ret = MEMLINK_ERR_PARAM;
 				break;
 			}
@@ -539,7 +540,7 @@ wdata_apply(char *data, int datalen, int writelog)
 			}
 
             DINFO("unpack tag, key:%s, value:%s, tag:%d\n", key, value, tag);
-			if (key[0] == 0) {
+			if (key[0] == 0 || valuelen <= 0) {
 				ret = MEMLINK_ERR_PARAM;
 				break;
 			}
@@ -588,7 +589,7 @@ wdata_apply(char *data, int datalen, int writelog)
 			DINFO("<<< cmd DEL_BY_MASK >>>\n");
 			ret = cmd_del_by_mask_unpack(data, key, maskarray, &masknum);
 			if (ret != 0) {
-				DERROR("unpack tag error! ret: %d\n", ret);
+				DERROR("unpack del_by_mask error! ret: %d\n", ret);
 				break;
 			}
 			DINFO("unpack key: %s, masknum: %d, maskarray: %d,%d,%d\n", key, masknum, maskarray[0], maskarray[1],maskarray[2]);
@@ -596,23 +597,24 @@ wdata_apply(char *data, int datalen, int writelog)
 			DINFO("hashtable_del_by_mask ret: %d\n", ret);
 			break;
 
-
         case CMD_LPUSH:
+            ret = MEMLINK_ERR_CLIENT_CMD;
             break;
         case CMD_RPUSH:
+            ret = MEMLINK_ERR_CLIENT_CMD;
             break;
         case CMD_LPOP:
+            ret = MEMLINK_ERR_CLIENT_CMD;
             break;
         case CMD_RPOP:
+            ret = MEMLINK_ERR_CLIENT_CMD;
             break;
         default:
             ret = MEMLINK_ERR_CLIENT_CMD;
             break;
     }
 	
-	if (g_cf->role == ROLE_MASTER) {
-		wdata_check_clean(key);
-	}
+	wdata_check_clean(key);
 
     return ret;
 }
