@@ -16,8 +16,10 @@
 We flushed the relay log BEFORE the master.info file, because if we crash now, we will get a duplicate event in the relay log at restart. If we flushed in the other order, we would get a hole in the relay log. And duplicate is better than hole (with a duplicate, in later versions we can add detection and scrap one event; with a hole there's nothing we can do).
 
 ==Master-info中信息==
+<pre>
 Master-bin-log-name
 Bin-log-pos
 Master ip
 Master user
+</pre>
 Master password
