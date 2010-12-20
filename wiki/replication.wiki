@@ -12,7 +12,7 @@
   * Master接收到来自Slave的IO进程的请求后，通过负责复制的IO线程根据请求信息读取制定日志指定位置之后的日志信息，返回给Slave 的IO进程。返回信息中除了日志所包含的信息之外，还包括本次返回的信息已经到Master端的bin-log文件的名称以及bin-log的位置；
   * Slave的IO进程接收到命令后，运行该命令，并将该命令记录追加在Slave端的bin-log文件的最末端，然后将Master端的 bin-log的文件名和位置记录到master-info文件中，以便在下一次读取的时候能够清楚的高速Master“我需要从某个bin-log的哪个位置开始往后的日志内容，请发给我”；
 
-先记录bin-log，再记录master-info，并非是一个原子操作，最坏情况是重复执行了一条命令。见Mysql rpl_mi.cc
+先记录bin-log，再记录master-info，并非是一个原子操作，最坏情况是重复执行了一条命令。见Mysql rpl_mi.cc<br/>
 We flushed the relay log BEFORE the master.info file, because if we crash now, we will get a duplicate event in the relay log at restart. If we flushed in the other order, we would get a hole in the relay log. And duplicate is better than hole (with a duplicate, in later versions we can add detection and scrap one event; with a hole there's nothing we can do).
 
 ==Master-info中信息==
