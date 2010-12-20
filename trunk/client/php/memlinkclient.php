@@ -94,7 +94,7 @@ class MemLinkClient
 
     function insert($key, $value, $valuelen, $maskstr, $pos)
     {
-    	if( False == is_string($key) or False == is_int($valuelen) or\
+    	if( False == is_string($key) or False == is_int($valuelen) or
     		False == is_int($pos) or False == is_string($maskstr) )
     	{
     		return -1;
@@ -135,7 +135,7 @@ class MemLinkClient
 
     function range($key, $maskstr, $frompos, $len)
     {
-    	if( False == is_string($key) or False == is_int($frompos) or \
+    	if( False == is_string($key) or False == is_int($frompos) or
     		False == is_int($len) or False == is_string($maskstr) )
     	{
     		return NULL;
