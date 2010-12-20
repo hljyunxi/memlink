@@ -113,7 +113,7 @@ class MemLinkClient
         return memlink_cmd_update($this->client, $key, $value, $valuelen, $pos);
     }
 
-    function mask($key, $value, $valulen, $maskstr)
+    function mask($key, $value, $valuelen, $maskstr)
     {
     	if( False == is_string($key) or False == is_int($valuelen) or False == is_string($maskstr) )
     	{
