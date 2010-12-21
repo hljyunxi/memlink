@@ -54,13 +54,13 @@ dumpfile(HashTable *ht)
     fwrite(&dumpver, sizeof(int), 1, fp);
     DINFO("write dumpfile version %d\n", dumpver);
 
-    unsigned int logver;
+    /*unsigned int logver;
     if (g_runtime->synclog->index_pos > 0) {
         logver = g_runtime->logver + 1;
     }else{
         logver = g_runtime->logver;
-    }
-    fwrite(&logver, sizeof(int), 1, fp);
+    }*/
+    fwrite(&g_runtime->logver, sizeof(int), 1, fp);
     DINFO("write logfile version %d\n", logver);
 
 	fwrite(&g_runtime->synclog->index_pos, sizeof(int), 1, fp);
