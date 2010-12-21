@@ -49,6 +49,7 @@ typedef struct _runtime
     pthread_mutex_t mutex; // write lock
     unsigned int    dumpver; // dump file version
     unsigned int    dumplogver; // log version in dump file
+    unsigned int    dumplogpos; // log position in dump file
     unsigned int    logver;  // synclog version
     SyncLog         *synclog;  // current synclog
     MemPool         *mpool; 

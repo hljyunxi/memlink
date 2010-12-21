@@ -19,7 +19,7 @@
  * ---------------------------------------------------------------------
  * | dumpfile format(2B) | dumpfile version (4B) | sync log version(4B)|
  * ---------------------------------------------------------------------
- * | dumpfile is master (1B) | dumpfile size (8B)| data |
+ * | sync log position (4B) | dumpfile size (8B)| data |
  * ------------------------------------------------------
  *
  * @param ht hash table
@@ -63,8 +63,8 @@ dumpfile(HashTable *ht)
     fwrite(&logver, sizeof(int), 1, fp);
     DINFO("write logfile version %d\n", logver);
 
-	fwrite(&g_cf->role, sizeof(char), 1, fp);
-	DINFO("write role: %d\n", g_cf->role);
+	fwrite(&g_runtime->synclog->index_pos, sizeof(int), 1, fp);
+	DINFO("write logfile pos: %d\n", g_runtime->synclog->index_pos);
 
 	fwrite(&size, sizeof(long long), 1, fp);
 
@@ -183,8 +183,7 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
         g_runtime->dumplogver = dumplogver;
     }
 
-	char role;
-	ret = fread(&role, sizeof(char), 1, fp);
+	ret = fread(&g_runtime->dumplogpos, sizeof(int), 1, fp);
 
 	long long size;
 	ret = fread(&size, sizeof(long long), 1, fp);

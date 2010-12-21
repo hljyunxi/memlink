@@ -85,7 +85,6 @@ synclog_create()
     DINFO("synclog end: %d\n", end);
     lseek(slog->fd, 0, SEEK_SET);
 
-	//Fixme: maybe SYNCLOG_INDEXNUM changed.
     if (end == 0 || end < len) { // new file
         g_runtime->logver = synclog_lastlog();
 
@@ -109,10 +108,10 @@ synclog_create()
             DERROR("write synclog newver error: %d\n", newver);
             MEMLINK_EXIT;
         }
-		if (writen(slog->fd, &g_cf->role, sizeof(char), 0) < 0) {
+		/*if (writen(slog->fd, &g_cf->role, sizeof(char), 0) < 0) {
             DERROR("write synclog role error: %d\n", g_cf->role);
             MEMLINK_EXIT;
-        }
+        }*/
 
         if (writen(slog->fd, &synlen, sizeof(int), 0) < 0) {
             DERROR("write synclog synlen error: %d\n", synlen);
@@ -137,10 +136,10 @@ synclog_create()
         g_runtime->logver = *(unsigned int*)(slog->index + sizeof(short));
         slog->version = g_runtime->logver;
 
-		char role = *(slog->index + SYNCLOG_HEAD_LEN - sizeof(int));
+		/*char role = *(slog->index + SYNCLOG_HEAD_LEN - sizeof(int));
 		if (role != g_cf->role) {
             synclog_rotate(slog);
-		}
+		}*/
 		
 		DINFO("validate synclog ...\n");
 		if ((ret = synclog_validate(slog)) < 0) {
@@ -241,10 +240,10 @@ synclog_new(SyncLog *slog)
         DERROR("write synclog newver error: %d\n", newver);
         MEMLINK_EXIT;
     }
-	if (writen(slog->fd, &g_cf->role, sizeof(char), 0) < 0) {
+	/*if (writen(slog->fd, &g_cf->role, sizeof(char), 0) < 0) {
         DERROR("write synclog role error: %d\n", g_cf->role);
         MEMLINK_EXIT;
-    }
+    }*/
     if (writen(slog->fd, &synlen, sizeof(int), 0) < 0) {
         DERROR("write synclog synlen error: %d\n", synlen);
         MEMLINK_EXIT;

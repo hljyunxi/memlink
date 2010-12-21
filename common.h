@@ -67,8 +67,9 @@
 #define CMD_REQ_SIZE_LEN	sizeof(short)
 
 // format + version + log version + ismaster + size
-#define DUMP_HEAD_LEN	    (sizeof(short)+sizeof(int)+sizeof(int)+sizeof(char)+sizeof(long long))
-#define SYNCLOG_HEAD_LEN	(sizeof(short)+sizeof(int)+sizeof(char)+sizeof(int))
+#define DUMP_HEAD_LEN	    (sizeof(short)+sizeof(int)+sizeof(int)+sizeof(int)+sizeof(long long))
+// format + version + index size
+#define SYNCLOG_HEAD_LEN	(sizeof(short)+sizeof(int)+sizeof(int))
 #define SYNCLOG_INDEXNUM	1000000
 #define SYNCPOS_LEN		    (sizeof(int)+sizeof(int))
 
