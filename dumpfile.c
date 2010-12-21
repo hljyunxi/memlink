@@ -127,8 +127,8 @@ dumpfile(HashTable *ht)
     }
     
     // start a new sync log
-	DINFO("start a new synclog.\n");
-    synclog_rotate(g_runtime->synclog);
+	//DINFO("start a new synclog.\n");
+    //synclog_rotate(g_runtime->synclog);
 
     return ret;
 }
