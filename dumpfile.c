@@ -61,7 +61,7 @@ dumpfile(HashTable *ht)
         logver = g_runtime->logver;
     }*/
     fwrite(&g_runtime->logver, sizeof(int), 1, fp);
-    DINFO("write logfile version %d\n", logver);
+    DINFO("write logfile version %d\n", g_runtime->logver);
 
 	fwrite(&g_runtime->synclog->index_pos, sizeof(int), 1, fp);
 	DINFO("write logfile pos: %d\n", g_runtime->synclog->index_pos);
