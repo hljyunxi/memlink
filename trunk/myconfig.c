@@ -162,9 +162,10 @@ myconfig_create(char *filename)
  * @param logname sync log file pathname
  */
 static int 
-load_synclog(char *logname)
+load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
 {
     int ret;
+	unsigned int file_logver;
 
     int ffd = open(logname, O_RDONLY);
     if (-1 == ffd) {
@@ -178,33 +179,46 @@ load_synclog(char *logname)
         DERROR("synclog mmap error: %s\n", strerror(errno));
         MEMLINK_EXIT;
     }   
-    unsigned int indexlen = *(unsigned int*)(addr + SYNCLOG_HEAD_LEN - sizeof(int));
-    char *data    = addr + SYNCLOG_HEAD_LEN + indexlen * sizeof(int);
-    char *enddata = addr + len;
 
-    unsigned short blen; 
+	unsigned int indexlen = *(unsigned int*)(addr + SYNCLOG_HEAD_LEN - sizeof(int));
+	char *data    = addr + SYNCLOG_HEAD_LEN + indexlen * sizeof(int);
+	char *enddata = addr + len;
+
+	file_logver = *(unsigned int *)(addr + sizeof(short));
+	if (file_logver == dumplogver) {
+		int *indxdata = (int *)(addr + SYNCLOG_HEAD_LEN);
+		int pos = indxdata[dumplogpos];
+		DERROR("dumplogpos: %d, pos:   %d\n", dumplogpos, pos);
+		if (pos == 0) {
+			return pos;
+		}
+		data = addr + pos;
+	}
+
+	unsigned short blen; 
 	unsigned int logver = 0, logline = 0, indexpos = 0;
-    while (data < enddata) {
-        blen = *(unsigned short*)(data + SYNCPOS_LEN);  
-	
+	while (data < enddata) {
+		blen = *(unsigned short*)(data + SYNCPOS_LEN);  
+
 		memcpy(&logver, data, sizeof(int));
 		memcpy(&logline, data + sizeof(int), sizeof(int));
+		
+		DERROR("logver: %d, logline: %d\n", logver, logline);
+		if (enddata < data + SYNCPOS_LEN + blen + sizeof(short)) {
+			DERROR("synclog end error: %s, skip\n", logname);
+			//MEMLINK_EXIT;
+			break;
+		}
+		DINFO("command, len:%d\n", blen);
+		ret = wdata_apply(data + SYNCPOS_LEN, blen + sizeof(short), 0);       
+		if (ret != 0) {
+			DERROR("wdata_apply log error: %d\n", ret);
+			MEMLINK_EXIT;
+		}
 
-        if (enddata < data + SYNCPOS_LEN + blen + sizeof(short)) {
-            DERROR("synclog end error: %s, skip\n", logname);
-            //MEMLINK_EXIT;
-            break;
-        }
-        DINFO("command, len:%d\n", blen);
-        ret = wdata_apply(data + SYNCPOS_LEN, blen + sizeof(short), 0);       
-        if (ret != 0) {
-            DERROR("wdata_apply log error: %d\n", ret);
-            MEMLINK_EXIT;
-        }
-
-        data += SYNCPOS_LEN + blen + sizeof(short); 
+		data += SYNCPOS_LEN + blen + sizeof(short); 
 		indexpos ++;
-    }
+	}
 
 	if (g_cf->role == ROLE_SLAVE) {
 		g_runtime->slave->logver  = logver;
@@ -212,11 +226,11 @@ load_synclog(char *logname)
 		g_runtime->slave->binlog_index = indexpos;
 	}
 
-    munmap(addr, len);
+	munmap(addr, len);
 
-    close(ffd);
+	close(ffd);
 
-    return indexpos;
+	return indexpos;
 }
 
 static int
@@ -267,13 +281,13 @@ load_data()
         //snprintf(logname, PATH_MAX, "%s/data/bin.log.%d", g_runtime->home, logids[i]);
         snprintf(logname, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, logids[i]);
         DINFO("load synclog: %s\n", logname);
-        load_synclog(logname);
+        load_synclog(logname, g_runtime->dumplogver, g_runtime->dumplogpos);
     }
 
     //snprintf(logname, PATH_MAX, "%s/data/bin.log", g_runtime->home);
     snprintf(logname, PATH_MAX, "%s/bin.log", g_cf->datadir);
     DINFO("load synclog: %s\n", logname);
-    load_synclog(logname);
+    load_synclog(logname, g_runtime->dumplogver, g_runtime->dumplogpos);
 	
     if (havedump == 0) {
         dumpfile(g_runtime->ht);
@@ -310,7 +324,7 @@ load_data_slave()
 
 			slave->logver  = dumpfile_logver(master_filename);
 			slave->logline = 0;
-			
+
 			//slave->dump_logver   = 0;
 			//slave->dumpsize      = 0;
 			//slave->dumpfile_size = 0;
@@ -333,6 +347,7 @@ load_data_slave()
         }
     }
 
+
     int n;
     char logname[PATH_MAX];
     int  logids[10000] = {0};
@@ -354,7 +369,7 @@ load_data_slave()
 			//snprintf(logname, PATH_MAX, "%s/data/bin.log.%d", g_runtime->home, logids[i]);
 			snprintf(logname, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, logids[i]);
 			DINFO("load synclog: %s\n", logname);
-			ret = load_synclog(logname);
+			ret = load_synclog(logname, g_runtime->dumplogver, g_runtime->dumplogpos);
 			if (ret > 0 && g_cf->role == ROLE_SLAVE) {
 				g_runtime->slave->binlog_ver = logids[i];
 			}
@@ -363,7 +378,7 @@ load_data_slave()
 		//snprintf(logname, PATH_MAX, "%s/data/bin.log", g_runtime->home);
 		snprintf(logname, PATH_MAX, "%s/bin.log", g_cf->datadir);
 		DINFO("load synclog: %s\n", logname);
-		ret = load_synclog(logname);
+		ret = load_synclog(logname, g_runtime->dumplogver, g_runtime->dumplogpos);
 		if (ret > 0 && g_cf->role == ROLE_SLAVE) {
 			g_runtime->slave->binlog_ver = g_runtime->synclog->version;
 		}
