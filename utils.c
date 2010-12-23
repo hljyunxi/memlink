@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <sys/select.h>
@@ -313,3 +314,24 @@ compare_int ( const void *a , const void *b )
     return *(int *)a - *(int *)b; 
 } 
 
+size_t
+ffwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
+{
+	size_t ret = fwrite(ptr, size, nmemb, stream);
+	if (ret != nmemb) {
+		DERROR("fwrite error, write:%d, must:%d\n", ret, nmemb);
+		MEMLINK_EXIT;
+	}
+	return ret;
+}
+
+size_t
+ffread(void *ptr, size_t size, size_t nmemb, FILE *stream)
+{
+	size_t ret = fread(ptr, size, nmemb, stream);
+	if (ret != nmemb) {
+		DERROR("fread error, write:%d, must:%d\n", ret, nmemb);
+		MEMLINK_EXIT;
+	}
+	return ret;
+}

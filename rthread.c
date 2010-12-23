@@ -21,7 +21,7 @@
 int
 rdata_ready(Conn *conn, char *data, int datalen)
 {
-    char key[512]; 
+    char key[512] = {0}; 
     //char value[1024];
     char cmd;
     int  ret = 0;

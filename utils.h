@@ -24,4 +24,7 @@ int			isexists(char *path);
 long long	file_size(char *path);
 int			compare_int ( const void *a , const void *b );
 
+size_t		ffwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
+size_t		ffread(void *ptr, size_t size, size_t nmemb, FILE *stream);
+
 #endif

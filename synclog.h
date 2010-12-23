@@ -4,13 +4,7 @@
 #include <stdio.h>
 #include <limits.h>
 
-
-//#define SYNCLOG_OK   0
-//#define SYNCLOG_FULL 1
-
 #define SYNCLOG_NAME "bin.log"
-
-
 /**
  * header and index area are mapped in memory address space.
  */

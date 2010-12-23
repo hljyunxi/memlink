@@ -47,19 +47,21 @@ mempool_get(MemPool *mp, int blocksize)
     }
 
     if (NULL == dbk) {
-        int len = sizeof(DataBlock) + g_cf->block_data_count * blocksize;
-        dbk = (DataBlock*)zz_malloc(len);
+        //int len = sizeof(DataBlock) + g_cf->block_data_count * blocksize;
+        //dbk = (DataBlock*)zz_malloc(len);
+        dbk = (DataBlock*)zz_malloc(blocksize);
         if (NULL == dbk) {
             DERROR("malloc DataBlock error!\n");
             return NULL;
         }
-        memset(dbk, 0, len);
+        memset(dbk, 0, blocksize);
         return dbk;
     }
     
     dbn = dbk->next;
     mp->freemem[i].data = dbn; 
-    memset(dbk, 0, sizeof(DataBlock) + g_cf->block_data_count * blocksize);
+    //memset(dbk, 0, sizeof(DataBlock) + g_cf->block_data_count * blocksize);
+    memset(dbk, 0, blocksize);
 
     return dbk;
 }
@@ -80,6 +82,7 @@ mempool_put(MemPool *mp, DataBlock *dbk, int blocksize)
     }
     
 	dbk->next = NULL;
+	dbk->data_count = 0;
     if (i < mp->idxnum) {
         mp->freemem[i].data = dbk;
         mp->freemem[i].memsize = blocksize;

@@ -240,7 +240,15 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
             //DINFO("i: %d\n", i);
             if (i % g_cf->block_data_count == 0) {
                 DINFO("create new datablock ...\n");
-                DataBlock *newdbk = mempool_get(g_runtime->mpool, datalen); 
+                DataBlock *newdbk;
+				if (itemnum == 1) {
+					newdbk = mempool_get(g_runtime->mpool, sizeof(DataBlock) + datalen); 
+					newdbk->data_count = 1;
+				}else{
+					newdbk = mempool_get(g_runtime->mpool, sizeof(DataBlock) + g_cf->block_data_count *datalen); 
+					newdbk->data_count = g_cf->block_data_count;
+				}
+
                 if (NULL == newdbk) {
                     DERROR("mempool_get NULL!\n");
                     MEMLINK_EXIT;
@@ -258,7 +266,6 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
             }
 
             ret = fread(itemdata, datalen, 1, fp);
-           
 			ret = dataitem_check_data(node, itemdata);
 			if (ret == MEMLINK_VALUE_VISIBLE) {
 				dbk->visible_count++;
@@ -267,9 +274,9 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
 			}
 			node->used++;
 
-            char buf[256] = {0};
-            memcpy(buf, itemdata, node->valuesize);
-            DINFO("load value: %s\n", buf);
+            //char buf[256] = {0};
+            //memcpy(buf, itemdata, node->valuesize);
+            //DINFO("load value: %s\n", buf);
 
             itemdata += datalen;
             load_count += 1;
