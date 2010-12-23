@@ -66,7 +66,7 @@
 #define CMD_REQ_HEAD_LEN	(sizeof(short)+sizeof(char))
 #define CMD_REQ_SIZE_LEN	sizeof(short)
 
-// format + version + log version + ismaster + size
+// format + version + log version + log position + size
 #define DUMP_HEAD_LEN	    (sizeof(short)+sizeof(int)+sizeof(int)+sizeof(int)+sizeof(long long))
 // format + version + index size
 #define SYNCLOG_HEAD_LEN	(sizeof(short)+sizeof(int)+sizeof(int))

@@ -87,7 +87,7 @@ mainserver_read(int fd, short event, void *arg)
     DINFO("send socket %d to notify ...\n", conn->sock);
     if (write(ts->notify_send_fd, "", 1) == -1) {
         DERROR("Writing to thread %d notify pipe error: %s\n", n, strerror(errno));
-        conn->destroy(conn);
+        //conn->destroy(conn);
     }
 
 }

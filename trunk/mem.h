@@ -8,7 +8,8 @@
 typedef struct _data_block
 {
     unsigned short      visible_count; // visible item count
-    unsigned short      tagdel_count;  // masked item count, invisible
+    unsigned short      tagdel_count;  // tag delete item count, invisible
+	unsigned short		data_count; // data count in one block
     struct _data_block  *next;
     char                data[0];
 }DataBlock;

@@ -24,6 +24,7 @@ typedef struct _queue
 
 Queue*      queue_create();
 void        queue_destroy(Queue *q);
+int         queue_size(Queue *q);
 int         queue_append(Queue *q, Conn *conn);
 QueueItem*  queue_get(Queue *q);
 void        queue_free(Queue *q, QueueItem *item);

@@ -45,6 +45,23 @@ queue_destroy(Queue *q)
     zz_free(q);
 }
 
+int
+queue_size(Queue *q)
+{
+	int count = 0;	
+	QueueItem	*item;
+
+    pthread_mutex_lock(&q->lock);
+	item = q->head;	
+	while (item) {
+		count++;
+		item = item->next;
+	}
+    pthread_mutex_lock(&q->lock);
+
+	return count;
+}
+
 int         
 queue_append(Queue *q, Conn *conn)
 {
