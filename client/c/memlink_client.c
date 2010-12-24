@@ -361,6 +361,27 @@ memlink_cmd_stat(MemLink *m, char *key, MemLinkStat *stat)
     return MEMLINK_OK;
 }
 
+int 
+memlink_cmd_stat_sys(MemLink *m, MemLinkStatSys *stat)
+{
+    char data[1024];
+    int  len;
+
+    len = cmd_stat_sys_pack(data);
+    DINFO("pack stat sys len: %d\n", len);
+
+    char retdata[1024];
+    int ret = memlink_do_cmd(m, MEMLINK_READER, data, len, retdata, 1024);
+    DINFO("memlink_do_cmd: %d\n", ret);
+    if (ret <= 0) {
+        return ret;
+    }
+
+    int  pos = CMD_REPLY_HEAD_LEN;
+    memcpy(stat, retdata + pos, sizeof(MemLinkStatSys));
+    return MEMLINK_OK;
+}
+
 int
 memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr)
 {
