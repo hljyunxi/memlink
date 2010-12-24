@@ -140,6 +140,7 @@ data_set_reply(Conn *conn, short retcode, char *retdata, int retlen)
         count += retlen;
     }
     conn->wlen = datalen;
+	
 /*
 #ifdef DEBUG
     char buf[10240] = {0};
@@ -288,8 +289,8 @@ wdata_apply(char *data, int datalen, int writelog)
     int             vnum;
 
     memcpy(&cmd, data + sizeof(short), sizeof(char));
-    //char buf[256] = {0};
-    //DINFO("data ready cmd: %d, data: %s\n", cmd, formath(data, datalen, buf, 256));
+    char buf[256] = {0};
+    DNOTE("data ready cmd: %d, data: %s\n", cmd, formath(data, datalen, buf, 256));
 
     switch(cmd) {
         case CMD_DUMP:
@@ -401,14 +402,11 @@ wdata_apply(char *data, int datalen, int writelog)
 				break;
 			}
 
+            //hashtable_print(g_runtime->ht, key);
+
             ret = hashtable_add_mask(g_runtime->ht, key, value, maskarray, masknum, pos);
             DINFO("hashtable_add_mask: %d\n", ret);
            
-			/*
-            int i;
-            for (i = 0; i < masknum; i++) {
-                DINFO("mask, i:%d, mask:%d\n", i, maskarray[i]);
-            }*/
             //hashtable_print(g_runtime->ht, key);
 
             if (ret >= 0 && writelog) {
