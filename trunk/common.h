@@ -115,4 +115,32 @@ typedef struct _memlink_insert_mvalue_item
     int             pos;
 }MemLinkInsertVal;
 
+typedef struct _memlink_stat
+{
+    unsigned char   valuesize;
+    unsigned char   masksize;
+    unsigned int    blocks; // all blocks
+    unsigned int    data;   // all alloc data item
+    unsigned int    data_used; // all data item used
+    unsigned int    mem;       // all alloc mem
+	unsigned int    visible;
+	unsigned int    tagdel;
+}MemLinkStat;
+
+typedef MemLinkStat HashTableStat;
+
+typedef struct _ht_stat_sys
+{
+    unsigned int keys;
+    unsigned int values;
+    unsigned int blocks;
+    unsigned int data;
+    unsigned int data_used;
+    unsigned int block_values;
+    unsigned int ht_mem;
+    unsigned int pool_blocks;
+}MemLinkStatSys;
+
+typedef MemLinkStatSys	HashTableStatSys;
+
 #endif

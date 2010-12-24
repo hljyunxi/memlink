@@ -379,10 +379,6 @@ cmd_dump_pack(char *data)
 int 
 cmd_dump_unpack(char *data)
 {
-    //unsigned short len;
-    //int count = sizeof(short) + sizeof(char);
-
-    //memcpy(&len, data + count, sizeof(short));
     return 0; 
 }
 
@@ -514,6 +510,25 @@ cmd_stat_unpack(char *data, char *key)  //, HashTableStat *stat)
 
     return 0;
 }
+
+int 
+cmd_stat_sys_pack(char *data)
+{
+    unsigned short len = sizeof(char);
+    unsigned char  cmd = CMD_STAT_SYS;
+
+    memcpy(data, &len, CMD_REQ_SIZE_LEN);
+    memcpy(data + CMD_REQ_SIZE_LEN, &cmd, sizeof(char));
+
+    return len + CMD_REQ_SIZE_LEN;
+}
+
+int 
+cmd_stat_sys_unpack(char *data)
+{
+    return 0; 
+}
+
 
 /**
  * Pack a CMD_CREATE command. Command format:

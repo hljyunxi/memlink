@@ -61,6 +61,7 @@ int             hashtable_range(HashTable *ht, char *key, unsigned int *maskarra
                                 char *data, int *datanum, unsigned char *valuesize, unsigned char *masksize);
 int             hashtable_clean(HashTable *ht, char *key);
 int             hashtable_stat(HashTable *ht, char *key, HashTableStat *stat);
+int				hashtable_stat_sys(HashTable *ht, HashTableStatSys *stat);
 int             hashtable_count(HashTable *ht, char *key, unsigned int *maskarray, int masknum, 
                                 int *visible_count, int *tagdel_count);
 int             hashtable_lpush(HashTable *ht, char *key, void *value, unsigned int *maskarray, char masknum);
