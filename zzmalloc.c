@@ -25,29 +25,10 @@ zz_malloc(size_t size)
 void
 zz_free(void *ptr)
 {
-	char *b = ptr - 8;
-	int  size = *((int*)b);
-
-	if (*((int*)(b + 4)) != 0x55555555 || *((int*)(b + 8 + size)) != 0x55555555) {
-		DERROR("free error! %p\n", ptr);
-	}
-	
     free(ptr);
 }
 #endif
 
-void
-zz_free_dbg(void *ptr, char *file, int line)
-{
-	char *b = ptr - 8;
-	int  size = *((int*)b);
-
-	if (*((int*)(b + 4)) != 0x55555555 || *((int*)(b + 8 + size)) != 0x55555555) {
-		DERROR("free error! %p, file:%s, line:%d\n", ptr, file, line);
-	}
-	
-    free(b);
-}
 
 void
 zz_check_dbg(void *ptr, char *file, int line)
@@ -63,6 +44,15 @@ zz_check_dbg(void *ptr, char *file, int line)
 					formatb(ptr-4, 4, buf1, 128), formatb(ptr+size+8, 4, buf2, 128));
 		MEMLINK_EXIT;
 	}
+}
+
+void
+zz_free_dbg(void *ptr, char *file, int line)
+{
+	char *b = ptr - 8;
+	zz_check_dbg(ptr, file, line);
+	
+    free(b);
 }
 
 char*
