@@ -112,9 +112,18 @@ def stat(*args):
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
     ret, stat = m.stat(key)
     if ret != MEMLINK_OK:
-        print 'clean error!', ret
+        print 'stat error!', ret
     print stat
     m.destroy()
+
+def stat_sys(*args):
+    m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
+    ret, stat = m.stat_sys()
+    if ret != MEMLINK_OK:
+        print 'stat_sys error!', ret
+    print stat
+    m.destroy()
+
 
 def ping(*args):
     try:
