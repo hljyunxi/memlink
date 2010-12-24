@@ -34,6 +34,7 @@ logfile_create(char *filename, int loglevel)
         if (-1 == logger->logfd) {
             fprintf(stderr, "open log file %s error: %s\n", filename, strerror(errno));
             zz_free(logger);
+			MEMLINK_EXIT;
             return NULL;
         }
     }

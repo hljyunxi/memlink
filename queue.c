@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <unistd.h>
 #include "queue.h"
 #include "myconfig.h"
 #include "logfile.h"
@@ -89,6 +90,33 @@ queue_append(Queue *q, Conn *conn)
 //queue_append_over:
     pthread_mutex_unlock(&q->lock);
     return ret;
+}
+
+int
+queue_remove_last(Queue *q, Conn *conn)
+{
+	QueueItem	*item, *prev = NULL, *last = NULL;
+
+    pthread_mutex_lock(&q->lock);
+	item = q->head;	
+	while (item) {
+		prev = last;
+		last = item;
+		item = item->next;
+	}
+	if (last && last->conn == conn) {
+		if (prev) {
+			prev->next = NULL;
+		}else{
+			q->head = NULL;
+		}
+		close(conn->sock);
+		zz_free(conn);
+		zz_free(last);
+	}
+    pthread_mutex_unlock(&q->lock);
+
+	return 0;
 }
 
 QueueItem*  

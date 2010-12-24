@@ -28,7 +28,7 @@ typedef struct _mempool
 	int			blocks;
 }MemPool;
 
-extern MemPool  *g_mpool;
+//extern MemPool  *g_mpool;
 
 MemPool*    mempool_create();
 DataBlock*  mempool_get(MemPool *mp, int blocksize);

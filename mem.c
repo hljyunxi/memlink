@@ -4,7 +4,7 @@
 #include "logfile.h"
 #include "mem.h"
 
-MemPool *g_mpool;
+//MemPool *g_mpool;
 
 MemPool*    
 mempool_create()
@@ -27,7 +27,7 @@ mempool_create()
     }
     memset(mp->freemem, 0, sizeof(MemItem) * mp->idxnum);
    
-    g_mpool = mp;
+    //g_mpool = mp;
 
     return mp;
 }
@@ -35,6 +35,7 @@ mempool_create()
 DataBlock*
 mempool_get(MemPool *mp, int blocksize)
 {
+	//DNOTE("mem get size:%d\n", blocksize);
     int i;
     DataBlock *dbk = NULL, *dbn;
 
@@ -47,8 +48,6 @@ mempool_get(MemPool *mp, int blocksize)
     }
 
     if (NULL == dbk) {
-        //int len = sizeof(DataBlock) + g_cf->block_data_count * blocksize;
-        //dbk = (DataBlock*)zz_malloc(len);
         dbk = (DataBlock*)zz_malloc(blocksize);
         if (NULL == dbk) {
             DERROR("malloc DataBlock error!\n");
@@ -71,7 +70,7 @@ mempool_put(MemPool *mp, DataBlock *dbk, int blocksize)
 {
     int i;
 
-	DINFO("mem put: %p\n", dbk);
+	//DNOTE("mem put: %p, size:%d\n", dbk, blocksize);
     for (i = 0; i < mp->idxused; i++) {
         if (mp->freemem[i].memsize == blocksize) {
             dbk->next = mp->freemem[i].data;
@@ -80,7 +79,7 @@ mempool_put(MemPool *mp, DataBlock *dbk, int blocksize)
             return 0;
         }
     }
-    
+
 	dbk->next = NULL;
 	dbk->data_count = 0;
     if (i < mp->idxnum) {
@@ -96,6 +95,8 @@ mempool_put(MemPool *mp, DataBlock *dbk, int blocksize)
 
         mp->idxused += 1;
     }
+
+	zz_check(dbk);
 
 	mp->blocks++;
     return 0;
