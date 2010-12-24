@@ -401,8 +401,6 @@ wdata_apply(char *data, int datalen, int writelog)
 				break;
 			}
 
-            hashtable_print(g_runtime->ht, key);
-
             ret = hashtable_add_mask(g_runtime->ht, key, value, maskarray, masknum, pos);
             DINFO("hashtable_add_mask: %d\n", ret);
            
@@ -411,7 +409,7 @@ wdata_apply(char *data, int datalen, int writelog)
             for (i = 0; i < masknum; i++) {
                 DINFO("mask, i:%d, mask:%d\n", i, maskarray[i]);
             }*/
-            hashtable_print(g_runtime->ht, key);
+            //hashtable_print(g_runtime->ht, key);
 
             if (ret >= 0 && writelog) {
                 int sret = synclog_write(g_runtime->synclog, data, datalen);
