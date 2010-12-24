@@ -24,7 +24,7 @@ typedef struct _memlink_client
     int     timeout;
 }MemLink;
 
-
+/*
 typedef struct _memlink_stat
 {
     unsigned char   valuesize;
@@ -33,8 +33,8 @@ typedef struct _memlink_stat
     unsigned int    data;   // all alloc data item
     unsigned int    data_used; // all data item used
     unsigned int    mem;       // all alloc mem
-    //unsigned int    mem_used;  // all used mem
 }MemLinkStat;
+*/
 
 typedef struct _memlink_count
 {
@@ -68,6 +68,7 @@ int         memlink_cmd_ping(MemLink *m);
 int         memlink_cmd_dump(MemLink *m);
 int			memlink_cmd_clean(MemLink *m, char *key);
 int			memlink_cmd_stat(MemLink *m, char *key, MemLinkStat *stat);
+int			memlink_cmd_stat_sys(MemLink *m, MemLinkStatSys *stat);
 int			memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr);
 int			memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen);
 int			memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen, 

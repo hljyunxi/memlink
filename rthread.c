@@ -117,6 +117,20 @@ rdata_ready(Conn *conn, char *data, int datalen)
 
             break;
         }
+		case CMD_STAT_SYS: {
+            DINFO("<<< cmd STAT_SYS >>>\n");
+            HashTableStatSys   stat;
+
+            ret = hashtable_stat_sys(g_runtime->ht, &stat);
+            DINFO("hashtable stat sys: %d\n", ret);
+    
+            retdata = (char*)&stat;
+            retlen  = sizeof(HashTableStatSys);
+
+            ret = data_reply(conn, ret, retdata, retlen);
+            DINFO("data_reply return: %d\n", ret);
+            break;
+        }
         case CMD_COUNT: {
             DINFO("<<< cmd COUNT >>>\n");
 			unsigned char masknum;

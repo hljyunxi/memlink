@@ -39,6 +39,13 @@ class MemLinkClient:
             mstat = None
         return ret, mstat
 
+    def stat_sys(self):
+        mstat = MemLinkStatSys()
+        ret = memlink_cmd_stat_sys(self.client, mstat)
+        if ret != MEMLINK_OK:
+            mstat = None
+        return ret, mstat
+
     def delete(self, key, value):
         return memlink_cmd_del(self.client, key, value, len(value))
 
@@ -91,11 +98,22 @@ MemLinkResult.__del__ = memlinkresult_free
 MemLinkResult.__str__ = memlinkresult_print
 
 def memlinkstat_print(self):
-    s = 'valuesize:%d\nmasksize:%d\nblocks:%d\ndata:%d\ndata_used:%d\nmem:%d\n' % (self.valuesize, self.masksize, self.blocks, self.data, self.data_used, self.mem)
+    s = 'valuesize:%d\nmasksize:%d\nblocks:%d\ndata:%d\ndata_used:%d\nmem:%d\n' % \
+        (self.valuesize, self.masksize, self.blocks, self.data, self.data_used, self.mem)
 
     return s
 
 MemLinkStat.__str__ = memlinkstat_print
+
+def memlinkstatsys_print(self):
+    s = 'keys:%d\nvalues:%d\nblocks:%d\ndata:%d\ndata_used:%d\nblock_values:%d\nht_mem:%d\npool_blocks:%d\n' % \
+        (self.keys, self.values, self.blocks, self.data, self.data_used, self.block_values, self.ht_mem, self.pool_blocks)
+
+    return s
+
+MemLinkStatSys.__str__ = memlinkstatsys_print
+
+
 
 
 

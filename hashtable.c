@@ -1586,6 +1586,9 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
 
 	DINFO("skipn: %d\n", skipn);
     while (dbk) {
+		if (dbk->data_count == 0) 
+			break;
+
         char *itemdata = dbk->data;
         int  i;
         //for (i = 0; i < g_cf->block_data_count; i++) {
@@ -1789,6 +1792,7 @@ int
 hashtable_stat_sys(HashTable *ht, HashTableStatSys *stat)
 {
 	HashNode	*node;
+	int			datalen = 0;
 	int			node_block = 0;
 	int			i;
 	int			keys	= 0;
@@ -1796,28 +1800,43 @@ hashtable_stat_sys(HashTable *ht, HashTableStatSys *stat)
 	int			data	= 0;
 	int			datau   = 0;
 	int			memu    = 0;
-	int			mpools  = 0;  // blocks in mem pool
 
+	//DINFO("sizeof DataBlock:%d, HashNode:%d\n", sizeof(DataBlock), sizeof(HashNode));
 	for (i = 0; i < HASHTABLE_BUNKNUM; i++) {
 		node = ht->bunks[i];
+		if (node) {
+			memu += strlen(node->key) + 1;
+		}
 		while (node) {
 			keys++;	
 			node_block = node->all / g_cf->block_data_count;
 			blocks += node_block;
 			data   += node->all;
 			datau  += node->used;
-
-			memu   += node_block * (sizeof(DataBlock) + (node->masksize + node->valuesize) * g_cf->block_data_count) + sizeof(HashNode);
-			if (node->all % g_cf->block_data_count == 1) {
-				memu += sizeof(DataBlock) + node->masksize + node->valuesize;
+			
+			datalen = node->masksize + node->valuesize;
+			//DINFO("datalen: %d, key len:%d\n", datalen, strlen(node->key));
+			memu   += node_block * (sizeof(DataBlock) + datalen * g_cf->block_data_count) + sizeof(HashNode);
+			if (node->all % g_cf->block_data_count != 0) {
+				memu += sizeof(DataBlock) + datalen;
+				blocks++;
 			}
-
+			
 			node = node->next;
 		}
 	}
 
-	mpools = g_runtime->mpool->blocks;
-	
+	//mpools = g_runtime->mpool->blocks;
+
+	stat->keys   = keys;
+	stat->values = datau;
+	stat->blocks = blocks;
+	stat->data   = data;
+	stat->data_used    = datau;
+	stat->block_values = g_cf->block_data_count;
+	stat->ht_mem	   = memu;
+	stat->pool_blocks  = g_runtime->mpool->blocks;
+
 	return MEMLINK_OK;
 }
 
@@ -1879,6 +1898,9 @@ hashtable_count(HashTable *ht, char *key, unsigned int *maskarray, int masknum, 
         int datalen = node->valuesize + node->masksize;
         DataBlock *dbk = node->data;
         while (dbk) {
+			if (dbk->data_count == 0) {
+				break;
+			}
             char *itemdata = dbk->data;
             //for (i = 0; i < g_cf->block_data_count; i++) {
             for (i = 0; i < dbk->data_count; i++) {
