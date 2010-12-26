@@ -445,7 +445,7 @@ hashtable_find_value_prev(HashTable *ht, char *key, void *value, HashNode **node
     HashNode *fnode = hashtable_find(ht, key);
 
     if (NULL == fnode) {
-        DWARNING("hashtable_del error: %s\n", key);
+        //DWARNING("hashtable_del error: %s\n", key);
         return MEMLINK_ERR_NOKEY;
     }
     if (node) {
@@ -710,6 +710,7 @@ hashtable_remove_key(HashTable *ht, char *key)
     }
 
 	zz_free(node->key);		
+    zz_free(node->maskformat);
 	zz_free(node);
 	
 	while (dbk) {
@@ -2017,9 +2018,13 @@ hashtable_print(HashTable *ht, char *key)
     int datalen = node->valuesize + node->masksize;
     char buf1[128];
 	char buf2[128];
+    
+    zz_check(node);
+    zz_check(node->key);
+    //zz_check(node->maskformat);
 
     while (dbk) {
-		//zz_check(dbk);
+		zz_check(dbk);
 
         blocks += 1;
         char *itemdata = dbk->data; 

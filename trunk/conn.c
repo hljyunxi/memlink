@@ -70,6 +70,8 @@ conn_create(int svrfd, int connsize)
 void
 conn_destroy(Conn *conn)
 {
+    zz_check(conn);
+
     if (conn->wbuf) {
         zz_free(conn->wbuf);
     }

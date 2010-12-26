@@ -15,6 +15,8 @@ typedef struct _thread_server
     int                 notify_recv_fd;
     int                 notify_send_fd;
     Queue               *cq;
+    int                 running;
+    int                 complete;
 }ThreadServer;
 
 typedef struct _main_server

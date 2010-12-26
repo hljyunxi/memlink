@@ -100,10 +100,6 @@ data_set_reply(Conn *conn, short retcode, char *retdata, int retlen)
     char *wdata;
 
     DINFO("retcode:%d, retlen:%d, retdata:%p\n", retcode, retlen, retdata);
-	/*
-    if (msg) {
-        mlen = strlen(msg);
-    }*/
 
     // package length + retcode + retdata
     datalen = CMD_REPLY_HEAD_LEN + retlen;
@@ -310,13 +306,13 @@ wdata_apply(char *data, int datalen, int writelog)
 				break;
 			}
 #ifdef DEBUG
-            //hashtable_print(g_runtime->ht, key);
+            hashtable_print(g_runtime->ht, key);
             DINFO("clean unpack key: %s\n", key);
 #endif
             ret = hashtable_clean(g_runtime->ht, key); 
 #ifdef DEBUG
             DINFO("clean return:%d\n", ret); 
-            //hashtable_print(g_runtime->ht, key);
+            hashtable_print(g_runtime->ht, key);
 #endif
             break;
         case CMD_CREATE:
@@ -368,7 +364,7 @@ wdata_apply(char *data, int datalen, int writelog)
             ret = hashtable_del(g_runtime->ht, key, value);
             DINFO("hashtable_del: %d\n", ret);
 #ifdef DEBUG
-            //hashtable_print(g_runtime->ht, key);
+            hashtable_print(g_runtime->ht, key);
 #endif
             if (ret >= 0 && writelog) {
                 int sret = synclog_write(g_runtime->synclog, data, datalen);
@@ -402,12 +398,12 @@ wdata_apply(char *data, int datalen, int writelog)
 				break;
 			}
 
-            //hashtable_print(g_runtime->ht, key);
+            hashtable_print(g_runtime->ht, key);
 
             ret = hashtable_add_mask(g_runtime->ht, key, value, maskarray, masknum, pos);
             DINFO("hashtable_add_mask: %d\n", ret);
            
-            //hashtable_print(g_runtime->ht, key);
+            hashtable_print(g_runtime->ht, key);
 
             if (ret >= 0 && writelog) {
                 int sret = synclog_write(g_runtime->synclog, data, datalen);
@@ -490,7 +486,7 @@ wdata_apply(char *data, int datalen, int writelog)
 
             ret = hashtable_move(g_runtime->ht, key, value, pos);
             DINFO("hashtable_move: %d\n", ret);
-            //hashtable_print(g_runtime->ht, key);
+            hashtable_print(g_runtime->ht, key);
             if (ret >= 0 && writelog) {
                 int sret = synclog_write(g_runtime->synclog, data, datalen);
                 if (sret < 0) {
@@ -518,7 +514,7 @@ wdata_apply(char *data, int datalen, int writelog)
             ret = hashtable_mask(g_runtime->ht, key, value, maskarray, masknum);
             DINFO("hashtable_mask: %d\n", ret);
 #ifdef DEBUG
-            //hashtable_print(g_runtime->ht, key);
+            hashtable_print(g_runtime->ht, key);
 #endif
             if (ret >= 0 && writelog) {
                 int sret = synclog_write(g_runtime->synclog, data, datalen);
@@ -547,7 +543,7 @@ wdata_apply(char *data, int datalen, int writelog)
             DINFO("hashtable_tag: %d\n", ret);
 
 #ifdef DEBUG
-            //hashtable_print(g_runtime->ht, key);
+            hashtable_print(g_runtime->ht, key);
 #endif
             if (ret >= 0 && writelog) {
                 int sret = synclog_write(g_runtime->synclog, data, datalen);
@@ -643,9 +639,9 @@ wdata_ready(Conn *conn, char *data, int datalen)
     pthread_mutex_unlock(&g_runtime->mutex);
 
 wdata_ready_over:
-    ret = data_reply(conn, ret, NULL, 0);
+    data_reply(conn, ret, NULL, 0);
     gettimeofday(&end, NULL);
-	DNOTE("%s:%d cmd:%d use %u us\n", conn->client_ip, conn->client_port, cmd, timediff(&start, &end));
+	DNOTE("%s:%d cmd:%d %d %uus\n", conn->client_ip, conn->client_port, cmd, ret, timediff(&start, &end));
     DINFO("data_reply return: %d\n", ret);
 
     return 0;

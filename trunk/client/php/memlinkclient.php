@@ -82,6 +82,21 @@ class MemLinkClient
         return memlink_cmd_stat($this->client, $key, $mstat);
 	}
 
+    function stat_sys()
+    {
+        $stat = new MemLinkStatSys();
+        $ret = memlink_cmd_stat_sys($this->client, $stat);
+        if ($ret != MEMLINK_OK) {
+            return $stat;
+        }
+        return NULL;
+    }
+
+    function stat_sys2($stat)
+    {
+        return memlink_cmd_stat_sys($stat);
+    }
+
     function delete($key, $value, $valuelen)
     {
     	if( False == is_string($key) or False == is_int($valuelen) )
