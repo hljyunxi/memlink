@@ -17,7 +17,13 @@ zz_malloc(size_t size)
 		
 	return b + 8;
 #else
+
+#ifdef USETCMALLOC
+    return tc_malloc(size);
+#else
     return malloc(size);
+#endif
+
 #endif
 }
 
@@ -25,7 +31,11 @@ zz_malloc(size_t size)
 void
 zz_free(void *ptr)
 {
+#ifdef USETCMALLOC
+    tc_free(ptr);
+#else
     free(ptr);
+#endif
 }
 #endif
 
@@ -33,6 +43,11 @@ zz_free(void *ptr)
 void
 zz_check_dbg(void *ptr, char *file, int line)
 {
+    if (NULL == ptr) {
+        DERROR("check NULL, file:%s, line:%d\n", file, line);
+        MEMLINK_EXIT;
+    }
+
 	char *b = ptr - 8;
 	int  size = *((int*)b);
 
@@ -49,6 +64,10 @@ zz_check_dbg(void *ptr, char *file, int line)
 void
 zz_free_dbg(void *ptr, char *file, int line)
 {
+    if (NULL == ptr) {
+        DERROR("free NULL, file:%s, line:%d\n", file, line);
+        MEMLINK_EXIT;
+    }
 	char *b = ptr - 8;
 	zz_check_dbg(ptr, file, line);
 	
@@ -62,7 +81,8 @@ zz_strdup(char *s)
 
     char *ss = (char*)zz_malloc(len + 1);
     if (NULL == ss) {
-        //DERROR("malloc char* error!\n");
+        DERROR("zz_strdump malloc error!\n");
+        MEMLINK_EXIT;
         return NULL;
     }
 

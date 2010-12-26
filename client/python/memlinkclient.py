@@ -55,6 +55,9 @@ class MemLinkClient:
     def insert(self, key, value, maskstr, pos):
         return memlink_cmd_insert(self.client, key, value, len(value), maskstr, pos)
 
+    def insert_mvalue(self, key, items):
+        return memlink_cmd_insert_mvalue(self.client, key, values, num)
+
     def update(self, key, value, pos):
         return memlink_cmd_update(self.client, key, value, len(value), pos)
 
@@ -78,7 +81,7 @@ class MemLinkClient:
         result = MemLinkCount()
         ret = memlink_cmd_count(self.client, key, maskstr, result)
         if ret != MEMLINK_OK:
-            return None
+            result = None
         return ret, result
 
 def memlinkresult_free(self):

@@ -10,6 +10,7 @@
 #include "myconfig.h"
 #include "logfile.h"
 #include "dumpfile.h"
+#include "utils.h"
 #include "common.h"
 
 /**
@@ -42,31 +43,24 @@ dumpfile(HashTable *ht)
 
     DINFO("dumpfile to tmp: %s\n", tmpfile);
     
-    //FILE    *fp = fopen(tmpfile, "wb");
     FILE    *fp = fopen64(tmpfile, "wb");
 
     unsigned short formatver = DUMP_FORMAT_VERSION;
-    fwrite(&formatver, sizeof(short), 1, fp);
+    ffwrite(&formatver, sizeof(short), 1, fp);
     DINFO("write format version %d\n", formatver);
 
     g_runtime->dumpver += 1;
     unsigned int dumpver = g_runtime->dumpver;
-    fwrite(&dumpver, sizeof(int), 1, fp);
+    ffwrite(&dumpver, sizeof(int), 1, fp);
     DINFO("write dumpfile version %d\n", dumpver);
 
-    /*unsigned int logver;
-    if (g_runtime->synclog->index_pos > 0) {
-        logver = g_runtime->logver + 1;
-    }else{
-        logver = g_runtime->logver;
-    }*/
-    fwrite(&g_runtime->logver, sizeof(int), 1, fp);
+    ffwrite(&g_runtime->logver, sizeof(int), 1, fp);
     DINFO("write logfile version %d\n", g_runtime->logver);
 
-	fwrite(&g_runtime->synclog->index_pos, sizeof(int), 1, fp);
+	ffwrite(&g_runtime->synclog->index_pos, sizeof(int), 1, fp);
 	DINFO("write logfile pos: %d\n", g_runtime->synclog->index_pos);
 
-	fwrite(&size, sizeof(long long), 1, fp);
+	ffwrite(&size, sizeof(long long), 1, fp);
 
     unsigned char keylen;
     int datalen;
@@ -78,29 +72,26 @@ dumpfile(HashTable *ht)
         while (NULL != node) {
             DINFO("start dump key: %s\n", node->key);
             keylen = strlen(node->key);
-            fwrite(&keylen, sizeof(char), 1, fp);
-			DINFO("dump keylen: %d\n", keylen);
-            fwrite(node->key, keylen, 1, fp);
-            fwrite(&node->valuesize, sizeof(char), 1, fp);
-            fwrite(&node->masksize, sizeof(char), 1, fp);
-            fwrite(&node->masknum, sizeof(char), 1, fp);
-            fwrite(node->maskformat, sizeof(char) * node->masknum, 1, fp);
+            ffwrite(&keylen, sizeof(char), 1, fp);
+			//DINFO("dump keylen: %d\n", keylen);
+            ffwrite(node->key, keylen, 1, fp);
+            ffwrite(&node->valuesize, sizeof(char), 1, fp);
+            ffwrite(&node->masksize, sizeof(char), 1, fp);
+            ffwrite(&node->masknum, sizeof(char), 1, fp);
+            ffwrite(node->maskformat, sizeof(char) * node->masknum, 1, fp);
             /*for (k = 0; k < node->masknum; k++) {
                 DINFO("dump mask, k:%d, mask:%d\n", k, node->maskformat[k]);
             }*/
-            fwrite(&node->used, sizeof(int), 1, fp);
+            ffwrite(&node->used, sizeof(int), 1, fp);
             datalen = node->valuesize + node->masksize;
 
             DataBlock *dbk = node->data;
 
             while (dbk) {
                 char *itemdata = dbk->data;
-
-                for (n = 0; n < g_cf->block_data_count; n++) {
+                for (n = 0; n < dbk->data_count; n++) {
 					if (dataitem_have_data(node, itemdata, 0)) {	
-						//fwrite(itemdata, node->valuesize, 1, fp);
-						//fwrite(itemdata + node->valuesize, node->masksize, 1, fp);
-                        fwrite(itemdata, datalen, 1, fp);
+                        ffwrite(itemdata, datalen, 1, fp);
                         dump_count += 1;
 					}
                     itemdata += datalen;
@@ -116,7 +107,7 @@ dumpfile(HashTable *ht)
 	size = ftell(fp);
 
 	fseek(fp,  DUMP_HEAD_LEN - sizeof(long long), SEEK_SET);
-	fwrite(&size, sizeof(long long), 1, fp);
+	ffwrite(&size, sizeof(long long), 1, fp);
 
     fclose(fp);
 
@@ -126,10 +117,6 @@ dumpfile(HashTable *ht)
         DERROR("dumpfile rename error: %s\n", strerror(errno));
     }
     
-    // start a new sync log
-	//DINFO("start a new synclog.\n");
-    //synclog_rotate(g_runtime->synclog);
-
     return ret;
 }
 
@@ -142,13 +129,9 @@ int
 dumpfile_load(HashTable *ht, char *filename, int localdump)
 {
     FILE    *fp;
-    //char    filename[PATH_MAX];
     int     filelen;
 	int		ret;
 
-    //snprintf(filename, PATH_MAX, "%s/%s", g_cf->datadir, DUMP_FILE_NAME);
-    //snprintf(filename, PATH_MAX, "%s/%s", g_cf->datadir, dumpfile_name);
-    //fp = fopen(filename, "rb");
     fp = fopen64(filename, "rb");
     if (NULL == fp) {
         DERROR("open dumpfile %s error: %s\n", filename, strerror(errno));
@@ -157,10 +140,10 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
    
     fseek(fp, 0, SEEK_END);
     filelen = ftell(fp);
-    DINFO("filelen: %d\n", filelen);
+    DINFO("dumpfile len: %d\n", filelen);
     fseek(fp, 0, SEEK_SET);
     unsigned short dumpfver;
-    ret = fread(&dumpfver, sizeof(short), 1, fp);
+    ret = ffread(&dumpfver, sizeof(short), 1, fp);
 	DINFO("load format ver: %d\n", dumpfver);
 
     if (dumpfver != DUMP_FORMAT_VERSION) {
@@ -170,23 +153,23 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
     }
     
     unsigned int dumpver;
-    ret = fread(&dumpver, sizeof(int), 1, fp);
+    ret = ffread(&dumpver, sizeof(int), 1, fp);
     DINFO("load dumpfile ver: %u\n", dumpver);
     if (localdump) {
         g_runtime->dumpver = dumpver;
     }
 
     unsigned int dumplogver;
-    ret = fread(&dumplogver, sizeof(int), 1, fp);
+    ret = ffread(&dumplogver, sizeof(int), 1, fp);
     DINFO("load dumpfile log ver: %u\n", dumplogver);
     if (localdump) {
         g_runtime->dumplogver = dumplogver;
     }
 
-	ret = fread(&g_runtime->dumplogpos, sizeof(int), 1, fp);
+	ret = ffread(&g_runtime->dumplogpos, sizeof(int), 1, fp);
 
 	long long size;
-	ret = fread(&size, sizeof(long long), 1, fp);
+	ret = ffread(&size, sizeof(long long), 1, fp);
 
     unsigned char keylen;
     unsigned char masklen;
@@ -202,23 +185,23 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
 
     while (ftell(fp) < filelen) {
         DINFO("cur: %d, filelen: %d, %d\n", (int)ftell(fp), filelen, feof(fp));
-        ret = fread(&keylen, sizeof(unsigned char), 1, fp);
+        ret = ffread(&keylen, sizeof(unsigned char), 1, fp);
         DINFO("keylen: %d\n", keylen);
-        ret = fread(key, keylen, 1, fp);
+        ret = ffread(key, keylen, 1, fp);
         key[keylen] = 0;
         DINFO("key: %s\n", key);
         
-        ret = fread(&valuelen, sizeof(unsigned char), 1, fp);
+        ret = ffread(&valuelen, sizeof(unsigned char), 1, fp);
 		DINFO("valuelen: %d\n", valuelen);
-        ret = fread(&masklen, sizeof(unsigned char), 1, fp);
+        ret = ffread(&masklen, sizeof(unsigned char), 1, fp);
 		DINFO("masklen: %d\n", masklen);
-        ret = fread(&masknum, sizeof(char), 1, fp);
+        ret = ffread(&masknum, sizeof(char), 1, fp);
 		DINFO("masknum: %d\n", masknum);
-        ret = fread(maskformat, sizeof(char) * masknum, 1, fp);
+        ret = ffread(maskformat, sizeof(char) * masknum, 1, fp);
         /*for (i = 0; i < masknum; i++) {
             DINFO("maskformat, i:%d, mask:%d\n", i, maskformat[i]);
         }*/
-        ret = fread(&itemnum, sizeof(unsigned int), 1, fp);
+        ret = ffread(&itemnum, sizeof(unsigned int), 1, fp);
         datalen = valuelen + masklen;
 		DINFO("itemnum: %d, datalen: %d\n", itemnum, datalen);
 
@@ -260,12 +243,12 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
                     dbk->next = newdbk;
                 }
                 dbk = newdbk;
-				node->all += g_cf->block_data_count;
+				node->all += newdbk->data_count;
 
                 itemdata = dbk->data;
             }
 
-            ret = fread(itemdata, datalen, 1, fp);
+            ret = ffread(itemdata, datalen, 1, fp);
 			ret = dataitem_check_data(node, itemdata);
 			if (ret == MEMLINK_VALUE_VISIBLE) {
 				dbk->visible_count++;
