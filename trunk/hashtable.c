@@ -14,35 +14,26 @@
  * 真实删除位为0表示无效数据，为1表示存在有效数据
  * @param node
  * @param itemdata
- * @param visible 为1表示只查找可见的，为0表示查找可见和不可见的(标记删除的)
+ * @param kind
  */
 int 
-dataitem_have_data(HashNode *node, char *itemdata, int visible)
+dataitem_have_data(HashNode *node, char *itemdata, unsigned char kind)
 {
     char *maskdata  = itemdata + node->valuesize;
 	
-	/*
-	if (visible) {
+	if (kind == MEMLINK_VALUE_VISIBLE) { // find visible
 		if ((*maskdata & (unsigned char)0x03) == 1) {
 			return MEMLINK_TRUE;
 		}
-	}else{
-		if ((*maskdata & (unsigned char)0x01) == 1) {
-			return MEMLINK_TRUE;
-		}
-	}
-	*/
-	if (visible == 1) { //查找可见的
-		if ((*maskdata & (unsigned char)0x03) == 1) {
-			return MEMLINK_TRUE;
-		}
-
-	} else if (visible == 2) {//查找标记删除的
+	}else if (kind == MEMLINK_VALUE_TAGDEL) { // find tagdel
 		if ((*maskdata & (unsigned char)0x03) == 3) {
 			return MEMLINK_TRUE;
 		}
-
-	} else if (visible == 0) {//查找可见的和标记删除的
+	}else if (kind == MEMLINK_VALUE_ALL) { // find visible and tagdel
+		if ((*maskdata & (unsigned char)0x01) == 1) {
+			return MEMLINK_TRUE;
+		}
+	}else if (kind == MEMLINK_VALUE_REMOVED) {
 		if ((*maskdata & (unsigned char)0x01) == 1) {
 			return MEMLINK_TRUE;
 		}
@@ -66,34 +57,6 @@ dataitem_check_data(HashNode *node, char *itemdata)
     return MEMLINK_VALUE_VISIBLE;
 }
 
-/*
-static int
-dataitem_have_visible_data(HashNode *node, char *itemdata)
-{
-    return dataitem_have_data(node, itemdata, 1);
-}
-
-static int
-dataitem_have_any_data(HashNode *node, char *itemdata)
-{
-    return dataitem_have_data(node, itemdata, 0);
-}
-*/
-
-/**
- * 检查数据项中是否有要显示的数据
- * 标记删除位为1表示数据标记为删除
- */
-/*
-static int 
-dataitem_have_visible_data(HashNode *node, char *itemdata)
-{
-    unsigned char n = *(itemdata + node->valuesize);
-    if ((n & (unsigned char)0x03) == 0x01)
-        return 1;
-    return MEMLINK_OK;
-}
-*/
 /**
  * 在数据链的一块中查找某一条数据
  */
@@ -168,11 +131,11 @@ datablock_del_restore(HashNode *node, DataBlock *dbk, char *data)
  * 在数据链中找到某位置所在数据块
  * @param node 
  * @param pos
- * @param visible 为1表示只查找可见的，为0表示查找可见和不可见
+ * @param kind
  * @param dbk 指定位置所在数据块
  */
 static int
-datablock_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk)
+datablock_lookup_pos(HashNode *node, int pos, unsigned char kind, DataBlock **dbk)
 {
     DataBlock *root = node->data;
 
@@ -180,22 +143,12 @@ datablock_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk)
     
     while (root) {
 		startn = n;
-		/*
-		if (visible) {
-			n += root->visible_count;	
-		}else{
-			n += root->tagdel_count + root->visible_count;
-		}
-		*/
 		//modify by lanwenhong
-		if (visible == 1) {
+		if (kind == MEMLINK_VALUE_VISIBLE) {
 			n += root->visible_count;
-
-		} else if (visible == 0) {
+		} else if (kind == MEMLINK_VALUE_ALL) {
 			n += root->tagdel_count + root->visible_count;
-
-		} else if (visible == 2) {
-
+		} else if (kind == MEMLINK_VALUE_TAGDEL) {
 			n += root->tagdel_count;
 		}
 	
@@ -212,7 +165,8 @@ datablock_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk)
 
 
 int
-dataitem_lookup_pos_mask(HashNode *node, int pos, int visible, char *maskval, char *maskflag, DataBlock **dbk, char **addr)
+dataitem_lookup_pos_mask(HashNode *node, int pos, unsigned char kind, 
+						char *maskval, char *maskflag, DataBlock **dbk, char **addr)
 {
     DataBlock *root = node->data;
 
@@ -226,7 +180,7 @@ dataitem_lookup_pos_mask(HashNode *node, int pos, int visible, char *maskval, ch
 
 		//for (i = 0; i < g_cf->block_data_count; i++) {
 		for (i = 0; i < root->data_count; i++) {
-			if (dataitem_have_data(node, itemdata, visible)) {
+			if (dataitem_have_data(node, itemdata, kind)) {
 				char *maskdata = itemdata + node->valuesize;	
                 /*
 				char buf[64], buf2[64];
@@ -269,7 +223,7 @@ dataitem_lookup_pos_mask(HashNode *node, int pos, int visible, char *maskval, ch
  * find a insert pos in DataBlock link. skip DataBlock
  */
 static int
-datablock_lookup_valid_pos(HashNode *node, int pos, int visible, DataBlock **dbk, DataBlock **prev)
+datablock_lookup_valid_pos(HashNode *node, int pos, unsigned char kind, DataBlock **dbk, DataBlock **prev)
 {
     DataBlock *root = node->data;
     DataBlock *previtem = NULL;
@@ -278,10 +232,12 @@ datablock_lookup_valid_pos(HashNode *node, int pos, int visible, DataBlock **dbk
     
     while (root) {
 		startn = n;
-		if (visible) {
+		if (kind == MEMLINK_VALUE_VISIBLE) {
 			n += root->visible_count;	
-		}else{
+		}else if (kind == MEMLINK_VALUE_ALL){
 			n += root->tagdel_count + root->visible_count;
+		}else if (kind == MEMLINK_VALUE_TAGDEL) {
+			n += root->tagdel_count;
 		}
 	
 		//if (n >= pos) {
@@ -320,7 +276,7 @@ datablock_lookup_valid_pos(HashNode *node, int pos, int visible, DataBlock **dbk
 }
 
 static int
-datablock_lookup_valid_pos2(HashNode *node, int pos, int visible, DataBlock **dbk, DataBlock **prev)
+datablock_lookup_valid_pos2(HashNode *node, int pos, unsigned char kind, DataBlock **dbk, DataBlock **prev)
 {
     DataBlock *root = node->data;
     DataBlock *previtem = NULL;
@@ -329,10 +285,12 @@ datablock_lookup_valid_pos2(HashNode *node, int pos, int visible, DataBlock **db
     
     while (root) {
 		startn = n;
-		if (visible) {
+		if (kind == MEMLINK_VALUE_VISIBLE) {
 			n += root->visible_count;	
-		}else{
+		}else if (kind == MEMLINK_VALUE_ALL) {
 			n += root->tagdel_count + root->visible_count;
+		}else if (kind == MEMLINK_VALUE_TAGDEL) {
+			n += root->tagdel_count;
 		}
 	
 		//if (n >= pos) {
@@ -362,11 +320,11 @@ datablock_lookup_valid_pos2(HashNode *node, int pos, int visible, DataBlock **db
 }
 
 int
-dataitem_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk, DataBlock **prev, char **data)
+dataitem_lookup_pos(HashNode *node, int pos, unsigned char kind, DataBlock **dbk, DataBlock **prev, char **data)
 {
     int ret;
 
-    ret = datablock_lookup_valid_pos(node, pos, visible, dbk, prev);
+    ret = datablock_lookup_valid_pos(node, pos, kind, dbk, prev);
     DINFO("datablock_lookup_pos, pos:%d, dbk:%p, prev:%p, ret:%d\n", pos, *dbk, *prev, ret);
     if (ret < 0 || *dbk == NULL) {
         *data = 0;
@@ -385,10 +343,12 @@ dataitem_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk, DataB
 	int n = 0;
 
 	if (*dbk) {
-		if (visible) {
+		if (kind == MEMLINK_VALUE_VISIBLE) {
 			n = (*dbk)->visible_count;
-		}else{
+		}else if (kind == MEMLINK_VALUE_ALL) {
 			n = (*dbk)->visible_count + (*dbk)->tagdel_count;
+		}else if (kind == MEMLINK_VALUE_TAGDEL) {
+			n = (*dbk)->tagdel_count;
 		}
 	}
 
@@ -402,7 +362,7 @@ dataitem_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk, DataB
         for (i = 0; i < fdbk->data_count; i++) {
             item  -= datalen;
             //if (dataitem_have_data(node, item, 0)) {
-            if (dataitem_have_data(node, item, visible)) {
+            if (dataitem_have_data(node, item, kind)) {
                 *data = item + datalen;
                 break;
             }
@@ -420,7 +380,7 @@ dataitem_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk, DataB
             return MEMLINK_OK;
         }
 		//if (dataitem_have_data(node, item, 0)) {
-		if (dataitem_have_data(node, item, visible)) {
+		if (dataitem_have_data(node, item, kind)) {
 			skipn -= 1;
 		}
         item  += datalen;
@@ -1226,8 +1186,9 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 					memcpy(newbk2->data, dbk->data + (dbk->data_count - 1) * datalen, datalen);
 					newbk->next = newbk2;
 					node->all += newbk2->data_count;
+					
+					mempool_put(g_runtime->mpool, dbk, sizeof(DataBlock) + dbk->data_count * datalen);
 				}
-				//prev = dbk; // only append
 			}else{ // datablock not full
 				DINFO("last dbk not full, copy and mix!\n");
 				newbk = datablock_new_copy(node, dbk, pos - startn, value, mask);
@@ -1249,7 +1210,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 	DINFO("not last dbk.\n");
 	if (dbk->visible_count + dbk->tagdel_count == dbk->data_count) { // datablock is full
 		DNOTE("dbk is full.\n");
-	    newbk = datablock_new_copy(node, dbk, pos - startn, value, mask);
+	    newbk = datablock_new_copy(node, dbk, skipn, value, mask);
 		DataBlock *nextbk = dbk->next;		
 
 		if (dataitem_have_data(node, nextbk->data, 0) == MEMLINK_FALSE) { // first data in next block is null
@@ -1307,11 +1268,11 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 
 	}else{
 		DNOTE("dbk not null\n");
-        if (datablock_check_idle(node, dbk, pos - startn, value, mask)) {
+        if (datablock_check_idle(node, dbk, skipn, value, mask)) {
             return MEMLINK_OK;
         }
 
-	    newbk = datablock_new_copy(node, dbk, pos - startn, value, mask);
+	    newbk = datablock_new_copy(node, dbk, skipn, value, mask);
     }
 
 	node->used++;
@@ -1582,7 +1543,8 @@ mask_array2_binary_flag(unsigned char *maskformat, unsigned int *maskarray, int 
 
 
 int
-hashtable_range(HashTable *ht, char *key, unsigned char kind, unsigned int *maskarray, int masknum, 
+hashtable_range(HashTable *ht, char *key, unsigned char kind, 
+				unsigned int *maskarray, int masknum, 
                 int frompos, int len, 
                 char *data, int *datanum, 
                 unsigned char *valuesize, unsigned char *masksize)
@@ -1592,7 +1554,6 @@ hashtable_range(HashTable *ht, char *key, unsigned char kind, unsigned int *mask
 
     HashNode    *node;
 	int			startn;
-	int         visible;
 	
 	if (len <= 0) {
 		return MEMLINK_ERR_RANGE_SIZE;
@@ -1603,21 +1564,6 @@ hashtable_range(HashTable *ht, char *key, unsigned char kind, unsigned int *mask
         DINFO("hashtable_find not found node for key:%s\n", key);
         return MEMLINK_ERR_NOKEY;
     }
-	//add by lanwenhong
-	switch (kind) {
-		case MEMLINK_VALUE_TAGDEL:
-			visible = 2;
-			break;
-		case MEMLINK_VALUE_VISIBLE:
-			visible = 1;
-			break;
-		case MEMLINK_VALUE_ALL:
-			visible = 0;
-			break;
-		default:
-			visible = 1;
-	}
-	
     if (masknum > 0) {
         masknum = mask_array2_binary_flag(node->maskformat, maskarray, masknum, maskval, maskflag);
     }
@@ -1631,8 +1577,7 @@ hashtable_range(HashTable *ht, char *key, unsigned char kind, unsigned int *mask
 
     if (masknum > 0) {
 		//modify by lanwenhong
-		//startn = dataitem_lookup_pos_mask(node, frompos, 1, maskval, maskflag, &dbk, &addr);
-		startn = dataitem_lookup_pos_mask(node, frompos, visible, maskval, maskflag, &dbk, &addr);
+		startn = dataitem_lookup_pos_mask(node, frompos, kind, maskval, maskflag, &dbk, &addr);
 		DINFO("dataitem_lookup_pos_mask startn: %d\n", startn);
 		if (startn < 0) { // out of range
 			*datanum = 0;
@@ -1640,9 +1585,8 @@ hashtable_range(HashTable *ht, char *key, unsigned char kind, unsigned int *mask
 		}
     }else{
 		//modify by lanwenhong
-		//startn = datablock_lookup_pos(node, frompos, 1, &dbk);
-		startn = datablock_lookup_pos(node, frompos, visible, &dbk);
-		DINFO("datablock_lookup_pos startn: %d\n", startn);
+		startn = datablock_lookup_pos(node, frompos, kind, &dbk);
+		DINFO("datablock_lookup_pos startn:%d, dbk:%p\n", startn, dbk);
 		if (startn < 0) { // out of range
 			*datanum = 0;
 			return MEMLINK_OK;
@@ -1658,14 +1602,16 @@ hashtable_range(HashTable *ht, char *key, unsigned char kind, unsigned int *mask
     memcpy(data + idx, node->maskformat, node->masknum);
     idx += node->masknum;
 
-	DINFO("skipn: %d\n", skipn);
+	DINFO("skipn:%d, kind:%d\n", skipn, kind);
     while (dbk) {
-		if (dbk->data_count == 0) 
+		DINFO("dbk:%p, count:%d\n", dbk, dbk->data_count);
+		if (dbk->data_count == 0) {
+			DINFO("data_count is 0, dbk:%p\n", dbk);
 			break;
+		}
 
         char *itemdata = dbk->data;
         int  i;
-        //for (i = 0; i < g_cf->block_data_count; i++) {
         for (i = 0; i < dbk->data_count; i++) {
 			if (addr) {
 				if (itemdata != addr) {
@@ -1677,9 +1623,9 @@ hashtable_range(HashTable *ht, char *key, unsigned char kind, unsigned int *mask
 				}
 			}
 			//modify by lanwenhong
-            if (dataitem_have_data(node, itemdata, visible)) {
+			DINFO("%d dataitem_check_data: %d, %d\n", i, dataitem_check_data(node, itemdata), dataitem_have_data(node, itemdata, kind));
+            if (dataitem_have_data(node, itemdata, kind)) {
 				char *maskdata = itemdata + node->valuesize;
-
 				if (masknum > 0) {
 					int k;
 					for (k = 0; k < node->masksize; k++) {
@@ -1717,11 +1663,11 @@ hashtable_range(HashTable *ht, char *key, unsigned char kind, unsigned int *mask
                 memcpy(data + idx, maskstr, mlen);
                 idx += mlen;
 #else
-                /*
+                
                 char buf[128];
 				snprintf(buf, node->valuesize + 1, "%s", itemdata);
-				DINFO("ok, copy item ... i:%d, value:%s\n", i, buf);
-                */
+				DINFO("\tok, copy item ... i:%d, value:%s\n", i, buf);
+                
 				memcpy(data + idx, itemdata, datalen);
 				idx += datalen;
 #endif
