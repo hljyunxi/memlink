@@ -96,14 +96,14 @@
 // value最大长度
 #define HASHTABLE_VALUE_MAX         255
 
-// 真实删除
-#define MEMLINK_VALUE_REMOVED        1
-// 标记删除
-#define MEMLINK_VALUE_TAGDEL         2
-// 可见
-#define MEMLINK_VALUE_VISIBLE        4 
 // 可见和标记删除
 #define MEMLINK_VALUE_ALL            0
+// 可见
+#define MEMLINK_VALUE_VISIBLE        1
+// 标记删除
+#define MEMLINK_VALUE_TAGDEL         2
+// 真实删除
+#define MEMLINK_VALUE_REMOVED        4
 
 typedef struct _memlink_insert_mvalue_item
 {
