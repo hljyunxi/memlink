@@ -286,7 +286,7 @@ wdata_apply(char *data, int datalen, int writelog)
 
     memcpy(&cmd, data + sizeof(short), sizeof(char));
     char buf[256] = {0};
-    DNOTE("data ready cmd: %d, data: %s\n", cmd, formath(data, datalen, buf, 256));
+    DINFO("data ready cmd: %d, data: %s\n", cmd, formath(data, datalen, buf, 256));
 
     switch(cmd) {
         case CMD_DUMP:

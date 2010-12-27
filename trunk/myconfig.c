@@ -188,7 +188,7 @@ load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
 	if (file_logver == dumplogver) {
 		int *indxdata = (int *)(addr + SYNCLOG_HEAD_LEN);
 		int pos = indxdata[dumplogpos];
-		DERROR("dumplogpos: %d, pos:   %d\n", dumplogpos, pos);
+		DNOTE("dumplogpos:%d, pos:%d\n", dumplogpos, pos);
 		if (pos == 0) {
 			return pos;
 		}
@@ -203,7 +203,7 @@ load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
 		memcpy(&logver, data, sizeof(int));
 		memcpy(&logline, data + sizeof(int), sizeof(int));
 		
-		DERROR("logver: %d, logline: %d\n", logver, logline);
+		//DNOTE("logver: %d, logline: %d\n", logver, logline);
 		if (enddata < data + SYNCPOS_LEN + blen + sizeof(short)) {
 			DERROR("synclog end error: %s, skip\n", logname);
 			//MEMLINK_EXIT;

@@ -1186,12 +1186,12 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 			if (dbk->visible_count + dbk->tagdel_count == dbk->data_count) { // datablock is full
 				DINFO("last dbk is full, append a new small\n");
 				// create a new small datablock	
-				if (skipn >= dbk->data_count) {
+				if (skipn >= dbk->data_count) { // pos out of block
 					newbk = datablock_new_copy_small(node, value, mask);
 					node->all += newbk->data_count;
 					prev = dbk; // only append
 				}else{
-					newbk = datablock_new_copy(node, dbk, pos - startn, value, mask);
+					newbk = datablock_new_copy(node, dbk, skipn, value, mask);
 					DataBlock *newbk2 = datablock_new_copy_small(node, NULL, NULL);
 					memcpy(newbk2->data, dbk->data + (dbk->data_count - 1) * datalen, datalen);
 					newbk->next = newbk2;
@@ -1268,7 +1268,8 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 					}
 					fromdata += datalen;
 				}
-
+				node->all -= nextbk->data_count;
+				node->all += newbk2->data_count;
 				newbk2->next = nextbk->next;
 				mempool_put(g_runtime->mpool, nextbk, sizeof(DataBlock) + nextbk->data_count * datalen);
 			}
@@ -2032,8 +2033,8 @@ hashtable_print(HashTable *ht, char *key)
         //for (i = 0; i < g_cf->block_data_count; i++) {
         for (i = 0; i < dbk->data_count; i++) {
             if (dataitem_have_data(node, itemdata, 1)) {
-                DINFO("i: %d, value: %s, mask: %s\n", i, formath(itemdata, node->valuesize, buf2, 128), 
-                            formath(itemdata + node->valuesize, node->masksize, buf1, 128));
+                //DINFO("i: %d, value: %s, mask: %s\n", i, formath(itemdata, node->valuesize, buf2, 128), 
+                //            formath(itemdata + node->valuesize, node->masksize, buf1, 128));
 				memcpy(buf2, itemdata, node->valuesize);
 				buf2[node->valuesize] = 0;
                 DINFO("i: %d, value: %s, mask: %s\n", i, buf2, 
