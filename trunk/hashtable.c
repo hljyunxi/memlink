@@ -1730,9 +1730,7 @@ hashtable_clean(HashTable *ht, char *key)
 
     while (dbk) {
         itemdata = dbk->data;
-        //for (i = 0; i < g_cf->block_data_count; i++) {
         for (i = 0; i < dbk->data_count; i++) {
-            //if (dataitem_have_data(node, itemdata, 0)) {
 			ret = dataitem_check_data(node, itemdata);
 			if (ret != MEMLINK_VALUE_REMOVED) {
                 if (newdbk == NULL || newdbk_pos >= newdbk_end) {
@@ -1742,20 +1740,17 @@ hashtable_clean(HashTable *ht, char *key)
                     newdbk_pos = newdbk->data;
 
 					newdbk->data_count = g_cf->block_data_count;
-                    newdbk->next  = NULL;
+                    newdbk->next	   = NULL;
 
 					if (newlast) {
 						newlast->next = newdbk; 
 					}else{
 						newroot = newdbk;
 					}
-
                     dataall += g_cf->block_data_count;
 					count += 1;
                 }
-                //unsigned char v = *(itemdata + node->valuesize) & 0x02;
                 memcpy(newdbk_pos, itemdata, dlen);
-
                 /*char buf[16] = {0};
                 memcpy(buf, itemdata, node->valuesize);
                 DINFO("clean copy item: %s\n", buf);
@@ -1771,7 +1766,7 @@ hashtable_clean(HashTable *ht, char *key)
         }
         if (count > 0 && count % g_cf->block_clean_num == 0) {
             newdbk->next = dbk->next;
-            if (linklast == NULL) { 
+            if (linklast == NULL) { // first
                 oldbk = node->data;
                 node->data = newroot;
             }else{
