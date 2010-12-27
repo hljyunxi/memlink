@@ -1604,7 +1604,7 @@ hashtable_range(HashTable *ht, char *key, unsigned char kind,
 
 	DINFO("skipn:%d, kind:%d\n", skipn, kind);
     while (dbk) {
-		DINFO("dbk:%p, count:%d\n", dbk, dbk->data_count);
+		//DINFO("dbk:%p, count:%d\n", dbk, dbk->data_count);
 		if (dbk->data_count == 0) {
 			DINFO("data_count is 0, dbk:%p\n", dbk);
 			break;
@@ -1623,7 +1623,6 @@ hashtable_range(HashTable *ht, char *key, unsigned char kind,
 				}
 			}
 			//modify by lanwenhong
-			DINFO("%d dataitem_check_data: %d, %d\n", i, dataitem_check_data(node, itemdata), dataitem_have_data(node, itemdata, kind));
             if (dataitem_have_data(node, itemdata, kind)) {
 				char *maskdata = itemdata + node->valuesize;
 				if (masknum > 0) {
@@ -1664,10 +1663,10 @@ hashtable_range(HashTable *ht, char *key, unsigned char kind,
                 idx += mlen;
 #else
                 
-                char buf[128];
+                /*char buf[128];
 				snprintf(buf, node->valuesize + 1, "%s", itemdata);
 				DINFO("\tok, copy item ... i:%d, value:%s\n", i, buf);
-                
+				*/ 
 				memcpy(data + idx, itemdata, datalen);
 				idx += datalen;
 #endif
@@ -1709,7 +1708,6 @@ hashtable_clean(HashTable *ht, char *key)
         while (dbk) {
             tmp = dbk; 
             dbk = dbk->next;
-            //mempool_put(g_runtime->mpool, tmp, dlen);
             mempool_put(g_runtime->mpool, tmp, sizeof(DataBlock) + tmp->data_count * dlen);
         }
         node->all  = 0;
@@ -1728,18 +1726,22 @@ hashtable_clean(HashTable *ht, char *key)
     char      *newdbk_end = NULL;
     char      *newdbk_pos = NULL;
 	int		  count = 0;
+	int		  ret;
 
     while (dbk) {
         itemdata = dbk->data;
         //for (i = 0; i < g_cf->block_data_count; i++) {
         for (i = 0; i < dbk->data_count; i++) {
-            if (dataitem_have_data(node, itemdata, 0)) {
+            //if (dataitem_have_data(node, itemdata, 0)) {
+			ret = dataitem_check_data(node, itemdata);
+			if (ret != MEMLINK_VALUE_REMOVED) {
                 if (newdbk == NULL || newdbk_pos >= newdbk_end) {
                     newlast    = newdbk;
                     newdbk     = mempool_get(g_runtime->mpool, sizeof(DataBlock) + g_cf->block_data_count * dlen);
                     newdbk_end = newdbk->data + g_cf->block_data_count * dlen;
                     newdbk_pos = newdbk->data;
 
+					newdbk->data_count = g_cf->block_data_count;
                     newdbk->next  = NULL;
 
 					if (newlast) {
@@ -1751,7 +1753,7 @@ hashtable_clean(HashTable *ht, char *key)
                     dataall += g_cf->block_data_count;
 					count += 1;
                 }
-                unsigned char v = *(itemdata + node->valuesize) & 0x02;
+                //unsigned char v = *(itemdata + node->valuesize) & 0x02;
                 memcpy(newdbk_pos, itemdata, dlen);
 
                 /*char buf[16] = {0};
@@ -1759,7 +1761,7 @@ hashtable_clean(HashTable *ht, char *key)
                 DINFO("clean copy item: %s\n", buf);
 				*/
                 newdbk_pos += dlen;
-                if (v == 2) {
+                if (ret == MEMLINK_VALUE_TAGDEL) {
                     newdbk->tagdel_count++;
                 }else{
                     newdbk->visible_count++;
@@ -1780,7 +1782,6 @@ hashtable_clean(HashTable *ht, char *key)
 
             while (oldbk && oldbk != dbk) {
                 tmp = oldbk->next;
-                //mempool_put(g_runtime->mpool, oldbk, dlen);
                 mempool_put(g_runtime->mpool, oldbk, sizeof(DataBlock) + oldbk->data_count * dlen);
                 oldbk = tmp;
             }
@@ -1799,7 +1800,6 @@ hashtable_clean(HashTable *ht, char *key)
     }
     while (oldbk && oldbk != dbk) {
         tmp = oldbk->next;
-        //mempool_put(g_runtime->mpool, oldbk, dlen);
         mempool_put(g_runtime->mpool, oldbk, sizeof(DataBlock) + oldbk->data_count * dlen);
         oldbk = tmp;
     }

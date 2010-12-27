@@ -198,9 +198,9 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
         ret = ffread(&masknum, sizeof(char), 1, fp);
 		DINFO("masknum: %d\n", masknum);
         ret = ffread(maskformat, sizeof(char) * masknum, 1, fp);
-        for (i = 0; i < masknum; i++) {
+        /*for (i = 0; i < masknum; i++) {
             DINFO("maskformat, i:%d, mask:%d\n", i, maskformat[i]);
-        }
+        }*/
         ret = ffread(&itemnum, sizeof(unsigned int), 1, fp);
         datalen = valuelen + masklen;
 		DINFO("itemnum: %d, datalen: %d\n", itemnum, datalen);
@@ -220,7 +220,7 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
         char        *itemdata = NULL;
 
         for (i = 0; i < itemnum; i++) {
-            DINFO("i: %d\n", i);
+            //DINFO("i: %d\n", i);
             if (i % g_cf->block_data_count == 0) {
                 DINFO("create new datablock ...\n");
                 DataBlock *newdbk;
@@ -256,10 +256,10 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
 			}
 			node->used++;
 
-            char buf[256] = {0};
+            /*char buf[256] = {0};
             memcpy(buf, itemdata, node->valuesize);
             DINFO("load value: %s\n", buf);
-
+			*/
             itemdata += datalen;
             load_count += 1;
         }
