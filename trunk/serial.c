@@ -761,7 +761,7 @@ cmd_tag_unpack(char *data, char *key, char *value, unsigned char *valuelen, unsi
 }
 
 int 
-cmd_range_pack(char *data, char *key, unsigned char masknum, unsigned int *maskarray, 
+cmd_range_pack(char *data, char *key, unsigned char kind, unsigned char masknum, unsigned int *maskarray, 
                int frompos, int rlen)
 {
     unsigned char cmd = CMD_RANGE;
@@ -771,6 +771,8 @@ cmd_range_pack(char *data, char *key, unsigned char masknum, unsigned int *maska
     memcpy(data + count, &cmd, sizeof(char));
     count += sizeof(char);
     count += pack_string(data + count, key, 0);
+	memcpy(data + count, &kind, sizeof(char));
+	count += sizeof(char);
     //count += pack_string(data + count, maskformat, masknum);
     count += pack_mask(data + count, maskarray, masknum);
     memcpy(data + count, &frompos, sizeof(int));
@@ -785,12 +787,14 @@ cmd_range_pack(char *data, char *key, unsigned char masknum, unsigned int *maska
 }
 
 int 
-cmd_range_unpack(char *data, char *key, unsigned char *masknum, unsigned int *maskarray, 
+cmd_range_unpack(char *data, char *key, unsigned char *kind, unsigned char *masknum, unsigned int *maskarray, 
                  int *frompos, int *len)
 {
     int count = CMD_REQ_HEAD_LEN;
     //unsigned char mlen;
     count += unpack_string(data + count, key, NULL); 
+	memcpy(kind, data + count, sizeof(char));
+	count += sizeof(char);
     //count += unpack_string(data + count, maskformat, &mlen);
     count += unpack_mask(data + count, maskarray, masknum);
     memcpy(frompos, data + count, sizeof(int));

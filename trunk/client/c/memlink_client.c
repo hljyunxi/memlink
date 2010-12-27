@@ -25,7 +25,7 @@ memlink_create(char *host, int readport, int writeport, int timeout)
     MemLink *m;
 
 #ifdef DEBUG
-	logfile_create("stdout", 4);
+	logfile_create("stdout", 1);
 #endif
 
     m = (MemLink*)zz_malloc(sizeof(MemLink));
@@ -578,7 +578,7 @@ memlink_cmd_count(MemLink *m, char *key, char *maskstr, MemLinkCount *count)
 }
 
 int 
-memlink_cmd_range(MemLink *m, char *key, char *maskstr, int frompos, int len, MemLinkResult *result)
+memlink_cmd_range(MemLink *m, char *key, unsigned char kind,  char *maskstr, int frompos, int len, MemLinkResult *result)
 {
 	if(len <= 0 || frompos < 0)
 		return MEMLINK_ERR_PARAM;
@@ -591,7 +591,7 @@ memlink_cmd_range(MemLink *m, char *key, char *maskstr, int frompos, int len, Me
     maskn = mask_string2array(maskstr, maskarray);
     DINFO("range mask len: %d\n", maskn);
 
-    plen = cmd_range_pack(data, key, maskn, maskarray, frompos, len);
+    plen = cmd_range_pack(data, key, kind, maskn, maskarray, frompos, len);
     DINFO("pack range len: %d\n", plen);
 
     //printh(data, plen);

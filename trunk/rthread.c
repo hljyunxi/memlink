@@ -47,7 +47,8 @@ rdata_ready(Conn *conn, char *data, int datalen)
 		}
         case CMD_RANGE: {
             DINFO("<<< cmd RANGE >>>\n");
-            ret = cmd_range_unpack(data, key, &masknum, maskarray, &frompos, &len);
+			unsigned char kind;
+            ret = cmd_range_unpack(data, key, &kind, &masknum, maskarray, &frompos, &len);
             DINFO("unpack range return:%d, key:%s, masknum:%d, frompos:%d, len:%d\n", ret, key, masknum, frompos, len);
 
 			if (frompos < 0 || len <= 0) {
@@ -76,7 +77,7 @@ rdata_ready(Conn *conn, char *data, int datalen)
             DINFO("ret buffer len: %d\n", rlen);
             char retrec[rlen];
 
-            ret = hashtable_range(g_runtime->ht, key, maskarray, masknum, frompos, len, 
+            ret = hashtable_range(g_runtime->ht, key, kind, maskarray, masknum, frompos, len, 
                                 retrec + sizeof(char)*2, &retlen, &valuesize, &masksize); 
             DINFO("hashtable_range return: %d, retlen:%d, valuesize:%d, masksize:%d\n", ret, retlen, valuesize, masksize);
             /*
