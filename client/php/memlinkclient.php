@@ -148,7 +148,7 @@ class MemLinkClient
         return memlink_cmd_tag($this->client, $key, $value, $valuelen, $tag);
     }
 
-    function range($key, $maskstr, $frompos, $len)
+    function range($key, $kind, $maskstr, $frompos, $len)
     {
     	if( False == is_string($key) or False == is_int($frompos) or
     		False == is_int($len) or False == is_string($maskstr) )
@@ -158,21 +158,21 @@ class MemLinkClient
     	
         $result = new MemLinkResult();
         
-        $ret = memlink_cmd_range($this->client, $key, $maskstr, $frompos, $len, $result);
+        $ret = memlink_cmd_range($this->client, $key, $kind, $maskstr, $frompos, $len, $result);
 		if ($ret == MEMLINK_OK) {
 			return $result;
 		}
 		return NULL;
     }
 
-	function range2($key, $maskstr, $frompos, $len, $result)
+	function range2($key, $kind, $maskstr, $frompos, $len, $result)
 	{
     	if( False == is_string($key) or False == is_int($frompos) or False == is_int($len) or False == is_string($maskstr) )
     	{
     		return -1;
     	}
 	
-		return memlink_cmd_range($this->client, $key, $maskstr, $frompos, $len, $result);
+		return memlink_cmd_range($this->client, $key, $kind, $maskstr, $frompos, $len, $result);
 	}
 
 	function rmkey($key)

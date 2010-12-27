@@ -69,7 +69,8 @@ rdata_ready(Conn *conn, char *data, int datalen)
             unsigned char masksize = 0, valuesize = 0;
             //old: int rlen = sizeof(char) * 2 + 256 * len + HASHTABLE_MASK_MAX_ITEM * sizeof(int) * len;
             // len(4B) + retcode(2B) + valuesize(1B) + masksize(1B) + masknum(1B) + maskformat(masknum B) + value.mask * le
-            int rlen = sizeof(int) + sizeof(short) + sizeof(char) + sizeof(char) + sizeof(char) + masknum * sizeof(int) + (HASHTABLE_VALUE_MAX + (HASHTABLE_MASK_MAX_BIT/8 + 2) * masknum) * len;
+            int rlen = sizeof(int) + sizeof(short) + sizeof(char) + sizeof(char) + sizeof(char) + \
+					   masknum * sizeof(int) + (HASHTABLE_VALUE_MAX + (HASHTABLE_MASK_MAX_BIT/8 + 2) * masknum) * len;
             if (rlen >= CMD_RANGE_MAX_SIZE) {
 				ret = MEMLINK_ERR_RANGE_SIZE;
 				goto rdata_ready_error;
@@ -79,6 +80,7 @@ rdata_ready(Conn *conn, char *data, int datalen)
 
             ret = hashtable_range(g_runtime->ht, key, kind, maskarray, masknum, frompos, len, 
                                 retrec + sizeof(char)*2, &retlen, &valuesize, &masksize); 
+
             DINFO("hashtable_range return: %d, retlen:%d, valuesize:%d, masksize:%d\n", ret, retlen, valuesize, masksize);
             /*
             if (retlen > 0) {

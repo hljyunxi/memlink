@@ -330,7 +330,7 @@ ffread(void *ptr, size_t size, size_t nmemb, FILE *stream)
 {
 	size_t ret = fread(ptr, size, nmemb, stream);
 	if (ret != nmemb) {
-		DERROR("fread error, write:%u, must:%d\n", ret, nmemb);
+		DERROR("fread error, read:%u, must:%d\n", ret, nmemb);
 		MEMLINK_EXIT;
 	}
 	return ret;

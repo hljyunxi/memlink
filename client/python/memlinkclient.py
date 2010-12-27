@@ -67,9 +67,9 @@ class MemLinkClient:
     def tag(self, key, value, tag):
         return memlink_cmd_tag(self.client, key, value, len(value), tag)
 
-    def range(self, key, maskstr, frompos, len):
+    def range(self, key, kind, maskstr, frompos, len):
         result = MemLinkResult()
-        ret = memlink_cmd_range(self.client, key, maskstr, frompos, len, result)
+        ret = memlink_cmd_range(self.client, key, kind, maskstr, frompos, len, result)
         if ret != MEMLINK_OK:
             result = None
         return ret, result
