@@ -47,7 +47,7 @@ zz_check_dbg(void *ptr, char *file, int line)
         DERROR("check NULL, file:%s, line:%d\n", file, line);
         MEMLINK_EXIT;
     }
-
+#ifdef DEBUG
 	char *b = ptr - 8;
 	int  size = *((int*)b);
 
@@ -59,6 +59,7 @@ zz_check_dbg(void *ptr, char *file, int line)
 					formatb(ptr-4, 4, buf1, 128), formatb(ptr+size+8, 4, buf2, 128));
 		MEMLINK_EXIT;
 	}
+#endif
 }
 
 void
