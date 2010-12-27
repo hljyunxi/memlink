@@ -1750,11 +1750,11 @@ hashtable_clean(HashTable *ht, char *key)
                     dataall += g_cf->block_data_count;
 					count += 1;
                 }
-                memcpy(newdbk_pos, itemdata, dlen);
                 /*char buf[16] = {0};
                 memcpy(buf, itemdata, node->valuesize);
                 DINFO("clean copy item: %s\n", buf);
 				*/
+                memcpy(newdbk_pos, itemdata, dlen);
                 newdbk_pos += dlen;
                 if (ret == MEMLINK_VALUE_TAGDEL) {
                     newdbk->tagdel_count++;
@@ -2054,10 +2054,10 @@ hashtable_del_by_mask(HashTable *ht, char *key, unsigned int *maskarray, int mas
 {
 
 	int i, k;
-	int find = 0;
+	int count = 0;
 	int datalen = 0;
-	char maskval[HASHTABLE_MASK_MAX_ITEM * sizeof(int)] = {0};
-	char maskflag[HASHTABLE_MASK_MAX_ITEM * sizeof(int)] = {0};
+	char maskval[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
+	char maskflag[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
 	HashNode *node;
 	
 	node = hashtable_find(ht, key);
@@ -2078,7 +2078,6 @@ hashtable_del_by_mask(HashTable *ht, char *key, unsigned int *maskarray, int mas
     while (root) {
         char *itemdata = root->data;
 
-        //for (i = 0; i < g_cf->block_data_count; i++) {
         for (i = 0; i < root->data_count; i++) {
             if (dataitem_have_data(node, itemdata, 0)) {
                 char *maskdata = itemdata + node->valuesize;
@@ -2100,8 +2099,7 @@ hashtable_del_by_mask(HashTable *ht, char *key, unsigned int *maskarray, int mas
 						root->tagdel_count--;
 					}
                     maskdata[0] = maskdata[0] & 0x00;
-                    if (find == 0)
-                        find = 1;
+                    count++;
                 }
             }
             itemdata += datalen;
@@ -2109,9 +2107,7 @@ hashtable_del_by_mask(HashTable *ht, char *key, unsigned int *maskarray, int mas
         }
         root = root->next;
     }
-    if (find == 1)
-        return MEMLINK_OK;
 
-    return MEMLINK_ERR_MASK;
+    return count;
 }
 
