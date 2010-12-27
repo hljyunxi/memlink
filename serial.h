@@ -86,9 +86,9 @@ int cmd_mask_unpack(char *data, char *key, char *value, unsigned char *valuelen,
 int cmd_tag_pack(char *data, char *key, char *value, unsigned char valuelen, unsigned char tag);
 int cmd_tag_unpack(char *data, char *key, char *value, unsigned char *valuelen, unsigned char *tag);
 
-int cmd_range_pack(char *data, char *key, unsigned char masknum, unsigned int *maskarray, 
+int cmd_range_pack(char *data, char *key, unsigned char kind, unsigned char masknum, unsigned int *maskarray, 
                    int frompos, int len);
-int cmd_range_unpack(char *data, char *key, unsigned char *masknum, unsigned int*maskarray, 
+int cmd_range_unpack(char *data, char *key, unsigned char *kind, unsigned char *masknum, unsigned int*maskarray, 
                      int *frompos, int *len);
 
 int cmd_ping_pack(char *data);

@@ -78,7 +78,7 @@ int			memlink_cmd_update(MemLink *m, char *key, char *value, int valuelen,
 int			memlink_cmd_mask(MemLink *m, char *key, char *value, int valuelen, 
                              char *maskstr);
 int			memlink_cmd_tag(MemLink *m, char *key, char *value, int valuelen, int tag);
-int			memlink_cmd_range(MemLink *m, char *key, char *maskstr, 
+int			memlink_cmd_range(MemLink *m, char *key, unsigned char kind, char *maskstr, 
                               int frompos, int len,
                               MemLinkResult *result);
 int         memlink_cmd_rmkey(MemLink *m, char *key);

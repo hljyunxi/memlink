@@ -20,12 +20,29 @@ int
 dataitem_have_data(HashNode *node, char *itemdata, int visible)
 {
     char *maskdata  = itemdata + node->valuesize;
-
+	
+	/*
 	if (visible) {
 		if ((*maskdata & (unsigned char)0x03) == 1) {
 			return MEMLINK_TRUE;
 		}
 	}else{
+		if ((*maskdata & (unsigned char)0x01) == 1) {
+			return MEMLINK_TRUE;
+		}
+	}
+	*/
+	if (visible == 1) { //查找可见的
+		if ((*maskdata & (unsigned char)0x03) == 1) {
+			return MEMLINK_TRUE;
+		}
+
+	} else if (visible == 2) {//查找标记删除的
+		if ((*maskdata & (unsigned char)0x03) == 3) {
+			return MEMLINK_TRUE;
+		}
+
+	} else if (visible == 0) {//查找可见的和标记删除的
 		if ((*maskdata & (unsigned char)0x01) == 1) {
 			return MEMLINK_TRUE;
 		}
@@ -163,10 +180,23 @@ datablock_lookup_pos(HashNode *node, int pos, int visible, DataBlock **dbk)
     
     while (root) {
 		startn = n;
+		/*
 		if (visible) {
 			n += root->visible_count;	
 		}else{
 			n += root->tagdel_count + root->visible_count;
+		}
+		*/
+		//modify by lanwenhong
+		if (visible == 1) {
+			n += root->visible_count;
+
+		} else if (visible == 0) {
+			n += root->tagdel_count + root->visible_count;
+
+		} else if (visible == 2) {
+
+			n += root->tagdel_count;
 		}
 	
 		if (n >= pos) {
@@ -1552,7 +1582,7 @@ mask_array2_binary_flag(unsigned char *maskformat, unsigned int *maskarray, int 
 
 
 int
-hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum, 
+hashtable_range(HashTable *ht, char *key, unsigned char kind, unsigned int *maskarray, int masknum, 
                 int frompos, int len, 
                 char *data, int *datanum, 
                 unsigned char *valuesize, unsigned char *masksize)
@@ -1562,6 +1592,7 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
 
     HashNode    *node;
 	int			startn;
+	int         visible;
 	
 	if (len <= 0) {
 		return MEMLINK_ERR_RANGE_SIZE;
@@ -1572,7 +1603,21 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
         DINFO("hashtable_find not found node for key:%s\n", key);
         return MEMLINK_ERR_NOKEY;
     }
-
+	//add by lanwenhong
+	switch (kind) {
+		case MEMLINK_VALUE_TAGDEL:
+			visible = 2;
+			break;
+		case MEMLINK_VALUE_VISIBLE:
+			visible = 1;
+			break;
+		case MEMLINK_VALUE_ALL:
+			visible = 0;
+			break;
+		default:
+			visible = 1;
+	}
+	
     if (masknum > 0) {
         masknum = mask_array2_binary_flag(node->maskformat, maskarray, masknum, maskval, maskflag);
     }
@@ -1585,14 +1630,18 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
     *masksize  = node->masksize;
 
     if (masknum > 0) {
-		startn = dataitem_lookup_pos_mask(node, frompos, 1, maskval, maskflag, &dbk, &addr);
+		//modify by lanwenhong
+		//startn = dataitem_lookup_pos_mask(node, frompos, 1, maskval, maskflag, &dbk, &addr);
+		startn = dataitem_lookup_pos_mask(node, frompos, visible, maskval, maskflag, &dbk, &addr);
 		DINFO("dataitem_lookup_pos_mask startn: %d\n", startn);
 		if (startn < 0) { // out of range
 			*datanum = 0;
 			return MEMLINK_OK;
 		}
     }else{
-		startn = datablock_lookup_pos(node, frompos, 1, &dbk);
+		//modify by lanwenhong
+		//startn = datablock_lookup_pos(node, frompos, 1, &dbk);
+		startn = datablock_lookup_pos(node, frompos, visible, &dbk);
 		DINFO("datablock_lookup_pos startn: %d\n", startn);
 		if (startn < 0) { // out of range
 			*datanum = 0;
@@ -1627,7 +1676,8 @@ hashtable_range(HashTable *ht, char *key, unsigned int *maskarray, int masknum,
 					addr = NULL;
 				}
 			}
-            if (dataitem_have_data(node, itemdata, 1)) {
+			//modify by lanwenhong
+            if (dataitem_have_data(node, itemdata, visible)) {
 				char *maskdata = itemdata + node->valuesize;
 
 				if (masknum > 0) {
@@ -2102,10 +2152,15 @@ hashtable_del_by_mask(HashTable *ht, char *key, unsigned int *maskarray, int mas
                     itemdata += datalen;
                     continue;
                 } else {//equal
+					if ((maskdata[0] & 0x03) == 1) {
+						root->visible_count--;
+					}
+					if ((maskdata[0] & 0x03) == 3) {
+						root->tagdel_count--;
+					}
                     maskdata[0] = maskdata[0] & 0x00;
                     if (find == 0)
                         find = 1;
-
                 }
             }
             itemdata += datalen;
