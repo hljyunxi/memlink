@@ -36,7 +36,7 @@ def insert(*args):
         else:
             val2 = val
         print 'insert:', val2
-        ret = m.insert(key, val2, "1", i)
+        ret = m.insert(key, val2, "1", 0)
         if ret != MEMLINK_OK:
             print 'insert error:', ret, i
             return
@@ -70,17 +70,20 @@ def range(*args):
     try:
         frompos = int(args[0])
         slen    = int(args[1])
-        mask    = args[2]
     except:
         frompos = 0
         slen    = 1000
-        mask    = '1'
+
+    try:
+        mask = args[2]
+    except:
+        mask    = ''
 
     print 'range from:%d, len:%d, mask:%s' % (frompos, slen, mask)
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
     
-    ret, recs = m.range(key, mask, frompos, slen)
+    ret, recs = m.range(key, MEMLINK_VALUE_VISIBLE, mask, frompos, slen)
     if ret != MEMLINK_OK:
         print 'range error:', ret
         return
