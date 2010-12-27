@@ -10,6 +10,17 @@ prgfiles = comfiles + ['memlink_client.c', 'test.c']
 libfiles = comfiles + ['memlink_client.c']
 
 env = Environment(CCFLAGS=cflags, CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
+
+#prgfiles = ['memlink_client.c', 'test.c']
+#shared_libfiles = ['memlink_client.c']
+#static_libfiles = ['memlink_client.c']
+#import os
+#for fn in comfiles:
+#	name = os.path.basename(fn)[:-2]
+#	prgfiles.append(env.Object('client-' + name, fn))
+#	shared_libfiles.append(env.Object('client-shared-' + name, fn))
+#	static_libfiles.append(env.Object('client-static-' + name, fn))
+
 env.SharedLibrary("memlink", libfiles)
 env.StaticLibrary("memlink", libfiles)
 
