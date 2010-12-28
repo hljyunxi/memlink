@@ -312,110 +312,37 @@ def test():
     memlinkfile  = os.path.join(home, 'memlink')
     memlinkstart = memlinkfile + ' test/memlink.conf'
 
-    testc()
-    return 0
+    m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30);
     
-    c = raw_input()
-    print 'dump.....'
-    m.dump();
-    print 'dump over.....'
-
-    c = raw_input()
-    return 0
+    key = 'haha777777'
+    ret = m.create(key, 10, "4:3:1")
+    if ret != MEMLINK_OK and ret != MEMLINK_ERR_EKEY:
+        print 'create error:', ret
+        return -1
+    
     #insert 800 val
     num = 1000
-    for i in range(200, num):
+    for i in range(0, num):
         val = '%010d' % i
         maskstr = "8:1:1"
         ret = m.insert(key, val, maskstr, i)
         if ret != MEMLINK_OK:
             print 'insert error!', key, val, maskstr, ret
             return -2;
-    print 'insert 800 val'
-
-    #create 199 key
-    for i in range(1, 200):
-        key = 'haha%03d' % i
-        ret = m.create(key, 6, "4:3:1")
-        if ret != MEMLINK_OK:
-            print 'create error:', ret, key
-            return -1
-    print 'create 199 key'
-
-    #rmkey key 100-199
-    for i in range(100, 200):
-        key = 'haha%03d' % i
-        ret = m.rmkey(key)
-    	if ret != MEMLINK_OK:
-        	print 'rmkey error:', ret, key
-        	return -1
-    print 'rmkey key 100-199'
+    print 'insert %d val' % num
     
-    num2 = num/2
-    
-    #delete val oushu
-    key = 'haha000'
-    for i in range(0, num2):
-        val = '%010d' % (i * 2)
-        ret = m.delete(key, val)
-        #print 'ding!', i
+    c = raw_input()
+
+    num2 = 2000
+    for i in range(num, num + num2):
+        val = '%010d' % i
+        maskstr = "8:1:1"
+        ret = m.insert(key, val, maskstr, i)
         if ret != MEMLINK_OK:
-        	print 'delete val error:', ret, val
-        	return -1
-    print 'delete val oushu'
-
-    #update reverse the list
-    for i in range(0, num2):
-        val = '%010d' % (i * 2 + 1)
-        ret = m.update(key, val, 0)
-        if ret != MEMLINK_OK:
-            print 'update val error:', ret, val
-            return -1
-    print 'update reverse the list'
-
-    # set all the values' mask = 4:4:1
-    for i in range(0, 500):
-        val = '%010d' % (i*2 + 1)
-        ret = m.mask(key, val, "4:4:1")
-        if ret != MEMLINK_OK:
-            print 'mask val error:', ret, val
-            return -1
-    print 'set all the values mask = 4:4:1'
-
-    #tag del 250 - 499
-    for i in range(250, 500):
-        val = '%010d' % (i*2 + 1)
-        ret = m.tag(key, val, 1)
-        if ret != MEMLINK_OK:
-            print 'tag val error:', ret, val
-            return -1
-    print 'tag del 250 - 499'
-
-    """ret = m.clean(key)
-    if ret != MEMLINK_OK:
-        print 'clean error:', ret"""
-        
-    m.destroy()
-
-    cmd = "killall memlink"
-    print cmd
-    os.system(cmd)
-   
-    time.sleep(1)
-
-    print memlinkstart
-    #x = subprocess.Popen(memlinkstart, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
-    #                         shell=True, env=os.environ, universal_newlines=True) 
-    x = subprocess.Popen(memlinkstart, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
-                             shell=True, env=os.environ, universal_newlines=True) 
-    #x = subprocess.Popen(memlinkstart, shell=True, env=os.environ, universal_newlines=True) 
-     
-    time.sleep(1)
-    ret = test_result()
-
-    x.kill()
-
-    return ret
+            print 'insert error!', key, val, maskstr, ret
+            return -2;
+    print 'insert %d val' % num2
+    return 0
 
 if __name__ == '__main__':
     #sys.exit(test_result())

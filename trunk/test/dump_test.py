@@ -8,8 +8,8 @@ import subprocess
 #import memlinkclient
 from memlinkclient import *
 
-READ_PORT  = 11001
-WRITE_PORT = 11002
+READ_PORT  = 11011
+WRITE_PORT = 11012
 
 def test_result():
     key = 'haha000'
@@ -27,7 +27,7 @@ def test_result():
         print 'stat error:', stat, ret
         return -3
 
-    ret, result = m.range(key, "", 0, 1000)
+    ret, result = m.range(key, MEMLINK_VALUE_VISIBLE, "", 0, 1000)
     if not result or result.count != 250:
         print 'range error!', result, ret
         return -4
@@ -38,7 +38,7 @@ def test_result():
     i = 250
     while i > 0:
         i -= 1
-        v = '%06d' % (i*2 + 1)
+        v = '%010d' % (i*2 + 1)
         if v != item.value:
             print 'range item error!', item.value, v
             return -5
@@ -64,29 +64,29 @@ def test():
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30);
    
     key = 'haha000'
-    ret = m.create(key, 6, "4:3:1")
+    ret = m.create(key, 10, "4:3:1")
     if ret != MEMLINK_OK:
         print 'create error:', ret
         return -1
     print 'create 1 key'
 
-    num = 1000
-    
-    for i in range(0, 200):
-        val = '%06d' % i
+    num = 200
+    for i in xrange(0, num):
+        val = '%010d' % i
         maskstr = "8:1:1"
-        ret = m.insert(key, val, maskstr, i)
+        ret = m.insert(key, val, maskstr, 0)
         if ret != MEMLINK_OK:
             print 'insert error!', key, val, maskstr, ret
             return -2;
-    print 'insert 200 val'
-    
-    m.dump();
+    print 'insert %d val' % num
     print 'dump.....'
+    m.dump();
+    print 'dump over.....'
 
     #insert 800 val
+    num = 1000
     for i in range(200, num):
-        val = '%06d' % i
+        val = '%010d' % i
         maskstr = "8:1:1"
         ret = m.insert(key, val, maskstr, i)
         if ret != MEMLINK_OK:
@@ -117,7 +117,7 @@ def test():
     #delete val oushu
     key = 'haha000'
     for i in range(0, num2):
-        val = '%06d' % (i * 2)
+        val = '%010d' % (i * 2)
         ret = m.delete(key, val)
         #print 'ding!', i
         if ret != MEMLINK_OK:
@@ -127,7 +127,7 @@ def test():
 
     #update reverse the list
     for i in range(0, num2):
-        val = '%06d' % (i * 2 + 1)
+        val = '%010d' % (i * 2 + 1)
         ret = m.update(key, val, 0)
         if ret != MEMLINK_OK:
             print 'update val error:', ret, val
@@ -136,7 +136,7 @@ def test():
 
     # set all the values' mask = 4:4:1
     for i in range(0, 500):
-        val = '%06d' % (i*2 + 1)
+        val = '%010d' % (i*2 + 1)
         ret = m.mask(key, val, "4:4:1")
         if ret != MEMLINK_OK:
             print 'mask val error:', ret, val
@@ -145,7 +145,7 @@ def test():
 
     #tag del 250 - 499
     for i in range(250, 500):
-        val = '%06d' % (i*2 + 1)
+        val = '%010d' % (i*2 + 1)
         ret = m.tag(key, val, 1)
         if ret != MEMLINK_OK:
             print 'tag val error:', ret, val

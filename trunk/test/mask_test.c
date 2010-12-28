@@ -9,7 +9,7 @@ int check_mask(MemLink *m, char *key, char *newmask)
 	MemLinkResult	result;
 	int				ret;
 
-	ret = memlink_cmd_range(m, key, "::", 0, 1, &result);
+	ret = memlink_cmd_range(m, key, MEMLINK_VALUE_VISIBLE, "::", 0, 1, &result);
 	if (ret != MEMLINK_OK) {
 		DERROR("range error, key:%s, ret:%d\n", key, ret);
 		return -5;

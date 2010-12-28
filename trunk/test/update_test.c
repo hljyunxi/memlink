@@ -62,7 +62,7 @@ int main()
 	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
         //DINFO("====== insert i:%d\n", i);
-		ret = memlink_cmd_update(m, buf, val, strlen(val), -1);
+		ret = memlink_cmd_update(m, buf, val, strlen(val), 0);
 		if (ret != MEMLINK_OK) {
 			DERROR("update error, key:%s, val:%s, ret:%d, i:%d\n", buf, val, ret, i);
 			return -4;
@@ -70,9 +70,9 @@ int main()
 		else
 			DINFO("update ok, key:%s, val:%s, ret:%d, i:%d\n", buf, val, ret, i);
 
-	/*		MemLinkResult result;
+		MemLinkResult result;
 
-		ret = memlink_cmd_range(m, buf, "", 0, 1, &result);
+		ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE, "", 0, 1, &result);
 		if (ret != MEMLINK_OK) {
 			DERROR("range error, key:%s, ret:%d\n", buf, ret);
 			return -5;
@@ -89,7 +89,7 @@ int main()
 			return -7;
 		}
 
-		memlink_result_free(&result);*/
+		memlink_result_free(&result);
 	}
 
     MemLinkStat     stat;

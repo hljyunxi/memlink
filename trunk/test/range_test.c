@@ -48,14 +48,14 @@ int main()
 	int				range_start = 50;
 	int				range_count = 50;
 
-	ret = memlink_cmd_range(m, buf, "7:1:1", -1, 0, &result);
+	ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE, "7:1:1", -1, 0, &result);
 	if (ret == MEMLINK_OK) {
 		DERROR("range error, key:%s, ret:%d\n", buf, ret);
 		printf("err\n");
 		return -4;
 	}
 
-	ret = memlink_cmd_range(m, buf, "7:1:1", range_start, range_count, &result);
+	ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE, "7:1:1", range_start, range_count, &result);
 	if (ret != MEMLINK_OK) {
 		DERROR("range error, key:%s, ret:%d\n", buf, ret);
 		printf("err\n");
@@ -104,7 +104,7 @@ int main()
 	for (i = 0; i < 6; i++) {
 		MemLinkResult	result2;
 
-		ret = memlink_cmd_range(m, buf, masktest[i], 0, insertnum, &result2);
+		ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE, masktest[i], 0, insertnum, &result2);
 		if (ret != MEMLINK_OK) {
 			DERROR("range error, ret:%d\n", ret);
 			return -8;
@@ -124,7 +124,7 @@ int main()
 	for (i = 0; i < 2; i++) {
 		MemLinkResult	result2;
 
-		ret = memlink_cmd_range(m, buf, masktest2[i], 0, insertnum, &result2);
+		ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE, masktest2[i], 0, insertnum, &result2);
 		if (ret != MEMLINK_OK) {
 			DERROR("range error, ret:%d\n", ret);
 			return -8;
@@ -154,7 +154,7 @@ int main()
 	}
 	
 	MemLinkResult	result5;
-	ret = memlink_cmd_range(m, buf, "::", 0, insertnum, &result5);
+	ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE, "::", 0, insertnum, &result5);
 	if (ret != MEMLINK_OK) {
 		DERROR("range error, key:%s, ret:%d\n", buf, ret);
 		return -4;
@@ -200,7 +200,7 @@ int main()
 	for (i = 0; i < 2; i++) {
 		MemLinkResult	result2;
 
-		ret = memlink_cmd_range(m, buf, masktest3[i], 0, insertnum, &result2);
+		ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE, masktest3[i], 0, insertnum, &result2);
 		if (ret != MEMLINK_OK) {
 			DERROR("range error, ret:%d\n", ret);
 			return -8;
