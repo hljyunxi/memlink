@@ -1,14 +1,14 @@
 import sys, os, subprocess
 
-#php_config = '/usr/bin/php-config'
-php_config = '/opt/php/bin/php-config'
+php_config = '/usr/bin/php-config'
+#php_config = '/www/zhaowei/php/bin/php-config'
 
 x = subprocess.Popen(php_config + ' --includes', stdout=subprocess.PIPE, shell=True)
 php_includes = x.stdout.read().strip().split()
 
 os.system('swig -php -o memlink_client_php.c ../c/memlink_client.i')
 
-cflags   = '-ggdb'
+cflags   = '-ggdb -O2'
 includes = ['.', '../../', '../c/', '/Developer/usr/include'] + php_includes
 libpath  = ['.']
 libs	 = ['m']
