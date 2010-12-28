@@ -63,7 +63,7 @@ int main()
 	}
 	
 	MemLinkResult	result;
-	ret = memlink_cmd_range(m, buf, "", 0, 200, &result);
+	ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE, "", 0, 200, &result);
 	if (ret != MEMLINK_OK) {
 		DERROR("range error, ret:%d\n", ret);
 		return -5;
@@ -100,7 +100,7 @@ int main()
 		}
 	}
 
-	ret = memlink_cmd_range(m, buf, "::", 0, 200, &result);
+	ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE, "::", 0, 200, &result);
 	if (ret != MEMLINK_OK) {
 		DERROR("range error, ret:%d\n", ret);
 		return -8;

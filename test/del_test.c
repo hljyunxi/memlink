@@ -85,7 +85,7 @@ int main()
 
 		MemLinkResult	result;
 
-		ret = memlink_cmd_range(m, buf, "", 0, 100, &result);
+		ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE,  "", 0, 100, &result);
 		if (ret != MEMLINK_OK) {
 			printf("range error, ret:%d\n", ret);
 			return -6;
