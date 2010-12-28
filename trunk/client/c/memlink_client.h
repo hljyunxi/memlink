@@ -24,18 +24,6 @@ typedef struct _memlink_client
     int     timeout;
 }MemLink;
 
-/*
-typedef struct _memlink_stat
-{
-    unsigned char   valuesize;
-    unsigned char   masksize;
-    unsigned int    blocks; // all blocks
-    unsigned int    data;   // all alloc data item
-    unsigned int    data_used; // all data item used
-    unsigned int    mem;       // all alloc mem
-}MemLinkStat;
-*/
-
 typedef struct _memlink_count
 {
 	unsigned int	visible_count;
@@ -57,7 +45,6 @@ typedef struct _memlink_result
     MemLinkItem     *root;
 }MemLinkResult;
 
-
 void        memlink_result_free(MemLinkResult *result);
 
 MemLink*    memlink_create(char *host, int readport, int writeport, int timeout);
@@ -73,6 +60,12 @@ int			memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr);
 int			memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen);
 int			memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen, 
                                char *maskstr, int pos);
+
+int			memlink_cmd_lpush(MemLink *m, char *key, char *value, int valuelen, char *maskstr);
+int			memlink_cmd_rpush(MemLink *m, char *key, char *value, int valuelen, char *maskstr);
+int			memlink_cmd_lpop(MemLink *m, char *key, int num, MemLinkResult *result);
+int			memlink_cmd_rpop(MemLink *m, char *key, int num, MemLinkResult *result);
+
 int			memlink_cmd_update(MemLink *m, char *key, char *value, int valuelen, 
                                int pos);
 int			memlink_cmd_mask(MemLink *m, char *key, char *value, int valuelen, 

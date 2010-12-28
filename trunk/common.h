@@ -105,6 +105,10 @@
 // 真实删除
 #define MEMLINK_VALUE_REMOVED        4
 
+#define MEMLINK_LIST        1
+#define MEMLINK_QUEUE       2
+#define MEMLINK_SORT_LIST   3
+
 typedef struct _memlink_insert_mvalue_item
 {
     char            value[255];

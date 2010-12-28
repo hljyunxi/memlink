@@ -11,8 +11,9 @@ typedef struct _hashnode
 {
     char            *key;
     DataBlock       *data; // DataBlock link
-    //DataBlock       *data_tail; // DataBlock link tail
+    DataBlock       *data_tail; // DataBlock link tail
     struct _hashnode *next;
+    unsigned char   type; // key type: list/queue
     unsigned char   valuesize;
     //unsigned char   valuetype;
     unsigned char   masksize;
