@@ -1038,15 +1038,27 @@ datablock_check_idle(HashNode *node, DataBlock *dbk, int skipn, void *value, voi
 	int datalen     = node->valuesize + node->masksize;
     char *fromdata  = dbk->data;
     int i, n = 0;
+	
+	if (skipn == 0) {
+		if (dataitem_have_data(node, fromdata, MEMLINK_VALUE_ALL) == MEMLINK_TRUE) {
+			return 0;
+		}else{
+			dataitem_copy(node, fromdata, value, mask);
+			dbk->visible_count++;
+			node->used++;
+			return 1;
+		}
+	}
 
     for (i = 0; i < dbk->data_count; i++) {
-        if (dataitem_have_data(node, fromdata, 0) == MEMLINK_TRUE) {
+        if (dataitem_have_data(node, fromdata, MEMLINK_VALUE_ALL) == MEMLINK_TRUE) {
+            n++;
             if (n == skipn) {
                 if (i == dbk->data_count - 1) {
                     break;
                 }
                 fromdata += datalen;
-                if (dataitem_have_data(node, fromdata, 0) == MEMLINK_FALSE) {
+                if (dataitem_have_data(node, fromdata, MEMLINK_VALUE_ALL) == MEMLINK_FALSE) {
                     dataitem_copy(node, fromdata, value, mask);
                     dbk->visible_count++;
                     node->used++;
@@ -1054,7 +1066,6 @@ datablock_check_idle(HashNode *node, DataBlock *dbk, int skipn, void *value, voi
                 }
                 return 0;
             }
-            n++;
         }
 
         fromdata += datalen;
@@ -1271,7 +1282,6 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
         if (datablock_check_idle(node, dbk, skipn, value, mask)) {
             return MEMLINK_OK;
         }
-
 	    newbk = datablock_new_copy(node, dbk, skipn, value, mask);
     }
 
