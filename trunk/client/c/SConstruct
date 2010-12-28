@@ -7,6 +7,7 @@ libpath  = ['.']
 libs	 = ['m']
 comfiles = ['../../zzmalloc.c', '../../serial.c', '../../logfile.c', '../../utils.c']
 prgfiles = comfiles + ['memlink_client.c', 'test.c']
+simfiles = comfiles + ['memlink_client.c', 'simpletest.c']
 libfiles = comfiles + ['memlink_client.c']
 
 env = Environment(CCFLAGS=cflags, CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
@@ -24,10 +25,25 @@ env = Environment(CCFLAGS=cflags, CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
 env.SharedLibrary("memlink", libfiles)
 env.StaticLibrary("memlink", libfiles)
 
-env2 = Environment(CCFLAGS='-ggdb -Wall -fprofile-arcs -ftest-coverage', LINKFLAGS='-fprofile-arcs -ftest-coverage', CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
-#env2 = Environment(CCFLAGS='-ggdb -Wall', LINKFLAGS='-fprofile-arcs -ftest-coverage', CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
-clientfiles = []
-for fn in prgfiles:
-	name = fn[:-2]
-	clientfiles.append(env2.Object('client-' + name, fn))	
-env2.Program("client", clientfiles)
+env.Program("client", prgfiles)
+env.Program("simple", simfiles)
+
+#env2 = Environment(CCFLAGS='-ggdb -Wall -fprofile-arcs -ftest-coverage', 
+#                   LINKFLAGS='-fprofile-arcs -ftest-coverage', 
+#				   CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
+#clientfiles = []
+#for fn in prgfiles:
+#	name = fn[:-2]
+#	clientfiles.append(env2.Object('client-' + name, fn))	
+#env2.Program("client", clientfiles)
+
+#env3 = Environment(CCFLAGS='-ggdb -Wall -fprofile-arcs -ftest-coverage', 
+#				   LINKFLAGS='-fprofile-arcs -ftest-coverage', 
+#				   CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
+#clientfiles = []
+#for fn in simfiles:
+#	name = fn[:-2]
+#	clientfiles.append(env3.Object('simple-' + name, fn))	
+#env3.Program("simple", clientfiles)
+
+
