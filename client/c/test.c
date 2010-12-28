@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
     for (i = 0; i < 1; i++) {
         printf("============== range %d ===============\n", i);
         MemLinkResult result;
-        ret = memlink_cmd_range(m, "haha1", MEMLINK_VALUE_VISIBLE, "::", 2, 10, &result);
+        ret = memlink_cmd_range(m, "haha1", 0,  "::", 2, 10, &result);
         DINFO("valuesize:%d, masksize:%d, count:%d\n", result.valuesize, result.masksize,
                 result.count);
     }

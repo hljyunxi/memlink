@@ -307,6 +307,9 @@ memlink_cmd_dump(MemLink *m)
 int
 memlink_cmd_clean(MemLink *m, char *key)
 {
+	if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
+		return MEMLINK_ERR_PARAM;
+
     char data[1024];
     int  len;
     //unsigned short dlen;
@@ -326,6 +329,9 @@ memlink_cmd_clean(MemLink *m, char *key)
 int 
 memlink_cmd_stat(MemLink *m, char *key, MemLinkStat *stat)
 {
+	if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
+		return MEMLINK_ERR_PARAM;
+
     char data[1024];
     int  len;
 
@@ -385,7 +391,9 @@ memlink_cmd_stat_sys(MemLink *m, MemLinkStatSys *stat)
 int
 memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr)
 {
-	if(valuelen <= 0)
+	if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
+		return MEMLINK_ERR_PARAM;
+	if (valuelen <= 0 || valuelen > HASHTABLE_VALUE_MAX)
 		return MEMLINK_ERR_PARAM;
 	
     char data[1024];
@@ -394,7 +402,18 @@ memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr)
     unsigned int maskarray[128];   
 
     masknum = mask_string2array(maskstr, maskarray);
-    DINFO("create masknum: %d\n", masknum);
+    DINFO("create masknum: %d\n", masknum);	
+	if (masknum > HASHTABLE_MASK_MAX_ITEM)
+		return MEMLINK_ERR_PARAM;
+	int i = 0;
+	for (i = 0; i < masknum; i++)
+	{
+		if (maskarray[i] > HASHTABLE_MASK_MAX_BIT)
+		{
+			DERROR("maskarray[%d]: %d\n", i, maskarray[i]);
+			return MEMLINK_ERR_PARAM;
+		}
+	}
    
     len = cmd_create_pack(data, key, valuelen, masknum, maskarray);
     DINFO("pack create len: %d\n", len);
@@ -411,7 +430,9 @@ memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr)
 int
 memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen)
 {
-	if(valuelen <= 0)
+	if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
+		return MEMLINK_ERR_PARAM;
+	if (valuelen <= 0 || valuelen > HASHTABLE_VALUE_MAX)
 		return MEMLINK_ERR_PARAM;
 
     char data[1024];
@@ -439,9 +460,13 @@ memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen)
 int
 memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen, char *maskstr, int pos)
 {
-	if(valuelen <= 0 || pos < -1)
+	if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
 		return MEMLINK_ERR_PARAM;
-
+	if (valuelen <= 0 || valuelen > HASHTABLE_VALUE_MAX)
+		return MEMLINK_ERR_PARAM;
+	if (pos < -1)
+		return MEMLINK_ERR_PARAM;
+	
     char data[1024];
     int  len;
     unsigned int maskarray[128];
@@ -449,6 +474,8 @@ memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen, char *masks
 
     masknum = mask_string2array(maskstr, maskarray);
     DINFO("insert mask len: %d\n", masknum);
+	if (masknum < 0 || masknum > HASHTABLE_MASK_MAX_ITEM)
+		return MEMLINK_ERR_PARAM;
 
     len = cmd_insert_pack(data, key, value, valuelen, masknum, maskarray, pos);
     DINFO("pack del len: %d\n", len);
@@ -464,7 +491,11 @@ memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen, char *masks
 int 
 memlink_cmd_update(MemLink *m, char *key, char *value, int valuelen, int pos)
 {
-	if(valuelen <= 0 || pos < -1)
+	if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
+		return MEMLINK_ERR_PARAM;
+	if (valuelen <= 0 || valuelen > HASHTABLE_VALUE_MAX)
+		return MEMLINK_ERR_PARAM;
+	if (pos < -1)
 		return MEMLINK_ERR_PARAM;
 
     char data[1024];
@@ -484,7 +515,9 @@ memlink_cmd_update(MemLink *m, char *key, char *value, int valuelen, int pos)
 int
 memlink_cmd_mask(MemLink *m, char *key, char *value, int valuelen, char *maskstr)
 {
-	if(valuelen <= 0)
+	if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
+		return MEMLINK_ERR_PARAM;
+	if (valuelen <= 0 || valuelen > HASHTABLE_VALUE_MAX)
 		return MEMLINK_ERR_PARAM;
 
     char data[1024];
@@ -494,6 +527,9 @@ memlink_cmd_mask(MemLink *m, char *key, char *value, int valuelen, char *maskstr
 
     masknum = mask_string2array(maskstr, maskarray);
     DINFO("mask mask len: %d\n", masknum);
+	if (masknum < 0 || masknum > HASHTABLE_MASK_MAX_ITEM)
+		return MEMLINK_ERR_PARAM;
+	
     DINFO("key: %s, valuelen: %d\n", key, valuelen);
     len = cmd_mask_pack(data, key, value, valuelen, masknum, maskarray);
     DINFO("pack mask len: %d\n", len);
@@ -509,7 +545,9 @@ memlink_cmd_mask(MemLink *m, char *key, char *value, int valuelen, char *maskstr
 int
 memlink_cmd_tag(MemLink *m, char *key, char *value, int valuelen, int tag)
 {
-	if(valuelen <= 0)
+	if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
+		return MEMLINK_ERR_PARAM;
+	if (valuelen <= 0 || valuelen > HASHTABLE_VALUE_MAX)
 		return MEMLINK_ERR_PARAM;
 
 	if ( MEMLINK_TAG_DEL != tag && MEMLINK_TAG_RESTORE != tag )
@@ -530,6 +568,9 @@ memlink_cmd_tag(MemLink *m, char *key, char *value, int valuelen, int tag)
 int
 memlink_cmd_rmkey(MemLink *m, char *key)
 {
+	if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
+		return MEMLINK_ERR_PARAM;
+
     char data[1024];
     int  len;
 
@@ -545,11 +586,16 @@ memlink_cmd_rmkey(MemLink *m, char *key)
 int 
 memlink_cmd_count(MemLink *m, char *key, char *maskstr, MemLinkCount *count)
 {
+	if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
+		return MEMLINK_ERR_PARAM;
+
 	unsigned int maskarray[128];
     int masknum = 0;
 
     masknum = mask_string2array(maskstr, maskarray);
     DINFO("range mask len: %d\n", masknum);
+	if (masknum < 0 || masknum > HASHTABLE_MASK_MAX_ITEM)
+		return MEMLINK_ERR_PARAM;
 
     char data[1024];
     int  len;
@@ -580,6 +626,9 @@ memlink_cmd_count(MemLink *m, char *key, char *maskstr, MemLinkCount *count)
 int 
 memlink_cmd_range(MemLink *m, char *key, unsigned char kind,  char *maskstr, int frompos, int len, MemLinkResult *result)
 {
+	if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
+		return MEMLINK_ERR_PARAM;
+
 	if(len <= 0 || frompos < 0)
 		return MEMLINK_ERR_PARAM;
 
@@ -590,6 +639,8 @@ memlink_cmd_range(MemLink *m, char *key, unsigned char kind,  char *maskstr, int
 
     maskn = mask_string2array(maskstr, maskarray);
     DINFO("range mask len: %d\n", maskn);
+	if (maskn < 0 || maskn > HASHTABLE_MASK_MAX_ITEM)
+		return MEMLINK_ERR_PARAM;
 
     plen = cmd_range_pack(data, key, kind, maskn, maskarray, frompos, len);
     DINFO("pack range len: %d\n", plen);
@@ -705,6 +756,9 @@ memlink_cmd_range(MemLink *m, char *key, unsigned char kind,  char *maskstr, int
 int
 memlink_cmd_insert_mvalue(MemLink *m, char *key, MemLinkInsertVal *values, int num)
 {
+	if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
+		return MEMLINK_ERR_PARAM;
+
     int  len;
     int  pkgsize = sizeof(int) + sizeof(char) + 256;
     int  i;
@@ -790,6 +844,9 @@ memlink_result_free(MemLinkResult *result)
 int
 memlink_cmd_del_by_mask(MemLink *m, char *key, char *maskstr)
 {
+	if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
+		return MEMLINK_ERR_PARAM;
+
 	char data[1024] = {0};
 	char retdata[1024];
 	unsigned int maskarray[128] = {0};
@@ -799,6 +856,9 @@ memlink_cmd_del_by_mask(MemLink *m, char *key, char *maskstr)
 
 	masknum = mask_string2array(maskstr, maskarray);
 	DINFO("masknum: %d\n", masknum);
+	if (masknum < 0 || masknum > HASHTABLE_MASK_MAX_ITEM)
+		return MEMLINK_ERR_PARAM;
+	
 	len = cmd_del_by_mask_pack(data, key, maskarray, masknum);
 	DINFO("pack del by mask len: %d\n", len);
 
