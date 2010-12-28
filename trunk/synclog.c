@@ -311,20 +311,46 @@ synclog_rotate(SyncLog *slog)
 int 
 synclog_validate(SyncLog *slog)
 {
-    int i;
+    int i = 0;
     int looplen = (slog->len - SYNCLOG_HEAD_LEN) / sizeof(int); // index zone length
     char *data  = slog->index + SYNCLOG_HEAD_LEN; // skip to index
     unsigned int *loopdata = (unsigned int*)data;
     unsigned int lastidx   = slog->len;
+	char dumpfile[PATH_MAX];
+	
+	//add by lanwenhong
+	snprintf(dumpfile, PATH_MAX, "%s/%s", g_cf->datadir, DUMP_FILE_NAME);
+	if (isfile(dumpfile) != 0 && g_cf->role == ROLE_SLAVE) {
+		FILE *fp = NULL;
+		unsigned int offset = 0;
+		int dumplogver, dumplogpos, ret;
 
-    for (i = 0; i < looplen; i++) {
+		fp = fopen64(dumpfile, "rb");
+		offset = sizeof(short) + sizeof(int);
+		fseek(fp, offset, SEEK_SET);
+		ret = fread(&dumplogver, sizeof(int), 1, fp);
+		ret = fread(&dumplogpos, sizeof(int), 1, fp);
+		if (dumplogver == g_runtime->synclog->version) {
+			i = dumplogpos;
+		}
+
+		fclose(fp);
+		
+	}	
+	//modify by lanwenhong
+    for (; i < looplen; i++) {
         if (loopdata[i] == 0) {
             break;
         }
         lastidx = loopdata[i];
     }
-
+	
     slog->index_pos = i;
+	if (i == 0) {
+		slog->pos = slog->len;
+		return 0;
+	}
+	
 
     unsigned short dlen;
     int            filelen = lseek(slog->fd, 0, SEEK_END);
@@ -446,10 +472,11 @@ synclog_write(SyncLog *slog, char *data, int datalen)
     //unsigned int *idxdata = (unsigned int*)(slog->index + sizeof(short) + sizeof(int) * 2);
     unsigned int *idxdata = (unsigned int*)(slog->index + SYNCLOG_HEAD_LEN);
     DINFO("write index: %u, %u\n", slog->index_pos, slog->pos);
+	//DERROR("synclog_filename: %s\n", slog->filename);
+	//DERROR("write index: %u, %u\n", slog->index_pos, slog->pos);
     idxdata[slog->index_pos] = slog->pos;
     slog->index_pos ++;
     slog->pos += offset;
-
     return 0;
 }
 
