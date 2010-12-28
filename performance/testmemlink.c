@@ -195,7 +195,7 @@ int test_range_long(int frompos, int rlen, int count)
 	for (i = 0; i < count; i++) {
 		sprintf(val, "%020d", i);
 		MemLinkResult	result;
-		ret = memlink_cmd_range(m, key, "", frompos, rlen, &result);
+		ret = memlink_cmd_range(m, key, MEMLINK_VALUE_VISIBLE, "", frompos, rlen, &result);
 		if (ret != MEMLINK_OK) {
 			DERROR("insert error, i:%d, val:%s, ret:%d\n", i, val, ret);
 			return -3;
@@ -238,7 +238,7 @@ int test_range_short(int frompos, int rlen, int count)
 
 		sprintf(val, "%020d", i);
 		MemLinkResult	result;
-		ret = memlink_cmd_range(m, key, "", frompos, rlen, &result);
+		ret = memlink_cmd_range(m, key, MEMLINK_VALUE_VISIBLE, "", frompos, rlen, &result);
 		if (ret != MEMLINK_OK) {
 			DERROR("insert error, i:%d, val:%s, ret:%d\n", i, val, ret);
 			return -3;
