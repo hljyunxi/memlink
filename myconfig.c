@@ -323,7 +323,8 @@ load_data_slave()
 			SSlave	*slave = g_runtime->slave;
 
 			slave->logver  = dumpfile_logver(master_filename);
-			slave->logline = 0;
+			slave->logline = g_runtime->dumplogpos;
+			//slave->logline = 0;
 
 			//slave->dump_logver   = 0;
 			//slave->dumpsize      = 0;
@@ -345,6 +346,7 @@ load_data_slave()
             MEMLINK_EXIT;
             return -1;
         }
+
     }
 
 

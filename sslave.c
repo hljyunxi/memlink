@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <arpa/inet.h>
-#include <netinet/tcp.h>
+#include <arpa/inet.h> 
+#include <netinet/tcp.h> 
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
@@ -443,7 +443,6 @@ sslave_conn_init(SSlave *ss)
             DINFO("sync return code:%d\n", syncret);
             if (syncret == CMD_SYNC_OK) { // ok, recv synclog
                 DINFO("sync ok, logver:%d, logline:%d, logver_start:%d, logline_start:%d\n", ss->binlog_ver, ss->binlog_index, local_logver_start, local_logpos_start);
-                //if (ss->logver < logver_start || ss->logline < logline_start) {
                 if ((ss->binlog_ver < local_logver_start || ss->binlog_index < local_logpos_start) && is_getdump != 1) {
                     synclog_resize(ss->binlog_ver, ss->binlog_index);
                 }
@@ -469,7 +468,13 @@ sslave_conn_init(SSlave *ss)
 					dumpfile(g_runtime->ht);
 
 					sslave_load_master_dump_info(ss, mdumpfile, NULL, NULL, &ss->logver);
-					ss->logline = 0;
+					//add by lanwenhong
+					g_runtime->synclog->version = ss->logver;
+					g_runtime->synclog->index_pos = g_runtime->dumplogpos;
+					memcpy((g_runtime->synclog->index + sizeof(short)), &(ss->logver), sizeof(int));
+
+					//ss->logline = 0;
+					ss->logline = g_runtime->dumplogpos;
 					is_getdump = 1;
 				}else{
                     return -1;
