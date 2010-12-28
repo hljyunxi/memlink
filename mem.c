@@ -51,6 +51,7 @@ mempool_get(MemPool *mp, int blocksize)
         dbk = (DataBlock*)zz_malloc(blocksize);
         if (NULL == dbk) {
             DERROR("malloc DataBlock error!\n");
+            MEMLINK_EXIT;
             return NULL;
         }
         memset(dbk, 0, blocksize);
