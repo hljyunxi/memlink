@@ -11,7 +11,7 @@
 #include "testframe.h"
 
 #define VALUE_SIZE		12
-//#define TEST_THREAD_NUM 10
+#define INSERT_POS		0
 
 
 int clear_key(char *key)
@@ -99,7 +99,7 @@ int test_insert_long(int count, int docreate)
 	int i;
 	for (i = 0; i < count; i++) {
 		sprintf(val, "%020d", i);
-		ret = memlink_cmd_insert(m, key, val, strlen(val), maskstr, 0);
+		ret = memlink_cmd_insert(m, key, val, strlen(val), maskstr, INSERT_POS);
 		if (ret != MEMLINK_OK) {
 			DERROR("insert error, i:%d, val:%s, ret:%d\n", i, val, ret);
 			return -3;
@@ -152,7 +152,7 @@ int test_insert_short(int count, int docreate)
 		char val[64];
 
 		sprintf(val, "%020d", i);
-		ret = memlink_cmd_insert(m, key, val, strlen(val), maskstr, 0);
+		ret = memlink_cmd_insert(m, key, val, strlen(val), maskstr, INSERT_POS);
 		if (ret != MEMLINK_OK) {
 			DERROR("insert error, i:%d, val:%s, ret:%d\n", i, val, ret);
 			return -3;
