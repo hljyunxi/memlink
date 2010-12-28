@@ -35,6 +35,7 @@ dumpfile(HashTable *ht)
     char        dumpfile[PATH_MAX];
     int         i;
 	long long   size = 0;
+	struct timeval start, end;
     
     DINFO("dumpfile start ...\n");
 
@@ -42,7 +43,8 @@ dumpfile(HashTable *ht)
     snprintf(tmpfile, PATH_MAX, "%s/%s.tmp", g_cf->datadir, DUMP_FILE_NAME);
 
     DINFO("dumpfile to tmp: %s\n", tmpfile);
-    
+   
+	gettimeofday(&start, NULL);
     FILE    *fp = fopen64(tmpfile, "wb");
 
     unsigned short formatver = DUMP_FORMAT_VERSION;
@@ -117,6 +119,8 @@ dumpfile(HashTable *ht)
         DERROR("dumpfile rename error: %s\n", strerror(errno));
     }
     
+	gettimeofday(&end, NULL);
+	DNOTE("dump time: %u us\n", timediff(&start, &end));
     return ret;
 }
 
@@ -131,7 +135,9 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
     FILE    *fp;
     int     filelen;
 	int		ret;
+	struct timeval start, end;
 
+	gettimeofday(&start, NULL);
     fp = fopen64(filename, "rb");
     if (NULL == fp) {
         DERROR("open dumpfile %s error: %s\n", filename, strerror(errno));
@@ -180,11 +186,10 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
     char          key[256];
     int           i;
     int           datalen;
-    //int           ret;
     int           load_count = 0;
 
     while (ftell(fp) < filelen) {
-        DINFO("--- cur: %d, filelen: %d, %d ---\n", (int)ftell(fp), filelen, feof(fp));
+        //DINFO("--- cur: %d, filelen: %d, %d ---\n", (int)ftell(fp), filelen, feof(fp));
         ret = ffread(&keylen, sizeof(unsigned char), 1, fp);
         DINFO("keylen: %d\n", keylen);
         ret = ffread(key, keylen, 1, fp);
@@ -266,7 +271,10 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
     }
     
     fclose(fp);
-    DINFO("load count: %d\n", load_count);
+    //DINFO("load count: %d\n", load_count);
+
+	gettimeofday(&end, NULL);
+	DNOTE("load dump %d time: %u us\n", load_count, timediff(&start, &end));
 
     return 0;
 }

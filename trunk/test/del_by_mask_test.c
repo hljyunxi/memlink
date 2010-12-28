@@ -44,7 +44,7 @@ int main()
 
 	ret = memlink_cmd_del_by_mask(m, buf, ":3:1");	
 	if (ret != MEMLINK_OK) {
-		printf("del_by_mask key:%s, val:%s, ret:%d\n", buf, ret);
+		printf("del_by_mask key:%s, ret:%d\n", buf, ret);
 		return -4;
 	}
 	printf("del_by_mask %s!\n", ":3:1");
@@ -69,7 +69,7 @@ int main()
 	ret = memlink_cmd_stat(m, buf, &st);
 	if(ret != MEMLINK_OK)
 	{
-		printf("stat err key:%s, ret:%s\n", buf, ret);
+		printf("stat err key:%s, ret:%d\n", buf, ret);
 		return -1;
 	}
 
@@ -108,14 +108,14 @@ int main()
 
 		ret = memlink_cmd_del_by_mask(m, buf, maskstr1[k]);	
 		if (ret != MEMLINK_OK) {
-			printf("del_by_mask key:%s, val:%s, ret:%d\n", buf, ret);
+			printf("del_by_mask key:%s, ret:%d\n", buf, ret);
 			return -4;
 		}
 		
 		ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE,  maskstr1[k], frompos, len, &rs);
 		if (ret != MEMLINK_OK)
 		{
-			printf("range error, key:%s, mask:%s\n", buf, maskstr[k]);
+			printf("range error, key:%s, mask:%s\n", buf, maskstr1[k]);
 			return -3;
 		}
 		MemLinkItem* item = rs.root;
@@ -129,7 +129,7 @@ int main()
 		ret = memlink_cmd_stat(m, buf, &st);
 		if(ret != MEMLINK_OK)
 		{
-			printf("stat err key:%s, ret:%s\n", buf, ret);
+			printf("stat err key:%s, ret:%d\n", buf, ret);
 			return -1;
 		}
 

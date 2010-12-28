@@ -398,13 +398,10 @@ wdata_apply(char *data, int datalen, int writelog)
 				break;
 			}
 
-            //hashtable_print(g_runtime->ht, key);
-
             ret = hashtable_add_mask(g_runtime->ht, key, value, maskarray, masknum, pos);
             DINFO("hashtable_add_mask: %d\n", ret);
            
             //hashtable_print(g_runtime->ht, key);
-
             if (ret >= 0 && writelog) {
                 int sret = synclog_write(g_runtime->synclog, data, datalen);
                 if (sret < 0) {
@@ -641,7 +638,7 @@ wdata_ready(Conn *conn, char *data, int datalen)
 wdata_ready_over:
     data_reply(conn, ret, NULL, 0);
     gettimeofday(&end, NULL);
-	DNOTE("%s:%d cmd:%d %d %uus\n", conn->client_ip, conn->client_port, cmd, ret, timediff(&start, &end));
+	DNOTE("%s:%d cmd:%d %d %u us\n", conn->client_ip, conn->client_port, cmd, ret, timediff(&start, &end));
     DINFO("data_reply return: %d\n", ret);
 
     return 0;

@@ -309,7 +309,7 @@ int main()
 		int k = i%3;
 		ret = memlink_cmd_insert(m, buf, (char*)&i, sizeof(int), maskstr1[k], 0);	
 		if (ret != MEMLINK_OK) {
-			DERROR("insert error, key:%s, val:%d, mask:%s\n", buf, val, maskstr1[k]);
+			DERROR("insert error, key:%s, val:%d, mask:%s\n", buf, i, maskstr1[k]);
 			return -3;
 		}
 	}
