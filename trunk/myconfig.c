@@ -512,7 +512,7 @@ runtime_create_slave(char *pgname)
  
 	sslave_go(rt->slave);
 	
-	DINFO("create slave runtime ok!\n");
+	DNOTE("create slave runtime ok!\n");
     return rt;
 }
 
@@ -553,7 +553,7 @@ runtime_create_master(char *pgname)
     DINFO("sync thread create ok!\n");
 	
 
-    DINFO("create master Runtime ok!\n");
+    DNOTE("create master Runtime ok!\n");
     return rt;
 }
 
