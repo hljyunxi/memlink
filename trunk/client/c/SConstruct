@@ -1,6 +1,6 @@
 #cflags   = '-ggdb -DRANGE_MASK_STR'
 #cflags   = '-ggdb -DDEBUG -DRANGE_MASK_STR'
-cflags   = '-ggdb -Wall'
+cflags   = '-ggdb -Wall -O2'
 #cflags   = '-ggdb -DDEBUG -Wall'
 includes = ['.', '../../', '/Developer/usr/include']
 libpath  = ['.']
@@ -24,4 +24,10 @@ env = Environment(CCFLAGS=cflags, CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
 env.SharedLibrary("memlink", libfiles)
 env.StaticLibrary("memlink", libfiles)
 
-env.Program("client", prgfiles)
+env2 = Environment(CCFLAGS='-ggdb -Wall -fprofile-arcs -ftest-coverage', LINKFLAGS='-fprofile-arcs -ftest-coverage', CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
+#env2 = Environment(CCFLAGS='-ggdb -Wall', LINKFLAGS='-fprofile-arcs -ftest-coverage', CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
+clientfiles = []
+for fn in prgfiles:
+	name = fn[:-2]
+	clientfiles.append(env2.Object('client-' + name, fn))	
+env2.Program("client", clientfiles)
