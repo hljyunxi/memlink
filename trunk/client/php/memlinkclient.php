@@ -148,7 +148,7 @@ class MemLinkClient
         return memlink_cmd_tag($this->client, $key, $value, $valuelen, $tag);
     }
 
-    function range($key, $kind, $maskstr, $frompos, $len)
+    function range($key, $maskstr, $frompos, $len, $kind=MEMLINK_VALUE_VISIBLE)
     {
     	if( False == is_string($key) or False == is_int($frompos) or
     		False == is_int($len) or False == is_string($maskstr) )
@@ -165,7 +165,22 @@ class MemLinkClient
 		return NULL;
     }
 
-	function range2($key, $kind, $maskstr, $frompos, $len, $result)
+	function range_visible($key, $maskstr, $frompos, $len) 
+	{
+		return $this->range($key, MEMLINK_VALUE_VISIBLE, $maskstr, $frompos, $len);
+	}
+	
+	function range_tagdel($key, $maskstr, $frompos, $len) 
+	{
+		return $this->range($key, MEMLINK_VALUE_TAGDEL, $maskstr, $frompos, $len);
+	}
+
+	function range_all($key, $maskstr, $frompos, $len) 
+	{
+		return $this->range($key, MEMLINK_VALUE_ALL, $maskstr, $frompos, $len);
+	}
+
+	function range2($key, $maskstr, $frompos, $len, $result, $kind=MEMLINK_VALUE_VISIBLE)
 	{
     	if( False == is_string($key) or False == is_int($frompos) or False == is_int($len) or False == is_string($maskstr) )
     	{
@@ -173,6 +188,21 @@ class MemLinkClient
     	}
 	
 		return memlink_cmd_range($this->client, $key, $kind, $maskstr, $frompos, $len, $result);
+	}
+
+	function range2_visible($key, $maskstr, $frompos, $len, $result)
+	{
+		return $this->range2($key, MEMLINK_VALUIE_VISIBLE, $maskstr, $frompos, $len, $result);
+	}
+
+	function range2_tagdel($key, $maskstr, $frompos, $len, $result)
+	{
+		return $this->range2($key, MEMLINK_VALUIE_TAGDEL, $maskstr, $frompos, $len, $result);
+	}
+
+	function range2_all($key, $maskstr, $frompos, $len, $result)
+	{
+		return $this->range2($key, MEMLINK_VALUIE_ALL, $maskstr, $frompos, $len, $result);
 	}
 
 	function rmkey($key)

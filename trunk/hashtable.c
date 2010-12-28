@@ -146,9 +146,9 @@ datablock_lookup_pos(HashNode *node, int pos, unsigned char kind, DataBlock **db
 		//modify by lanwenhong
 		if (kind == MEMLINK_VALUE_VISIBLE) {
 			n += root->visible_count;
-		} else if (kind == MEMLINK_VALUE_ALL) {
+		}else if (kind == MEMLINK_VALUE_ALL) {
 			n += root->tagdel_count + root->visible_count;
-		} else if (kind == MEMLINK_VALUE_TAGDEL) {
+		}else if (kind == MEMLINK_VALUE_TAGDEL) {
 			n += root->tagdel_count;
 		}
 	
@@ -325,7 +325,7 @@ dataitem_lookup_pos(HashNode *node, int pos, unsigned char kind, DataBlock **dbk
     int ret;
 
     ret = datablock_lookup_valid_pos(node, pos, kind, dbk, prev);
-    DINFO("datablock_lookup_pos, pos:%d, dbk:%p, prev:%p, ret:%d\n", pos, *dbk, *prev, ret);
+    DINFO("datablock_lookup_valid_pos, pos:%d, dbk:%p, prev:%p, ret:%d\n", pos, *dbk, *prev, ret);
     if (ret < 0 || *dbk == NULL) {
         *data = 0;
         return ret;
