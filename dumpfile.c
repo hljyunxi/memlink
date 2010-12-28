@@ -80,7 +80,10 @@ dumpfile(HashTable *ht)
             ffwrite(&node->valuesize, sizeof(char), 1, fp);
             ffwrite(&node->masksize, sizeof(char), 1, fp);
             ffwrite(&node->masknum, sizeof(char), 1, fp);
-            ffwrite(node->maskformat, sizeof(char) * node->masknum, 1, fp);
+
+			if (node->masknum > 0) {
+				ffwrite(node->maskformat, sizeof(char) * node->masknum, 1, fp);
+			}
             /*for (k = 0; k < node->masknum; k++) {
                 DINFO("dump mask, k:%d, mask:%d\n", k, node->maskformat[k]);
             }*/
@@ -202,7 +205,10 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
 		DINFO("masklen: %d\n", masklen);
         ret = ffread(&masknum, sizeof(char), 1, fp);
 		DINFO("masknum: %d\n", masknum);
-        ret = ffread(maskformat, sizeof(char) * masknum, 1, fp);
+		if (masknum > 0) {
+			ret = ffread(maskformat, sizeof(char) * masknum, 1, fp);
+		}
+			
         /*for (i = 0; i < masknum; i++) {
             DINFO("maskformat, i:%d, mask:%d\n", i, maskformat[i]);
         }*/
@@ -210,7 +216,7 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
         datalen = valuelen + masklen;
 		DINFO("itemnum: %d, datalen: %d\n", itemnum, datalen);
 
-        unsigned int maskarray[HASHTABLE_MASK_MAX_ITEM];
+        unsigned int maskarray[HASHTABLE_MASK_MAX_ITEM] = {0};
         for (i = 0; i < masknum; i++) {
             maskarray[i] = maskformat[i];
         }

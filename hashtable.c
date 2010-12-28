@@ -616,7 +616,7 @@ hashtable_key_create_mask(HashTable *ht, char *key, int valuesize, unsigned int 
             node->maskformat[i] = maskarray[i];
         }
     }
-    DINFO("node key: %s, format: %d,%d,%d\n", node->key, node->maskformat[0], node->maskformat[1], node->maskformat[2]);
+    //DINFO("node key: %s, format: %d,%d,%d\n", node->key, node->maskformat[0], node->maskformat[1], node->maskformat[2]);
     ht->bunks[hash] = node;
     DINFO("ht key:%s, hash:%d\n", ht->bunks[hash]->key, hash);
 
@@ -1828,7 +1828,7 @@ hashtable_stat_sys(HashTable *ht, HashTableStatSys *stat)
 	for (i = 0; i < HASHTABLE_BUNKNUM; i++) {
 		node = ht->bunks[i];
 		if (node) {
-			memu += strlen(node->key) + 1;
+			memu += strlen(node->key) + 1 + node->masknum;
 		}
 		while (node) {
 			keys++;	
