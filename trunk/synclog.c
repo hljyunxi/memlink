@@ -330,7 +330,7 @@ synclog_validate(SyncLog *slog)
 		fseek(fp, offset, SEEK_SET);
 		ret = fread(&dumplogver, sizeof(int), 1, fp);
 		ret = fread(&dumplogpos, sizeof(int), 1, fp);
-		if (dumplogver == g_runtime->synclog->version) {
+		if (dumplogver == g_runtime->logver) {
 			i = dumplogpos;
 		}
 
