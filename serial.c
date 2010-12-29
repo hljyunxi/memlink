@@ -31,7 +31,13 @@ mask_string2array(char *maskstr, unsigned int *result)
         if (m[0] == ':' || m[0] == 0) {
             result[i] = UINT_MAX;
         }else{
-            result[i] = atoi(m); 
+        //modifed by wyx 12.27
+        	unsigned long num = strtoul(m, NULL, 10);
+			if (num >= UINT_MAX){
+				//DERROR("num:%lu\n", num);
+				return MEMLINK_ERR_PARAM;
+			}
+			result[i] = num; 
         }
         i++;
         if (fi != NULL) {
