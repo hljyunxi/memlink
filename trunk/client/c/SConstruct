@@ -7,7 +7,7 @@ libpath  = ['.']
 libs	 = ['m']
 comfiles = ['../../zzmalloc.c', '../../serial.c', '../../logfile.c', '../../utils.c']
 prgfiles = comfiles + ['memlink_client.c', 'test.c']
-simfiles = comfiles + ['memlink_client.c', 'simpletest.c']
+simfiles = comfiles + ['memlink_client.c', 'pingtest.c']
 libfiles = comfiles + ['memlink_client.c']
 
 env = Environment(CCFLAGS=cflags, CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
@@ -26,7 +26,7 @@ env.SharedLibrary("memlink", libfiles)
 env.StaticLibrary("memlink", libfiles)
 
 env.Program("client", prgfiles)
-env.Program("simple", simfiles)
+env.Program("pingtest", simfiles)
 
 #env2 = Environment(CCFLAGS='-ggdb -Wall -fprofile-arcs -ftest-coverage', 
 #                   LINKFLAGS='-fprofile-arcs -ftest-coverage', 
