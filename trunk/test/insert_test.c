@@ -36,16 +36,21 @@ int main()
 		int k = i%3;
 		ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr1[k], 0);	
 		//ret = memlink_cmd_insert(m, buf, val, strlen(val), "14294967295:3:1", 0);	
-		
 		if (ret != MEMLINK_OK) {
 			DERROR("insert error, key:%s, val:%s, mask:%s, i:%d\n", buf, val, maskstr1[k], i);
 			return -3;
 		}
 	}
 
+	ret = memlink_cmd_insert(m, buf, val, strlen(val), "14294967295:3:1", 0); 
+	if (ret == MEMLINK_OK) {
+		DERROR("insert error, key:%s, val:%s, mask:%s, i:%d\n", buf, val, "14294967295:3:1", 0);
+		return -3;
+	}
+
 	ret = memlink_cmd_insert(m, buf, val, -1, maskstr1[1], -10); 
 	if (ret == MEMLINK_OK) {
-		DERROR("insert error, key:%s, val:%s, mask:%s, i:%d\n", buf, val, maskstr1[1], i);
+		DERROR("insert error, key:%s, val:%s, mask:%s, pos:%d\n", buf, val, maskstr1[1], -10);
 		return -3;
 	}
 	//ret = memlink_cmd_insert(m, buf, val, strlen(val), "8:3:1", 201); 
