@@ -68,7 +68,7 @@ function test_tag($m, $key)
 
 function test_range($m, $key)
 {
-    $ret = $m->range($key, "", 0, 10);
+    $ret = $m->range($key, MEMLINK_VALUE_VISIBLE, "", 0, 10);
     if (is_null($ret)) {
         echo "range error! \n";
         return -1;
