@@ -403,7 +403,7 @@ memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr)
 
     masknum = mask_string2array(maskstr, maskarray);
     DINFO("create masknum: %d\n", masknum);	
-	if (masknum > HASHTABLE_MASK_MAX_ITEM)
+	if (masknum < 0 || masknum > HASHTABLE_MASK_MAX_ITEM)
 		return MEMLINK_ERR_PARAM;
 	int i = 0;
 	for (i = 0; i < masknum; i++)
@@ -629,10 +629,11 @@ memlink_cmd_range(MemLink *m, char *key, unsigned char kind,  char *maskstr,
 {
 	if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
 		return MEMLINK_ERR_PARAM;
-
-	if(len <= 0 || frompos < 0)
+	if (len <= 0 || frompos < 0)
 		return MEMLINK_ERR_PARAM;
-
+	if (MEMLINK_VALUE_ALL != kind && MEMLINK_VALUE_VISIBLE != kind && MEMLINK_VALUE_TAGDEL != kind)
+		return MEMLINK_ERR_PARAM;
+	
     char data[1024];
     int  plen;
     unsigned int maskarray[128];
