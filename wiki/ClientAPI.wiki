@@ -83,8 +83,8 @@
   * {{{int memlink_cmd_tag(MemLink *m, char *key, char *value, int valuelen, int tag);}}}<br/>
   发送TAG命令，对一个value进行标记删除或者恢复。标记删除的value不会被真实删除，只是该数据不再显示。tag值为MEMLINK_TAG_DEL表示标记删除，为MEMLINK_TAG_RESTORE表示恢复。
 
-  * {{{int memlink_cmd_range(MemLink *m, char *key, char *maskstr,unsigned int frompos, unsigned int len,MemLinkResult *result);}}}<br/>
-  发送RANGE命令，获取指定key下的某个范围的value。frompos是获取的开始位置，从0开始，len为要获取的长度。结果将写入到result中。
+  * {{{int memlink_cmd_range(MemLink *m, char *key, unsigned char kind, char *maskstr,unsigned int frompos, unsigned int len,MemLinkResult *result);}}}<br/>
+  发送RANGE命令，获取指定key下的某个范围的value。kind为查询value的内部属性，MEMLINK_VALUE_VISIBLE 表示正常可见数据，MEMLINK_VALUE_TAGDEL表示标记删除的数据，MEMLINK_VALUE_ALL表示前两者之和。frompos是获取的开始位置，从0开始，len为要获取的长度。结果将写入到result中。
   MemLinkResult的结构定义如下：
   {{{
   typedef struct _memlink_result
@@ -154,9 +154,9 @@
     同c版memlink_cmd_mask。返回值为整型，正常返回MEMLNK_OK。
     * tag($key, $value, $valuelen, $tag)
     同c版memlink_cmd_tag。返回值为整型，正常返回MEMLNK_OK。
-    * range($key, $maskstr, $frompos, $len)
+    * range($key, kind, $maskstr, $frompos, $len)
     同c版memlink_cmd_range。返回MemLinkResult对象，失败返回null。
-    * range2($key, $maskstr, $frompos, $len, $result)
+    * range2($key, kind, $maskstr, $frompos, $len, $result)
     同c版memlink_cmd_range。和上一个range方法的区别是，需要传一个MemLinkResult对象作为第二个参数，返回值为整型，正常返回MEMLNK_OK。
     * rmkey($key)
     同c版memlink_cmd_rmkey。返回值为整型，正常返回MEMLNK_OK。
@@ -194,7 +194,7 @@
     同c版memlink_cmd_mask。返回值为整型，正常返回MEMLNK_OK。		
     * tag(self, key, value, tag)
     同c版memlink_cmd_tag。返回值为整型，正常返回MEMLNK_OK。		
-    * range(self, key, maskstr, frompos, len)
+    * range(self, key, kind, maskstr, frompos, len)
     同c版memlink_cmd_range。返回值为tuple,共两个成员。其中第一项为整形返回值，为MEMLINK_OK表示正常。第二项为MemLinkResult对象。		
     * rmkey(self, key)
     同c版memlink_cmd_rmkey。返回值为整型，正常返回MEMLNK_OK。		
