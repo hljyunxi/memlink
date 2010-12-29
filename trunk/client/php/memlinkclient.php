@@ -148,7 +148,7 @@ class MemLinkClient
         return memlink_cmd_tag($this->client, $key, $value, $valuelen, $tag);
     }
 
-    function range($key, $maskstr, $frompos, $len, $kind=MEMLINK_VALUE_VISIBLE)
+    function range($key, $kind, $maskstr, $frompos, $len)
     {
     	if( False == is_string($key) or False == is_int($frompos) or
     		False == is_int($len) or False == is_string($maskstr) )
@@ -180,7 +180,7 @@ class MemLinkClient
 		return $this->range($key, MEMLINK_VALUE_ALL, $maskstr, $frompos, $len);
 	}
 
-	function range2($key, $maskstr, $frompos, $len, $result, $kind=MEMLINK_VALUE_VISIBLE)
+	function range2($key, $kind, $maskstr, $frompos, $len, $result)
 	{
     	if( False == is_string($key) or False == is_int($frompos) or False == is_int($len) or False == is_string($maskstr) )
     	{

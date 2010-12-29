@@ -27,12 +27,6 @@ if (!extension_loaded('memlink')) {
 
 /*
 abstract class memlink {
-	const MEMLINK_ERR_TIMEOUT = MEMLINK_ERR_TIMEOUT;
-
-	const MEMLINK_ERR_SEND = MEMLINK_ERR_SEND;
-
-	const MEMLINK_ERR_RECV = MEMLINK_ERR_RECV;
-
 	const MEMLINK_ERR_CLIENT = MEMLINK_ERR_CLIENT;
 
 	const MEMLINK_ERR_SERVER = MEMLINK_ERR_SERVER;
@@ -61,6 +55,16 @@ abstract class memlink {
 
 	const MEMLINK_ERR_RANGE_SIZE = MEMLINK_ERR_RANGE_SIZE;
 
+	const MEMLINK_ERR_SEND = MEMLINK_ERR_SEND;
+
+	const MEMLINK_ERR_RECV = MEMLINK_ERR_RECV;
+
+	const MEMLINK_ERR_TIMEOUT = MEMLINK_ERR_TIMEOUT;
+
+	const MEMLINK_ERR_KEY = MEMLINK_ERR_KEY;
+
+	const MEMLINK_ERR_PARAM = MEMLINK_ERR_PARAM;
+
 	const MEMLINK_ERR = MEMLINK_ERR;
 
 	const MEMLINK_FAILED = MEMLINK_FAILED;
@@ -71,15 +75,63 @@ abstract class memlink {
 
 	const MEMLINK_FALSE = MEMLINK_FALSE;
 
+	const MEMLINK_ERR_DUMP_SIZE = MEMLINK_ERR_DUMP_SIZE;
+
+	const MEMLINK_ERR_DUMP_VER = MEMLINK_ERR_DUMP_VER;
+
+	const ROLE_MASTER = ROLE_MASTER;
+
+	const ROLE_SLAVE = ROLE_SLAVE;
+
+	const SYNCLOG_INDEXNUM = SYNCLOG_INDEXNUM;
+
+	const MEMLINK_TAG_DEL = MEMLINK_TAG_DEL;
+
+	const MEMLINK_TAG_RESTORE = MEMLINK_TAG_RESTORE;
+
+	const CMD_GETDUMP_OK = CMD_GETDUMP_OK;
+
+	const CMD_GETDUMP_CHANGE = CMD_GETDUMP_CHANGE;
+
+	const CMD_GETDUMP_SIZE_ERR = CMD_GETDUMP_SIZE_ERR;
+
+	const CMD_SYNC_OK = CMD_SYNC_OK;
+
+	const CMD_SYNC_FAILED = CMD_SYNC_FAILED;
+
+	const CMD_RANGE_MAX_SIZE = CMD_RANGE_MAX_SIZE;
+
+	const HASHTABLE_BUNKNUM = HASHTABLE_BUNKNUM;
+
+	const HASHTABLE_MASK_MAX_BIT = HASHTABLE_MASK_MAX_BIT;
+
+	const HASHTABLE_MASK_MAX_BYTE = HASHTABLE_MASK_MAX_BYTE;
+
+	const HASHTABLE_MASK_MAX_ITEM = HASHTABLE_MASK_MAX_ITEM;
+
+	const HASHTABLE_KEY_MAX = HASHTABLE_KEY_MAX;
+
+	const HASHTABLE_VALUE_MAX = HASHTABLE_VALUE_MAX;
+
+	const MEMLINK_VALUE_ALL = MEMLINK_VALUE_ALL;
+
+	const MEMLINK_VALUE_VISIBLE = MEMLINK_VALUE_VISIBLE;
+
+	const MEMLINK_VALUE_TAGDEL = MEMLINK_VALUE_TAGDEL;
+
+	const MEMLINK_VALUE_REMOVED = MEMLINK_VALUE_REMOVED;
+
+	const MEMLINK_LIST = MEMLINK_LIST;
+
+	const MEMLINK_QUEUE = MEMLINK_QUEUE;
+
+	const MEMLINK_SORT_LIST = MEMLINK_SORT_LIST;
+
 	const MEMLINK_READER = MEMLINK_READER;
 
 	const MEMLINK_WRITER = MEMLINK_WRITER;
 
 	const MEMLINK_ALL = MEMLINK_ALL;
-
-	const MEMLINK_TAG_DEL = MEMLINK_TAG_DEL;
-
-	const MEMLINK_TAG_RESTORE = MEMLINK_TAG_RESTORE;
 
 	static function memlink_result_free($result) {
 		memlink_result_free($result);
@@ -105,6 +157,10 @@ abstract class memlink {
 		memlink_close($m);
 	}
 
+	static function memlink_cmd_ping($m) {
+		return memlink_cmd_ping($m);
+	}
+
 	static function memlink_cmd_dump($m) {
 		return memlink_cmd_dump($m);
 	}
@@ -115,6 +171,10 @@ abstract class memlink {
 
 	static function memlink_cmd_stat($m,$key,$stat) {
 		return memlink_cmd_stat($m,$key,$stat);
+	}
+
+	static function memlink_cmd_stat_sys($m,$stat) {
+		return memlink_cmd_stat_sys($m,$stat);
 	}
 
 	static function memlink_cmd_create($m,$key,$valuelen,$maskstr) {
@@ -129,6 +189,22 @@ abstract class memlink {
 		return memlink_cmd_insert($m,$key,$value,$valuelen,$maskstr,$pos);
 	}
 
+	static function memlink_cmd_lpush($m,$key,$value,$valuelen,$maskstr) {
+		return memlink_cmd_lpush($m,$key,$value,$valuelen,$maskstr);
+	}
+
+	static function memlink_cmd_rpush($m,$key,$value,$valuelen,$maskstr) {
+		return memlink_cmd_rpush($m,$key,$value,$valuelen,$maskstr);
+	}
+
+	static function memlink_cmd_lpop($m,$key,$num,$result) {
+		return memlink_cmd_lpop($m,$key,$num,$result);
+	}
+
+	static function memlink_cmd_rpop($m,$key,$num,$result) {
+		return memlink_cmd_rpop($m,$key,$num,$result);
+	}
+
 	static function memlink_cmd_update($m,$key,$value,$valuelen,$pos) {
 		return memlink_cmd_update($m,$key,$value,$valuelen,$pos);
 	}
@@ -141,8 +217,8 @@ abstract class memlink {
 		return memlink_cmd_tag($m,$key,$value,$valuelen,$tag);
 	}
 
-	static function memlink_cmd_range($m,$key,$maskstr,$frompos,$len,$result) {
-		return memlink_cmd_range($m,$key,$maskstr,$frompos,$len,$result);
+	static function memlink_cmd_range($m,$key,$kind,$maskstr,$frompos,$len,$result) {
+		return memlink_cmd_range($m,$key,$kind,$maskstr,$frompos,$len,$result);
 	}
 
 	static function memlink_cmd_rmkey($m,$key) {
@@ -152,29 +228,37 @@ abstract class memlink {
 	static function memlink_cmd_count($m,$key,$maskstr,$count) {
 		return memlink_cmd_count($m,$key,$maskstr,$count);
 	}
+
+	static function memlink_cmd_insert_mvalue($m,$key,$values,$num) {
+		return memlink_cmd_insert_mvalue($m,$key,$values,$num);
+	}
+
+	static function memlink_cmd_del_by_mask($m,$key,$maskstr) {
+		return memlink_cmd_del_by_mask($m,$key,$maskstr);
+	}
 }
 */
 
 /* PHP Proxy Classes */
-class MemLink {
+class MemLinkInsertVal {
 	public $_cPtr=null;
 	protected $_pData=array();
 
 	function __set($var,$value) {
-		$func = 'MemLink_'.$var.'_set';
+		$func = 'MemLinkInsertVal_'.$var.'_set';
 		if (function_exists($func)) return call_user_func($func,$this->_cPtr,$value);
 		if ($var === 'thisown') return swig_memlink_alter_newobject($this->_cPtr,$value);
 		$this->_pData[$var] = $value;
 	}
 
 	function __isset($var) {
-		if (function_exists('MemLink_'.$var.'_set')) return true;
+		if (function_exists('MemLinkInsertVal_'.$var.'_set')) return true;
 		if ($var === 'thisown') return true;
 		return array_key_exists($var, $this->_pData);
 	}
 
 	function __get($var) {
-		$func = 'MemLink_'.$var.'_get';
+		$func = 'MemLinkInsertVal_'.$var.'_get';
 		if (function_exists($func)) {
 			$r = call_user_func($func,$this->_cPtr);
 			if (!is_resource($r)) return $r;
@@ -186,11 +270,11 @@ class MemLink {
 	}
 
 	public function __construct($res=null) {
-		if (is_resource($res) && get_resource_type($res) === '_p__memlink_client') {
+		if (is_resource($res) && get_resource_type($res) === '_p__memlink_insert_mvalue_item') {
 			$this->_cPtr=$res;
 			return;
 		}
-		$this->_cPtr=new_MemLink();
+		$this->_cPtr=new_MemLinkInsertVal();
 	}
 }
 
@@ -229,6 +313,82 @@ class MemLinkStat {
 			return;
 		}
 		$this->_cPtr=new_MemLinkStat();
+	}
+}
+
+class MemLinkStatSys {
+	public $_cPtr=null;
+	protected $_pData=array();
+
+	function __set($var,$value) {
+		$func = 'MemLinkStatSys_'.$var.'_set';
+		if (function_exists($func)) return call_user_func($func,$this->_cPtr,$value);
+		if ($var === 'thisown') return swig_memlink_alter_newobject($this->_cPtr,$value);
+		$this->_pData[$var] = $value;
+	}
+
+	function __isset($var) {
+		if (function_exists('MemLinkStatSys_'.$var.'_set')) return true;
+		if ($var === 'thisown') return true;
+		return array_key_exists($var, $this->_pData);
+	}
+
+	function __get($var) {
+		$func = 'MemLinkStatSys_'.$var.'_get';
+		if (function_exists($func)) {
+			$r = call_user_func($func,$this->_cPtr);
+			if (!is_resource($r)) return $r;
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			return new $c($r);
+		}
+		if ($var === 'thisown') return swig_memlink_get_newobject($this->_cPtr);
+		return $this->_pData[$var];
+	}
+
+	public function __construct($res=null) {
+		if (is_resource($res) && get_resource_type($res) === '_p__ht_stat_sys') {
+			$this->_cPtr=$res;
+			return;
+		}
+		$this->_cPtr=new_MemLinkStatSys();
+	}
+}
+
+class MemLink {
+	public $_cPtr=null;
+	protected $_pData=array();
+
+	function __set($var,$value) {
+		$func = 'MemLink_'.$var.'_set';
+		if (function_exists($func)) return call_user_func($func,$this->_cPtr,$value);
+		if ($var === 'thisown') return swig_memlink_alter_newobject($this->_cPtr,$value);
+		$this->_pData[$var] = $value;
+	}
+
+	function __isset($var) {
+		if (function_exists('MemLink_'.$var.'_set')) return true;
+		if ($var === 'thisown') return true;
+		return array_key_exists($var, $this->_pData);
+	}
+
+	function __get($var) {
+		$func = 'MemLink_'.$var.'_get';
+		if (function_exists($func)) {
+			$r = call_user_func($func,$this->_cPtr);
+			if (!is_resource($r)) return $r;
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			return new $c($r);
+		}
+		if ($var === 'thisown') return swig_memlink_get_newobject($this->_cPtr);
+		return $this->_pData[$var];
+	}
+
+	public function __construct($res=null) {
+		if (is_resource($res) && get_resource_type($res) === '_p__memlink_client') {
+			$this->_cPtr=$res;
+			return;
+		}
+		$this->_cPtr=new_MemLink();
 	}
 }
 
@@ -308,8 +468,6 @@ class MemLink_Item {
 	}
 }
 
-//$MemLinkItem = MemLink_Item;
-
 class MemLinkResult {
 	public $_cPtr=null;
 	protected $_pData=array();
@@ -347,10 +505,9 @@ class MemLinkResult {
 		$this->_cPtr=new_MemLinkResult();
 	}
 
-	function __destruct() {
+    function __destruct() {
         memlink_result_free($this->_cPtr);
     }
-
 }
 
 

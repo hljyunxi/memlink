@@ -40,7 +40,7 @@ int my_test_insert_key_value()
 	int ret;
 
 	snprintf(buf, 128, "%s", "myvalue");
-	DINFO("INSERT test mykey %s\n");
+	DINFO("INSERT test mykey %s\n", buf);
 
 	ret = memlink_cmd_insert(m, "test", buf, strlen(buf), "1:2:0", 0);
 
@@ -57,7 +57,7 @@ int my_test_stat()
 	
 	ret = memlink_cmd_stat(m, "test", &stat);
 	DINFO("memlink_cmd_stat: %d\n", ret);
-	DINFO("valuesize:%d, masksize:%d, blocks:%d, data:%d, data_used:%d, mem:%d, mem_used:%d\n", stat.valuesize, stat.masksize, stat.blocks, stat.data, stat.data_used, stat.mem, stat.mem_used);
+	DINFO("valuesize:%d, masksize:%d, blocks:%d, data:%d, data_used:%d, mem:%d\n", stat.valuesize, stat.masksize, stat.blocks, stat.data, stat.data_used, stat.mem);
 
 	return 1;
 
@@ -70,7 +70,7 @@ int my_test_range()
 	MemLinkResult result;
 	MemLinkItem *p ;
 
-	ret = memlink_cmd_range(m, "test", "::", 0, 2, &result);
+	ret = memlink_cmd_range(m, "test", MEMLINK_VALUE_VISIBLE, "::", 0, 2, &result);
 	DINFO("valuesize:%d, masksize:%d, count:%d\n", result.valuesize, result.masksize,
 		result.count);
 
@@ -113,7 +113,7 @@ int my_test_del_value()
     char value[10];
 
 	sprintf(key, "%s", "test");
-	sprintf(value, "%s" "myvalue");
+	sprintf(value, "%s", "myvalue");
 
 	ret = memlink_cmd_del(m, key, value, strlen(value));
 	DINFO("memlink_cmd_del: %d", ret);
@@ -128,7 +128,7 @@ int my_test_mask()
 	char value[10];
 
 	sprintf(key, "%s", "test");
-	sprintf(value, "%s" "myvalue");
+	sprintf(value, "%s", "myvalue");
 
 	ret = memlink_cmd_mask(m, key, value, strlen(value), "1:1:1");
 	DINFO("memlink_cmd_mask: %d\n", ret);
