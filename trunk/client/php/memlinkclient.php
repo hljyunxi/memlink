@@ -237,7 +237,7 @@ class MemLinkClient
     		return -1;
     	}
 	
-		return memlink_cmd_count($this->client, $key, $maskstr, $result);
+		return memlink_cmd_count($this->client, $key, $maskstr, $count);
 	}
 }
 
