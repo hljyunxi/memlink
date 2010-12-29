@@ -546,7 +546,7 @@ hashtable_key_create(HashTable *ht, char *key, int valuesize, char *maskstr)
     int  masknum = mask_string2array(maskstr, format);
     int  i; 
     
-    if (masknum > HASHTABLE_MASK_MAX_ITEM) {
+    if (masknum > HASHTABLE_MASK_MAX_ITEM || masknum <= 0) {
         return MEMLINK_ERR_MASK;
     }
 
@@ -836,7 +836,7 @@ hashtable_add(HashTable *ht, char *key, void *value, char *maskstr, int pos)
     char masknum;
 
     masknum = mask_string2array(maskstr, maskarray);
-    if (masknum <= 0) {
+    if (masknum <= 0 || masknum > HASHTABLE_MASK_MAX_ITEM) {
         DINFO("mask_string2array error: %s\n", maskstr);
         return MEMLINK_ERR_MASK;
     }
