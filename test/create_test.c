@@ -29,24 +29,30 @@ int main()
 		ret = memlink_cmd_create(m, key, 6, "4:3:1");
 		
 		if (ret != MEMLINK_OK) {
-			DERROR("1 memlink_cmd_create %s error: %d\n", key, ret);
+			DERROR("memlink_cmd_create %s error: %d\n", key, ret);
 			return -2;
 		}
 	}
 	
 	ret = memlink_cmd_create(m, key, 6, "4:3:1");
 	if (ret == MEMLINK_OK) {
-		DERROR("2 memlink_cmd_create %s error: %d\n", key, ret);
+		DERROR("memlink_cmd_create %s error: %d\n", key, ret);
 		return -3;
 	}
 
 	strcpy(key, "haha1111");
 	ret = memlink_cmd_create(m, key, -1, "4:3:1");
 	if (ret == MEMLINK_OK) {
-		DERROR("2 memlink_cmd_create %s error: %d\n", key, ret);
+		DERROR("memlink_cmd_create %s error: %d\n", key, ret);
 		return -3;
 	}
 
+	strcpy(key, "haha2222");
+	ret = memlink_cmd_create(m, key, 12, "4:3:21474");
+	if (ret == MEMLINK_OK) {
+		DERROR("memlink_cmd_create %s error: %d, mask=%s\n", key, ret, "4:3:21474");
+		return -3;
+	}
 	
 	memlink_destroy(m);
 

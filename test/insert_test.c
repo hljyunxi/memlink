@@ -53,6 +53,25 @@ int main()
 		DERROR("insert error, key:%s, val:%s, mask:%s, pos:%d\n", buf, val, maskstr1[1], -10);
 		return -3;
 	}
+	
+	//mask值跟format不一致的情况
+	strcpy(val, "0610");
+	//DERROR("val:%s, mask = 4:3:2:1\n", val);
+	ret = memlink_cmd_insert(m, buf, val, strlen(val), "4:3:2:1", 0); 
+	if (ret == MEMLINK_OK) {
+		DERROR("insert error, key:%s, val:%s, mask=4:3:2:1, ret:%d\n", buf, val, ret);
+		return -3;
+	}
+
+	//mask值跟format不一致的情况
+	strcpy(val, "0610");
+	//DERROR("val:%s, mask = 4:3:2:1\n", val);
+	ret = memlink_cmd_insert(m, buf, val, strlen(val), "2:1", 0); 
+	if (ret == MEMLINK_OK) {
+		DERROR("insert error, key:%s, val:%s, mask=2:1, ret:%d\n", buf, val, ret);
+		return -3;
+	}
+	
 	//ret = memlink_cmd_insert(m, buf, val, strlen(val), "8:3:1", 201); 
 	//DINFO("ret:%d val: %s\n", ret, val);
 	/*for(i = 98; i <= 99; i++)
@@ -288,15 +307,6 @@ int main()
 		}
 		i++;
 		item = item->next;
-	}
-
-	//mask值跟format不一致的情况
-	strcpy(val, "0610");
-	//DERROR("val:%s, mask = 4:3:2:1\n", val);
-	ret = memlink_cmd_insert(m, buf, val, strlen(val), "4:3:2:1", 0); 
-	if (ret == MEMLINK_OK) {
-		DERROR("insert error, key:%s, val:%s, mask=4:3:2:1, ret:%d\n", buf, val, ret);
-		return -3;
 	}
 	
 	memlink_result_free(&result3);
