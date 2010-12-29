@@ -5,6 +5,10 @@
 
 #define MEMLINK_MEM_NUM     100
 
+#ifdef __APPLE__
+#define fopen64 fopen
+#endif
+
 typedef struct _data_block
 {
     unsigned short      visible_count; // visible item count
