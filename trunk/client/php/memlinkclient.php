@@ -86,7 +86,7 @@ class MemLinkClient
     {
         $stat = new MemLinkStatSys();
         $ret = memlink_cmd_stat_sys($this->client, $stat);
-        if ($ret != MEMLINK_OK) {
+        if ($ret == MEMLINK_OK) {
             return $stat;
         }
         return NULL;
@@ -94,7 +94,7 @@ class MemLinkClient
 
     function stat_sys2($stat)
     {
-        return memlink_cmd_stat_sys($stat);
+        return memlink_cmd_stat_sys($this->client, $stat);
     }
 
     function delete($key, $value, $valuelen)

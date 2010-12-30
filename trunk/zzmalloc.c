@@ -7,8 +7,13 @@
 void*
 zz_malloc(size_t size)
 {
+    void *ptr;
 #ifdef DEBUGMEM
-	void *ptr = malloc(size + 12);
+	ptr = malloc(size + 12);
+    if (NULL == ptr) {
+        DERROR("malloc error!\n");
+        MEMLINK_EXIT;
+    }
 	char  *b = (char*)ptr;
 
 	*((int*)b) = size;
@@ -18,10 +23,20 @@ zz_malloc(size_t size)
 	return b + 8;
 #else
 
-#ifdef USETCMALLOC
-    return tc_malloc(size);
+#ifdef TCMALLOC
+    ptr = tc_malloc(size);
+    if (NULL == ptr) {
+        DERROR("mallloc error!\n");
+        MEMLINK_EXIT;
+    }
+    return ptr
 #else
-    return malloc(size);
+    ptr = malloc(size);
+    if (NULL == ptr) {
+        DERROR("malloc error!\n");
+        MEMLINK_EXIT;
+    }
+    return ptr;
 #endif
 
 #endif
