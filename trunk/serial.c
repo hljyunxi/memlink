@@ -190,7 +190,8 @@ mask_binary2string(unsigned char *maskformat, int masknum, char *mask, int maskl
 	for (i = 0; i < masknum; i++) {
         //DINFO("i: %d\n", i);
 		int fs = maskformat[i];
-		int yu = ((fs + n) % 8) > 0 ? 1: 0;
+		int offset = (fs + n) % 8;
+		int yu = offset > 0 ? 1: 0;
 		int cs = (fs + n) / 8 + yu;
 	    
         //DINFO("fs:%d, yu: %d, cs: %d\n", fs, yu, cs);
@@ -198,6 +199,7 @@ mask_binary2string(unsigned char *maskformat, int masknum, char *mask, int maskl
 		
 		//DINFO("idx:%d, cs:%d, n:%d, yu:%d\n", idx, cs, n, yu);
 		memcpy(&val, &mask[idx], cs);
+        //DERROR("%d: %x, n:%d\n", i, val, n);
 		val <<= 32 - fs - n;
 		val >>= 32 - fs;
 
@@ -207,8 +209,10 @@ mask_binary2string(unsigned char *maskformat, int masknum, char *mask, int maskl
 			maskstr[widx] = ':';	
 			widx ++;
 		}
-		//int len = sprintf(&maskstr[widx], "%d", val);
-		int len = int2string(&maskstr[widx], val);
+		//int len = sprintf(&maskstr[widx], "%d", val);		
+        //DERROR("%d: %d\n", i, val);
+		int len = int2string(&maskstr[widx], val);		
+        //DERROR("%d: %c\n", i, maskstr[widx]);
 		widx += len;
 		//maskstr[widx] = val;
 
@@ -218,7 +222,7 @@ mask_binary2string(unsigned char *maskformat, int masknum, char *mask, int maskl
 			idx += 1;
 		}
 		if (fs + n > 8) {
-			n = yu;
+			n = offset;
 		}else{
 			n = fs + n;
 		}
