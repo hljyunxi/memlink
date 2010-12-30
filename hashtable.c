@@ -574,7 +574,7 @@ hashtable_key_create_mask(HashTable *ht, char *key, int valuesize, unsigned int 
         DINFO("node->key: %p\n", node);
         //DINFO("node->key: %p, valuesize: %d\n", node, node->valuesize);
         if (strcmp(node->key, key) == 0) {
-            DWARNING("key %s exists.\n", key);
+            //DWARNING("key %s exists.\n", key);
             return MEMLINK_ERR_EKEY;
         }
         node = node->next;
