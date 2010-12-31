@@ -707,6 +707,7 @@ sdata_ready(Conn *c, char *data, int datalen)
 
 void sthread_destroy(SThread *st) 
 {
+    //Fixme: not close socket, not close file descriptor
     zz_free(st);
 }
 

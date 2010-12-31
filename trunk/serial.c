@@ -104,7 +104,11 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
         //printb((char *)&v, n);
         memcpy(&mask[idx], &v, n);
 
-        idx += n - 1;
+        if (y > 0) {
+            idx += n - 1;
+        }else{
+            idx += n;
+        }
         
         mask[idx] = mask[idx] | x;
 
