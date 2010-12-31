@@ -165,8 +165,9 @@ static int
 load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
 {
     int ret;
-	unsigned int file_logver;
-
+	unsigned int binlogver;
+	int have_key = 0;
+	
     int ffd = open(logname, O_RDONLY);
     if (-1 == ffd) {
         DERROR("open file %s error! %s\n", logname, strerror(errno));
@@ -184,15 +185,19 @@ load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
 	char *data    = addr + SYNCLOG_HEAD_LEN + indexlen * sizeof(int);
 	char *enddata = addr + len;
 
-	file_logver = *(unsigned int *)(addr + sizeof(short));
-	if (file_logver == dumplogver) {
+	binlogver = *(unsigned int *)(addr + sizeof(short));
+	if (binlogver == dumplogver) {
 		int *indxdata = (int *)(addr + SYNCLOG_HEAD_LEN);
 		int pos = indxdata[dumplogpos];
-		DNOTE("dumplogpos:%d, pos:%d\n", dumplogpos, pos);
 		if (pos == 0) {
-			return pos;
+			if (indxdata[dumplogpos - 1] != 0) {
+				data = addr + indxdata[dumplogpos - 1];
+				have_key = 1;
+			}
+			
+		}else{
+			data = addr + pos;
 		}
-		data = addr + pos;
 	}
 
 	unsigned short blen; 
@@ -203,17 +208,19 @@ load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
 		memcpy(&logver, data, sizeof(int));
 		memcpy(&logline, data + sizeof(int), sizeof(int));
 		
-		//DNOTE("logver: %d, logline: %d\n", logver, logline);
+		DINFO("logver: %d, logline: %d\n", logver, logline);
 		if (enddata < data + SYNCPOS_LEN + blen + sizeof(short)) {
 			DERROR("synclog end error: %s, skip\n", logname);
 			//MEMLINK_EXIT;
 			break;
 		}
 		DINFO("command, len:%d\n", blen);
-		ret = wdata_apply(data + SYNCPOS_LEN, blen + sizeof(short), 0);       
-		if (ret != 0) {
-			DERROR("wdata_apply log error: %d\n", ret);
-			MEMLINK_EXIT;
+		if (have_key == 0) {
+			ret = wdata_apply(data + SYNCPOS_LEN, blen + sizeof(short), 0);       
+			if (ret != 0) {
+				DERROR("wdata_apply log error: %d\n", ret);
+				MEMLINK_EXIT;
+			}
 		}
 
 		data += SYNCPOS_LEN + blen + sizeof(short); 
@@ -223,7 +230,11 @@ load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
 	if (g_cf->role == ROLE_SLAVE) {
 		g_runtime->slave->logver  = logver;
 		g_runtime->slave->logline = logline;
-		g_runtime->slave->binlog_index = indexpos;
+		if (dumplogver == binlogver) {
+			g_runtime->slave->binlog_index = indexpos + dumplogpos;
+		}else{
+			g_runtime->slave->binlog_index = indexpos;
+		}
 	}
 
 	munmap(addr, len);

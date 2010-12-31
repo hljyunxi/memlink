@@ -317,23 +317,24 @@ synclog_validate(SyncLog *slog)
     unsigned int *loopdata = (unsigned int*)data;
     unsigned int lastidx   = slog->len;
 	char dumpfile[PATH_MAX];
+	int dumplogver, dumplogpos, ret;
 	
 	//add by lanwenhong
 	snprintf(dumpfile, PATH_MAX, "%s/%s", g_cf->datadir, DUMP_FILE_NAME);
 	if (isfile(dumpfile) != 0 && g_cf->role == ROLE_SLAVE) {
 		FILE *fp = NULL;
 		unsigned int offset = 0;
-		int dumplogver, dumplogpos, ret;
 
 		fp = fopen64(dumpfile, "rb");
 		offset = sizeof(short) + sizeof(int);
 		fseek(fp, offset, SEEK_SET);
 		ret = fread(&dumplogver, sizeof(int), 1, fp);
 		ret = fread(&dumplogpos, sizeof(int), 1, fp);
+		//DNOTE("dumlogver: %d, g_runtime->logver: %d\n", dumplogver, g_runtime->logver);
 		if (dumplogver == g_runtime->logver) {
 			i = dumplogpos;
 		}
-
+		//DNOTE("dumplogpos: %d\n", dumplogpos);
 		fclose(fp);
 		
 	}	
@@ -349,6 +350,9 @@ synclog_validate(SyncLog *slog)
 	if (i == 0) {
 		slog->pos = slog->len;
 		return 0;
+	}
+	else if (i == dumplogpos) {
+		lastidx = loopdata[i - 1];
 	}
 	
 
@@ -386,8 +390,9 @@ synclog_validate(SyncLog *slog)
         }else{
             lastidx = lastidx + sizeof(short) + dlen; // skip to next
             if (i == 0 || lastidx > oldidx) { // add index
-                loopdata[slog->index_pos] = cur;
-                slog->index_pos += 1;
+                //loopdata[slog->index_pos] = cur;
+                //slog->index_pos += 1;
+				DNOTE("lastidx: %d, oldidx: %d\n", lastidx, oldidx);
             }
         }
     }
@@ -472,8 +477,6 @@ synclog_write(SyncLog *slog, char *data, int datalen)
     //unsigned int *idxdata = (unsigned int*)(slog->index + sizeof(short) + sizeof(int) * 2);
     unsigned int *idxdata = (unsigned int*)(slog->index + SYNCLOG_HEAD_LEN);
     DINFO("write index: %u, %u\n", slog->index_pos, slog->pos);
-	//DERROR("synclog_filename: %s\n", slog->filename);
-	//DERROR("write index: %u, %u\n", slog->index_pos, slog->pos);
     idxdata[slog->index_pos] = slog->pos;
     slog->index_pos ++;
     slog->pos += offset;

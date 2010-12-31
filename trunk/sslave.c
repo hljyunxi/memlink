@@ -68,13 +68,13 @@ sslave_recv_log(SSlave *ss)
 		unsigned int size = checksize + rlen;
 		pthread_mutex_lock(&g_runtime->mutex);
 		ret = wdata_apply(recvbuf + SYNCPOS_LEN, rlen, 0);
-		pthread_mutex_unlock(&g_runtime->mutex);
 		DINFO("wdata_apply return:%d\n", ret);
 		if (ret == 0) {
 			//DINFO("synclog index_pos:%d, pos:%d\n", g_runtime->synclog->index_pos, g_runtime->synclog->pos);
 			synclog_write(g_runtime->synclog, recvbuf, size);
 		}
-	
+		pthread_mutex_unlock(&g_runtime->mutex);
+
         ss->logver  = logver;
         ss->logline = logline;
 	}

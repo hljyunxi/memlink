@@ -61,7 +61,6 @@ dumpfile(HashTable *ht)
 
 	ffwrite(&g_runtime->synclog->index_pos, sizeof(int), 1, fp);
 	DINFO("write logfile pos: %d\n", g_runtime->synclog->index_pos);
-
 	ffwrite(&size, sizeof(long long), 1, fp);
 
     unsigned char keylen;
