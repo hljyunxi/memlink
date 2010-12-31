@@ -56,6 +56,14 @@ int mask_string2array_test()//随机生成一个mask，0-20个项，每项的值0-256
 
 int mask_string2binary_binary2string()
 {
+	char mask2[512] = {0};
+	char maskformatnum2[3] = {3, 3, 2};
+	char maskstr2[512] = {0};
+	strcpy(maskstr2, "1:6:1");
+	int ret2 = mask_string2binary(maskformatnum2, maskstr2, mask2);
+	char buf3[128];
+	DINFO("mask:%s\n", formath(mask2, 2, buf3, 128));
+	return 0;
 	int i = 0;int j = 0;
 	for (j = 0; j < 50; j++)
 	{
