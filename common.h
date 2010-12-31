@@ -39,6 +39,8 @@
 #define MEMLINK_ERR_KEY				-27
 // 客户端传递参数错误 
 #define MEMLINK_ERR_PARAM			-28
+// 文件IO错误
+#define MEMLINK_ERR_IO              -29
 
 // 其他错误
 #define MEMLINK_ERR                 -1
@@ -80,8 +82,8 @@
 #define CMD_GETDUMP_CHANGE		2
 #define CMD_GETDUMP_SIZE_ERR	3
 
-#define CMD_SYNC_OK		0
-#define CMD_SYNC_FAILED	1
+#define CMD_SYNC_OK		        0
+#define CMD_SYNC_FAILED	        1
 
 #define CMD_RANGE_MAX_SIZE			1024000
 

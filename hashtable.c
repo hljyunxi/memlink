@@ -1318,7 +1318,7 @@ hashtable_move(HashTable *ht, char *key, void *value, int pos)
 	
     char ret = hashtable_find_value(ht, key, value, &node, &dbk, &item);
     if (ret < 0) {
-        DWARNING("hashtable_move not found value, ret:%d, key:%s\n", ret, key);
+        //DWARNING("hashtable_move not found value, ret:%d, key:%s\n", ret, key);
         return ret;
     }
 	
