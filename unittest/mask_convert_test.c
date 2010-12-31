@@ -3,7 +3,8 @@
 //#include <memlink_client.h>
 #include "logfile.h"
 #include "serial.h"
-
+#include <math.h>
+#include <utils.h>
 int my_rand(int base)
 {
 	int i = -1;
@@ -32,7 +33,7 @@ int mask_string2array_test()//随机生成一个mask，0-20个项，每项的值0-256
 		sprintf(buf, "%d", val);
 		do
 		{
-			if(1 != num && val > 256)
+			if(val > 256)
 				break;			
 			strcat(mask, buf);
 		}while(0);
@@ -48,8 +49,59 @@ int mask_string2array_test()//随机生成一个mask，0-20个项，每项的值0-256
 		DERROR("mask_string2array error. num:%d, ret:%d\n", num, ret);
 		return -1;
 	}
+
 	//DERROR("mask_string2array error. num:%d, ret:%d\n", num, ret);
 	return 0;
+}
+
+int mask_string2binary_binary2string()
+{
+	int i = 0;int j = 0;
+	for (j = 0; j < 50; j++)
+	{
+		int num = 1 + my_rand(3);
+		num = 3;
+		char maskformat[512] = {0};
+		char maskformatnum[100] = {0};
+		char maskstr[512] = {0};
+		DINFO("num:%d\n", num);		
+		int len = 2;
+		for(i = 1; i <= num; i++)
+		{
+			//随机生成maskformat
+			char buf[10] = {0};
+			char buf2[10] = {0};
+			int val = 1 + my_rand(4);
+			sprintf(buf, "%d", val);
+			strcat(maskformat, buf);
+			if(i != num)
+				strcat(maskformat, ":");
+			len += val;
+			maskformatnum[i-1] = (char)val;
+			//随机生成maskstr
+			int max = pow(2, val) - 1;
+			int k= 1 + my_rand(max);
+			sprintf(buf2, "%d", k);
+			do
+			{
+				if(k > 32)
+					break;			
+				strcat(maskstr, buf2);
+			}while(0);
+			if(i != num)
+				strcat(maskstr, ":");
+		}		
+		DINFO("maskformat=%s, maskstr=%s\n", maskformat, maskstr);
+		int n = len / 8;
+		int masklen = ((len % 8) == 0)? n : (n+1);
+		char mask[512];
+		int ret = mask_string2binary(maskformatnum, maskstr, mask);		
+		char buf1[128], buf2[128];
+        DINFO("mask:%s\n", formath(mask, masklen, buf2, 128));
+		char maskstr1[512] = {0};
+		mask_binary2string(maskformatnum, num, mask, masklen, maskstr1);		
+		DINFO("maskstr1=%s\n\n", maskstr1);
+	}
 }
 
 int mask_array2binary_test()
@@ -165,14 +217,14 @@ int main()
 {
 	//#define DEBUG
 
-	logfile_create("stdout", 1);
+	logfile_create("stdout", 4);
 	int n = 0x03 & 0x02;
 	printf("-----------> %d\n", n);
 	int ret;
 	int i = 0;
-	for(i = 0; i < 20; i++)
+	for(i = 0; i < 0; i++)
 		mask_string2array_test();
 
-	mask_array2binary_test();
-	
+	//mask_array2binary_test();
+	mask_string2binary_binary2string();
 }

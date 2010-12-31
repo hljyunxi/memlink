@@ -115,7 +115,7 @@ int main()
 			realnum = 0;
 		printf("frompos:%d, len:%d, i:%d\n", frompos, len, i);
 		
-		ret = hashtable_range(ht, key, maskarray2[k], masknum, 
+		ret = hashtable_range(ht, key, MEMLINK_VALUE_VISIBLE, maskarray2[k], masknum, 
 			            frompos, len, 
 			            data, &retnum,
 			            &vsize, &msize);
