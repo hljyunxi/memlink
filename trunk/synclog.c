@@ -328,8 +328,8 @@ synclog_validate(SyncLog *slog)
 		fp = fopen64(dumpfile, "rb");
 		offset = sizeof(short) + sizeof(int);
 		fseek(fp, offset, SEEK_SET);
-		ret = fread(&dumplogver, sizeof(int), 1, fp);
-		ret = fread(&dumplogpos, sizeof(int), 1, fp);
+		ret = ffread(&dumplogver, sizeof(int), 1, fp);
+		ret = ffread(&dumplogpos, sizeof(int), 1, fp);
 		//DNOTE("dumlogver: %d, g_runtime->logver: %d\n", dumplogver, g_runtime->logver);
 		if (dumplogver == g_runtime->logver) {
 			i = dumplogpos;
@@ -376,7 +376,9 @@ synclog_validate(SyncLog *slog)
             slog->pos = filelen;
             break;
         }else if (filelen < cur + dlen + sizeof(short)) { // too small
-            DWARNING("synclog data too small, fixed, at:%u, index:%d\n", cur, i);
+            DERROR("synclog data too small, at:%u, index:%d\n", cur, i);
+            MEMLINK_EXIT;
+            /*
             DINFO("index: %p, loopdata: %p\n", slog->index, loopdata);
             slog->index_pos -= 1;
             loopdata[slog->index_pos] = 0;
@@ -387,16 +389,21 @@ synclog_validate(SyncLog *slog)
             //msync(slog->index, slog->len, MS_SYNC);
             //lseek(slog->fd, idx, SEEK_SET);
             break;
+            */
         }else{
+            DERROR("index too small, at:%u, index:%d\n", cur, i);
+            MEMLINK_EXIT;
+            /*
             lastidx = lastidx + sizeof(short) + dlen; // skip to next
             if (i == 0 || lastidx > oldidx) { // add index
                 //loopdata[slog->index_pos] = cur;
                 //slog->index_pos += 1;
 				DNOTE("lastidx: %d, oldidx: %d\n", lastidx, oldidx);
-            }
+            }*/
         }
     }
-
+    
+    DWARNING("sync_validate index_pos:%d, pos:%d\n", slog->index_pos, slog->post);
     return 0;
 }
 
