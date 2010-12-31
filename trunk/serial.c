@@ -95,10 +95,11 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
 
         v = v | x;
 
+		//modified by wyx 12/31
         //m = (pow(2, 8 - y) - 1);
-        m = 0xff >> y;
-        m = m << y;
-        x = mask[idx + n - 1] & m;
+        //m = 0xff >> y;
+        //m = m << y;
+        //x = mask[idx + n - 1] & m;
 
         //DINFO("copy idx:%d, v:%d, n:%d\n", idx, v, n);
         //printb((char *)&v, n);
@@ -110,7 +111,7 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
             idx += n;
         }
         
-        mask[idx] = mask[idx] | x;
+        //mask[idx] = mask[idx] | x;
 
         b = y;
 
@@ -225,11 +226,11 @@ mask_binary2string(unsigned char *maskformat, int masknum, char *mask, int maskl
 		if (yu == 0) {
 			idx += 1;
 		}
-		if (fs + n > 8) {
+		//if (fs + n >= 8) {
 			n = offset;
-		}else{
-			n = fs + n;
-		}
+		//}else{
+			//n = fs + n;
+		//}
 	}
     maskstr[widx] = 0;
 
