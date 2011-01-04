@@ -361,7 +361,7 @@ synclog_validate(SyncLog *slog)
     
     DINFO("filelen: %d, lastidx: %d, i: %d\n", filelen, lastidx, i);
 
-    unsigned int oldidx = lastidx; 
+    //unsigned int oldidx = lastidx; 
     while (lastidx < filelen) {
         //DINFO("check offset: %d\n", lastidx);
 		// skip logver and logline
@@ -403,7 +403,7 @@ synclog_validate(SyncLog *slog)
         }
     }
     
-    DWARNING("sync_validate index_pos:%d, pos:%d\n", slog->index_pos, slog->post);
+    DWARNING("sync_validate index_pos:%d, pos:%d\n", slog->index_pos, slog->pos);
     return 0;
 }
 
