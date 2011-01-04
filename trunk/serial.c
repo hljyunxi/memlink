@@ -59,7 +59,7 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
     int b   = 0; // 已经处理的bit
     int idx = 0;
     int n;
-    unsigned int v;
+    unsigned int v, flow = 0;
     char    mf;
     // 前两位分别表示真实删除和标记删除，跳过
     // mask[idx] = mask[idx] & 0xfc;
@@ -86,6 +86,9 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
         unsigned char y = (b + mf) % 8;
         n = (b + mf) / 8 + (y>0 ? 1: 0);
         //DINFO("y: %d, n: %d\n", y, n);
+		if (n > 32) {
+			flow = v >> (32 - b);
+		}
         v = v << b;
         //DINFO("v: %x %b\n", v, v); 
         //unsigned char m = pow(2, b) - 1;
@@ -94,7 +97,10 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
         //DINFO("m: %d, %x, x: %d, %x\n", m, m, x, x);
 
         v = v | x;
-
+		
+		m = 0xff >> y;
+		m = m << y;
+		x = mask[idx + n -1] & m;
 		//modified by wyx 12/31
         //m = (pow(2, 8 - y) - 1);
         //m = 0xff >> y;
@@ -103,7 +109,11 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
 
         //DINFO("copy idx:%d, v:%d, n:%d\n", idx, v, n);
         //printb((char *)&v, n);
-        memcpy(&mask[idx], &v, n);
+		if (n > 32) {
+        	memcpy(&mask[idx], &v, sizeof(int));
+		} else {
+			memcpy(&mask[idx], &v, n);
+		}
 
         if (y > 0) {
             idx += n - 1;
@@ -112,6 +122,10 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
         }
         
         //mask[idx] = mask[idx] | x;
+		mask[idx] = mask[idx] | x;
+		if (n > 32) {
+			mask[idx] = mask[idx] | flow;
+		}
 
         b = y;
 
