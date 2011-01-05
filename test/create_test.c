@@ -53,6 +53,13 @@ int main()
 		DERROR("memlink_cmd_create %s error: %d, mask=%s\n", key, ret, "4:3:21474");
 		return -3;
 	}
+
+	strcpy(key, "haha3333");
+	ret = memlink_cmd_create(m, key, 12, "");
+	if (ret != MEMLINK_OK) {
+		DERROR("memlink_cmd_create %s error: %d, mask=%s\n", key, ret, "");
+		return -3;
+	}
 	
 	memlink_destroy(m);
 

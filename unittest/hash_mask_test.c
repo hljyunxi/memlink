@@ -11,7 +11,7 @@ int main()
 	char val[64];
 	int maskformat[3] = {4, 3, 1};	
 	char charmaskformat[3] = {4, 3, 1};
-	char* maskstr1[] = {"8:3:1", "7:2:1", "6:2:1"};
+	//char* maskstr1[] = {"8:3:1", "7:2:1", "6:2:1"};
 	int maskarray[4][3] = { { 7, UINT_MAX, 1}, {6, 2, 1}, { 4, 1, UINT_MAX}, {8, 3, 1} }; 
 	int num  = 200;
 	int masknum = 3;

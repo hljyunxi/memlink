@@ -10,7 +10,7 @@ int main()
 	int valuesize = 8;
 	char val[64];
 	int maskformat[3] = {4, 3, 1};
-	char* maskstr1[] = {"8:3:1", "7:2:1", "6:2:1"};
+	//char* maskstr1[] = {"8:3:1", "7:2:1", "6:2:1"};
 	int maskarray[3][3] = { {8, 3, 1}, { 7, 2,1}, {6, 2, 1} }; 
 	int num  = 100;
 	int masknum = 3;

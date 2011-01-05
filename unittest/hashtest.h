@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <unistd.h>
+#include "zzmalloc.h"
 #include "logfile.h"
 #include "hashtable.h"
 #include "mem.h"

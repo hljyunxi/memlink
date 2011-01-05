@@ -21,23 +21,23 @@ class MemLinkTestException (Exception):
 
 class MemLinkTest:
     def __init__(self, args):
-        ip = '127.0.0.1'
-        r_port = READ_PORT
-        w_port = WRITE_PORT
-        timeout = 30
+        self.ip = '127.0.0.1'
+        self.r_port = READ_PORT
+        self.w_port = WRITE_PORT
+        self.timeout = 10
         for item in args:
             if item.startswith('-'):
                 if item[:2] == '-h':
-                    ip = item[2:]
+                    self.ip = item[2:]
                 elif item[:2] == '-r':
-                    r_port = int(item[2:])
+                    self.r_port = int(item[2:])
                 elif item[:2] == '-w':
-                    w_port = int(item[2:])
+                    self.w_port = int(item[2:])
                 elif item[:2] == '-t':
-                    timeout = int(item[2:])
+                    self.timeout = int(item[2:])
 
-        print ip, r_port, w_port, timeout
-        self.m = MemLinkClient(ip, r_port, w_port, timeout)
+        print self.ip, self.r_port, self.w_port, self.timeout
+        self.m = MemLinkClient(self.ip, self.r_port, self.w_port, self.timeout)
         self.allkey = {}
         self.maskformat = '4:3:1'
         self.valuesize = 12
@@ -47,9 +47,13 @@ class MemLinkTest:
     def create(self, args):
         '''Command -- create.
 
-        create key valuesize maskformat -- for instance : 
-        create haha 12  -- maskformat is ''
-        create haha 12 4:3:1  -- normal format
+        Command Description:
+
+            create key valuesize maskformat   --- for instance : create haha 12 (4:3:1)
+
+                                                  If maskformat is not input, it'll be set to ''. In this case, the maskstr
+
+                                                  must be '' too when values are inserted.
         '''
         try:
             argc = len(args)
@@ -67,30 +71,22 @@ class MemLinkTest:
             print 'bad input! expected at least %d' % x.atleast
             return -1
         
-        opnum = 0
-        while 1:
-            opnum += 1
-            ret = self.m.create(key, valuesize, maskformat)
-            if ret == MEMLINK_OK:
-                print 'create %s %d %s ok!'% (key, valuesize, maskformat)
-                return 0
-            elif ret == MEMLINK_ERR_RECV:
-                if opnum < 2:
-                    continue
-                else:
-                    print 'create %s err:%d'% (key, ret)
-                    return -1
-            elif ret == MEMLINK_ERR_EKEY:
-                print '%s existed' % key
-                return -1
-            else:
-                print 'create %s err:%d'% (key, ret)
-                return ret
+        ret = self.m.create(key, valuesize, maskformat)
+        print 'create (%s %d %s) '% (key, valuesize, maskformat), 
+        if ret == MEMLINK_OK:
+            print 'OK!'
+        elif ret == MEMLINK_ERR_RECV:
+            pass
+        else:
+            print 'ERROR: ', ret
+        return ret
 
     def rmkey(self, args):
         '''Command -- rmkey.
 
-        rmkey key
+        Command Description:
+
+            rmkey key
         '''
         try:
             argc = len(args)
@@ -102,47 +98,43 @@ class MemLinkTest:
             print 'bad input! expected at least %d' % x.atleast
             return -1
 
-        opnum = 0
-        while 1:
-            opnum += 1
-            ret = self.m.rmkey(key)
-            if ret == MEMLINK_OK:
-                print 'rmkey %s ok!'% key
-                return 0
-            elif ret == MEMLINK_ERR_RECV:
-                if opnum < 2:
-                    continue
-                else:
-                    print 'rmkey %s err:%d'% (key, ret)
-                    return -1
-            else:
-                print 'rmkey %s err:%d'% (key, ret)
-                return ret
+        ret = self.m.rmkey(key)
+        print 'rmkey %s '% key, 
+        if ret == MEMLINK_OK:
+            print 'OK!'
+        elif ret == MEMLINK_ERR_RECV:
+            pass
+        else:
+            print 'ERROR: ', ret
+        return ret
                 
     def insert(self, args):
-        '''Command -- insert.
+        '''Command insert.
 
-        insert key value pos mask  --- Normal format. For instance: insert haha value 0 8:2:1
-        insert key value pos  --- mask is set ''. It'll be used only when the maskformat is '', or it will cause an error!
-        insert key value pos mask -nNUM 
-        insert key value  --- mask default '8:2:1', pos default 0.
+        Command Description:
+
+            insert key value pos maskstr   --- for instance: insert haha value 0 (8:2:1)  
+
+                                               If maskstr is not input, it'll be set to ''. In this case, it only be used 
+
+                                               when the maskformat is '', or it will cause an error!
         '''
+        #insert key value  --- mask is set to '8:2:1' and pos to 0 implicitly.
         try:
-            argv = len(args)
             num = 1
             i = 0
             while i < len(args):
+                #print args[i]
                 if args[i].startswith('-n'):
-                    #print args[i]
-                    argv -= 1
                     numstr = args[i][2:]
                     if numstr: num = int(numstr)
                     del args[i]
-                i += 1
+                else:
+                    i += 1
                 
+            argv = len(args)                
             if argv < 2:
                 raise ShortInputException(argv, 2)
-            #print num
             if argv == 2:
                 key = args[0]
                 value = args[1]
@@ -163,25 +155,18 @@ class MemLinkTest:
             return -1
                 
         if key not in self.allkey:
-            opnum = 0
-            while 1:
-                opnum += 1
-                ret, stat = self.m.stat(key)
-                if ret == MEMLINK_ERR_RECV:
-                    if opnum < 2:
-                        continue
-                    else:
-                        print 'err %d', ret
-                        return -1
-                elif ret == MEMLINK_OK:
-                    keyinfo = [12, '4:3:1']
-                    keyinfo[0] = stat.valuesize
-                    self.allkey[key] = keyinfo
-                elif ret == MEMLINK_ERR_NOKEY:
-                    print 'key does not exist!'
-                    return -1
-                break;
-        
+            ret, stat = self.m.stat(key)
+            if ret == MEMLINK_OK:
+                keyinfo = [12, '4:3:1']
+                keyinfo[0] = stat.valuesize
+                self.allkey[key] = keyinfo
+            elif ret == MEMLINK_ERR_RECV:
+                return ret
+            elif ret == MEMLINK_ERR_NOKEY:
+                print 'key does not exist!'
+                return ret
+
+        ret = 0
         for i in xrange(0, num):
             myvalue = value
             if pos == -1:
@@ -195,23 +180,55 @@ class MemLinkTest:
                 n = 0
             myvalue += '0'*n + sstr
             ret = self.m.insert(key, myvalue, maskstr, pos)
-            if ret != MEMLINK_OK:
-                print 'insert:', (key, myvalue, maskstr, pos, i), 'err:%d!'%ret
-                return ret
+            print 'insert (%s, %s, %s, %d) ' % (key, myvalue, maskstr, pos),
+            if ret == MEMLINK_OK:
+                print 'OK!'
+            elif ret == MEMLINK_ERR_RECV:
+                break;
             else:
-                print 'insert:', (key, myvalue, maskstr, pos, i), 'ok!'
-       
-        return 0
-
+                print 'ERROR: ', ret
+                break;
+            
+        return ret
+    
     def range(self, args):
         '''Command range.
-    
-        range key frompos llen maskstr -- for instance : 
-        range haha
-        range haha 10 1000
-        range haha 10 1000 8::1
+        
+        Command Description:
+
+            range [option] key frompos len maskstr 
+
+        Options:
+            
+            -v : visible value (default option)   --- for instance: range -v haha 10 1000 (8::1)
+            
+            -a : all value                        
+            
+            -t : tagdel value                     --- for instance: range -t haha 10 1000
+            
+            -r : removed value  
         '''
+        #range haha
         try:
+            optype = MEMLINK_VALUE_VISIBLE
+            i = 0
+            while i < len(args):
+                if args[i].startswith('-'):
+                    if args[i] == '-a':
+                        optype = MEMLINK_VALUE_ALL
+                    elif args[i] == '-v':
+                        optype = MEMLINK_VALUE_VISIBLE
+                    elif args[i] == '-t':
+                        optype = MEMLINK_VALUE_TAGDEL
+                    elif args[i] == '-r':
+                        optype = MEMLINK_VALUE_REMOVED
+                    else:
+                        print 'Option Is Not Found!'
+                        return -1
+                    del args[i]
+                else:
+                    i += 1
+        
             argv = len(args)
             if argv < 1:
                 raise ShortInputException(argv, 1)
@@ -237,22 +254,15 @@ class MemLinkTest:
             print 'bad input! expected at least %d' % x.atleast
             return -1
 
-        opnum = 0
-        while 1:
-            opnum += 1
-            ret, recs = self.m.range(key, MEMLINK_VALUE_VISIBLE, maskstr, frompos, llen)
-            if ret == MEMLINK_OK:
-                print 'range (%s, %d, %d, "%s") ok' % (key, frompos, llen, maskstr)
-                break
-            elif ret == MEMLINK_ERR_RECV:
-                if opnum < 2:
-                    continue
-                else:
-                    print 'range %s err:%d'% (key, ret)
-                    return ret
-            else:
-                print 'range %s err:%d'% (key, ret)
-                return ret
+        ret, recs = self.m.range(key, optype, maskstr, frompos, llen)
+        print 'range (%s, "%s", %d, %d) ' % (key, maskstr, frompos, llen),
+        if ret == MEMLINK_OK:
+            print 'OK!'
+        elif ret == MEMLINK_ERR_RECV:
+            return ret
+        else:
+            print 'ERROR: ', ret
+            return ret
             
         print 'range count:', recs.count
         items = recs.root
@@ -262,10 +272,108 @@ class MemLinkTest:
             
         return 0
 
+    def delete(self, args):
+        '''Command delete.
+        
+        Command Description:
+    
+            delete [option] key value/maskstr
+
+        Options:
+
+            -v : delete by value (default option)   --- for instance: delete (-v) haha 123
+                        
+            -m : delete by mask                     --- for instance: delete -m haha 4::1
+        '''
+        #delete key frompos len : delete haha 10 50        
+        try:
+            optype = 0
+            i = 0
+            while i < len(args):
+                if args[i].startswith('-'):
+                    if args[i] == '-m':
+                        optype = 1
+                    elif args[i] == '-v':
+                        optype = 0
+                    else:
+                        print 'Option Is Not Found!'
+                        return -1
+                    del args[i]
+                else:
+                    i += 1
+        
+            argc = len(args)
+            if argc < 2:
+                raise ShortInputException(argc, 2)
+                    
+            multidel = 0
+            if argc == 2:
+                key = args[0]
+                if optype == 0:
+                    value = args[1]
+                elif optype == 1:
+                    maskstr = args[1]
+            elif argc == 3:
+                key = args[0]
+                frompos = int(args[1])
+                llen = int(args[2])
+                multidel = 1
+        except ShortInputException, x:
+            print 'bad input! expected at least %d' % x.atleast
+            return -1
+
+        if multidel:
+            ret, result = self.m.range(key, MEMLINK_VALUE_VISIBLE, "", frompos, llen)
+            if ret == MEMLINK_OK:
+                num = 0
+                item = result.root
+                while item:
+                    ret = self.m.delete(key, item.value)
+                    print 'delete (%s, %s) '% (key, item.value),
+                    if ret == MEMLINK_OK:
+                        num += 1
+                        print 'OK!'
+                    elif ret == MEMLINK_ERR_RECV:
+                        return ret;
+                    else:
+                        print 'ERROR: ', ret
+                        break;
+                    item = item.next
+                print 'multidel %d' % num
+                return ret;
+            elif ret == MEMLINK_ERR_RECV:
+                pass
+            else:
+                print 'ERROR: ', ret
+            return ret
+            
+        if optype == 0:
+            ret = self.m.delete(key, value)
+            print 'delete (%s, %s) '% (key, value), 
+            if ret == MEMLINK_OK:
+                print 'OK!'
+            elif ret == MEMLINK_ERR_RECV:
+                pass
+            else:
+                print 'ERROR: ', ret
+            return ret
+        elif optype == 1:
+            ret = self.m.delete_by_mask(key, maskstr)
+            print 'delete (%s, %s) '% (key, maskstr), 
+            if ret == MEMLINK_OK:
+                print 'OK!'
+            elif ret == MEMLINK_ERR_RECV:
+                pass
+            else:
+                print 'ERROR: ', ret
+            return ret
+            
     def update(self, args):
         '''Command update.
 
-        update key value pos -- for instance : update haha 123 0
+        Command Description:
+
+            update key value pos   --- for instance: update haha 123 0
         '''
         try:
             argc = len(args)
@@ -279,58 +387,93 @@ class MemLinkTest:
             return -1
             
         ret = self.m.update(key, value, pos)
-        if ret != MEMLINK_OK:
-            print 'update (%s, %s, %d) err:%d' % (key, value, pos, ret)
-            return -1
+        print 'update (%s, %s, %d) ' % (key, value, pos)
+        if ret == MEMLINK_OK:
+            print 'OK!'
+        elif ret == MEMLINK_ERR_RECV:
+            pass
         else:
-            print 'update (%s, %s, %d) ok' % (key, value, pos)
-            
-        return 0
+            print 'ERROR: ', ret
+        return ret
 
     def stat(self, args):
         '''Command stat.
 
-        stat key
+        Command Description:
+
+            stat [option] key
+
+        Options:
+
+            -k : show stat of some key      --- for instance:  stat haha  or  stat -k haha
+
+            -s : show stat of the memlink   --- for instance:  stat  or  stat -s
         '''
         try:
-            key = args[0]
+            argc = len(args)
+            if argc == 0:  #stat
+                optype = 1
+            else: #other
+                optype = 0
+                
+            i = 0
+            while i < len(args):
+                if args[i].startswith('-'):
+                    if args[i] == '-k':
+                        optype = 0
+                    elif args[i] == '-s':
+                        optype = 1
+                    else:
+                        print 'Option Is Not Found!'
+                        return -1
+                    del args[i]
+                else:
+                    i += 1
+            if optype == 0:
+                key = args[0]
         except:
             print 'bad input! stat must have one param!'
             return -1
-        
-        opnum = 0
-        while 1:
-            opnum += 1
+
+        if optype == 0:
             ret, stat = self.m.stat(key)
-            if ret == MEMLINK_OK:
-                print 'stat %s ok' % key
-                print stat
-                return 0
-            elif ret == MEMLINK_ERR_RECV:
-                if opnum < 2:
-                    continue
-                else:
-                    print 'stat err:', ret
-                    return -1
-            else:
-                print 'stat err:', ret
-                return -1
+            print 'stat %s ' % key,            
+        elif optype == 1:
+            ret, stat = self.m.stat_sys()
+            print 'stat ',
+        if ret == MEMLINK_OK:
+            print 'OK!'
+            print
+            print stat
+        elif ret == MEMLINK_ERR_RECV:
+            pass
+        else:
+            print 'ERROR: ', ret
+        return ret
      
     def dump(self, args):
         '''Command dump.
 
-        dump
+        Command Description:
+
+            dump
         '''
         ret = self.m.dump()
-        if ret != MEMLINK_OK:
-            print 'dump err:', ret
-            return -1
-        return 0
+        print 'dump ',
+        if ret == MEMLINK_OK:
+            print 'OK!'
+        elif ret == MEMLINK_ERR_RECV:
+            pass
+        else:
+            print 'ERROR: ', ret
+        return ret
 
     def clean(self, args):
         '''Command clean.
 
-        clean key
+        Command Description:
+
+            clean key
         '''
         try:
             argc = len(args)
@@ -342,71 +485,22 @@ class MemLinkTest:
             return -1
                 
         ret = self.m.clean(key)
-        if ret != MEMLINK_OK:
-            print 'clean err:', ret
-            return -1
+        print 'clean %s ' % key,
+        if ret == MEMLINK_OK:
+            print 'OK!'
+        elif ret == MEMLINK_ERR_RECV:
+            pass
         else:
-            print 'clean ok!'
-        return 0
-
-    def delete(self, args):
-        '''Command delete.
-    
-        delete key value: delete haha 123
-        delete key frompos len : delete haha 10 50
-        '''
-        try:
-            argc = len(args)
-            if argc < 2:
-                raise ShortInputException(argc, 2)
-
-            multidel = 0
-            if argc == 2:
-                key = args[0]
-                value = args[1]
-            elif argc == 3:
-                key = args[0]
-                frompos = int(args[1])
-                llen = int(args[2])
-                multidel = 1
-        except ShortInputException, x:
-            print 'bad input! expected at least %d' % x.atleast
-            return -1
-            
-        if not multidel:
-            ret = self.m.delete(key, value)
-            if ret != MEMLINK_OK:
-                print 'del (%s, %s) err:%d!'% (key, value, ret)
-                return -1
-            else:
-                print 'del (%s, %s) OK!'% (key, value)
-        else:
-            ret, result = self.m.range(key, "", frompos, llen)
-            if ret != MEMLINK_OK:
-                print 'multidel err:%d' % ret, result
-                return -1
-            else:
-                num = 0
-                item = result.root
-                while item:
-                    ret = self.m.delete(key, item.value)
-                    if ret != MEMLINK_OK:
-                        print 'del (%s, %s) err:%d!'% (key, item.value, ret)
-                        return -1
-                    else:
-                        num += 1
-                        print 'del (%s, %s) ok!'% (key, item.value)
-                    item = item.next
-                print 'multidel %d' % num
+            print 'ERROR: ', ret
+        return ret
                 
-        return 0
-         
     def tag(self, args):
         '''Command tag.
+
+        Command Description:
     
-        tag key value flag : flag -- 1 for tag del; 0 for restore.
+            tag key value flag  --- flag : 1 for tag_del ; 0 for restore
         '''
-    
         try:
             argv = len(args)
             if argv < 3:
@@ -417,18 +511,23 @@ class MemLinkTest:
         except ShortInputException, x:
             print 'bad input! expected at least %d' % x.atleast
             return -1
+            
         ret = self.m.tag(key, value, flag)
-        if ret != MEMLINK_OK:
-            print 'tag err:', ret
-            return -1
+        print 'tag (%s, %s, %d) ' % (key, value, flag), 
+        if ret == MEMLINK_OK:
+            print 'OK!'
+        elif ret == MEMLINK_ERR_RECV:
+            pass
         else:
-            print 'tag (%s, %s, %d) ok!' % (key, value, flag)
-        return 0
+            print 'ERROR: ', ret
+        return ret
 
     def mask(self, args):
         '''Command mask.
+
+        Command Description:
     
-        mask key value maskstr -- for instance: mask haha 123 4::1
+            mask key value maskstr   --- for instance: update haha 123 0
         '''
         try:
             argv = len(args)
@@ -440,20 +539,23 @@ class MemLinkTest:
         except ShortInputException, x:
             print 'bad input! expected at least %d' % x.atleast
             return -1
-        print 'mask (%s, %s, "%s")' % (key, value, maskstr) 
+            
+        print 'mask (%s, %s, "%s") ' % (key, value, maskstr),
         ret = self.m.mask(key, value, maskstr)
-        if ret != MEMLINK_OK:
-            print 'mask err:', ret
+        if ret == MEMLINK_OK:
+            print 'OK!'
+        elif ret == MEMLINK_ERR_RECV:
+            pass
         else:
-            print 'mask (%s, %s, "%s") ok' % (key, value, maskstr) 
-            return -1
-        return 0
+            print 'ERROR: ', ret
+        return ret
 
     def count(self, args):
         '''Command count.
+
+        Command Description:
     
-        count key
-        count key maskstr
+            count key maskstr   --- for instance: count haha 4::1 ; count haha (count all)
         '''
         try:
             argv = len(args)
@@ -469,23 +571,16 @@ class MemLinkTest:
             print 'bad input! expected at least %d' % x.atleast
             return -1
             
-        opnum = 0
-        while 1:
-            opnum += 1
-            ret, count = self.m.count(key, maskstr)
-            if ret == MEMLINK_OK:
-                print 'count (%s, "%s") ok.' % (key, maskstr) 
-                print 'visible_count:%d, tagdel_count:%d' % (count.visible_count, count.tagdel_count)
-                return 0
-            elif ret == MEMLINK_ERR_RECV:
-                if opnum < 2:
-                    continue
-                else:
-                    print 'count err:', ret
-                    return -1
-            else:
-                print 'count err:', ret
-                return -1
+        ret, count = self.m.count(key, maskstr)
+        print 'count (%s, "%s") ' % (key, maskstr),
+        if ret == MEMLINK_OK:
+            print 'OK!'
+            print 'visible_count:%d, tagdel_count:%d' % (count.visible_count, count.tagdel_count)
+        elif ret == MEMLINK_ERR_RECV:
+            pass
+        else:
+            print 'ERROR: ', ret
+        return ret;
 
 def test_main(args):
     all_the_cmd = ('create', 'rmkey', 'insert', 'delete', 'range', 'update', 'tag', 'mask', 'count', 'stat', 'dump', 'clean')
@@ -508,7 +603,7 @@ def test_main(args):
         cmd_str = string.split(sstr)
         cmd = cmd_str[0]
         if not hasattr(mtest, cmd) and cmd != 'help'and cmd != 'list':            
-            print 'Bad input. DO NOT have this command.'
+            print 'Bad input! DO NOT have this command.'
             continue
 
         if cmd == 'list':
@@ -522,10 +617,19 @@ def test_main(args):
                 print 'command "%s" don\'t exist! All are as follows:' % cmd_str[1]
                 print all_the_cmd
         else:
-            args = cmd_str[1:]
-            ret = getattr(mtest, cmd)(args)
-            #if ret != MEMLINK_OK:
-                #print cmd, 'error:', ret
+            opnum = 0;
+            while 1:
+                opnum += 1
+                args = cmd_str[1:]
+                ret = getattr(mtest, cmd)(args)
+                if ret == MEMLINK_ERR_RECV:
+                    if opnum < 2:
+                        continue;
+                    else:
+                        print "Connection ERROR! May be lost!"
+                        break;
+                else:
+                    break;
 
 if __name__ == '__main__':
     args = []
