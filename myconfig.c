@@ -189,14 +189,16 @@ load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
 	if (binlogver == dumplogver) {
 		int *indxdata = (int *)(addr + SYNCLOG_HEAD_LEN);
 		int pos = indxdata[dumplogpos];
-		if (pos == 0) {
+		if (pos == 0 && dumplogpos != 0) {
 			if (indxdata[dumplogpos - 1] != 0) {
 				data = addr + indxdata[dumplogpos - 1];
 				have_key = 1;
 			}
 			
 		}else{
-			data = addr + pos;
+			if (pos != 0) {
+				data = addr + pos;
+			}
 		}
 	}
 
