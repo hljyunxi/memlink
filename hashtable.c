@@ -1176,6 +1176,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 					newbk = datablock_new_copy(node, dbk, skipn, value, mask);
 					DataBlock *newbk2 = datablock_new_copy_small(node, NULL, NULL);
 					memcpy(newbk2->data, dbk->data + (dbk->data_count - 1) * datalen, datalen);
+					newbk2->visible_count = 1; //add by wyx 1/5 18:00
 					newbk->next = newbk2;
 					node->all += newbk2->data_count;
 					
@@ -1353,6 +1354,9 @@ hashtable_move(HashTable *ht, char *key, void *value, int pos)
 			DINFO("update release null block: %p\n", dbk);
 			//mempool_put(g_runtime->mpool, dbk, node->valuesize + node->masksize);
 			mempool_put(g_runtime->mpool, dbk, sizeof(DataBlock) + dbk->data_count * (node->valuesize + node->masksize));
+			/**************************************************/
+			//modified by wyx 1/5 16:20
+			node->all -= dbk->data_count;
 		}
 		//hashtable_print(ht, key);
 	}
@@ -1400,6 +1404,9 @@ hashtable_del(HashTable *ht, char *key, void *value)
 		}
 		//mempool_put(g_runtime->mpool, dbk, node->valuesize + node->masksize);
 		mempool_put(g_runtime->mpool, dbk, sizeof(DataBlock) + dbk->data_count * (node->valuesize + node->masksize));
+		/**************************************************/
+		//modified by wyx 1/5 16:20
+		node->all -= dbk->data_count;
 	}
 
     return MEMLINK_OK;

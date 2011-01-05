@@ -3,7 +3,7 @@
 int main()
 {
 #ifdef DEBUG
-	logfile_create("test.log", 3);
+	logfile_create("stdout", 3);
 #endif
 	HashTable* ht;
 	char key[64];
@@ -40,7 +40,7 @@ int main()
 		HashNode* pNode = hashtable_find(ht, key);
 		if(NULL == pNode)
 		{
-			printf("hashtable_add_info_mask error. can not find %s\n", key);
+			DERROR("hashtable_add_info_mask error. can not find %s\n", key);
 			return -1;
 		}
 	}
@@ -58,22 +58,28 @@ int main()
 		sprintf(val, "value%03d", i);
 		//pos = i;
 		pos = my_rand(num + 50);
+		//DINFO("<<<<<<<hashtable_print>>>>>>>>>>>>\n");
+		//hashtable_print(g_runtime->ht, key);
+		
+		//DINFO("<<<<<<hashtable_add_mask>>>> val:%s, pos:%d \n", val, pos);
 		ret = hashtable_add_mask(ht, key, val, maskarray[i%3], 3, pos);
 		if (ret < 0) {
-			printf("hashtable_add_mask err! ret:%d, val:%s, pos:%d \n", ret, val, pos);
+			DERROR("hashtable_add_mask err! ret:%d, val:%s, pos:%d \n", ret, val, pos);
 			return ret;
 		}
 	}
 
 	printf("2 insert 1000 \n");
 	//return 0;
-	
+	//DINFO("<<<<<<<hashtable_end>>>>>>>>>>>>\n");
+	//hashtable_print(g_runtime->ht, key);
+
 	for(i = 0; i < num; i++)
 	{
 		sprintf(val, "value%03d", i);
 		ret = hashtable_find_value(ht, key, val, &node, &dbk, &item);
 		if (ret < 0) {
-			printf("not found value: %d, %s\n", ret, key);
+			DERROR("not found value: %d, %s\n", ret, val);
 			return ret;
 		}
 	}
@@ -81,19 +87,19 @@ int main()
 	sprintf(val, "value%03d", 50);
 	ret = hashtable_del(ht, key, val);
 	if (ret < 0) {
-		printf("del value: %d, %s\n", ret, val);
+		DERROR("del value: %d, %s\n", ret, val);
 		return ret;
 	}
 	
 	ret = hashtable_add_mask(ht, key, val, maskarray[2], masknum, 100);
 	if (ret < 0) {
-		printf("add value err: %d, %s\n", ret, val);
+		DERROR("add value err: %d, %s\n", ret, val);
 		return ret;
 	}
 
 	ret = hashtable_find_value(ht, key, val, &node, &dbk, &item);
 	if (ret < 0) {
-		printf("not found value: %d, %s\n", ret, val);
+		DERROR("not found value: %d, %s\n", ret, val);
 		return ret;
 	}
 	printf("test: insert ok!\n");
@@ -105,7 +111,7 @@ int main()
 		//pos = i;
 		ret = hashtable_del(ht, key, val);
 		if (ret < 0) {
-			printf("hashtable_del err! ret:%d, val:%s \n", ret, val);
+			DERROR("hashtable_del err! ret:%d, val:%s \n", ret, val);
 			return ret;
 		}
 	}
@@ -116,7 +122,7 @@ int main()
 		sprintf(val, "value%03d", i);
 		ret = hashtable_find_value(ht, key, val, &node, &dbk, &item);
 		if (ret >= 0) {
-			printf("err should not found value: %d, %s\n", ret, key);
+			DERROR("err should not found value: %d, %s\n", ret, key);
 			return ret;
 		}
 	}

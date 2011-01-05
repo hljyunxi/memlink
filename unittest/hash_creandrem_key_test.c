@@ -12,6 +12,9 @@
 
 int main()
 {
+#ifdef DEBUG
+		logfile_create("stdout", 3);
+#endif
 	HashTable* ht;
 	char key[64];
 	int valuesize = 8;
@@ -32,7 +35,6 @@ int main()
 	my_runtime_create_common("memlink");
 
 	ht = g_runtime->ht;
-
 
 	///////////begin test;
 	//test1 : hashtable_add_info_mask //Ìí¼Ókey
