@@ -7,7 +7,6 @@ public class MemLinkClient
 {
 	private MemLink client = null;
 
-	/*
 	static {
 		try{
 			System.loadLibrary("memlink");
@@ -15,7 +14,7 @@ public class MemLinkClient
 			System.err.println("library libmemlink.so load error! " + e);
 			System.exit(1);
 		}
-	}*/
+	}
 
 	public MemLinkClient (String host, int readport, int writeport, int timeout)
 	{
@@ -93,11 +92,11 @@ public class MemLinkClient
 		return memlink.memlink_cmd_tag(client, key, value, value.length(), tag);
 	}
 
-	public MemLinkResult range(String key, String maskstr, int frompos, int len)
+	public MemLinkResult range(String key, int kind, String maskstr, int frompos, int len)
 	{
 		MemLinkResult result = new MemLinkResult();
 
-		int ret = memlink.memlink_cmd_range(client, key, maskstr, frompos, len, result);
+		int ret = memlink.memlink_cmd_range(client, key, kind, maskstr, frompos, len, result);
 		if (ret == memlink.MEMLINK_OK) {
 			return result;
 		}

@@ -623,8 +623,9 @@ memlink_cmd_count(MemLink *m, char *key, char *maskstr, MemLinkCount *count)
     return MEMLINK_OK;
 }
 
+// kind: short to int  modified by wyx at 1.4
 int 
-memlink_cmd_range(MemLink *m, char *key, unsigned char kind,  char *maskstr, 
+memlink_cmd_range(MemLink *m, char *key, int kind,  char *maskstr, 
                   int frompos, int len, MemLinkResult *result)
 {
 	if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
