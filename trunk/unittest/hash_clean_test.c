@@ -1,10 +1,9 @@
 #include "hashtest.h"
 
-
 int main()
 {
 #ifdef DEBUG
-	logfile_create("test.log", 3);
+	logfile_create("stdout", 2);
 #endif
 	HashTable* ht;
 	char key[64];
@@ -15,7 +14,6 @@ int main()
 	//char* maskstr1[] = {"8:3:1", "7:2:1", "6:2:1"};
 	int maskarray[6][3] = { { 7, UINT_MAX, 1}, {6, 2, 1}, { 4, 1, UINT_MAX}, 
 		                    {8, 3, 1}, {8, 8, 8}, { UINT_MAX, UINT_MAX, UINT_MAX} }; 
-	int num  = 100*10 - 1;
 	int masknum = 3;
 	int ret;
 	int i = 0;
@@ -43,7 +41,7 @@ int main()
 		HashNode* pNode = hashtable_find(ht, key);
 		if(NULL == pNode)
 		{
-			printf("hashtable_add_info_mask error. can not find %s\n", key);
+			DERROR("hashtable_add_info_mask error. can not find %s\n", key);
 			return -1;
 		}
 	}
@@ -51,7 +49,8 @@ int main()
 	///////test : hashtable_add_mask ²åÈënum¸övalue
 	HashNode *node = NULL;
 	DataBlock *dbk = NULL;
-	char	 *item = NULL; 	
+	char	 *item = NULL; 
+	int num  = 100*10 - 1;	
 	int pos = 0;
 	for(i = 0; i < num; i++)
 	{
@@ -59,13 +58,13 @@ int main()
 		pos = i;
 		ret = hashtable_add_mask(ht, key, val, maskarray[i%4], masknum, pos);
 		if (ret < 0) {
-			printf("add value err: %d, %s\n", ret, val);
+			DERROR("add value err: %d, %s\n", ret, val);
 			return ret;
 		}
 		
 		ret = hashtable_find_value(ht, key, val, &node, &dbk, &item);
 		if (ret < 0) {
-			printf("not found value: %d, %s\n", ret, key);
+			DERROR("not found value: %d, %s\n", ret, key);
 			return ret;
 		}
 	}
@@ -76,7 +75,7 @@ int main()
 	hashtable_stat(ht, key, &stat);
 	if(stat.blocks != 2 && stat.data_used != num && stat.data != 200)
 	{
-		printf("err stat.blocks:%d, stat.data_used:%d, key:%s\n", stat.blocks, stat.data_used, key);
+		DERROR("err stat.blocks:%d, stat.data_used:%d, key:%s\n", stat.blocks, stat.data_used, key);
 		return -1;
 	}
 
@@ -84,16 +83,24 @@ int main()
 	for(i = 0; i < 500; i++)
 	{
 		sprintf(val, "value%03d", i*2);
-		hashtable_del(ht, key, val);
+		ret = hashtable_del(ht, key, val);
+		if (ret < 0) {
+			DERROR("hashtable_del error: %d  val:%s\n", ret, val);
+			return ret;
+		}
 	}
 	
-	hashtable_clean(ht, key);
-
+	ret = hashtable_clean(ht, key);
+	if (ret < 0) {
+		DERROR("hashtable_clean error: %d\n", ret);
+		return ret;
+	}
+	
 	HashTableStat stat1;
 	hashtable_stat(ht, key, &stat1);
 	if(stat1.blocks != 5 || stat1.data_used != 499 || stat1.data != 500)
 	{
-		printf("err stat.blocks:%d, stat.data_used:%d, stat.data:%d, key:%s\n",
+		DERROR("err stat.blocks:%d, stat.data_used:%d, stat.data:%d, key:%s\n",
 			    stat1.blocks, stat1.data_used, stat1.data, key);
 		return -1;
 	}
@@ -102,16 +109,26 @@ int main()
 	for(i = 0; i < 499; i++)
 	{
 		sprintf(val, "value%03d", i*2+1);
-		hashtable_del(ht, key, val);
+		ret = hashtable_del(ht, key, val);
+		if (ret < 0) {
+			DERROR("hashtable_del error: %d  val:%s\n", ret, val);
+			return ret;
+		}
 	}
 	
-	hashtable_clean(ht, key);
+	ret = hashtable_clean(ht, key);
+	if (ret < 0) {
+		DERROR("hashtable_clean error: %d\n", ret);
+		return ret;
+	}
+	
+	//hashtable_print(g_runtime->ht, key);
 
 	//HashTableStat stat1;
 	hashtable_stat(ht, key, &stat1);
 	if(stat1.blocks != 0 || stat1.data_used != 0 || stat1.data != 0)
 	{
-		printf("err stat.blocks:%d, stat.data_used:%d, stat.data:%d, key:%s\n",
+		DERROR("err stat.blocks:%d, stat.data_used:%d, stat.data:%d, key:%s\n",
 			    stat1.blocks, stat1.data_used, stat1.data, key);
 		return -1;
 	}
