@@ -127,7 +127,8 @@ sslave_load_master_dump_info(SSlave *ss, char *dumpfile, long long *filesize, lo
 			*dumpsize = dsize;
 		}
 
-		int pos = sizeof(short) + sizeof(int);
+		//int pos = sizeof(short) + sizeof(int);
+		int pos = sizeof(short);
 		fseek(dumpf, pos, SEEK_SET);
 
 		ret = fread(&mylogver, 1, sizeof(int), dumpf);
