@@ -62,7 +62,7 @@ sslave_recv_log(SSlave *ss)
 		// after getdump, must not skip first one
         if (logver == ss->logver && logline == ss->logline && g_runtime->synclog->index_pos != 0) {
             //skip first one
-            continue;
+            //continue;
         }
 
 		unsigned int size = checksize + rlen;
@@ -86,7 +86,7 @@ sslave_recv_log(SSlave *ss)
  * load master dump info
  */
 int
-sslave_load_master_dump_info(SSlave *ss, char *dumpfile, long long *filesize, long long *dumpsize, unsigned int *logver)
+sslave_load_master_dump_info(SSlave *ss, char *dumpfile, long long *filesize, long long *dumpsize, unsigned int *dumpver, unsigned int *logver)
 {
 	//char dumpfile[PATH_MAX];	
 	int  ret;
@@ -138,10 +138,21 @@ sslave_load_master_dump_info(SSlave *ss, char *dumpfile, long long *filesize, lo
 			return -1;
 			//goto read_dump_over;
 		}
-
+		if (dumpver) {
+			*dumpver = mylogver;
+		}
+		ret = fread(&mylogver, 1, sizeof(int), dumpf);
+		if (ret != sizeof(int)) {
+			DERROR("fread error: %s\n", strerror(errno));
+			fclose(dumpf);
+			return -1;
+			//goto read_dump_over;
+		}
 		if (logver) {
 			*logver = mylogver;
 		}
+
+
 	}
 	fclose(dumpf);
 
@@ -299,18 +310,19 @@ sslave_do_getdump(SSlave *ss)
 
 	long long	 tmpsize  = 0;
 	long long	 dumpsize = 0;
+	unsigned int dumpver  = 0;
 	unsigned int logver   = 0;
 	int			 ret;
 
-	sslave_load_master_dump_info(ss, dumpfile_tmp, &tmpsize, &dumpsize, &logver);
+	sslave_load_master_dump_info(ss, dumpfile_tmp, &tmpsize, &dumpsize, &dumpver, &logver);
 
 	char sndbuf[1024];
     int  sndlen;
     char recvbuf[1024];
 
 	// do getdump
-    DINFO("try getdump, dumpver:%d, dumpsize:%lld, filesize:%lld\n", logver, dumpsize, tmpsize);
-    sndlen = cmd_getdump_pack(sndbuf, logver, tmpsize); 
+    DINFO("try getdump, dumpver:%d, dumpsize:%lld, filesize:%lld\n", dumpver, dumpsize, tmpsize);
+    sndlen = cmd_getdump_pack(sndbuf, dumpver, tmpsize); 
     ret = sslave_do_cmd(ss, sndbuf, sndlen, recvbuf, 1024); 
     if (ret < 0) {
         DERROR("cmd getdump error: %d\n", ret);
@@ -320,9 +332,9 @@ sslave_do_getdump(SSlave *ss)
     unsigned long long size, rlen = 0;
 
     memcpy(&retcode, recvbuf + sizeof(int), sizeof(short));
-    memcpy(&logver, recvbuf + CMD_REPLY_HEAD_LEN, sizeof(int));
+    memcpy(&dumpver, recvbuf + CMD_REPLY_HEAD_LEN, sizeof(int));
     memcpy(&size, recvbuf + CMD_REPLY_HEAD_LEN + sizeof(int), sizeof(long long));
-    DINFO("recvlen:%d, retcode:%d, logver:%d, dump size: %lld\n", ret, retcode,logver, size);
+    DINFO("recvlen:%d, retcode:%d, dumpver:%d, dump size: %lld\n", ret, retcode, dumpver, size);
 
     char    dumpbuf[8192];
     int     buflen = 0;
@@ -396,7 +408,7 @@ sslave_conn_init(SSlave *ss)
     int  ret;
     unsigned int  local_logver_start;
     unsigned int  local_logpos_start;
-    //unsigned int  dumpver;
+    unsigned int  dumpver;
     //long long     dumpsize;
 	char    mdumpfile[PATH_MAX];
 	char    mdumpfile_tmp[PATH_MAX];
@@ -411,7 +423,7 @@ sslave_conn_init(SSlave *ss)
 	//	sslave_load_master_dump_info(ss, mdumpfile, &ss->dumpfile_size, &ss->dumpsize, &ss->dump_logver);
 	//}
 
-	sslave_load_master_dump_info(ss, mdumpfile, &ss->dumpfile_size, &ss->dumpsize, &ss->dump_logver);
+	sslave_load_master_dump_info(ss, mdumpfile, &ss->dumpfile_size, &ss->dumpsize, &dumpver, &ss->dump_logver);
 
 	if (ss->logver == 0) {
 		ss->logver  = ss->dump_logver;
@@ -467,13 +479,16 @@ sslave_conn_init(SSlave *ss)
 				if (sslave_do_getdump(ss) == 0) {
 					DINFO("load dump ...\n");
 					hashtable_clear_all(g_runtime->ht);
-					dumpfile_load(g_runtime->ht, mdumpfile, 0);
-					dumpfile(g_runtime->ht);
+					dumpfile_load(g_runtime->ht, mdumpfile, 1);
 
-					sslave_load_master_dump_info(ss, mdumpfile, NULL, NULL, &ss->logver);
+					g_runtime->synclog->index_pos = g_runtime->dumplogpos;
+					dumpfile(g_runtime->ht);
+					
+					sslave_load_master_dump_info(ss, mdumpfile, NULL, NULL, &dumpver, &ss->logver);
 					//add by lanwenhong
 					g_runtime->synclog->version = ss->logver;
-					g_runtime->synclog->index_pos = g_runtime->dumplogpos;
+					g_runtime->logver = ss->logver;
+					DINFO("ss->logver: %d, dumplogpos: %d\n", ss->logver, g_runtime->dumplogpos);
 					memcpy((g_runtime->synclog->index + sizeof(short)), &(ss->logver), sizeof(int));
 
 					//ss->logline = 0;
