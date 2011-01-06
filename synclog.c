@@ -226,7 +226,7 @@ synclog_new(SyncLog *slog)
     }
 
     unsigned short format = DUMP_FORMAT_VERSION;
-    unsigned int   newver = g_runtime->logver + 1;
+    unsigned int   newver = g_runtime->synclog->version + 1;
     unsigned int   synlen = SYNCLOG_INDEXNUM;
   
     slog->version = newver;
