@@ -223,10 +223,10 @@ load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
 				DERROR("wdata_apply log error: %d\n", ret);
 				MEMLINK_EXIT;
 			}
+			indexpos ++;
 		}
 
 		data += SYNCPOS_LEN + blen + sizeof(short); 
-		indexpos ++;
 	}
 
 	if (g_cf->role == ROLE_SLAVE) {
