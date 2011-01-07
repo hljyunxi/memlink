@@ -272,7 +272,7 @@ int
 wdata_apply(char *data, int datalen, int writelog)
 {
     char key[512] = {0}; 
-    char value[1024];
+    char value[1024] = {0};
     //char maskstr[128];
     char cmd;
     int  ret = 0;
