@@ -1226,7 +1226,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 
 			newbk->next = newbk2;
 
-			if (nextbk->visible_count + nextbk->tagdel_count == nextbk->data_count) { // nextbk is full
+			if (nextbk->data_count != 1 && nextbk->visible_count + nextbk->tagdel_count == nextbk->data_count) { // nextbk is full
 				DINFO("nextdbk is full.\n");
 				// create a new datablock, and only one data in first position
 				node->all += newbk2->data_count;
@@ -1352,11 +1352,12 @@ hashtable_move(HashTable *ht, char *key, void *value, int pos)
 				node->data = dbk->next;		
 			}
 			DINFO("update release null block: %p\n", dbk);
+			//modified by wyx 1/5 16:20
+			node->all -= dbk->data_count;
+
 			//mempool_put(g_runtime->mpool, dbk, node->valuesize + node->masksize);
 			mempool_put(g_runtime->mpool, dbk, sizeof(DataBlock) + dbk->data_count * (node->valuesize + node->masksize));
 			/**************************************************/
-			//modified by wyx 1/5 16:20
-			node->all -= dbk->data_count;
 		}
 		//hashtable_print(ht, key);
 	}
@@ -1402,11 +1403,11 @@ hashtable_del(HashTable *ht, char *key, void *value)
 		}else{
 			node->data = dbk->next;		
 		}
+		//modified by wyx 1/5 16:20
+		node->all -= dbk->data_count;
 		//mempool_put(g_runtime->mpool, dbk, node->valuesize + node->masksize);
 		mempool_put(g_runtime->mpool, dbk, sizeof(DataBlock) + dbk->data_count * (node->valuesize + node->masksize));
 		/**************************************************/
-		//modified by wyx 1/5 16:20
-		node->all -= dbk->data_count;
 	}
 
     return MEMLINK_OK;
