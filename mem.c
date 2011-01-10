@@ -72,6 +72,7 @@ mempool_put(MemPool *mp, DataBlock *dbk, int blocksize)
     int i;
 
 	//DNOTE("mem put: %p, size:%d\n", dbk, blocksize);
+	dbk->data_count = 0;
     for (i = 0; i < mp->idxused; i++) {
         if (mp->freemem[i].memsize == blocksize) {
             dbk->next = mp->freemem[i].data;
@@ -82,7 +83,6 @@ mempool_put(MemPool *mp, DataBlock *dbk, int blocksize)
     }
 
 	dbk->next = NULL;
-	dbk->data_count = 0;
     if (i < mp->idxnum) {
         mp->freemem[i].data = dbk;
         mp->freemem[i].memsize = blocksize;
