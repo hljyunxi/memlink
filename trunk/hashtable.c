@@ -70,7 +70,7 @@ dataitem_lookup(HashNode *node, void *value, DataBlock **dbk, DataBlock **prev)
 
     while (root) {
         char *data = root->data;
-		DINFO("root: %p, data: %p, next: %p\n", root, data, root->next);
+		//DINFO("root: %p, data: %p, next: %p\n", root, data, root->next);
         //DINFO("data: %p\n", data);
         //for (i = 0; i < g_cf->block_data_count; i++) {
         for (i = 0; i < root->data_count; i++) {
@@ -1540,14 +1540,12 @@ mask_array2_binary_flag(unsigned char *maskformat, unsigned int *maskarray, int 
     return masknum;
 }
 
-
-
+/*
 int
-hashtable_range(HashTable *ht, char *key, unsigned char kind, 
+hashtable_range_old(HashTable *ht, char *key, unsigned char kind, 
 				unsigned int *maskarray, int masknum, 
                 int frompos, int len, 
-                char *data, int *datanum, 
-                unsigned char *valuesize, unsigned char *masksize)
+                char *data, int *datanum)
 {
     char maskval[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
 	char maskflag[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
@@ -1572,9 +1570,6 @@ hashtable_range(HashTable *ht, char *key, unsigned char kind,
     int datalen = node->valuesize + node->masksize;
 	char *addr  = NULL;
 
-    *valuesize = node->valuesize;
-    *masksize  = node->masksize;
-
     if (masknum > 0) {
 		//modify by lanwenhong
 		startn = dataitem_lookup_pos_mask(node, frompos, kind, maskval, maskflag, &dbk, &addr);
@@ -1597,10 +1592,161 @@ hashtable_range(HashTable *ht, char *key, unsigned char kind,
     int idx   = 0;
     int n     = 0; 
 
+    memcpy(data, &node->valuesize, sizeof(char));
+    idx += sizeof(char);
+    memcpy(data, &node->masksize, sizeof(char));
+    idx += sizeof(char);
     memcpy(data, &node->masknum, sizeof(char));
     idx += sizeof(char);
     memcpy(data + idx, node->maskformat, node->masknum);
     idx += node->masknum;
+
+	DINFO("skipn:%d, kind:%d\n", skipn, kind);
+    while (dbk) {
+		//DINFO("dbk:%p, count:%d\n", dbk, dbk->data_count);
+		if (dbk->data_count == 0) {
+			DINFO("data_count is 0, dbk:%p\n", dbk);
+			break;
+		}
+
+        char *itemdata = dbk->data;
+        int  i;
+        for (i = 0; i < dbk->data_count; i++) {
+			if (addr) {
+				if (itemdata != addr) {
+					skipn -= 1;
+					itemdata += datalen;
+					continue;
+				}else{
+					addr = NULL;
+				}
+			}
+			//modify by lanwenhong
+            if (dataitem_have_data(node, itemdata, kind)) {
+				char *maskdata = itemdata + node->valuesize;
+				if (masknum > 0) {
+					int k;
+					for (k = 0; k < node->masksize; k++) {
+						if ((maskdata[k] & maskflag[k]) != maskval[k]) {
+							break;
+						}
+					}
+					if (k < node->masksize) { // not equal
+						//DINFO("not equal.\n");
+						itemdata += datalen;
+						continue;
+					}
+				}
+				if (skipn > 0) {
+					DINFO("== skipn: %d\n", skipn);
+					skipn -= 1;
+					itemdata += datalen;
+					continue;
+				}
+			
+#ifdef RANGE_MASK_STR
+				char            maskstr[256];
+				unsigned char   mlen;
+
+                mlen = mask_binary2string(node->maskformat, node->masknum, maskdata, node->masksize, maskstr);
+				memcpy(data + idx, itemdata, node->valuesize);
+                idx += node->valuesize;
+                memcpy(data + idx, &mlen, sizeof(char));
+                idx += sizeof(char);
+                memcpy(data + idx, maskstr, mlen);
+                idx += mlen;
+#else
+				memcpy(data + idx, itemdata, datalen);
+				idx += datalen;
+#endif
+				n += 1;
+				if (n >= len) {
+					goto hashtable_range_over;
+				}
+            }
+            itemdata += datalen;
+        }
+        dbk = dbk->next;
+    }
+
+hashtable_range_over:
+	DINFO("count: %d\n", n);
+    // *data = retv;
+    *datanum = idx;
+
+    return MEMLINK_OK;
+}
+*/
+
+int
+hashtable_range(HashTable *ht, char *key, unsigned char kind, 
+				unsigned int *maskarray, int masknum, 
+                int frompos, int len, Conn *conn)
+{
+    char maskval[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
+	char maskflag[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
+
+    HashNode    *node;
+	int			startn;
+    int         idx   = 0;
+    char        *wbuf = NULL;
+    int         ret   = 0;
+	
+	if (len <= 0) {
+		ret =  MEMLINK_ERR_RANGE_SIZE;
+        goto hashtable_range_over;
+	}
+
+    node = hashtable_find(ht, key);
+    if (NULL == node) {
+        DINFO("hashtable_find not found node for key:%s\n", key);
+        ret = MEMLINK_ERR_NOKEY;
+        goto hashtable_range_over;
+    }
+    if (masknum > 0) {
+        masknum = mask_array2_binary_flag(node->maskformat, maskarray, masknum, maskval, maskflag);
+    }
+
+    int  wlen = CMD_REPLY_HEAD_LEN + 3 + node->masknum + (node->valuesize + node->masksize) * len;
+    DINFO("range wlen: %d\n", wlen);
+    wbuf = conn_write_buffer(conn, wlen);
+    idx += CMD_REPLY_HEAD_LEN;
+    //DINFO("valuesize:%d, masksize:%d, masknum:%d\n", node->valuesize, node->masksize, node->masknum);
+    memcpy(wbuf + idx, &node->valuesize, sizeof(char));
+    idx += sizeof(char);
+    memcpy(wbuf + idx, &node->masksize, sizeof(char));
+    idx += sizeof(char);
+    memcpy(wbuf + idx, &node->masknum, sizeof(char));
+    idx += sizeof(char);
+    memcpy(wbuf + idx, node->maskformat, node->masknum);
+    idx += node->masknum;
+
+    DataBlock *dbk = NULL;
+    int datalen = node->valuesize + node->masksize;
+	char *addr  = NULL;
+
+    if (masknum > 0) {
+		//modify by lanwenhong
+		startn = dataitem_lookup_pos_mask(node, frompos, kind, maskval, maskflag, &dbk, &addr);
+		DINFO("dataitem_lookup_pos_mask startn: %d\n", startn);
+		if (startn < 0) { // out of range
+			//*datanum = 0;
+			ret = MEMLINK_OK;
+            goto hashtable_range_over;
+		}
+    }else{
+		//modify by lanwenhong
+		startn = datablock_lookup_pos(node, frompos, kind, &dbk);
+		DINFO("datablock_lookup_pos startn:%d, dbk:%p\n", startn, dbk);
+		if (startn < 0) { // out of range
+			//*datanum = 0;
+			ret = MEMLINK_OK;
+            goto hashtable_range_over;
+		}
+	}
+	
+	int skipn = frompos - startn;
+    int n     = 0; 
 
 	DINFO("skipn:%d, kind:%d\n", skipn, kind);
     while (dbk) {
@@ -1655,19 +1801,18 @@ hashtable_range(HashTable *ht, char *key, unsigned char kind,
 				snprintf(buf, node->valuesize + 1, "%s", itemdata);
 				DINFO("ok, copy item ... i:%d, value:%s maskstr:%s, mlen:%d\n", i, buf, maskstr, mlen);
                 */
-				memcpy(data + idx, itemdata, node->valuesize);
+				memcpy(wbuf + idx, itemdata, node->valuesize);
                 idx += node->valuesize;
-                memcpy(data + idx, &mlen, sizeof(char));
+                memcpy(wbuf + idx, &mlen, sizeof(char));
                 idx += sizeof(char);
-                memcpy(data + idx, maskstr, mlen);
+                memcpy(wbuf + idx, maskstr, mlen);
                 idx += mlen;
 #else
-                
                 /*char buf[128];
 				snprintf(buf, node->valuesize + 1, "%s", itemdata);
 				DINFO("\tok, copy item ... i:%d, value:%s\n", i, buf);
 				*/ 
-				memcpy(data + idx, itemdata, datalen);
+				memcpy(wbuf + idx, itemdata, datalen);
 				idx += datalen;
 #endif
 				n += 1;
@@ -1679,13 +1824,25 @@ hashtable_range(HashTable *ht, char *key, unsigned char kind,
         }
         dbk = dbk->next;
     }
+    ret = MEMLINK_OK;
+	DINFO("count: %d\n", n);
 
 hashtable_range_over:
-	DINFO("count: %d\n", n);
-    //*data = retv;
-    *datanum = idx;
+    if (ret == MEMLINK_OK) {
+        conn->wlen = idx;
+        idx -= sizeof(int);
+    }else{
+        wbuf = conn_write_buffer(conn, CMD_REPLY_HEAD_LEN);
+        conn->wlen = CMD_REPLY_HEAD_LEN;
+        idx = CMD_REPLY_HEAD_LEN - sizeof(int);
+    }
+    //char bufx[1024];
+    //DINFO("wlen:%d, size:%d ret:%d %s\n", conn->wlen, idx, ret, formath(conn->wbuf, conn->wlen, bufx, 1024)); 
+    memcpy(wbuf, &idx, sizeof(int));
+    short retv = ret;
+    memcpy(wbuf + sizeof(int), &retv, sizeof(short));
 
-    return MEMLINK_OK;
+    return ret;
 }
 
 
@@ -1972,37 +2129,45 @@ hashtable_rpush(HashTable *ht, char *key, void *value, unsigned int *maskarray, 
 }
 
 int
-hashtable_lpop(HashTable *ht, char *key, int num, char *data, int *datanum,
-                unsigned char *valuesize, unsigned char *masksize)
+hashtable_lpop(HashTable *ht, char *key, int num, Conn *conn)
 {
     HashNode    *node;
+    char        *wbuf;
+    int         idx = 0;
+    int         ret = MEMLINK_OK;
 	
 	if (num <= 0) {
-		return MEMLINK_ERR_PARAM;
+		ret =  MEMLINK_ERR_PARAM;
+        goto hashtable_lpop_end;
 	}
 
     node = hashtable_find(ht, key);
     if (NULL == node) {
         DINFO("hashtable_find not found node for key:%s\n", key);
-        return MEMLINK_ERR_NOKEY;
+        ret = MEMLINK_ERR_NOKEY;
+        goto hashtable_lpop_end;
     }
+
+    int  wlen = CMD_REPLY_HEAD_LEN + 3 + node->masknum + (node->valuesize + node->masksize) * num;
+    DINFO("range wlen: %d\n", wlen);
+    wbuf = conn_write_buffer(conn, wlen);
+    idx += CMD_REPLY_HEAD_LEN;
 
     DataBlock *dbk = node->data;
     DataBlock *tmp;
     char      *endaddr = NULL;
     char      *itemdata;
     int datalen = node->valuesize + node->masksize;
-
-    *valuesize = node->valuesize;
-    *masksize  = node->masksize;
-
-    int idx   = 0;
     int n     = 0; 
-    int i, ret;
+    int i;
 
-    memcpy(data, &node->masknum, sizeof(char));
+    memcpy(wbuf + idx, &node->valuesize, sizeof(char));
     idx += sizeof(char);
-    memcpy(data + idx, node->maskformat, node->masknum);
+    memcpy(wbuf + idx, &node->masksize, sizeof(char));
+    idx += sizeof(char);
+    memcpy(wbuf + idx, &node->masknum, sizeof(char));
+    idx += sizeof(char);
+    memcpy(wbuf + idx, node->maskformat, node->masknum);
     idx += node->masknum;
 
     while (dbk) {
@@ -2014,7 +2179,7 @@ hashtable_lpop(HashTable *ht, char *key, int num, char *data, int *datanum,
 				snprintf(buf, node->valuesize + 1, "%s", itemdata);
 				DINFO("\tok, copy item ... i:%d, value:%s\n", i, buf);
 				*/ 
-				memcpy(data + idx, itemdata, datalen);
+				memcpy(wbuf + idx, itemdata, datalen);
 				idx += datalen;
                 endaddr = itemdata;
 				n += 1;
@@ -2029,7 +2194,7 @@ hashtable_lpop(HashTable *ht, char *key, int num, char *data, int *datanum,
     
 hashtable_lpop_over:
 	DINFO("count: %d\n", n);
-    if (endaddr != NULL) {
+    if (endaddr != NULL) { // remove before datablock
         char *enddata;
         int  ucount = 0;
         dbk = node->data;
@@ -2038,7 +2203,7 @@ hashtable_lpop_over:
             dbk = dbk->next;
             
             enddata = tmp->data + tmp->data_count * datalen;
-            if (endaddr >= tmp->data && endaddr < enddata) {
+            if (endaddr >= tmp->data && endaddr < enddata) { // end addr in the datablock, copy to new one
                 int size = enddata - endaddr - 1;
                 DataBlock *newbk = mempool_get(g_runtime->mpool, sizeof(DataBlock) + tmp->data_count * datalen);
                 char *todata = newbk->data + (endaddr - tmp->data + datalen);
@@ -2049,26 +2214,42 @@ hashtable_lpop_over:
                 
                 dbk = node->data;
                 node->data = newbk;
-                
-                while (dbk != tmp) {
+                DataBlock *dbktmp = NULL; 
+
+                while (dbk != tmp) { // put previous all datablock to mempool
                     node->all -= tmp->data_count;
                     ucount += tmp->visible_count;
-                    mempool_put(g_runtime->mpool, tmp, sizeof(DataBlock) + tmp->data_count * datalen);
+                    dbktmp = dbk;
                     dbk = dbk->next;
+                    mempool_put(g_runtime->mpool, dbktmp, sizeof(DataBlock) + dbktmp->data_count * datalen);
                 }
+                mempool_put(g_runtime->mpool, tmp, sizeof(DataBlock) + tmp->data_count * datalen);
                 break;
             }
         }
-        node->used -= idx;
+        node->used -= n;
     }
-    *datanum = idx;
 
-    return MEMLINK_OK;
+hashtable_lpop_end:
+    if (ret == MEMLINK_OK) {
+        conn->wlen = idx;
+        idx -= sizeof(int);
+    }else{
+        wbuf = conn_write_buffer(conn, CMD_REPLY_HEAD_LEN);
+        conn->wlen = CMD_REPLY_HEAD_LEN;
+        idx = CMD_REPLY_HEAD_LEN - sizeof(int);
+    }
+    //char bufx[1024];
+    //DINFO("wlen:%d, size:%d ret:%d %s\n", conn->wlen, idx, ret, formath(conn->wbuf, conn->wlen, bufx, 1024)); 
+    memcpy(wbuf, &idx, sizeof(int));
+    short retv = ret;
+    memcpy(wbuf + sizeof(int), &retv, sizeof(short));
+
+    return ret;
 }
 
 int
-hashtable_rpop(HashTable *ht, char *key, int num, char *data, int *datanum,
-                unsigned char *valuesize, unsigned char *masksize)
+hashtable_rpop(HashTable *ht, char *key, int num, Conn *conn)
 {
     return MEMLINK_ERR_CLIENT_CMD;
 }

@@ -28,6 +28,8 @@ mask_string2array(char *maskstr, unsigned int *result)
 
     while (m != NULL) {
         char *fi  = strchr(m, ':');
+        if (i >= HASHTABLE_MASK_MAX_ITEM)
+            return -1;
         if (m[0] == ':' || m[0] == 0) {
             result[i] = UINT_MAX;
         }else{

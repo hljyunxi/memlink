@@ -446,7 +446,7 @@ runtime_create_common(char *pgname)
     int ret;
 	// create data and log dir
 	if (!isdir(g_cf->datadir)) {
-		ret = mkdir(g_cf->datadir, 0644);
+		ret = mkdir(g_cf->datadir, 0744);
 		if (ret == -1) {
 			DERROR("create dir %s error! %s\n", g_cf->datadir, strerror(errno));
 			MEMLINK_EXIT;

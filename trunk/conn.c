@@ -16,6 +16,7 @@
 #include "zzmalloc.h"
 #include "serial.h"
 #include "network.h"
+#include "utils.h"
 
 /**
  * conn_create - return the accepted connection.
@@ -40,20 +41,13 @@ conn_create(int svrfd, int connsize)
         }
         break;
     }
-	//char ip[16] = {0};
-	//int  port   = ntohs((short)clientaddr.sin_port);
-	//inet_ntop(AF_INET, &(clientaddr.sin_addr), ip, slen);
-    //DINFO("accept newfd: %d, %s\n", newfd, inet_ntoa(clientaddr.sin_addr));
-
     tcp_server_setopt(newfd);
 
-    //conn = (Conn*)zz_malloc(sizeof(Conn));
     conn = (Conn*)zz_malloc(connsize);
     if (conn == NULL) {
         DERROR("conn malloc error.\n");
         MEMLINK_EXIT;
     }
-    //memset(conn, 0, sizeof(Conn)); 
     memset(conn, 0, connsize); 
     conn->sock = newfd;
 	conn->destroy = conn_destroy;
@@ -80,6 +74,24 @@ conn_destroy(Conn *conn)
     zz_free(conn);
 }
 
+char*
+conn_write_buffer(Conn *conn, int size)
+{
+    if (conn->wsize >= size) {
+        conn->wlen = conn->wpos = 0;
+        return conn->wbuf;
+    }
+
+    if (conn->wbuf != NULL)
+        zz_free(conn->wbuf);
+
+    conn->wbuf  = zz_malloc(size);
+    conn->wsize = size;
+    conn->wlen  = conn->wpos = 0;
+
+    return conn->wbuf;
+}
+
 int
 conn_wrote(Conn *conn)
 {
@@ -97,7 +109,6 @@ conn_write(Conn *conn)
 {
     int ret;
 
-    DINFO("connection write: %d\n", conn->wlen);
     while (1) {
         ret = write(conn->sock, &conn->wbuf[conn->wpos], conn->wlen - conn->wpos);
         DINFO("write: %d\n", ret);
@@ -111,6 +122,11 @@ conn_write(Conn *conn)
                 break;
             }
         }else{
+            /*char buf[512];
+            DINFO("conn write, ret:%d, wlen:%d, wpos:%d, %x, wbuf:%s\n", ret, 
+                    conn->wlen, conn->wpos, conn->wbuf[conn->wpos], 
+                    formath(&conn->wbuf[conn->wpos], ret, buf, 512));
+            */
             conn->wpos += ret;
         }
         break;

@@ -5,7 +5,7 @@
 #include "mem.h"
 #include "serial.h"
 #include "common.h"
-
+#include "conn.h"
 
 typedef struct _hashnode
 {
@@ -14,6 +14,7 @@ typedef struct _hashnode
     DataBlock       *data_tail; // DataBlock link tail
     struct _hashnode *next;
     unsigned char   type; // key type: list/queue
+    unsigned char   sortfield; // which sort? 0:value, 1-255:mask[0-xx]
     unsigned char   valuesize;
     //unsigned char   valuetype;
     unsigned char   masksize;
@@ -58,8 +59,8 @@ int             hashtable_del(HashTable *ht, char *key, void *value);
 int             hashtable_tag(HashTable *ht, char *key, void *value, unsigned char tag);
 int             hashtable_mask(HashTable *ht, char *key, void *value, unsigned int *maskarray, int masknum);
 int             hashtable_range(HashTable *ht, char *key, unsigned char kind, unsigned int *maskarray, int masknum, 
-                                int frompos, int len,
-                                char *data, int *datanum, unsigned char *valuesize, unsigned char *masksize);
+                                int frompos, int len, Conn *conn);
+                                //int frompos, int len, char *data, int *datanum);
 int             hashtable_clean(HashTable *ht, char *key);
 int             hashtable_stat(HashTable *ht, char *key, HashTableStat *stat);
 int				hashtable_stat_sys(HashTable *ht, HashTableStatSys *stat);
@@ -68,10 +69,8 @@ int             hashtable_count(HashTable *ht, char *key, unsigned int *maskarra
 int             hashtable_lpush(HashTable *ht, char *key, void *value, unsigned int *maskarray, char masknum);
 int             hashtable_rpush(HashTable *ht, char *key, void *value, unsigned int *maskarray, char masknum);
 
-int             hashtable_lpop(HashTable *ht, char *key, int num, char *data, int *datanum, 
-                                unsigned char *valuesize, unsigned char *masksize);
-int             hashtable_rpop(HashTable *ht, char *key, int num, char *data, int *datanum,
-                                unsigned char *valuesize, unsigned char *masksize);
+int             hashtable_lpop(HashTable *ht, char *key, int num, Conn *conn);
+int             hashtable_rpop(HashTable *ht, char *key, int num, Conn *conn);
 
 int             hashtable_print(HashTable *ht, char *key);
 

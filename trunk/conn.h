@@ -52,9 +52,10 @@ typedef struct _conn
 }Conn;
 
 Conn*   conn_create(int svrfd, int connsize);
-void conn_write(Conn *conn);
+void    conn_write(Conn *conn);
 void    conn_destroy(Conn *conn);
 int     conn_wrote(Conn *conn);
+char*   conn_write_buffer(Conn *conn, int size);
 
 
 
