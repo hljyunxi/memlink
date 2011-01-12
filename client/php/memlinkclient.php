@@ -118,14 +118,14 @@ class MemLinkClient
         return memlink_cmd_insert($this->client, $key, $value, $valuelen, $maskstr, $pos);
     }
 
-    function update($key, $value, $valuelen, $pos)
+    function move($key, $value, $valuelen, $pos)
     {
     	if( False == is_string($key) or False == is_int($valuelen) or False == is_int($pos) )
     	{
     		return -1;
     	}
 			
-        return memlink_cmd_update($this->client, $key, $value, $valuelen, $pos);
+        return memlink_cmd_move($this->client, $key, $value, $valuelen, $pos);
     }
 
     function mask($key, $value, $valuelen, $maskstr)

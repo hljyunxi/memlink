@@ -42,33 +42,33 @@ int main()
 	}
 
 //add by wyx
-	ret = memlink_cmd_update(m, buf, val, -1, -10);
+	ret = memlink_cmd_move(m, buf, val, -1, -10);
 	if (ret == MEMLINK_OK) {
-		DERROR("update error, must novalue, key:%s, val:%s, ret:%d\n", buf, "xxxx", ret);
+		DERROR("move error, must novalue, key:%s, val:%s, ret:%d\n", buf, "xxxx", ret);
 		return -4;
 	}
 
-	ret = memlink_cmd_update(m, buf, "xxxx", 4, 0);
+	ret = memlink_cmd_move(m, buf, "xxxx", 4, 0);
 	if (ret != MEMLINK_ERR_NOVAL) {
-		DERROR("update error, must novalue, key:%s, val:%s, ret:%d\n", buf, "xxxx", ret);
+		DERROR("move error, must novalue, key:%s, val:%s, ret:%d\n", buf, "xxxx", ret);
 		return -4;
 	}
-    ret = memlink_cmd_update(m, "xxxxxx", "xxxx", 4, 0);
+    ret = memlink_cmd_move(m, "xxxxxx", "xxxx", 4, 0);
 	if (ret != MEMLINK_ERR_NOKEY) {
-		DERROR("update error, must nokey, key:%s\n", buf);
+		DERROR("move error, must nokey, key:%s\n", buf);
 		return -4;
 	}
 //end
 	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
         //DINFO("====== insert i:%d\n", i);
-		ret = memlink_cmd_update(m, buf, val, strlen(val), 0);
+		ret = memlink_cmd_move(m, buf, val, strlen(val), 0);
 		if (ret != MEMLINK_OK) {
-			DERROR("update error, key:%s, val:%s, ret:%d, i:%d\n", buf, val, ret, i);
+			DERROR("move error, key:%s, val:%s, ret:%d, i:%d\n", buf, val, ret, i);
 			return -4;
 		}
 		else
-			DINFO("update ok, key:%s, val:%s, ret:%d, i:%d\n", buf, val, ret, i);
+			DINFO("move ok, key:%s, val:%s, ret:%d, i:%d\n", buf, val, ret, i);
 
 		MemLinkResult result;
 
@@ -85,7 +85,7 @@ int main()
 		}
         //DINFO("item value: %s\n", item->value);
 		if (strcmp(item->value, val) != 0) {
-			DERROR("after update, first line error! item->value:%s value:%s\n", item->value, val);
+			DERROR("after move, first line error! item->value:%s value:%s\n", item->value, val);
 			return -7;
 		}
 

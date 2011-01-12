@@ -77,9 +77,9 @@ public class MemLinkClient
 		return memlink.memlink_cmd_insert(client, key, value, value.length(), maskstr, pos);
 	}
 
-	public int update(String key, String value, int pos)
+	public int move(String key, String value, int pos)
 	{
-		return memlink.memlink_cmd_update(client, key, value, value.length(), pos);
+		return memlink.memlink_cmd_move(client, key, value, value.length(), pos);
 	}
 
 	public int mask(String key, String value, String maskstr)

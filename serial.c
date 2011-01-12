@@ -683,9 +683,9 @@ cmd_insert_unpack(char *data, char *key, char *value, unsigned char *valuelen,
 
 
 int 
-cmd_update_pack(char *data, char *key, char *value, unsigned char valuelen, int pos)
+cmd_move_pack(char *data, char *key, char *value, unsigned char valuelen, int pos)
 {
-    unsigned char cmd = CMD_UPDATE;
+    unsigned char cmd = CMD_MOVE;
     unsigned int len;
     int count = CMD_REQ_SIZE_LEN;
 
@@ -703,7 +703,7 @@ cmd_update_pack(char *data, char *key, char *value, unsigned char valuelen, int 
 }
 
 int 
-cmd_update_unpack(char *data, char *key, char *value, unsigned char *valuelen, int *pos)
+cmd_move_unpack(char *data, char *key, char *value, unsigned char *valuelen, int *pos)
 {
     int count = CMD_REQ_HEAD_LEN;
     unsigned char vlen;

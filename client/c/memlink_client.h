@@ -67,7 +67,7 @@ int			memlink_cmd_rpush(MemLink *m, char *key, char *value, int valuelen, char *
 int			memlink_cmd_lpop(MemLink *m, char *key, int num, MemLinkResult *result);
 int			memlink_cmd_rpop(MemLink *m, char *key, int num, MemLinkResult *result);
 
-int			memlink_cmd_update(MemLink *m, char *key, char *value, int valuelen, 
+int			memlink_cmd_move(MemLink *m, char *key, char *value, int valuelen, 
                                int pos);
 int			memlink_cmd_mask(MemLink *m, char *key, char *value, int valuelen, 
                              char *maskstr);

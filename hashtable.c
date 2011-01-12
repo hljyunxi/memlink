@@ -1351,7 +1351,7 @@ hashtable_move(HashTable *ht, char *key, void *value, int pos)
 			}else{
 				node->data = dbk->next;		
 			}
-			DINFO("update release null block: %p\n", dbk);
+			DINFO("move release null block: %p\n", dbk);
 			//modified by wyx 1/5 16:20
 			node->all -= dbk->data_count;
 

@@ -58,8 +58,8 @@ class MemLinkClient:
     def insert_mvalue(self, key, items):
         return memlink_cmd_insert_mvalue(self.client, key, values, num)
 
-    def update(self, key, value, pos):
-        return memlink_cmd_update(self.client, key, value, len(value), pos)
+    def move(self, key, value, pos):
+        return memlink_cmd_move(self.client, key, value, len(value), pos)
 
     def mask(self, key, value, maskstr):
         return memlink_cmd_mask(self.client, key, value, len(value), maskstr)

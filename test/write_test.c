@@ -278,18 +278,18 @@ int insertVal()
 	return 0;
 }
 
-int updateVal()
+int moveVal()
 {
 	int  ret;
 	char val[64];
 	int num = my_rand(200);
 	sprintf(val, "%06d", num);
     //DINFO("====== insert i:%d\n", i);
-	ret = memlink_cmd_update(m, key, val, strlen(val), 0);
+	ret = memlink_cmd_move(m, key, val, strlen(val), 0);
 	
 	linkNodeUpdate(list, key, val, 0);
 	if (ret != MEMLINK_OK && ret != MEMLINK_ERR_NOVAL) {
-		DERROR("updateVal error, key:%s, val:%s, ret:%d\n", key, val, ret);
+		DERROR("moveVal error, key:%s, val:%s, ret:%d\n", key, val, ret);
 		return -4;
 	}
 
@@ -347,7 +347,7 @@ int cleanKey()
 }
 
 typedef int (*pFunc)();
-pFunc p[7] = {createKey, delVal, insertVal, updateVal, tagVal, maskVal, cleanKey};
+pFunc p[7] = {createKey, delVal, insertVal, moveVal, tagVal, maskVal, cleanKey};
 
 
 int main()
@@ -403,12 +403,12 @@ int main()
 		ret = check_result(list);
 		if (ret != MEMLINK_OK) {
 			DERROR("Function %d err!\n", index);
-			printf("createKey:%d, delVal:%d, insertVal:%d, updateVal:%d, tagVal:%d, maskVal:%d, cleanKey:%d\n", 
+			printf("createKey:%d, delVal:%d, insertVal:%d, moveVal:%d, tagVal:%d, maskVal:%d, cleanKey:%d\n", 
 				opNum[0], opNum[1],opNum[2],opNum[3],opNum[4],opNum[5],opNum[6]);
 			return -3;
 		}
 	}
-	printf("createKey:%d, delVal:%d, insertVal:%d, updateVal:%d, tagVal:%d, maskVal:%d, cleanKey:%d\n", 
+	printf("createKey:%d, delVal:%d, insertVal:%d, moveVal:%d, tagVal:%d, maskVal:%d, cleanKey:%d\n", 
 		opNum[0], opNum[1],opNum[2],opNum[3],opNum[4],opNum[5],opNum[6]);
 	//ret = check_result(list);
 

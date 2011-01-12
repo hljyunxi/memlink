@@ -66,7 +66,7 @@ def test():
     key = 'haha000'
     ret = m.create(key, 10, "4:3:1")
     if ret != MEMLINK_OK:
-        print 'create error:', ret
+        print 'create error:', ret, key
         return -1
     print 'create 1 key'
 
@@ -125,14 +125,14 @@ def test():
         	return -1
     print 'delete val oushu'
 
-    #update reverse the list
+    #move reverse the list
     for i in range(0, num2):
         val = '%010d' % (i * 2 + 1)
-        ret = m.update(key, val, 0)
+        ret = m.move(key, val, 0)
         if ret != MEMLINK_OK:
-            print 'update val error:', ret, val
+            print 'move val error:', ret, val
             return -1
-    print 'update reverse the list'
+    print 'move reverse the list'
 
     # set all the values' mask = 4:4:1
     for i in range(0, 500):

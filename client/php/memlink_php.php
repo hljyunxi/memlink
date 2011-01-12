@@ -205,8 +205,8 @@ abstract class memlink {
 		return memlink_cmd_rpop($m,$key,$num,$result);
 	}
 
-	static function memlink_cmd_update($m,$key,$value,$valuelen,$pos) {
-		return memlink_cmd_update($m,$key,$value,$valuelen,$pos);
+	static function memlink_cmd_move($m,$key,$value,$valuelen,$pos) {
+		return memlink_cmd_move($m,$key,$value,$valuelen,$pos);
 	}
 
 	static function memlink_cmd_mask($m,$key,$value,$valuelen,$maskstr) {

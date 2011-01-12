@@ -208,13 +208,13 @@ def teste():
     i = num - 1
     while i >= 290000:
         val = '%010d' % i
-        ret = m.update(key, val, 0)
+        ret = m.move(key, val, 0)
         if ret != MEMLINK_OK:
-            print 'update error!', key, val
+            print 'move error!', key, val
             return -2
         i -= 1
     num = 10000
-    print 'update %d val' % num
+    print 'move %d val' % num
 
     #return 0
     

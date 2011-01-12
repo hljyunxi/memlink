@@ -10,7 +10,7 @@
 #define CMD_CREATE		    4
 #define CMD_DEL			    5
 #define CMD_INSERT		    6
-#define CMD_UPDATE		    7
+#define CMD_MOVE		    7
 #define CMD_MASK		    8
 #define CMD_TAG			    9
 #define CMD_RANGE		    10
@@ -75,8 +75,8 @@ int cmd_insert_pack(char *data, char *key, char *value, unsigned char valuelen,
 int cmd_insert_unpack(char *data, char *key, char *value, unsigned char *valuelen,
                       unsigned char *masknum, unsigned int *maskarray, int *pos);
 
-int cmd_update_pack(char *data, char *key, char *value, unsigned char valuelen, int pos);
-int cmd_update_unpack(char *data, char *key, char *value, unsigned char *valuelen, int *pos);
+int cmd_move_pack(char *data, char *key, char *value, unsigned char valuelen, int pos);
+int cmd_move_unpack(char *data, char *key, char *value, unsigned char *valuelen, int *pos);
 
 int cmd_mask_pack(char *data, char *key, char *value, unsigned char valuelen, 
                   unsigned char masknum, unsigned int *maskarray);
