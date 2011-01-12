@@ -17,7 +17,7 @@
 || del || 写 || 删除key下的某个value ||
 || del_by_mask || 写 || 删除list下符合此mask条件的所有value ||
 || insert || 写 || 在key下的列表中插入一条 ||
-|| update || 写 || 更新key下列表中某value在列表中的位置 ||
+|| move || 写 || 更新key下列表中某value在列表中的位置 ||
 || mask || 写 || 修改某个value的mask信息 ||
 || tag || 写 || 标记删除列表中的某个value或者恢复某个value ||
 || rmkey || 写 || 删除一个key，包括它的列表 ||
