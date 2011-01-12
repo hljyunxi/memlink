@@ -61,37 +61,13 @@ rdata_ready(Conn *conn, char *data, int datalen)
 				ret = MEMLINK_ERR_PARAM;
 				goto rdata_ready_error;
 			}
-			/*
-            int i;
-            for (i = 0; i < masknum; i++) {
-                DINFO("mask i:%d, m:%d\n", i, maskarray[i]);
-            }*/
-            unsigned char masksize = 0, valuesize = 0;
-            //old: int rlen = sizeof(char) * 2 + 256 * len + HASHTABLE_MASK_MAX_ITEM * sizeof(int) * len;
-            // len(4B) + retcode(2B) + valuesize(1B) + masksize(1B) + masknum(1B) + maskformat(masknum B) + value.mask * le
-            int rlen = sizeof(int) + sizeof(short) + sizeof(char) + sizeof(char) + sizeof(char) + \
-					   masknum * sizeof(int) + (HASHTABLE_VALUE_MAX + (HASHTABLE_MASK_MAX_BIT/8 + 2) * masknum) * len;
-            if (rlen >= CMD_RANGE_MAX_SIZE) {
-				ret = MEMLINK_ERR_RANGE_SIZE;
-				goto rdata_ready_error;
-            }
-            DINFO("ret buffer len: %d\n", rlen);
-            char retrec[rlen];
-
-            ret = hashtable_range(g_runtime->ht, key, kind, maskarray, masknum, frompos, len, 
-                                retrec + sizeof(char)*2, &retlen, &valuesize, &masksize); 
-
-            DINFO("hashtable_range return: %d, retlen:%d, valuesize:%d, masksize:%d\n", ret, retlen, valuesize, masksize);
-            /*
-            if (retlen > 0) {
-                printh(retrec + sizeof(char) * 2, retlen);
-            }*/
-            memcpy(retrec, &valuesize, sizeof(char));
-            memcpy(retrec + sizeof(char), &masksize, sizeof(char));
-           
-            retlen += sizeof(char) * 2;
-
-            ret = data_reply(conn, ret, retrec, retlen);
+            // len(4B) + retcode(2B) + valuesize(1B) + masksize(1B) + masknum(1B) + maskformat(masknum B) + value.mask * len
+            //int wlen = sizeof(int) + sizeof(short) + sizeof(char) + sizeof(char) + sizeof(char) + 
+			//		   masknum * sizeof(int) + (HASHTABLE_VALUE_MAX + (HASHTABLE_MASK_MAX_BIT/8 + 2) * masknum) * len;
+            ret = hashtable_range(g_runtime->ht, key, kind, maskarray, masknum, frompos, len, conn); 
+            DINFO("hashtable_range return: %d\n", ret);
+            //ret = data_reply(conn, ret, retrec, retlen);
+            ret = data_reply_direct(conn);
             DINFO("data_reply return: %d\n", ret);
 
             break;
@@ -179,7 +155,6 @@ rdata_ready_error:
 	ret = data_reply(conn, ret, NULL, 0);
     gettimeofday(&end, NULL);
     DNOTE("%s:%d cmd:%d use %u us\n", conn->client_ip, conn->client_port, cmd, timediff(&start, &end));
-
 	DINFO("data_reply return: %d\n", ret);
 
     return 0;

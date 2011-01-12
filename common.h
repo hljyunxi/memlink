@@ -41,6 +41,8 @@
 #define MEMLINK_ERR_PARAM			-28
 // 文件IO错误
 #define MEMLINK_ERR_IO              -29
+// list类型错误
+#define MEMLINK_ERR_LIST_TYPE       -30
 
 // 其他错误
 #define MEMLINK_ERR                 -1

@@ -135,7 +135,8 @@ writen(int fd, const void *vptr, size_t n, int timeout)
                 return -1;
             }
         }
-        //DINFO("nwritten: %d\n", (int)nwritten);
+        //char buf[1024];
+        //DINFO("nwritten: %d, %s\n", (int)nwritten, formath((char*)ptr, (int)nwritten, buf, 1024));
         nleft -= nwritten;
         ptr += nwritten;
     }

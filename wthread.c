@@ -137,12 +137,11 @@ data_set_reply(Conn *conn, short retcode, char *retdata, int retlen)
     }
     conn->wlen = datalen;
 	
-/*
+
 #ifdef DEBUG
     char buf[10240] = {0};
     DINFO("reply %s\n", formath(conn->wbuf, conn->wlen, buf, 10240));
 #endif
-*/
 
     return 0;
 }
@@ -158,6 +157,19 @@ data_reply(Conn *conn, short retcode, char *retdata, int retlen)
 
 	DINFO("change event to write.\n");
 	ret = change_event(conn, EV_WRITE|EV_PERSIST, g_cf->timeout, 0);
+	if (ret < 0) {
+		DERROR("change_event error: %d, close conn.\n", ret);
+		conn->destroy(conn);
+	}
+
+    return 0;
+}
+
+int
+data_reply_direct(Conn *conn)
+{
+	DINFO("change event to write.\n");
+	int ret = change_event(conn, EV_WRITE|EV_PERSIST, g_cf->timeout, 0);
 	if (ret < 0) {
 		DERROR("change_event error: %d, close conn.\n", ret);
 		conn->destroy(conn);
@@ -590,12 +602,58 @@ wdata_apply(char *data, int datalen, int writelog)
 			break;
 
         case CMD_LPUSH:
-            ret = MEMLINK_ERR_CLIENT_CMD;
+            DINFO("<<< cmd LPUSH >>>\n");
+			ret = cmd_lpush_unpack(data, key, value, &valuelen, &masknum, maskarray);
+			if (ret != 0) {
+				DINFO("unpack lpush error! ret: %d\n", ret);
+				break;
+			}
+			DINFO("unpack key: %s, masknum: %d, maskarray: %d,%d,%d\n", key, masknum, maskarray[0], maskarray[1],maskarray[2]);
+			ret = hashtable_lpush(g_runtime->ht, key, value, maskarray, masknum);
+			DINFO("hashtable_lpush ret: %d\n", ret);
+
             break;
         case CMD_RPUSH:
-            ret = MEMLINK_ERR_CLIENT_CMD;
+            DINFO("<<< cmd RPUSH >>>\n");
+			ret = cmd_rpush_unpack(data, key, value, &valuelen, &masknum, maskarray);
+			if (ret != 0) {
+				DINFO("unpack rpush error! ret: %d\n", ret);
+				break;
+			}
+			DINFO("unpack key: %s, masknum: %d, maskarray: %d,%d,%d\n", key, masknum, maskarray[0], maskarray[1],maskarray[2]);
+			ret = hashtable_rpush(g_runtime->ht, key, value, maskarray, masknum);
+			DINFO("hashtable_rpush ret: %d\n", ret);
             break;
         case CMD_LPOP:
+            DINFO("<<< cmd LPOP >>>\n");
+            int num = 0;
+			ret = cmd_pop_unpack(data, key, &num);
+			if (ret != 0) {
+				DINFO("unpack rpush error! ret: %d\n", ret);
+				break;
+			}
+            /*
+            unsigned char masksize = 0, valuesize = 0;
+            // len(4B) + retcode(2B) + valuesize(1B) + masksize(1B) + masknum(1B) + maskformat(masknum B) + value.mask * le
+            int rlen = sizeof(int) + sizeof(short) + sizeof(char) + sizeof(char) + sizeof(char) + \ 
+                       masknum * sizeof(int) + (HASHTABLE_VALUE_MAX + (HASHTABLE_MASK_MAX_BIT/8 + 2) * masknum) * len;
+            if (rlen >= CMD_RANGE_MAX_SIZE) {
+                ret = MEMLINK_ERR_RANGE_SIZE;
+                goto rdata_ready_error;
+            }   
+            DINFO("ret buffer len: %d\n", rlen);
+            char retrec[rlen];
+
+            ret = hashtable_lpop(g_runtime->ht, key, num, retrec + sizeof(char)*2, &retlen, &valuesize, &masksize);
+            DINFO("hashtable_lpop return: %d, retlen:%d, valuesize:%d, masksize:%d\n", ret, retlen, valuesize, masksize);
+            memcpy(retrec, &valuesize, sizeof(char));
+            memcpy(retrec + sizeof(char), &masksize, sizeof(char));
+
+            retlen += sizeof(char) * 2;
+
+            ret = data_reply(conn, ret, retrec, retlen);
+            DINFO("data_reply return: %d\n", ret);
+            */
             ret = MEMLINK_ERR_CLIENT_CMD;
             break;
         case CMD_RPOP:
