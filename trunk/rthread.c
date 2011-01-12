@@ -35,7 +35,7 @@ rdata_ready(Conn *conn, char *data, int datalen)
     struct timeval start, end;
 
     gettimeofday(&start, NULL);
-    memcpy(&cmd, data + sizeof(short), sizeof(char));
+    memcpy(&cmd, data + sizeof(int), sizeof(char));
     char buf[256] = {0};
     DINFO("data ready cmd: %d, data: %s\n", cmd, formath(data, datalen, buf, 256));
 

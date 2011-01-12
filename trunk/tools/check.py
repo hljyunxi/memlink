@@ -48,8 +48,8 @@ def binlog(filename='bin.log'):
                 break
             log_ver = struct.unpack('I', s1[0:4])
             log_pos = struct.unpack('I', s1[4:])
-            s1 = f.read(2)
-            slen = struct.unpack('H', s1)[0]
+            s1 = f.read(4)
+            slen = struct.unpack('I', s1)[0]
             s2 = f.read(slen)
             s = s1 + s2 
             print 'ver:%d, ln:%d, %d:' % \

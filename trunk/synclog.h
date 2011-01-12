@@ -30,7 +30,9 @@ int			synclog_version(SyncLog *slog, unsigned int *logver);
 int         synclog_lastlog();
 int			synclog_prevlog(int curid);
 int			synclog_scan_binlog(int *result, int rsize);
-int         synclog_truncate(SyncLog *slog, int index);
+//int         synclog_truncate(SyncLog *slog, int index);
+int         synclog_truncate(SyncLog *slog, unsigned int logver, unsigned int dumplogpos);
 int         synclog_resize(unsigned int logver, unsigned int logline);
+int         synclog_clean(unsigned int logver, unsigned int dumplogpos);
 
 #endif
