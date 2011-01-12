@@ -107,7 +107,7 @@ Dump文件的格式为二进制的格式：
 ||Create ||Key  valuelen mask ||4 ||Valuelen为1字节，mask用1个字节项数+N字节数据。 ||Create haha 1 4:3:2 表示为 \x0c\x00\x04\x04haha\x01\x03\x04\x03\x04||
 ||Del ||Key  value ||5 ||Value前面要有一个1字节表示类型 ||Del  haha vvv 表示为 \x0b\x00\x05\x04haha\x01\x03vvv||
 ||Insert ||Key  value  pos ||6 ||Pos为4字节 ||Insert haha gogo 1 表示为 \x10\x00\x06\x04haha\x01\x04gogo\x02\x00\x00\x00||
-||Update ||Key  value  pos ||7 ||Pos为4字节 ||Update haha aaa 2 表示为 \x0f\x00\x07\x04haha\x01\x03aaa\x02\x00\x00\x00 ||
+||Move ||Key  value  pos ||7 ||Pos为4字节 ||Move haha aaa 2 表示为 \x0f\x00\x07\x04haha\x01\x03aaa\x02\x00\x00\x00 ||
 ||Mask ||Key  value  mask ||8 ||Mask为1字节 ||Mask haha bbb 3 表示为 \x0c\x00\x08\x04haha\x01\x03bbb\x03||
 ||Tag ||Key  value del/reverse ||9 ||Del用1表示，reverse用0表示。1字节 ||Tag haha xxx1 del 表示为 \x0d\x00\x09\x04haha\x01\x04xxx1\x01||
 
@@ -269,7 +269,7 @@ Dump文件的格式为二进制的格式：
 
 描述：插入一条新的条目。Pos为新插入条路在列表中的位置。0表示第一位，以此类推。
 
-7. Update  key  value  pos
+7. Move  key  value  pos
 
 描述：更新一个条目的位置。key为列表名，value为该条目的名字，pos为新的位置。
 
@@ -298,7 +298,7 @@ Dump文件的格式为二进制的格式：
 ||Create ||4||
 ||Del ||5||
 ||Insert ||6||
-||Update ||7||
+||Move ||7||
 ||Mask ||8||
 ||Tag ||9||
 ||range ||10||
