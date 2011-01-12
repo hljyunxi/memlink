@@ -8,7 +8,7 @@
 
 int mask_string2array_test()//随机生成一个mask，0-20个项，每项的值0-256
 {
-	int num = 1 + my_rand(20);
+	int num = 1 + my_rand(HASHTABLE_MASK_MAX_ITEM);
 	//num = 1;
 	char mask[512] = {0};
 	char buf[10];
@@ -34,7 +34,7 @@ int mask_string2array_test()//随机生成一个mask，0-20个项，每项的值0-256
 	int ret = mask_string2array(mask, result);
 	if(ret != num)
 	{		
-		DERROR("mask_string2array error. num:%d, ret:%d\n", num, ret);
+		DERROR("mask_string2array error. mask:%s, num:%d, ret:%d\n", mask, num, ret);
 		return -1;
 	}
 

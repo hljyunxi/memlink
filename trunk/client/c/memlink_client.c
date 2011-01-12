@@ -626,7 +626,7 @@ memlink_cmd_count(MemLink *m, char *key, char *maskstr, MemLinkCount *count)
     return MEMLINK_OK;
 }
 
-static int 
+int 
 memlink_result_parse(char *retdata, MemLinkResult *result)
 {
     unsigned int dlen;

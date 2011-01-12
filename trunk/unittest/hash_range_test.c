@@ -1,4 +1,5 @@
 #include "hashtest.h"
+#include "memlink_client.h"
 
 int main()
 {
@@ -106,6 +107,7 @@ int main()
 		char data[4096*2];
 		int retnum = 0;
 		int realnum;
+
 		if(frompos < num)
 		{
 			int tmp = num - frompos;
@@ -114,26 +116,29 @@ int main()
 		else
 			realnum = 0;
 		printf("frompos:%d, len:%d, i:%d\n", frompos, len, i);
-		
+	
+        Conn    conn;
+        memset(&conn, 0, sizeof(Conn));
+
 		ret = hashtable_range(ht, key, MEMLINK_VALUE_VISIBLE, maskarray2[k], masknum, 
-			            frompos, len, 
-			            data, &retnum,
-			            &vsize, &msize);
-		
+			            frompos, len, &conn);
+	
+        MemLinkResult   result;
+        memlink_result_parse(conn.wbuf, &result);
+
 		if( 0 != ret)
 		{
 			printf("ret:%d, len:%d\n", ret, len);
 		}
-		if(retnum != 0)
-			retnum = (retnum - sizeof(char) - masknum)/(vsize + msize);
-		if(retnum != realnum)
+		if(result.count != realnum)
 		{			
-			printf("error!! realnum:%d, retnum:%d, i:%d\n", realnum, retnum, i);
+			printf("error!! realnum:%d, retnum:%d, i:%d\n", realnum, result.count, i);
 			//return -1;
 		}
 		//else
 		{
-			int j;
+			int j = frompos;
+            /*
 			char* item = data + sizeof(char) + masknum;
 			for(j = frompos; j < frompos + realnum; j++)
 			{
@@ -146,12 +151,33 @@ int main()
 				int ret = memcmp(item, val, valuesize);
 				if(ret != 0)
 				{
-					printf("pos:%d, val:%s\n", jj, val);
+					printf("error, pos:%d, val:%s\n", jj, val);
 					return -1;
 				}
 				item = item + vsize + msize;
-			}
+			}*/
+
+            MemLinkItem *item = result.root;
+
+            while (item) {
+                int jj;
+				if(i < 25)
+					jj = j*2 + 1;
+				else
+					jj = j;
+
+				sprintf(val, "value%03d", jj);
+                int ret = memcmp(item->value, val, result.valuesize);
+                if (ret != 0) {
+                    printf("error, pos:%d, val:%s\n", jj, val);
+                    return -1;
+                }
+                j++;
+                item = item->next;
+            }
 		}
+
+        memlink_result_free(&result);
 	}
 
 
