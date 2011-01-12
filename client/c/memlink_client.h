@@ -45,6 +45,7 @@ typedef struct _memlink_result
     MemLinkItem     *root;
 }MemLinkResult;
 
+int         memlink_result_parse(char *retdata, MemLinkResult *result);
 void        memlink_result_free(MemLinkResult *result);
 
 MemLink*    memlink_create(char *host, int readport, int writeport, int timeout);
