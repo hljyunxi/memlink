@@ -70,7 +70,7 @@ int main()
 
 	printf("insert %d  ok!\n", num);
 
-	///////test3 : hashtable_update
+	///////test3 : hashtable_move_
 
 	for(i = 0; i < 100; i++)
 	{
@@ -84,11 +84,11 @@ int main()
 			if(pos != v)
 				break;
 		}
-		printf("hashtable_update val:%s, pos:%d\n", val, pos);
+		printf("hashtable_move val:%s, pos:%d\n", val, pos);
 		int ret = hashtable_move(ht, key, val, pos);
 		if(MEMLINK_OK != ret)
 		{
-			printf("err hashtable_update value:%s, pos:%d\n", val, pos);
+			printf("err hashtable_move value:%s, pos:%d\n", val, pos);
 			break;
 		}
 	    DataBlock *dbk = node->data;
@@ -116,7 +116,7 @@ int main()
 		}
 	}
 	hashtable_print(ht, key);
-	printf("hashtable_update test end!\n");
+	printf("hashtable_move test end!\n");
 	return 0;
 }
 

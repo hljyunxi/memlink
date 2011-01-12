@@ -473,14 +473,14 @@ wdata_apply(char *data, int datalen, int writelog)
             zz_free(values);
             break;
         }
-        case CMD_UPDATE:
-            DINFO("<<< cmd UPDATE >>>\n");
-            ret = cmd_update_unpack(data, key, value, &valuelen, &pos);
+        case CMD_MOVE:
+            DINFO("<<< cmd MOVE >>>\n");
+            ret = cmd_move_unpack(data, key, value, &valuelen, &pos);
 			if (ret != 0) {
-				DINFO("unpack update error! ret: %d\n", ret);
+				DINFO("unpack move error! ret: %d\n", ret);
 				break;
 			}
-            DINFO("unpack update, key:%s, value:%s, pos:%d\n", key, value, pos);
+            DINFO("unpack move, key:%s, value:%s, pos:%d\n", key, value, pos);
 			if (key[0] == 0 || valuelen <= 0) {
 				ret = MEMLINK_ERR_PARAM;
 				break;
@@ -490,7 +490,7 @@ wdata_apply(char *data, int datalen, int writelog)
 				pos = INT_MAX;
 			} else if (pos < 0) {
 				ret = MEMLINK_ERR_PARAM;
-				DINFO("update pos < 0, %d", pos);
+				DINFO("move pos < 0, %d", pos);
 				break;
 			}
 

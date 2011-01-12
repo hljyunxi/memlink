@@ -492,7 +492,7 @@ memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen, char *masks
 }
 
 int 
-memlink_cmd_update(MemLink *m, char *key, char *value, int valuelen, int pos)
+memlink_cmd_move(MemLink *m, char *key, char *value, int valuelen, int pos)
 {
 	if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
 		return MEMLINK_ERR_PARAM;
@@ -504,8 +504,8 @@ memlink_cmd_update(MemLink *m, char *key, char *value, int valuelen, int pos)
     char data[1024];
     int  len;
 
-    len = cmd_update_pack(data, key, value, valuelen, pos);
-    DINFO("pack update len: %d\n", len);
+    len = cmd_move_pack(data, key, value, valuelen, pos);
+    DINFO("pack move len: %d\n", len);
     char retdata[1024];
     int ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
 
@@ -739,7 +739,8 @@ memlink_cmd_range(MemLink *m, char *key, int kind,  char *maskstr,
     DINFO("pack range len: %d\n", plen);
 
     // len(4B) + retcode(2B) + valuesize(1B) + masksize(1B) + masknum(1B) + maskformat(masknum B) + value.mask * len
-    int retlen = sizeof(int) + sizeof(short) + sizeof(char) + sizeof(char) + sizeof(char) + maskn * sizeof(int) + (HASHTABLE_VALUE_MAX + (HASHTABLE_MASK_MAX_BIT/8 + 2) * maskn) * len;
+    int retlen = CMD_REPLY_HEAD_LEN + 3 + HASHTABLE_MASK_MAX_ITEM +  \
+                (HASHTABLE_VALUE_MAX + HASHTABLE_MASK_MAX_BYTE * HASHTABLE_MASK_MAX_ITEM + 1) * len;
     DINFO("retlen: %d\n", retlen);
 	if (retlen > 1024000) { // do not more than 1M
 		return MEMLINK_ERR_RANGE_SIZE;
@@ -875,7 +876,7 @@ memlink_cmd_lpop(MemLink *m, char *key, int num, MemLinkResult *result)
 
     // len(4B) + retcode(2B) + valuesize(1B) + masksize(1B) + masknum(1B) + maskformat(masknum B) + value.mask * len
     int retlen = CMD_REPLY_HEAD_LEN + 3 + HASHTABLE_MASK_MAX_ITEM + \
-                 (HASHTABLE_VALUE_MAX + (HASHTABLE_MASK_MAX_BYTE + 1) * HASHTABLE_MASK_MAX_ITEM) * num;
+                 (HASHTABLE_VALUE_MAX + HASHTABLE_MASK_MAX_BYTE * HASHTABLE_MASK_MAX_ITEM + 1) * num;
     if (retlen > 1024000) { // do not more than 1M
 		return MEMLINK_ERR_RANGE_SIZE;
 	}
