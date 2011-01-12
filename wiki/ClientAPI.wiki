@@ -74,7 +74,7 @@
   * {{{int memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen,char *maskstr, unsigned int pos);}}}<br/>
   发送insert命令，在指定的key下插入一个value，且此value要插入到一个指定位置。value为定长的二进制格式。maskstr为该value的熟悉信息。格式和创建key时指定的属性格式对应。比如创建时属性格式为4:3:1，那么这里的maskstr也只能设置三项，比如maskstr可以为8:3:1。pos表示value要插入到列表中的哪个位置，0是列表头部，-1是列表尾部。注意，如果pos超出了列表的范围，也会被插入到尾部。
 
-  * {{{int memlink_cmd_update(MemLink *m, char *key, char *value, int valuelen, unsigned int pos);}}}<br/>
+  * {{{int memlink_cmd_move(MemLink *m, char *key, char *value, int valuelen, unsigned int pos);}}}<br/>
   发送UPDATE命令，更新一个value的位置。pos为此value的新位置。
 
   * {{{int memlink_cmd_mask(MemLink *m, char *key, char *value, int valuelen, char *maskstr);}}}<br/>
@@ -148,8 +148,8 @@
     同c版memlink_cmd_del。返回值为整型，正常返回MEMLNK_OK。
     * insert($key, $value, $valuelen, $maskstr, $pos)
     同c版memlink_cmd_insert。返回值为整型，正常返回MEMLNK_OK。
-    * update($key, $value, $valuelen, $pos)
-    同c版memlink_cmd_update。返回值为整型，正常返回MEMLNK_OK。
+    * move($key, $value, $valuelen, $pos)
+    同c版memlink_cmd_move。返回值为整型，正常返回MEMLNK_OK。
     * mask($key, $value, $valulen, $maskstr)
     同c版memlink_cmd_mask。返回值为整型，正常返回MEMLNK_OK。
     * tag($key, $value, $valuelen, $tag)
@@ -188,8 +188,8 @@
     同c版memlink_cmd_delete。返回值为整型，正常返回MEMLNK_OK。		
     * insert(self, key, value, maskstr, pos)
     同c版memlink_cmd_insert。返回值为整型，正常返回MEMLNK_OK。		
-    * update(self, key, value, pos)
-    同c版memlink_cmd_update。返回值为整型，正常返回MEMLNK_OK。		
+    * move(self, key, value, pos)
+    同c版memlink_cmd_move。返回值为整型，正常返回MEMLNK_OK。		
     * mask(self, key, value, maskstr)
     同c版memlink_cmd_mask。返回值为整型，正常返回MEMLNK_OK。		
     * tag(self, key, value, tag)
@@ -215,7 +215,7 @@
     * public int stat2(String key, MemLinkStat stat)		
     * public int delete(String key, String value)
     * public int insert(String key, String value, String maskstr, int pos)
-    * public int update(String key, String value, int pos)
+    * public int move(String key, String value, int pos)
     * public int mask(String key, String value, String maskstr)
     * public int tag(String key, String value, int tag)   
     * public MemLinkResult range(String key, String maskstr, int frompos, int len)	
