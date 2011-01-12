@@ -391,7 +391,7 @@ pack_mask(char *s, unsigned int *v, unsigned char vlen)
 int 
 cmd_dump_pack(char *data)
 {
-    unsigned short len = sizeof(char);
+    unsigned int len = sizeof(char);
     unsigned char  cmd = CMD_DUMP;
 
     memcpy(data, &len, CMD_REQ_SIZE_LEN);
@@ -410,7 +410,7 @@ int
 cmd_clean_pack(char *data, char *key)
 {
     unsigned char  cmd = CMD_CLEAN;
-    unsigned short  len;
+    unsigned int  len;
     int count = CMD_REQ_SIZE_LEN;
     int ret;
 
@@ -419,9 +419,9 @@ cmd_clean_pack(char *data, char *key)
 
     ret = pack_string(data + count, key, 0);
     count += ret;
-    len = count - sizeof(short);
+    len = count - sizeof(int);
     //DINFO("clean len: %d, count: %d\n", len, count);
-    memcpy(data, &len, sizeof(short));
+    memcpy(data, &len, sizeof(int));
     
     return count;
 }
@@ -441,7 +441,7 @@ int
 cmd_rmkey_pack(char *data, char *key)
 {
     unsigned char  cmd = CMD_RMKEY;
-    unsigned short  len;
+    unsigned int  len;
     int count = CMD_REQ_SIZE_LEN;
     int ret;
 
@@ -473,7 +473,7 @@ int
 cmd_count_pack(char *data, char *key, unsigned char masknum, unsigned int *maskarray)
 {
     unsigned char  cmd = CMD_COUNT;
-    unsigned short  len;
+    unsigned int  len;
     int count = CMD_REQ_SIZE_LEN;
     int ret;
 
@@ -508,7 +508,7 @@ cmd_stat_pack(char *data, char *key)  //, HashTableStat  *stat)
 {
     unsigned char  cmd = CMD_STAT;
     unsigned short count = CMD_REQ_SIZE_LEN;
-    unsigned short len;
+    unsigned int len;
 
     memcpy(data + count, &cmd, sizeof(char)); 
     count += sizeof(char);
@@ -538,7 +538,7 @@ cmd_stat_unpack(char *data, char *key)  //, HashTableStat *stat)
 int 
 cmd_stat_sys_pack(char *data)
 {
-    unsigned short len = sizeof(char);
+    unsigned int len = sizeof(char);
     unsigned char  cmd = CMD_STAT_SYS;
 
     memcpy(data, &len, CMD_REQ_SIZE_LEN);
@@ -576,7 +576,7 @@ cmd_create_pack(char *data, char *key, unsigned char valuelen, unsigned char mas
 {
     unsigned char  cmd = CMD_CREATE;
     unsigned short count = CMD_REQ_SIZE_LEN;
-    unsigned short len;
+    unsigned int len;
 
     memcpy(data + count, &cmd, sizeof(char)); 
     count += sizeof(char);
@@ -611,7 +611,7 @@ int
 cmd_del_pack(char *data, char *key, char *value, unsigned char valuelen)
 {
     unsigned char cmd = CMD_DEL;
-    unsigned short len;
+    unsigned int len;
     int count = CMD_REQ_SIZE_LEN;
 
     memcpy(data + count, &cmd, sizeof(char));
@@ -643,7 +643,7 @@ cmd_insert_pack(char *data, char *key, char *value, unsigned char valuelen,
                 unsigned char masknum, unsigned int *maskarray, int pos)
 {
     unsigned char cmd = CMD_INSERT;
-    unsigned short len;
+    unsigned int len;
     int count = CMD_REQ_SIZE_LEN;
 
     memcpy(data + count, &cmd, sizeof(char));
@@ -684,7 +684,7 @@ int
 cmd_update_pack(char *data, char *key, char *value, unsigned char valuelen, int pos)
 {
     unsigned char cmd = CMD_UPDATE;
-    unsigned short len;
+    unsigned int len;
     int count = CMD_REQ_SIZE_LEN;
 
     memcpy(data + count, &cmd, sizeof(char));
@@ -719,7 +719,7 @@ cmd_mask_pack(char *data, char *key, char *value, unsigned char valuelen,
               unsigned char masknum, unsigned int *maskarray)
 {
     unsigned char cmd = CMD_MASK;
-    unsigned short len;
+    unsigned int len;
     int count = CMD_REQ_SIZE_LEN;
 
     memcpy(data + count, &cmd, sizeof(char));
@@ -756,7 +756,7 @@ int
 cmd_tag_pack(char *data, char *key, char *value, unsigned char valuelen, unsigned char tag)
 {
     unsigned char cmd = CMD_TAG;
-    unsigned short len;
+    unsigned int len;
     int count = CMD_REQ_SIZE_LEN;
 
     memcpy(data + count, &cmd, sizeof(char));
@@ -789,7 +789,7 @@ cmd_range_pack(char *data, char *key, unsigned char kind, unsigned char masknum,
                int frompos, int rlen)
 {
     unsigned char cmd = CMD_RANGE;
-    unsigned short len;
+    unsigned int len;
     int count = CMD_REQ_SIZE_LEN;
 
     memcpy(data + count, &cmd, sizeof(char));
@@ -832,7 +832,7 @@ int
 cmd_ping_pack(char *data)
 {
 	unsigned char  cmd = CMD_PING;
-    unsigned short  len;
+    unsigned int  len;
     int count = CMD_REQ_SIZE_LEN;
 
     memcpy(data + count, &cmd, sizeof(char)); 
@@ -852,7 +852,7 @@ int
 cmd_push_pack(char *data, unsigned char cmd, char *key, char *value, unsigned char valuelen, 
                 unsigned char masknum, unsigned *maskarray)
 {
-    unsigned short len;
+    unsigned int len;
     int count = sizeof(short);
 
     memcpy(data + count, &cmd, sizeof(char));
@@ -862,7 +862,7 @@ cmd_push_pack(char *data, unsigned char cmd, char *key, char *value, unsigned ch
     count += pack_mask(data + count, maskarray, masknum);
 
     len = count - sizeof(short);
-    memcpy(data, &len, sizeof(short));
+    memcpy(data, &len, sizeof(int));
 
     return count;
 }
@@ -903,7 +903,7 @@ cmd_rpush_pack(char *data, char *key, char *value, unsigned char valuelen,
 int
 cmd_pop_pack(char *data, unsigned char cmd, char *key, int num)
 {
-    unsigned short len;
+    unsigned int len;
     int count = CMD_REQ_SIZE_LEN;
 
     memcpy(data + count, &cmd, sizeof(char));
@@ -948,7 +948,7 @@ int
 cmd_sync_pack(char *data, unsigned int logver, unsigned int logpos)
 {
     unsigned char cmd = CMD_SYNC;
-    unsigned short len;
+    unsigned int len;
     int count = CMD_REQ_SIZE_LEN;
 
     memcpy(data + count, &cmd, sizeof(char));
@@ -980,7 +980,7 @@ int
 cmd_getdump_pack(char *data, unsigned int dumpver, unsigned long long size)
 {
     unsigned char cmd = CMD_GETDUMP;
-    unsigned short len;
+    unsigned int len;
     int count = CMD_REQ_SIZE_LEN;
 
     memcpy(data + count, &cmd, sizeof(char));
@@ -1012,7 +1012,7 @@ int
 cmd_insert_mvalue_pack(char *data, char *key, MemLinkInsertVal *items, int num)
 {
     unsigned char cmd = CMD_INSERT_MVALUE;
-    unsigned short len;
+    unsigned int len;
     int count = CMD_REQ_SIZE_LEN;
 
     memcpy(data + count, &cmd, sizeof(char));
@@ -1070,7 +1070,7 @@ cmd_del_by_mask_pack(char *data, char *key, unsigned int *maskarray, unsigned ch
 {
 	unsigned char cmd = CMD_DEL_BY_MASK;
 	int count = CMD_REQ_SIZE_LEN;
-	int len;
+	unsigned int len;
 
 	memcpy(data + count, &cmd, sizeof(char));
 	count += sizeof(char);

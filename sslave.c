@@ -30,9 +30,9 @@ static int
 sslave_recv_log(SSlave *ss)
 {
 	char recvbuf[1024];
-	int  checksize = SYNCPOS_LEN + sizeof(short);
+	int  checksize = SYNCPOS_LEN + sizeof(int);
 	int  ret;
-	unsigned short  rlen = 0;
+	unsigned int  rlen = 0;
     unsigned int    logver;
     unsigned int    logline;
 	// send sync
@@ -47,7 +47,7 @@ sslave_recv_log(SSlave *ss)
 			return -1;
 		}
         //DINFO("readn return:%d\n", ret); 		
-		memcpy(&rlen, recvbuf + SYNCPOS_LEN, sizeof(short));
+		memcpy(&rlen, recvbuf + SYNCPOS_LEN, sizeof(int));
 		ret = readn(ss->sock, recvbuf + checksize, rlen, 0);
 		if (ret < rlen) {
 			DERROR("read sync too short: %d, close\n", ret);
@@ -63,6 +63,14 @@ sslave_recv_log(SSlave *ss)
         if (logver == ss->logver && logline == ss->logline && g_runtime->synclog->index_pos != 0) {
             //skip first one
             //continue;
+			int pos = g_runtime->synclog->index_pos;
+			int *indxdata = (int *)(g_runtime->synclog->index + SYNCLOG_HEAD_LEN);
+
+			//上一条已经记录了
+			if (indxdata[pos] == 0 && indxdata[pos - 1] != 0) {
+				DNOTE("tag---------------------------------------------------------\n");
+				continue;
+			}
         }
 
 		unsigned int size = checksize + rlen;
@@ -162,6 +170,7 @@ sslave_load_master_dump_info(SSlave *ss, char *dumpfile, long long *filesize, lo
 /* 
  * find previous binlog position for sync
  */
+/*
 static int 
 sslave_prev_sync_pos(SSlave *ss)
 {
@@ -251,6 +260,7 @@ sslave_prev_sync_pos(SSlave *ss)
 
 	return 0;
 }
+*/
 
 
 /**
@@ -350,7 +360,7 @@ sslave_do_getdump(SSlave *ss)
     fd = open(dumpfile_tmp, oflag, 0644);
     if (fd == -1) {
         DERROR("open dumpfile %s error! %s\n", dumpfile_tmp, strerror(errno));
-        return -1;
+        MEMLINK_EXIT;
     }
 
     int rsize = 8192;
@@ -384,7 +394,7 @@ sslave_do_getdump(SSlave *ss)
     ret = rename(dumpfile_tmp, dumpfile);
     if (ret == -1) {
         DERROR("dump file rename error: %s\n", strerror(errno));
-        return -1;
+        MEMLINK_EXIT; 
     }
 	return 0;
 
@@ -406,8 +416,8 @@ sslave_conn_init(SSlave *ss)
     char recvbuf[1024];
     //int  recvlen;
     int  ret;
-    unsigned int  local_logver_start;
-    unsigned int  local_logpos_start;
+    //unsigned int  local_logver_start;
+    //unsigned int  local_logpos_start;
     unsigned int  dumpver;
     //long long     dumpsize;
 	char    mdumpfile[PATH_MAX];
@@ -430,8 +440,8 @@ sslave_conn_init(SSlave *ss)
 		ss->logline = 0;
 	}
 
-    local_logver_start = ss->binlog_ver;
-    local_logpos_start = ss->binlog_index;
+    //local_logver_start = ss->binlog_ver;
+    //local_logpos_start = ss->binlog_index;
 
     if (ss->dumpsize == ss->dumpfile_size) { // have master dumpfile, and size ok or not have master dumpfile
         // send sync command 
@@ -457,10 +467,10 @@ sslave_conn_init(SSlave *ss)
             syncret = recvbuf[i];
             DINFO("sync return code:%d\n", syncret);
             if (syncret == CMD_SYNC_OK) { // ok, recv synclog
-                DINFO("sync ok, logver:%d, logline:%d, logver_start:%d, logline_start:%d\n", ss->binlog_ver, ss->binlog_index, local_logver_start, local_logpos_start);
-                if ((ss->binlog_ver < local_logver_start || ss->binlog_index < local_logpos_start) && is_getdump != 1) {
-                    synclog_resize(ss->binlog_ver, ss->binlog_index);
-                }
+                DINFO("sync ok, logver:%d, logline:%d\n", ss->binlog_ver, ss->binlog_index);
+                //if ((ss->binlog_ver < local_logver_start || ss->binlog_index < local_logpos_start) && is_getdump != 1) {
+                    //synclog_resize(ss->binlog_ver, ss->binlog_index);
+                //}
                 DINFO("sync ok! try recv push message.\n");
                 return 0;
             }else if (syncret == CMD_SYNC_FAILED && \
@@ -470,12 +480,12 @@ sslave_conn_init(SSlave *ss)
 			}
 
             // try find the last sync position
-            DINFO("try find the last sync position .\n");
-            ret = sslave_prev_sync_pos(ss);
-            if (ret != 0) { // no prev log, or get error, try get dump
-				DINFO("no prev log, try getdump.\n");
-                //dumpsize = 0;
-                //break;
+			DINFO("try find the last sync position .\n");
+			//ret = sslave_prev_sync_pos(ss);
+			DINFO("no prev log, try getdump.\n");
+			//dumpsize = 0;
+			//break;
+			if (syncret == CMD_SYNC_FAILED) {
 				if (sslave_do_getdump(ss) == 0) {
 					DINFO("load dump ...\n");
 					hashtable_clear_all(g_runtime->ht);
@@ -483,7 +493,7 @@ sslave_conn_init(SSlave *ss)
 
 					g_runtime->synclog->index_pos = g_runtime->dumplogpos;
 					dumpfile(g_runtime->ht);
-					
+
 					sslave_load_master_dump_info(ss, mdumpfile, NULL, NULL, &dumpver, &ss->logver);
 					//add by lanwenhong
 					g_runtime->synclog->version = ss->logver;
@@ -494,12 +504,13 @@ sslave_conn_init(SSlave *ss)
 					//ss->logline = 0;
 					ss->logline = g_runtime->dumplogpos;
 					is_getdump = 1;
+					synclog_clean(ss->logver, g_runtime->dumplogpos);
 				}else{
-                    return -1;
-                }
-            }
-        } 
-    }
+					return -1;
+				}
+			}
+		} 
+	}
 
 	return 0;
 }

@@ -188,13 +188,18 @@ load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
 	binlogver = *(unsigned int *)(addr + sizeof(short));
 	if (binlogver == dumplogver) {
 		int *indxdata = (int *)(addr + SYNCLOG_HEAD_LEN);
-		int pos = indxdata[dumplogpos];
+		int pos;
+
+		if (dumplogpos < SYNCLOG_INDEXNUM) {
+			pos = indxdata[dumplogpos];
+		} else {
+			pos = 0;
+		}
 		if (pos == 0 && dumplogpos != 0) {
 			if (indxdata[dumplogpos - 1] != 0) {
 				data = addr + indxdata[dumplogpos - 1];
 				have_key = 1;
 			}
-			
 		}else{
 			if (pos != 0) {
 				data = addr + pos;
@@ -202,23 +207,25 @@ load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
 		}
 	}
 
-	unsigned short blen; 
+	unsigned int blen; 
 	unsigned int logver = 0, logline = 0, indexpos = 0;
 	while (data < enddata) {
-		blen = *(unsigned short*)(data + SYNCPOS_LEN);  
+		//blen = *(unsigned short*)(data + SYNCPOS_LEN);
+		blen = *(unsigned int*)(data + SYNCPOS_LEN);
+			
 
 		memcpy(&logver, data, sizeof(int));
 		memcpy(&logline, data + sizeof(int), sizeof(int));
 		
 		DINFO("logver: %d, logline: %d\n", logver, logline);
-		if (enddata < data + SYNCPOS_LEN + blen + sizeof(short)) {
+		if (enddata < data + SYNCPOS_LEN + blen + sizeof(int)) {
 			DERROR("synclog end error: %s, skip\n", logname);
 			//MEMLINK_EXIT;
 			break;
 		}
 		DINFO("command, len:%d\n", blen);
 		if (have_key == 0) {
-			ret = wdata_apply(data + SYNCPOS_LEN, blen + sizeof(short), 0);       
+			ret = wdata_apply(data + SYNCPOS_LEN, blen + sizeof(int), 0);       
 			if (ret != 0) {
 				DERROR("wdata_apply log error: %d\n", ret);
 				MEMLINK_EXIT;
@@ -226,7 +233,7 @@ load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
 			indexpos ++;
 		}
 
-		data += SYNCPOS_LEN + blen + sizeof(short); 
+		data += SYNCPOS_LEN + blen + sizeof(int); 
 	}
 
 	if (g_cf->role == ROLE_SLAVE) {

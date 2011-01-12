@@ -284,7 +284,8 @@ wdata_apply(char *data, int datalen, int writelog)
     int				pos;
     int             vnum;
 
-    memcpy(&cmd, data + sizeof(short), sizeof(char));
+    //memcpy(&cmd, data + sizeof(short), sizeof(char));
+	memcpy(&cmd, data + sizeof(int), sizeof(char));
     char buf[256] = {0};
     DINFO("data ready cmd: %d, data: %s\n", cmd, formath(data, datalen, buf, 256));
 
@@ -624,7 +625,8 @@ wdata_ready(Conn *conn, char *data, int datalen)
 	char cmd;
 	int ret;
 
-	memcpy(&cmd, data + sizeof(short), sizeof(char));
+	//memcpy(&cmd, data + sizeof(short), sizeof(char));
+	memcpy(&cmd, data + sizeof(int), sizeof(char));
 	if (g_cf->role == ROLE_SLAVE && cmd != CMD_DUMP && cmd != CMD_CLEAN) {
 		ret = MEMLINK_ERR_CLIENT_CMD;
 		goto wdata_ready_over;
@@ -687,7 +689,8 @@ client_read(int fd, short event, void *arg)
 {
     Conn *conn = (Conn*)arg;
     int     ret;
-    unsigned short   datalen = 0;
+    //unsigned short   datalen = 0;
+	unsigned int datalen = 0;
 
 	if (event & EV_TIMEOUT) {
 		DWARNING("read timeout:%d, close\n", fd);
@@ -699,7 +702,8 @@ client_read(int fd, short event, void *arg)
      * 2-byte command length.
      */
     if (conn->rlen >= 2) {
-        memcpy(&datalen, conn->rbuf, sizeof(short)); 
+        //memcpy(&datalen, conn->rbuf, sizeof(short)); 
+		memcpy(&datalen, conn->rbuf, sizeof(int));
     }
     DINFO("client read datalen: %d, fd: %d, event:%x\n", datalen, fd, event);
     DINFO("conn rlen: %d\n", conn->rlen);
@@ -738,9 +742,11 @@ client_read(int fd, short event, void *arg)
 
     DINFO("conn rbuf len: %d\n", conn->rlen);
     while (conn->rlen >= 2) {
-        memcpy(&datalen, conn->rbuf, sizeof(short));
+        //memcpy(&datalen, conn->rbuf, sizeof(short));
+		memcpy(&datalen, conn->rbuf, sizeof(int));
         DINFO("check datalen: %d, rlen: %d\n", datalen, conn->rlen);
-        int mlen = datalen + sizeof(short);
+        //int mlen = datalen + sizeof(short);
+		int mlen = datalen + sizeof(int);
 
         if (conn->rlen >= mlen) {
 			conn->ready(conn, conn->rbuf, mlen);

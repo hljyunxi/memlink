@@ -18,7 +18,8 @@
 
 #define BUF_SIZE 4096
 #define SYNCLOG_MAX_INDEX_POS (get_index_pos(SYNCLOG_INDEXNUM))
-#define RECORD_HEAD_LEN (sizeof(int) * 2 + sizeof(short))
+//#define RECORD_HEAD_LEN (sizeof(int) * 2 + sizeof(short))
+#define RECORD_HEAD_LEN (sizeof(int) * 2 + sizeof(int))
 #define RECORD_LEN_POS  (sizeof(int) * 2)
 
 /** malloc size bytes, exit if error */
@@ -386,7 +387,7 @@ read_record(SyncConn *conn,
     lseek_set(conn->sync_fd, log_pos);
     read_or_exit(conn->sync_fd, head_buf, RECORD_HEAD_LEN);
 
-    datalen = *((unsigned short *)(head_buf + RECORD_LEN_POS));
+    datalen = *((unsigned int *)(head_buf + RECORD_LEN_POS));
     *wdatalen_ptr = RECORD_HEAD_LEN + datalen;
     *wbuf_ptr = malloc_or_exit(*wdatalen_ptr);
 
@@ -687,7 +688,8 @@ sdata_ready(Conn *c, char *data, int datalen)
     SyncConn *conn = (SyncConn*) c;
     conn->sync_fd = -1;
 
-    memcpy(&cmd, data + sizeof(short), sizeof(char));
+    //memcpy(&cmd, data + sizeof(short), sizeof(char));
+	memcpy(&cmd, data + sizeof(int), sizeof(char));
     char buf[256] = {0};
     DINFO("data ready cmd: %d, data: %s\n", cmd, formath(data, datalen, buf, 256));
     switch (cmd) {
