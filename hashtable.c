@@ -58,7 +58,7 @@ dataitem_check_data(HashNode *node, char *itemdata)
 }
 
 /**
- * 在数据链的一块中查找某一条数据
+ * find one data in link of datablock
  */
 static char*
 dataitem_lookup(HashNode *node, void *value, DataBlock **dbk, DataBlock **prev)
@@ -1137,9 +1137,9 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 		DINFO("create first small dbk.\n");
 		newbk = datablock_new_copy_small(node, value, mask);
 		node->data = newbk;
+        node->data_tail = newbk;
 		node->used++;
 		node->all += newbk->data_count;
-
 		return MEMLINK_OK;
 	}
 
@@ -1160,7 +1160,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 			DINFO("create a bigger dbk.\n");
 			// datablock have data, create a bigger datablock
 			newbk = datablock_new_copy(node, dbk, skipn, value, mask);
-
+            node->data_tail = newbk;
 			node->all -= dbk->data_count;
 			node->all += newbk->data_count;
 			mempool_put(g_runtime->mpool, dbk, sizeof(DataBlock) + dbk->data_count * datalen);
@@ -1170,6 +1170,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 				// create a new small datablock	
 				if (skipn >= dbk->data_count) { // pos out of block
 					newbk = datablock_new_copy_small(node, value, mask);
+                    node->data_tail = newbk;
 					node->all += newbk->data_count;
 					prev = dbk; // only append
 				}else{
@@ -1179,7 +1180,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 					newbk2->visible_count = 1; //add by wyx 1/5 18:00
 					newbk->next = newbk2;
 					node->all += newbk2->data_count;
-					
+				    node->data_tail = newbk2;	
 					mempool_put(g_runtime->mpool, dbk, sizeof(DataBlock) + dbk->data_count * datalen);
 				}
 			}else{ // datablock not full
@@ -1190,6 +1191,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 				}
 
 				newbk = datablock_new_copy(node, dbk, pos - startn, value, mask);
+                node->data_tail = newbk;
 				mempool_put(g_runtime->mpool, dbk, sizeof(DataBlock) + dbk->data_count * datalen);
 			}
 		}
@@ -1255,6 +1257,10 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 				node->all -= nextbk->data_count;
 				node->all += newbk2->data_count;
 				newbk2->next = nextbk->next;
+
+                if (newbk2->next == NULL) {
+                    node->data_tail = newbk2;
+                }
 				mempool_put(g_runtime->mpool, nextbk, sizeof(DataBlock) + nextbk->data_count * datalen);
 			}
 		}
@@ -1280,7 +1286,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 }
 
 /**
- * 在数据链中任意指定位置添加数据
+ * add new value at a specially position
  */
 int
 hashtable_add_mask(HashTable *ht, char *key, void *value, unsigned int *maskarray, char masknum, int pos)
@@ -1307,7 +1313,7 @@ hashtable_add_mask(HashTable *ht, char *key, void *value, unsigned int *maskarra
 }
 
 /**
- * 把数据链中的某一条数据移动到链头部
+ * move value to another position
  */
 int
 hashtable_move(HashTable *ht, char *key, void *value, int pos)
@@ -1351,13 +1357,14 @@ hashtable_move(HashTable *ht, char *key, void *value, int pos)
 			}else{
 				node->data = dbk->next;		
 			}
+            if (dbk->next == NULL)
+                node->data_tail = prev;
 			DINFO("move release null block: %p\n", dbk);
 			//modified by wyx 1/5 16:20
 			node->all -= dbk->data_count;
 
 			//mempool_put(g_runtime->mpool, dbk, node->valuesize + node->masksize);
 			mempool_put(g_runtime->mpool, dbk, sizeof(DataBlock) + dbk->data_count * (node->valuesize + node->masksize));
-			/**************************************************/
 		}
 		//hashtable_print(ht, key);
 	}
@@ -1367,7 +1374,7 @@ hashtable_move(HashTable *ht, char *key, void *value, int pos)
 
 
 /**
- * 在HashTable中删除一条数据。只是把真实删除标记位置1
+ * remove a value, only write a flag to 0
  */
 int 
 hashtable_del(HashTable *ht, char *key, void *value)
@@ -1403,18 +1410,19 @@ hashtable_del(HashTable *ht, char *key, void *value)
 		}else{
 			node->data = dbk->next;		
 		}
+        if (dbk->next == NULL) 
+            node->data_tail = prev;
 		//modified by wyx 1/5 16:20
 		node->all -= dbk->data_count;
 		//mempool_put(g_runtime->mpool, dbk, node->valuesize + node->masksize);
 		mempool_put(g_runtime->mpool, dbk, sizeof(DataBlock) + dbk->data_count * (node->valuesize + node->masksize));
-		/**************************************************/
 	}
 
     return MEMLINK_OK;
 }
 
 /**
- * 标记删除/标记恢复。只是把对应的标记删除位置1/0
+ * tag delete/restore, only change the flag to 1 or 0
  */
 int
 hashtable_tag(HashTable *ht, char *key, void *value, unsigned char tag)
@@ -1460,7 +1468,7 @@ hashtable_tag(HashTable *ht, char *key, void *value, unsigned char tag)
 }
 
 /**
- * 修改一条数据的mask值
+ * change mask for a value
  */
 int
 hashtable_mask(HashTable *ht, char *key, void *value, unsigned int *maskarray, int masknum)
@@ -2198,6 +2206,7 @@ hashtable_lpop_over:
         char *enddata;
         int  ucount = 0;
         dbk = node->data;
+        //Fixme: maybe pop all data, put all datablock to mempool
         while (dbk) {
             tmp = dbk;
             dbk = dbk->next;
@@ -2209,20 +2218,36 @@ hashtable_lpop_over:
                 char *todata = newbk->data + (endaddr - tmp->data + datalen);
                 newbk->data_count = tmp->data_count;
                 newbk->visible_count = tmp->visible_count - (idx - ucount); 
-
+                node->data = newbk;
                 memcpy(todata, enddata + datalen, size);
                 
-                dbk = node->data;
+                DataBlock *dbktmp = NULL, *dbklp; 
+                dbklp = node->data;
                 node->data = newbk;
-                DataBlock *dbktmp = NULL; 
 
-                while (dbk != tmp) { // put previous all datablock to mempool
+                while (dbklp != tmp) { // put previous all datablock to mempool
                     node->all -= tmp->data_count;
                     ucount += tmp->visible_count;
-                    dbktmp = dbk;
-                    dbk = dbk->next;
+                    dbktmp = dbklp;
+                    dbklp = dbklp->next;
                     mempool_put(g_runtime->mpool, dbktmp, sizeof(DataBlock) + dbktmp->data_count * datalen);
                 }
+                mempool_put(g_runtime->mpool, tmp, sizeof(DataBlock) + tmp->data_count * datalen);
+                break;
+            }else if (endaddr == enddata) {
+                DataBlock *dbktmp = NULL, *dbklp; 
+                dbklp = node->data;
+
+                while (dbklp != tmp) { // put previous all datablock to mempool
+                    node->all -= tmp->data_count;
+                    ucount += tmp->visible_count;
+                    dbktmp = dbklp;
+                    dbklp = dbklp->next;
+                    mempool_put(g_runtime->mpool, dbktmp, sizeof(DataBlock) + dbktmp->data_count * datalen);
+                }
+                node->data = tmp->next;
+                if (tmp->next == NULL)
+                    node->data_tail = NULL;
                 mempool_put(g_runtime->mpool, tmp, sizeof(DataBlock) + tmp->data_count * datalen);
                 break;
             }
