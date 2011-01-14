@@ -74,13 +74,20 @@ sslave_recv_log(SSlave *ss)
         }
 
 		unsigned int size = checksize + rlen;
+        struct timeval start, end;
+        char cmd;	
+
+        memcpy(&cmd, recvbuf + sizeof(int), sizeof(char));
 		pthread_mutex_lock(&g_runtime->mutex);
+        gettimeofday(&start, NULL);
 		ret = wdata_apply(recvbuf + SYNCPOS_LEN, rlen, 0);
 		DINFO("wdata_apply return:%d\n", ret);
 		if (ret == 0) {
 			//DINFO("synclog index_pos:%d, pos:%d\n", g_runtime->synclog->index_pos, g_runtime->synclog->pos);
 			synclog_write(g_runtime->synclog, recvbuf, size);
 		}
+        gettimeofday(&end, NULL);
+	    DNOTE("cmd:%d %d %u us\n", cmd, ret, timediff(&start, &end));
 		pthread_mutex_unlock(&g_runtime->mutex);
 
         ss->logver  = logver;

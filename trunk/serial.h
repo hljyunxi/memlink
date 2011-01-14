@@ -27,7 +27,7 @@
 #define CMD_DEL_BY_MASK     19
 
 #define CMD_PING			20
-#define CMD_STAT_SYS		2
+#define CMD_STAT_SYS		21
 
 #define CMD_SYNC            100 
 #define CMD_GETDUMP		    101
