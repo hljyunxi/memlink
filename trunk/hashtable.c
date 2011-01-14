@@ -480,6 +480,9 @@ hashtable_create()
     }
     memset(ht, 0, sizeof(HashTable));    
 
+    //ht->bunks = (HashNode**)zz_malloc(sizeof(HashNode*) * HASHTABLE_BUNKNUM);
+    //memset(ht->bunks, 0, sizeof(HashNode*) * HASHTABLE_BUNKNUM);
+
     return ht;
 }
 
