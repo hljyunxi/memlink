@@ -357,10 +357,11 @@ sync_read(int fd, short event, void *arg)
 }
 
 static void
-set_timeval(struct timeval *tm_ptr, unsigned int seconds) 
+set_timeval(struct timeval *tm_ptr, unsigned int seconds, unsigned int msec) 
 {
     evutil_timerclear(tm_ptr);
     tm_ptr->tv_sec = seconds;
+    tm_ptr->tv_usec = msec * 1000;
 }
 
 #ifdef DEBUG
@@ -473,7 +474,7 @@ interval_event_init(SyncConn *conn)
 {
     evtimer_set(&conn->sync_interval_evt, read_synclog, conn);
     event_base_set(conn->base, &conn->sync_interval_evt);
-    set_timeval(&conn->interval, g_cf->sync_interval);
+    set_timeval(&conn->interval, 0, g_cf->sync_interval);
 }
 
 /** 
@@ -485,7 +486,7 @@ write_event_init_and_add(SyncConn *conn)
 {
     event_set(&conn->sync_write_evt, conn->sock, EV_WRITE | EV_PERSIST, sync_write, conn);
     event_base_set(conn->base, &conn->sync_write_evt);
-    set_timeval(&conn->timeout, g_cf->timeout);
+    set_timeval(&conn->timeout, g_cf->timeout, 0);
     event_add(&conn->sync_write_evt, &conn->timeout);
 }
 
