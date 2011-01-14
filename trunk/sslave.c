@@ -77,7 +77,7 @@ sslave_recv_log(SSlave *ss)
         struct timeval start, end;
         char cmd;	
 
-        memcpy(&cmd, recvbuf + sizeof(int), sizeof(char));
+        memcpy(&cmd, recvbuf + SYNCPOS_LEN + sizeof(int), sizeof(char));
 		pthread_mutex_lock(&g_runtime->mutex);
         gettimeofday(&start, NULL);
 		ret = wdata_apply(recvbuf + SYNCPOS_LEN, rlen, 0);
