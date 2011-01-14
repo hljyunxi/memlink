@@ -11,6 +11,8 @@
 #include "daemon.h"
 #include "common.h"
 
+char *VERSION = "memlink-0.2.4";
+
 static void 
 sig_handler(const int sig) {
     DFATALERR("====== SIGNAL %d handled ======\n", sig);
