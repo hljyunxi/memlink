@@ -125,7 +125,32 @@ int main()
 		return -5;
 	}
 
-	
+	sprintf(buf, "hihi");
+	ret = memlink_cmd_create(m, buf, 255, "4:3:1");
+	if (ret != MEMLINK_OK) {
+		DERROR("1 memlink_cmd_create %s error: %d\n", buf, ret);
+		return -2;
+	}
+	char val2[64] = {0};
+	int insertnum = 1000;
+	for (i = 0; i < insertnum; i++) {
+		sprintf(val2, "%06d", i);
+		ret = memlink_cmd_insert(m, buf, val2, strlen(val2), maskstr, i);	
+		if (ret != MEMLINK_OK) {
+			DERROR("insert error, key:%s, val:%s, mask:%s, i:%d\n", buf, val, maskstr, i);
+			return -3;
+		}
+	}
+	printf("insert 1000!\n");
+	for (i = 0; i < insertnum; i++) {
+		sprintf(val2, "%06d", i);
+		ret = memlink_cmd_del(m, buf, val2, strlen(val2));
+		if (ret != MEMLINK_OK) {
+			DERROR("del error, key:%s, val:%s, mask:%s, ret:%d\n", buf, val, maskstr, ret);
+			return -3;
+		}
+	}
+	printf("del 1000!\n");	
 memlink_over:
 	memlink_destroy(m);
 

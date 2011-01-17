@@ -1,18 +1,18 @@
 import glob
 
-cflags   = ['-Wall', '-ggdb', '-fprofile-arcs', '-ftest-coverage']
-lflags   = [ '-fprofile-arcs', '-ftest-coverage']
-#lflags = []
+#cflags   = ['-Wall', '-ggdb', '-fprofile-arcs', '-ftest-coverage']
+#lflags   = [ '-fprofile-arcs', '-ftest-coverage']
+lflags = []
 #cflags   = ['-Wall', '-ggdb', '-DDEBUG']
-#cflags   = ['-Wall', '-ggdb']
-includes = ['/usr/local/include', '../', '/Developer/usr/include']
+cflags   = ['-Wall', '-ggdb']
+includes = ['/usr/local/include', '../', '/Developer/usr/include', '../client/c']
 libpath  = ['/usr/local/lib', '/Developer/usr/lib']
 libs	 = ['event', 'm']
 files	 = ['../hashtable.c', '../serial.c', '../logfile.c', 
 	        '../mem.c', '../zzmalloc.c', '../myconfig.c', '../synclog.c', 
 	        '../wthread.c', '../dumpfile.c', '../utils.c', '../rthread.c',
             '../network.c', '../conn.c', '../server.c', '../queue.c',
-            '../sslave.c', '../sthread.c']
+            '../sslave.c', '../sthread.c', '../client/c/memlink_client.c']
 env = Environment(CCFLAGS=cflags, LINKFLAGS = lflags, CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
 
 localfiles = glob.glob("*.c")
