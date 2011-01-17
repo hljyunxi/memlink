@@ -23,6 +23,7 @@ def binlog(filename='bin.log'):
     print 'format:%d, logver:%d, index:%d, data:%d' % tuple(v)
     
     indexes = []
+    filelen = 0
     rdc = 0
     while rdc < maxdata * 4:
         ns = f.read(4)
@@ -32,7 +33,7 @@ def binlog(filename='bin.log'):
         else:
             indexes.append(v[0])
         rdc += 4
-
+        
     if onlyheader:
         print 'index:', len(indexes)
         return
@@ -106,6 +107,81 @@ def dumpfile(filename):
         
     f.close()
 
+def checklog(filename):
+    f = open(filename, 'r+')
+
+    f.seek(0, 2)
+    filesize = f.tell()
+    print filesize
+    f.seek(0)
+    s = f.read(2 + 4 + 4)
+    v = []
+    v.extend(struct.unpack('h', s[:2]))
+    v.extend(struct.unpack('I', s[2:6]))
+    v.extend(struct.unpack('I', s[6:]))
+    maxdata = v[-1]
+    d = f.tell() + 4 * v[-1]
+    v.append(d)
+
+    print '====================== bin log   ========================='
+    #print 'head:', repr(s)
+    #print 'format:%d, logver:%d, index:%d, data:%d' % tuple(v)
+    
+    indexes = []
+    last_data_pos = 0
+    last_index_pos = 0
+    rdc = 0
+    while rdc < maxdata * 4:
+        ns = f.read(4)
+        v = struct.unpack('I', ns)
+        if v[0] == 0:
+            f.seek(-8, 1)
+            last_index_pos = f.tell()
+            ns = f.read(4)
+            llen = struct.unpack('I', ns)
+            last_data_pos = llen[0]
+            break
+        else:
+            indexes.append(v[0])
+        rdc += 4
+
+    flag = 0
+    lllen = 0
+    print last_data_pos
+    while 1:
+        f.seek(last_data_pos, 0)
+        s1 = f.read(8)
+        if not s1 or len(s1) != 8:
+            flag = 1
+            break;
+        s2 = f.read(4)
+        if not s2 or len(s2) != 4:
+            flag = 1
+            break
+        slen = struct.unpack('I', s2)[0]
+        print slen
+        lllen = last_data_pos + 8 + 4 + slen
+        print lllen
+        if filesize == lllen:
+            flag = 0
+            break
+        if filesize > lllen:
+            flag = 2
+            break
+        else:
+            flag = 1
+            break;
+            
+    if 0 == flag:
+        print 'log size ok!'
+    elif 1 == flag:
+        print 'log size is too smaller than expected size'
+    elif 2 == flag:
+        print 'log size is too larger than expected size'
+        f.truncate(lllen)
+        
+    f.close()
+    
 def show_help():
     print 'usage:'
     print '\tpython check.py [options]'
@@ -120,11 +196,12 @@ def main():
     dump_filename   = ''
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'b:d:h')
+        opts, args = getopt.getopt(sys.argv[1:], 'b:d:c:h')
     except:
         show_help()
         return
 
+    flag = False
     for opt,arg in opts:
         if opt == '-b':
             binlog_filename = arg
@@ -132,9 +209,16 @@ def main():
             dump_filename = arg
         elif opt == '-h':
             onlyheader = True
-           
+        elif opt == '-c':
+            flag = True
+            binlog_filename = arg
+
     if not binlog_filename and not dump_filename:
         show_help()
+        return
+
+    if binlog_filename and flag:
+        checklog(binlog_filename)
         return
         
     if binlog_filename:

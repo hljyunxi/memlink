@@ -31,6 +31,45 @@ int main()
 	char val[64];
 	char* maskstr1[] = {"8::1", "7:2:1", "6:2:1"};
 	int	 insertnum = 200;
+
+	sprintf(buf, "hihi");
+	ret = memlink_cmd_create(m, buf, 255, "4:3:1");
+	
+	if (ret != MEMLINK_OK) {
+		DERROR("1 memlink_cmd_create %s error: %d\n", buf, ret);
+		return -2;
+	}
+	char val2[64] = {0};
+	insertnum = 200;
+	for (i = 0; i < insertnum; i++) {
+		sprintf(val2, "%06d", i);
+		int k = i%3;
+		ret = memlink_cmd_insert(m, buf, val2, strlen(val2), maskstr1[k], 0);	
+		//ret = memlink_cmd_insert(m, buf, val, strlen(val), "14294967295:3:1", 0);	
+		if (ret != MEMLINK_OK) {
+			DERROR("insert error, key:%s, val:%s, mask:%s, i:%d\n", buf, val, maskstr1[k], i);
+			return -3;
+		}
+	}
+	MemLinkResult rs2;
+	MemLinkItem	*item;
+	ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE,  "", 0, 2, &rs2);
+	if (ret != MEMLINK_OK) {
+		DERROR("range error, ret:%d\n", ret);
+		return -6;
+	}
+	item = rs2.root;
+	if (NULL == item) {
+		DERROR("range must not null\n");
+		return -7;
+	}
+	i = 200;
+	while (item) {
+		printf( "item->value:%s, %d\n", item->value, i);
+		item = item->next;
+	}
+
+	return 0;
 	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
 		int k = i%3;
@@ -117,7 +156,7 @@ int main()
 		DERROR("range error, ret:%d\n", ret);
 		return -6;
 	}
-	MemLinkItem	*item = result.root;
+	item = result.root;
 	if (NULL == item) {
 		DERROR("range must not null\n");
 		return -7;
@@ -318,7 +357,6 @@ int main()
 		DERROR("1 memlink_cmd_create %s error: %d\n", buf, ret);
 		return -2;
 	}
-	
 	insertnum = 200;
 	for (i = 0; i < insertnum; i++) {
 		int k = i%3;
@@ -328,7 +366,6 @@ int main()
 			return -3;
 		}
 	}
-	
 	MemLinkResult rs;
 	ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE,  "::", 0, insertnum, &rs);
 	if (ret != MEMLINK_OK) {
@@ -353,6 +390,52 @@ int main()
 	
 	memlink_result_free(&rs);
 
+
+/// valusize = 255  strlen(value) = 6
+/*	sprintf(buf, "hihi");
+	ret = memlink_cmd_create(m, buf, 255, "4:3:1");
+	
+	if (ret != MEMLINK_OK) {
+		DERROR("1 memlink_cmd_create %s error: %d\n", buf, ret);
+		return -2;
+	}
+	char val2[64] = {0};
+	insertnum = 200;
+	for (i = 0; i < insertnum; i++) {
+		sprintf(val2, "%06d", i);
+		int k = i%3;
+		ret = memlink_cmd_insert(m, buf, val2, strlen(val2), maskstr1[k], 0);	
+		//ret = memlink_cmd_insert(m, buf, val, strlen(val), "14294967295:3:1", 0);	
+		if (ret != MEMLINK_OK) {
+			DERROR("insert error, key:%s, val:%s, mask:%s, i:%d\n", buf, val, maskstr1[k], i);
+			return -3;
+		}
+	}
+	MemLinkResult rs2;
+	ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE,  "::", 0, insertnum, &rs2);
+	if (ret != MEMLINK_OK) {
+		DERROR("range error, ret:%d\n", ret);
+		return -6;
+	}
+	item = rs2.root;
+	if (NULL == item) {
+		DERROR("range must not null\n");
+		return -7;
+	}
+	i = 200;
+	while (item) {
+		i--;
+		sprintf(val2, "%06d", i);
+		if (memcmp(item->value, val2, 6) != 0) {
+			DERROR( "range value error, value:%s\n", item->value );
+			return -8;
+		}
+		//DERROR( "item->value:%d, %d\n", *((int*)item->value), i);
+		item = item->next;
+	}
+	
+	memlink_result_free(&rs2);
+*/
 	memlink_destroy(m);
 
 	return 0;
