@@ -903,7 +903,15 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
     DataBlock *prev = NULL;
 
 
-	int ret = datablock_lookup_valid_pos2(node, pos, 0, &dbk);
+	int ret = 0;
+   
+    if (pos >= node->used) {
+        dbk = node->data_tail;
+        if (dbk == NULL)
+            ret = -1;
+    }else{
+        ret = datablock_lookup_valid_pos2(node, pos, 0, &dbk);
+    }
     if (dbk) {
         prev = dbk->prev;
     }
