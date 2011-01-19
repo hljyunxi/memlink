@@ -347,12 +347,18 @@ synclog_validate(SyncLog *slog)
     }
 	
     slog->index_pos = i;
+	//索引第一个是0
 	if (i == 0) {
 		slog->pos = slog->len;
 		return 0;
 	}
 	else if (i == dumplogpos) {
 		lastidx = loopdata[i - 1];
+		if (lastidx == 0) {
+			slog->pos = slog->len;
+			slog->index_pos = dumplogpos;
+			return 0;
+		}
 	}
 	
 

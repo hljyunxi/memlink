@@ -186,6 +186,7 @@ load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
 	char *enddata = addr + len;
 
 	binlogver = *(unsigned int *)(addr + sizeof(short));
+	DINFO("binlogver: %d, dumplogver: %d\n", binlogver, dumplogver);
 	if (binlogver == dumplogver) {
 		int *indxdata = (int *)(addr + SYNCLOG_HEAD_LEN);
 		int pos;
@@ -195,10 +196,19 @@ load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
 		} else {
 			pos = 0;
 		}
+		DINFO("dumplogpos: %d, pos: %d\n", dumplogpos, pos);
 		if (pos == 0 && dumplogpos != 0) {
+			DINFO("indxdata[dumplogpos - 1]=%d\n", indxdata[dumplogpos - 1]);
 			if (indxdata[dumplogpos - 1] != 0) {
 				data = addr + indxdata[dumplogpos - 1];
 				have_key = 1;
+			}else{
+				g_runtime->slave->logver  = dumplogver;
+				g_runtime->slave->logline = dumplogpos;
+				munmap(addr, len);
+
+				close(ffd);
+				return dumplogpos;
 			}
 		}else{
 			if (pos != 0) {
