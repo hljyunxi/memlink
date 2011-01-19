@@ -3,44 +3,44 @@
 
 #include "conn.h"
 #include <limits.h>
+#include "synclog.h"
 
-typedef struct _sthread 
+#define NOT_SEND        0
+#define SEND_LOG        1
+#define SEND_DUMP       2
+
+
+typedef struct _sthread
 {
-    int sock;
-    struct event_base *base;
-    struct event event;
-} SThread;
+	int sock;
+	struct event_base *base;
+	struct event event;
 
+}SThread;
 
-#define NOT_SEND 0
-#define SEND_LOG 1 
-#define SEND_DUMP 2
-
-/**
- * Connection for sync.
- */
-typedef struct _syncConn 
+typedef struct __syncconn
 {
-    CONN_MEMBER
+	CONN_MEMBER
 
-    struct event sync_write_evt;
-    struct event sync_interval_evt;
-    struct event sync_read_evt;
+	struct event sync_write_evt;
+	struct event sync_interval_evt;
+	struct event sync_read_evt;
 
-    struct timeval interval;
-    struct timeval timeout;
+	struct timeval interval;
+	struct timeval timeout;
+	
+	unsigned char status;
+	unsigned char cmd;
 
-    int status;                 
-    int sync_fd;                // file descriptor for sync log or dump
-    char log_name[PATH_MAX];    // sync log path
-    unsigned int log_ver;       // sync log version
-    unsigned int log_index_pos; // sync log index position
-    void (*fill_wbuf)(int fd, short event, void *arg);
-} SyncConn;
+	SyncLog *synclog;
+	int dump_fd;
+}SyncConn;
 
-SThread* sthread_create();
+SThread *sthread_create();
 void sthread_destroy(SThread *st);
 
-int  sdata_ready(Conn *conn, char *data, int datalen);
+int sdata_ready(Conn *conn, char *data, int datalen);
+int check_binlog_local(SyncConn *conn, unsigned int log_ver, unsigned int log_line);
 void sync_conn_destroy(Conn *conn);
+
 #endif

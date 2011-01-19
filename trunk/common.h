@@ -74,7 +74,7 @@
 #define DUMP_HEAD_LEN	    (sizeof(short)+sizeof(int)+sizeof(int)+sizeof(int)+sizeof(long long))
 // format + version + index size
 #define SYNCLOG_HEAD_LEN	(sizeof(short)+sizeof(int)+sizeof(int))
-#define SYNCLOG_INDEXNUM	5000000
+#define SYNCLOG_INDEXNUM	5000000	
 #define SYNCPOS_LEN		    (sizeof(int)+sizeof(int))
 
 #define MEMLINK_TAG_DEL         1
@@ -112,6 +112,8 @@
 #define MEMLINK_LIST        1
 #define MEMLINK_QUEUE       2
 #define MEMLINK_SORT_LIST   3
+
+#define SYNC_BUF_SIZE       8192 
 
 typedef struct _memlink_insert_mvalue_item
 {
