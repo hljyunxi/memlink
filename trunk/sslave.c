@@ -25,13 +25,18 @@
 
 /**\
  * recv server push log
- */
+*/
+
+#ifdef RECV_LOG_BY_PACKAGE 
 static int
-sslave_recv_log(SSlave *ss)
+sslave_recv_package_log(SSlave *ss)
 {
-	char recvbuf[1024];
+	char recvbuf[1024 * 1024];
 	int  checksize = SYNCPOS_LEN + sizeof(int);
 	int  ret;
+	unsigned char first_check = 0;
+	char *ptr = NULL;
+	unsigned int package_len;
 	unsigned int  rlen = 0;
     unsigned int    logver;
     unsigned int    logline;
@@ -39,63 +44,165 @@ sslave_recv_log(SSlave *ss)
     
     DINFO("slave recv log ...\n");
 	while (1) {
-		ret = readn(ss->sock, recvbuf, checksize, 0);
-		if (ret < checksize) {
-			DERROR("read sync head too short: %d, close\n", ret);
+		//读数据包长度
+		ret = readn(ss->sock, &package_len, sizeof(int), 0);
+		if (ret < sizeof(int)) {
+			DERROR("read sync package_len too short: %d, close\n", ret);
 			close(ss->sock);
 			ss->sock = -1;
 			return -1;
 		}
-        //DINFO("readn return:%d\n", ret); 		
-		memcpy(&rlen, recvbuf + SYNCPOS_LEN, sizeof(int));
-		ret = readn(ss->sock, recvbuf + checksize, rlen, 0);
-		if (ret < rlen) {
-			DERROR("read sync too short: %d, close\n", ret);
+		//读取数据包
+		unsigned int need = package_len - sizeof(int);
+		ret = readn(ss->sock, recvbuf, need, 0);
+		if (ret < need) {
+			DERROR("read sync command set too short: %d, close\n", ret);
 			close(ss->sock);
 			ss->sock = -1;
 			return -1;
 		}
+		/*
+		memcpy(&package_len, recvbuf, sizeof(int));
+		if (ret < package_len) {
+			DERROR("read sync command set too short: %d, close\n", ret);
+			close(ss->sock);
+			ss->sock = -1;
+			return -1;
+		}
+		*/
+		DINFO("package_len: %d\n", package_len);
+		int count = 0;//统计读出命令的字节数
+		ptr = recvbuf;
+		while (count < package_len - sizeof(int)) {
+			memcpy(&logver, ptr, sizeof(int));
+			memcpy(&logline, ptr + sizeof(int), sizeof(int));
+			memcpy(&rlen, ptr + SYNCPOS_LEN, sizeof(int));
+			DINFO("logver: %d, logline: %d\n, rlen: %d", logver, logline, rlen);
+			
+			DINFO("ss->logver: %d, ss->logline: %d, index_pos: %d\n", ss->logver, ss->logline, g_runtime->synclog->index_pos);			
+			//只需校验第一次接收到的命令
+			if (first_check == 0) {
+				if (logver == ss->logver && logline == ss->logline && g_runtime->synclog->index_pos != 0) {
+					//int pos = g_runtime->synclog->index_pos;
+					int *indxdata = (int *)(g_runtime->synclog->index + SYNCLOG_HEAD_LEN);
+					DINFO("indxdata[logline]=%d\n", indxdata[logline]);		
+					/*
+					if (g_runtime->synclog->index_pos == SYNCLOG_INDEXNUM) {
+						first_check = 1;
+						count += SYNCPOS_LEN + sizeof(int) + rlen; 
+						continue;
+					}
+					if (indxdata[pos] == 0 && indxdata[pos - 1] != 0) {
+						first_check = 1;
+						count += SYNCPOS_LEN + sizeof(int) + rlen;
+						continue;
+					}
+					*/
+					if (indxdata[logline] != 0) {
+						first_check = 1;
+						count += SYNCPOS_LEN + sizeof(int) + rlen;
+						DINFO("package_len: %d, count: %d\n", package_len, count);
+						DINFO("---------------------skip\n");
+						ptr += SYNCPOS_LEN + sizeof(int) + rlen;
+						continue;
+					}
+				}
+			}
+			unsigned int size = checksize + rlen;
+			char cmd;
+			memcpy(&cmd, ptr + SYNCPOS_LEN + sizeof(int), sizeof(char));
+			pthread_mutex_lock(&g_runtime->mutex);
+			ret = wdata_apply(ptr + SYNCPOS_LEN, rlen, 0);
+			DINFO("wdata_apply return: %d\n", ret);
+			if (ret == 0) {
+				DINFO("write to binlog\n");
+				synclog_write(g_runtime->synclog, ptr, size);
+				DINFO("after write to binlog\n");
+			}
+			pthread_mutex_unlock(&g_runtime->mutex);
+
+			ss->logver = logver;
+			ss->logline = logline;
+			
+			ptr += SYNCPOS_LEN + sizeof(int) + rlen;
+			count += SYNCPOS_LEN + sizeof(int) + rlen;
+		}
+
+	}
+	return 0;
+}
+
+#else
+static int
+sslave_recv_log(SSlave *ss)
+{
+    char recvbuf[1024];
+    int  checksize = SYNCPOS_LEN + sizeof(int);
+    int  ret;
+    unsigned int  rlen = 0;
+    unsigned int    logver;
+    unsigned int    logline;
+    // send sync
+
+    DINFO("slave recv log ...\n");
+    while (1) {
+        ret = readn(ss->sock, recvbuf, checksize, 0);
+        if (ret < checksize) {
+            DERROR("read sync head too short: %d, close\n", ret);
+            close(ss->sock);
+            ss->sock = -1;
+            return -1;
+        }
+        //DINFO("readn return:%d\n", ret);
+        memcpy(&rlen, recvbuf + SYNCPOS_LEN, sizeof(int));
+        ret = readn(ss->sock, recvbuf + checksize, rlen, 0);
+        if (ret < rlen) {
+            DERROR("read sync too short: %d, close\n", ret);
+            close(ss->sock);
+            ss->sock = -1;
+            return -1;
+        }
         //DINFO("recv log len:%d\n", rlen);
         memcpy(&logver, recvbuf, sizeof(int));
         memcpy(&logline, recvbuf + sizeof(int), sizeof(int));
-		DINFO("logver:%d, logline:%d\n", logver, logline); 
-		// after getdump, must not skip first one
+        DINFO("logver:%d, logline:%d\n", logver, logline);
+        // after getdump, must not skip first one
         if (logver == ss->logver && logline == ss->logline && g_runtime->synclog->index_pos != 0) {
             //skip first one
             //continue;
-			int pos = g_runtime->synclog->index_pos;
-			int *indxdata = (int *)(g_runtime->synclog->index + SYNCLOG_HEAD_LEN);
+            //int pos = g_runtime->synclog->index_pos;
+            int *indxdata = (int *)(g_runtime->synclog->index + SYNCLOG_HEAD_LEN);
 
-			//上一条已经记录了
-			if (indxdata[pos] == 0 && indxdata[pos - 1] != 0) {
-				DNOTE("tag---------------------------------------------------------\n");
-				continue;
-			}
+            //上一条已经记录了
+            if (indxdata[logline] != 0) {
+                continue;
+            }
         }
 
-		unsigned int size = checksize + rlen;
+        unsigned int size = checksize + rlen;
         struct timeval start, end;
-        char cmd;	
+        char cmd;
 
-        memcpy(&cmd, recvbuf + SYNCPOS_LEN + sizeof(int), sizeof(char));
-		pthread_mutex_lock(&g_runtime->mutex);
+		        memcpy(&cmd, recvbuf + SYNCPOS_LEN + sizeof(int), sizeof(char));
+        pthread_mutex_lock(&g_runtime->mutex);
         gettimeofday(&start, NULL);
-		ret = wdata_apply(recvbuf + SYNCPOS_LEN, rlen, 0);
-		DINFO("wdata_apply return:%d\n", ret);
-		if (ret == 0) {
-			//DINFO("synclog index_pos:%d, pos:%d\n", g_runtime->synclog->index_pos, g_runtime->synclog->pos);
-			synclog_write(g_runtime->synclog, recvbuf, size);
-		}
+        ret = wdata_apply(recvbuf + SYNCPOS_LEN, rlen, 0);
+        DINFO("wdata_apply return:%d\n", ret);
+        if (ret == 0) {
+            //DINFO("synclog index_pos:%d, pos:%d\n", g_runtime->synclog->index_pos, g_runtime->synclog->pos);
+            synclog_write(g_runtime->synclog, recvbuf, size);
+        }
         gettimeofday(&end, NULL);
-	    DNOTE("cmd:%d %d %u us\n", cmd, ret, timediff(&start, &end));
-		pthread_mutex_unlock(&g_runtime->mutex);
+        DNOTE("cmd:%d %d %u us\n", cmd, ret, timediff(&start, &end));
+        pthread_mutex_unlock(&g_runtime->mutex);
 
         ss->logver  = logver;
         ss->logline = logline;
-	}
+    }
 
-	return 0;
+    return 0;
 }
+#endif
 
 /**
  * load master dump info
@@ -496,15 +603,16 @@ sslave_conn_init(SSlave *ss)
 				if (sslave_do_getdump(ss) == 0) {
 					DINFO("load dump ...\n");
 					hashtable_clear_all(g_runtime->ht);
-					dumpfile_load(g_runtime->ht, mdumpfile, 1);
 
+					dumpfile_load(g_runtime->ht, mdumpfile, 1);
 					g_runtime->synclog->index_pos = g_runtime->dumplogpos;
-					dumpfile(g_runtime->ht);
 
 					sslave_load_master_dump_info(ss, mdumpfile, NULL, NULL, &dumpver, &ss->logver);
 					//add by lanwenhong
 					g_runtime->synclog->version = ss->logver;
 					g_runtime->logver = ss->logver;
+					
+					dumpfile(g_runtime->ht);
 					DINFO("ss->logver: %d, dumplogpos: %d\n", ss->logver, g_runtime->dumplogpos);
 					memcpy((g_runtime->synclog->index + sizeof(short)), &(ss->logver), sizeof(int));
 
@@ -562,7 +670,11 @@ sslave_run(void *args)
 			//break;
 		}
 		// recv sync log from master
+#ifdef RECV_LOG_BY_PACKAGE
+		ret = sslave_recv_package_log(ss);
+#else
 		ret = sslave_recv_log(ss);
+#endif
 	}
 
 	return NULL;
