@@ -895,7 +895,11 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
         DINFO("hashtable_add_mask_bin not found node for key:%s\n", key);
         return MEMLINK_ERR_NOKEY;
     }
-    
+    /*char bufv[512] = {0}; 
+    memcpy(bufv, value, node->valuesize);
+    DINFO("add_mask_bin: %s, %s\n", key, bufv);
+    */
+
     DataBlock *dbk = node->data;
 	DataBlock *newbk = NULL;
     int datalen = node->valuesize + node->masksize;

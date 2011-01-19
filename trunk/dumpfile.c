@@ -252,6 +252,7 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
                 }else{
                     dbk->next = newdbk;
                 }
+                newdbk->prev = dbk;
                 dbk = newdbk;
 				node->all += newdbk->data_count;
 
@@ -268,11 +269,12 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
 
             /*char buf[256] = {0};
             memcpy(buf, itemdata, node->valuesize);
-            DINFO("load value: %s\n", buf);
-			*/
+            DINFO("load value: %s\n", buf);*/
+			
             itemdata += datalen;
             load_count += 1;
         }
+        node->data_tail = dbk;
     }
     
     fclose(fp);
