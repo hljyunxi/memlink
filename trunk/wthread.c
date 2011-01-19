@@ -104,7 +104,8 @@ data_set_reply(Conn *conn, short retcode, char *retdata, int retlen)
     // package length + retcode + retdata
     datalen = CMD_REPLY_HEAD_LEN + retlen;
     DINFO("datalen: %d, retcode: %d, conn->wsize: %d\n", datalen, retcode, conn->wsize); 
-    
+   
+    /*
     if (conn->wsize >= datalen) {
         wdata = conn->wbuf;
     }else{
@@ -121,6 +122,9 @@ data_set_reply(Conn *conn, short retcode, char *retdata, int retlen)
         conn->wsize = datalen;
     }
     conn->wlen = conn->wpos = 0;
+    */
+
+    wdata = conn_write_buffer(conn, datalen);
 
     int count = 0; 
     unsigned int dlen = datalen - sizeof(int);

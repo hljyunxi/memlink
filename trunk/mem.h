@@ -11,12 +11,21 @@
 
 typedef struct _data_block
 {
+	unsigned short		data_count; // data count in one block
     unsigned short      visible_count; // visible item count
     unsigned short      tagdel_count;  // tag delete item count, invisible
-	unsigned short		data_count; // data count in one block
+    struct _data_block  *prev;
     struct _data_block  *next;
     char                data[0];
 }DataBlock;
+
+typedef struct _data_block_one
+{
+	unsigned short		data_count; // data count in one block
+    unsigned short      visible_count; // visible item count
+    unsigned short      tagdel_count;  // tag delete item count, invisible
+    char                data[0];
+}DataBlockOne;
 
 typedef struct _mem_item
 {

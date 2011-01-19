@@ -67,9 +67,7 @@
 // 命令执行返回信息头部长度
 // datalen(4B) + retcode(2B)
 #define CMD_REPLY_HEAD_LEN  (sizeof(int)+sizeof(short))
-//#define CMD_REQ_HEAD_LEN	(sizeof(short)+sizeof(char))
 #define CMD_REQ_HEAD_LEN    (sizeof(int)+sizeof(char))
-//#define CMD_REQ_SIZE_LEN	sizeof(short)
 #define CMD_REQ_SIZE_LEN    sizeof(int)
 
 // format + version + log version + log position + size
@@ -79,8 +77,8 @@
 #define SYNCLOG_INDEXNUM	5000000
 #define SYNCPOS_LEN		    (sizeof(int)+sizeof(int))
 
-#define MEMLINK_TAG_DEL     1
-#define MEMLINK_TAG_RESTORE 0
+#define MEMLINK_TAG_DEL         1
+#define MEMLINK_TAG_RESTORE     0
 
 #define CMD_GETDUMP_OK			1
 #define CMD_GETDUMP_CHANGE		2

@@ -3,7 +3,7 @@
 int main()
 {
 #ifdef DEBUG
-	logfile_create("test.log", 3);
+	logfile_create("stdout", 3);
 #endif
 	HashTable* ht;
 	char key[64];
@@ -40,7 +40,7 @@ int main()
 		HashNode* pNode = hashtable_find(ht, key);
 		if(NULL == pNode)
 		{
-			printf("hashtable_add_info_mask error. can not find %s\n", key);
+			DERROR("hashtable_add_info_mask error. can not find %s\n", key);
 			return -1;
 		}
 	}
@@ -57,18 +57,18 @@ int main()
 		pos = i;
 		hashtable_add_mask(ht, key, val, maskarray[i%3], masknum, pos);
 		if (ret < 0) {
-			printf("add value err: %d, %s\n", ret, val);
+			DERROR("add value err: %d, %s\n", ret, val);
 			return ret;
 		}
 		
 		char ret = hashtable_find_value(ht, key, val, &node, &dbk, &item);
 		if (ret < 0) {
-			printf("not found value: %d, %s\n", ret, key);
+			DERROR("not found value: %d, %s\n", ret, key);
 			return ret;
 		}
 	}
 
-	printf("insert %d  ok!\n", num);
+	DNOTE("insert %d  ok!\n", num);
 
 	///////test3 : hashtable_move_
 
@@ -84,21 +84,22 @@ int main()
 			if(pos != v)
 				break;
 		}
-		printf("hashtable_move val:%s, pos:%d\n", val, pos);
+		DINFO("=== hashtable_move val:%s, pos:%d ===\n", val, pos);
 		int ret = hashtable_move(ht, key, val, pos);
 		if(MEMLINK_OK != ret)
 		{
-			printf("err hashtable_move value:%s, pos:%d\n", val, pos);
+			DERROR("err hashtable_move value:%s, pos:%d\n", val, pos);
 			break;
 		}
 	    DataBlock *dbk = node->data;
 	    //int count = 0;
 	    char *posaddr  = NULL;
-	    DataBlock *last = NULL;
-	    ret = dataitem_lookup_pos(node, pos, 0, &dbk, &last, &posaddr);
+	    //DataBlock *last = NULL;
+	    ret = dataitem_lookup_pos(node, pos, 0, &dbk, &posaddr);
+        DINFO("ret:%d, posaddr:%p\n", ret, posaddr);
 		if(NULL == posaddr)
 		{
-			printf("not found value:%s, pos:%d\n",val, pos);
+			DERROR("not found value:%s, pos:%d, posaddr:%p, dbk:%p\n",val, pos, posaddr, dbk);
 			return -1;
 		}
 		else
@@ -106,17 +107,17 @@ int main()
 			ret = memcmp(val, posaddr, valuesize);
 			if(0 == ret)
 			{
-				printf("pos:%d is ok!\n", pos);
+				DINFO("pos:%d is ok!\n", pos);
 			}
 			else
 			{
-				printf("err value! pos:%d is not the right value%s!\n", pos, val);
+				DERROR("err value! pos:%d is not the right value%s!\n", pos, val);
 				return -1;
 			}
 		}
 	}
-	hashtable_print(ht, key);
-	printf("hashtable_move test end!\n");
+	//hashtable_print(ht, key);
+	DINFO("hashtable_move test end!\n");
 	return 0;
 }
 
