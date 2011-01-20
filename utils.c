@@ -234,6 +234,21 @@ formath(char *data, int datalen, char *buf, int blen)
     return buf;
 }
 
+void
+timestart(struct timeval *start)
+{
+    gettimeofday(start, NULL);
+}
+
+unsigned int
+timeend(struct timeval *start, struct timeval *end, char *info)
+{
+    gettimeofday(end, NULL);
+    unsigned int td = timediff(start, end);
+
+    DNOTE("=== %s time: %u us ===\n", info, td);
+    return td;
+}
 
 unsigned int 
 timediff(struct timeval *start, struct timeval *end)
