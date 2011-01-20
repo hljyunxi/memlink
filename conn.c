@@ -92,6 +92,28 @@ conn_write_buffer(Conn *conn, int size)
     return conn->wbuf;
 }
 
+// put datalen and return code to header
+int
+conn_write_buffer_head(Conn *conn, int retcode, int len)
+{
+    if (retcode == MEMLINK_OK) {
+        conn->wlen = len; 
+        len -= sizeof(int);
+    }else{
+        conn_write_buffer(conn, CMD_REPLY_HEAD_LEN);
+        conn->wlen = CMD_REPLY_HEAD_LEN;
+        len = CMD_REPLY_HEAD_LEN - sizeof(int);
+    }    
+    //char bufx[1024];
+    //DINFO("wlen:%d, size:%d ret:%d %s\n", conn->wlen, idx, ret, formath(conn->wbuf, conn->wlen, bufx, 1024)); 
+    memcpy(conn->wbuf, &len, sizeof(int));
+    short retv = retcode; 
+    memcpy(conn->wbuf + sizeof(int), &retv, sizeof(short));
+
+    return MEMLINK_OK;
+}
+
+
 int
 conn_wrote(Conn *conn)
 {

@@ -60,6 +60,8 @@
 // GETDUMP 命令中dump文件错误
 #define MEMLINK_ERR_DUMP_VER        -101
 
+// 命令已回复
+#define MEMLINK_REPLIED             100
 
 #define ROLE_MASTER		1
 #define ROLE_SLAVE		0
@@ -114,6 +116,9 @@
 #define MEMLINK_SORT_LIST   3
 
 #define SYNC_BUF_SIZE       8192 
+
+#define MEMLINK_WRITE_LOG   1
+#define MEMLINK_NO_LOG      0
 
 typedef struct _memlink_insert_mvalue_item
 {

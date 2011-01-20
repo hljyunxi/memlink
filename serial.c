@@ -855,7 +855,7 @@ cmd_push_pack(char *data, unsigned char cmd, char *key, char *value, unsigned ch
                 unsigned char masknum, unsigned *maskarray)
 {
     unsigned int len;
-    int count = sizeof(short);
+    int count = CMD_REQ_SIZE_LEN;
 
     memcpy(data + count, &cmd, sizeof(char));
     count += sizeof(char);
@@ -863,8 +863,8 @@ cmd_push_pack(char *data, unsigned char cmd, char *key, char *value, unsigned ch
     count += pack_string(data + count, value, valuelen);
     count += pack_mask(data + count, maskarray, masknum);
 
-    len = count - sizeof(short);
-    memcpy(data, &len, sizeof(int));
+    len = count - CMD_REQ_SIZE_LEN;
+    memcpy(data, &len, CMD_REQ_SIZE_LEN);
 
     return count;
 }
