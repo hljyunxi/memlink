@@ -166,7 +166,7 @@ data_reply(Conn *conn, short retcode, char *retdata, int retlen)
 		conn->destroy(conn);
 	}
 
-    return 0;
+    return MEMLINK_OK;
 }
 
 int
@@ -177,9 +177,9 @@ data_reply_direct(Conn *conn)
 	if (ret < 0) {
 		DERROR("change_event error: %d, close conn.\n", ret);
 		conn->destroy(conn);
+        return MEMLINK_FAILED;
 	}
-
-    return 0;
+    return MEMLINK_OK;
 }
 
 /* is clean?
@@ -309,18 +309,19 @@ wdata_apply(char *data, int datalen, int writelog)
         case CMD_DUMP:
             DINFO("<<< cmd DUMP >>>\n");
             ret = dumpfile(g_runtime->ht);
+            goto wdata_apply_over;
             break;
         case CMD_CLEAN:
             DINFO("<<< cmd CLEAN >>>\n");
             ret = cmd_clean_unpack(data, key);
 			if (ret != 0) {
 				DINFO("unpack clean error! ret: %d\n", ret);
-				break;
+                goto wdata_apply_over;
 			}
 
 			if (key[0] == 0) {
 				ret = MEMLINK_ERR_PARAM;
-				break;
+                goto wdata_apply_over;
 			}
 #ifdef DEBUG
             //hashtable_print(g_runtime->ht, key);
@@ -331,6 +332,7 @@ wdata_apply(char *data, int datalen, int writelog)
             DINFO("clean return:%d\n", ret); 
             //hashtable_print(g_runtime->ht, key);
 #endif
+            goto wdata_apply_over;
             break;
         case CMD_CREATE:
             DINFO("<<< cmd CREATE >>>\n");
@@ -338,58 +340,42 @@ wdata_apply(char *data, int datalen, int writelog)
             ret = cmd_create_unpack(data, key, &valuelen, &masknum, maskformat);
 			if (ret != 0) {
 				DINFO("unpack create error! ret: %d\n", ret);
-				break;
+                goto wdata_apply_over;
 			}
 
             DINFO("unpack key: %s, valuelen: %d, masknum: %d, maskarray: %d,%d,%d\n", 
 					key, valuelen, masknum, maskformat[0], maskformat[1], maskformat[2]);
 			if (key[0] == 0 || valuelen <= 0) {
 				ret = MEMLINK_ERR_PARAM;
-				break;
+                goto wdata_apply_over;
 			}
 
 			if (masknum > HASHTABLE_MASK_MAX_ITEM) {
 				DINFO("create mask too long: %d, max:%d\n", masknum, HASHTABLE_MASK_MAX_ITEM);
 				ret = MEMLINK_ERR_MASK;
-			}else{
-				vnum = valuelen;
-				ret = hashtable_key_create_mask(g_runtime->ht, key, vnum, maskformat, masknum);
-				DINFO("hashtable_key_create_mask return: %d\n", ret);
-				if (ret >= 0 && writelog) {
-					int sret = synclog_write(g_runtime->synclog, data, datalen);
-					if (sret < 0) {
-						DERROR("synclog_write error: %d\n", sret);
-						MEMLINK_EXIT;
-					}
-				}
+                goto wdata_apply_over;
 			}
+            vnum = valuelen;
+            ret = hashtable_key_create_mask(g_runtime->ht, key, vnum, maskformat, masknum);
+            DINFO("hashtable_key_create_mask return: %d\n", ret);
+
             break;
         case CMD_DEL:
             DINFO("<<< cmd DEL >>>\n");
             ret = cmd_del_unpack(data, key, value, &valuelen);
 			if (ret != 0) {
 				DINFO("unpack del error! ret: %d\n", ret);
-				break;
+                goto wdata_apply_over;
 			}
 
             DINFO("unpack del, key: %s, value: %s, valuelen: %d\n", key, value, valuelen);
 			if (key[0] == 0 || valuelen <= 0) {
 				ret = MEMLINK_ERR_PARAM;
-				break;
+                goto wdata_apply_over;
 			}
 
             ret = hashtable_del(g_runtime->ht, key, value);
             DINFO("hashtable_del: %d\n", ret);
-#ifdef DEBUG
-            //hashtable_print(g_runtime->ht, key);
-#endif
-            if (ret >= 0 && writelog) {
-                int sret = synclog_write(g_runtime->synclog, data, datalen);
-                if (sret < 0) {
-                    DERROR("synclog_write error: %d\n", sret);
-                    MEMLINK_EXIT;
-                }
-            }
 
             break;
         case CMD_INSERT: {
@@ -397,14 +383,14 @@ wdata_apply(char *data, int datalen, int writelog)
             ret = cmd_insert_unpack(data, key, value, &valuelen, &masknum, maskarray, &pos);
 			if (ret != 0) {
 				DINFO("unpack insert error! ret: %d\n", ret);
-				break;
+                goto wdata_apply_over;
 			}
 
             DINFO("unpack key:%s, value:%s, pos:%d, mask: %d, array:%d,%d,%d\n", 
 					key, value, pos, masknum, maskarray[0], maskarray[1], maskarray[2]);
 			if (key[0] == 0 || valuelen <= 0) {
 				ret = MEMLINK_ERR_PARAM;
-				break;
+                goto wdata_apply_over;
 			}
 
 			if (pos == -1) {
@@ -412,21 +398,12 @@ wdata_apply(char *data, int datalen, int writelog)
 			} else if (pos < 0) {
 				ret = MEMLINK_ERR_PARAM;
 				DINFO("insert pos < 0, %d", pos);
-				break;
+                goto wdata_apply_over;
 			}
 
             ret = hashtable_add_mask(g_runtime->ht, key, value, maskarray, masknum, pos);
             DINFO("hashtable_add_mask: %d\n", ret);
            
-            //hashtable_print(g_runtime->ht, key);
-            if (ret >= 0 && writelog) {
-                int sret = synclog_write(g_runtime->synclog, data, datalen);
-                if (sret < 0) {
-                    DERROR("synclog_write error: %d\n", sret);
-                    MEMLINK_EXIT;
-                }
-            }
-
             break;
         }
         case CMD_INSERT_MVALUE: {
@@ -438,14 +415,14 @@ wdata_apply(char *data, int datalen, int writelog)
 			if (ret != 0) {
 				DINFO("unpack insert error! ret: %d\n", ret);
                 zz_free(values);
-				break;
+                goto wdata_apply_over;
 			}
 
             DINFO("unpack key:%s, vnum:%d\n", key, vnum);
 			if (key[0] == 0) {
 				ret = MEMLINK_ERR_PARAM;
                 zz_free(values);
-				break;
+                goto wdata_apply_over;
 			}
 
             int i;
@@ -456,7 +433,7 @@ wdata_apply(char *data, int datalen, int writelog)
                     ret = MEMLINK_ERR_PARAM;
                     DINFO("insert mvalue %d pos < 0, %d", i, pos);
                     zz_free(values);
-                    break;
+                    goto wdata_apply_over;
                 }
             }
 
@@ -466,14 +443,6 @@ wdata_apply(char *data, int datalen, int writelog)
                 DINFO("hashtable_add_mask: %d\n", ret);
             }
 
-            if (ret >= 0 && writelog) {
-                int sret = synclog_write(g_runtime->synclog, data, datalen);
-                if (sret < 0) {
-                    DERROR("synclog_write error: %d\n", sret);
-                    MEMLINK_EXIT;
-                }
-            }
-            
             zz_free(values);
             break;
         }
@@ -482,12 +451,12 @@ wdata_apply(char *data, int datalen, int writelog)
             ret = cmd_move_unpack(data, key, value, &valuelen, &pos);
 			if (ret != 0) {
 				DINFO("unpack move error! ret: %d\n", ret);
-				break;
+                goto wdata_apply_over;
 			}
             DINFO("unpack move, key:%s, value:%s, pos:%d\n", key, value, pos);
 			if (key[0] == 0 || valuelen <= 0) {
 				ret = MEMLINK_ERR_PARAM;
-				break;
+                goto wdata_apply_over;
 			}
 	
 			if (pos == -1) {
@@ -495,77 +464,46 @@ wdata_apply(char *data, int datalen, int writelog)
 			} else if (pos < 0) {
 				ret = MEMLINK_ERR_PARAM;
 				DINFO("move pos < 0, %d", pos);
-				break;
+                goto wdata_apply_over;
 			}
 
             ret = hashtable_move(g_runtime->ht, key, value, pos);
             DINFO("hashtable_move: %d\n", ret);
-            //hashtable_print(g_runtime->ht, key);
-            if (ret >= 0 && writelog) {
-                int sret = synclog_write(g_runtime->synclog, data, datalen);
-                if (sret < 0) {
-                    DERROR("synclog_write error: %d\n", sret);
-                    MEMLINK_EXIT;
-                }
-            }
-
             break;
         case CMD_MASK:
             DINFO("<<< cmd MASK >>>\n");
             ret = cmd_mask_unpack(data, key, value, &valuelen, &masknum, maskarray);
 			if (ret != 0) {
 				DINFO("unpack mask error! ret: %d\n", ret);
-				break;
+                goto wdata_apply_over;
 			}
 
             DINFO("unpack mask key: %s, valuelen: %d, masknum: %d, maskarray: %d,%d,%d\n", key, valuelen, 
                     masknum, maskarray[0], maskarray[1], maskarray[2]);
 			if (key[0] == 0 || valuelen <= 0) {
 				ret = MEMLINK_ERR_PARAM;
-				break;
+                goto wdata_apply_over;
 			}
 
             ret = hashtable_mask(g_runtime->ht, key, value, maskarray, masknum);
             DINFO("hashtable_mask: %d\n", ret);
-#ifdef DEBUG
-            //hashtable_print(g_runtime->ht, key);
-#endif
-            if (ret >= 0 && writelog) {
-                int sret = synclog_write(g_runtime->synclog, data, datalen);
-                if (sret < 0) {
-                    DERROR("synclog_write error: %d\n", sret);
-                    MEMLINK_EXIT;
-                }
-            }
-
             break;
         case CMD_TAG:
             DINFO("<<< cmd TAG >>>\n");
             cmd_tag_unpack(data, key, value, &valuelen, &tag);
 			if (ret != 0) {
 				DINFO("unpack tag error! ret: %d\n", ret);
-				break;
+                goto wdata_apply_over;
 			}
 
             DINFO("unpack tag, key:%s, value:%s, tag:%d\n", key, value, tag);
 			if (key[0] == 0 || valuelen <= 0) {
 				ret = MEMLINK_ERR_PARAM;
-				break;
+                goto wdata_apply_over;
 			}
 
             ret = hashtable_tag(g_runtime->ht, key, value, tag);
             DINFO("hashtable_tag: %d\n", ret);
-
-#ifdef DEBUG
-            //hashtable_print(g_runtime->ht, key);
-#endif
-            if (ret >= 0 && writelog) {
-                int sret = synclog_write(g_runtime->synclog, data, datalen);
-                if (sret < 0) {
-                    DERROR("synclog_write error: %d\n", sret);
-                    MEMLINK_EXIT;
-                }
-            }
 
             break;
         case CMD_RMKEY:
@@ -573,44 +511,36 @@ wdata_apply(char *data, int datalen, int writelog)
             ret = cmd_rmkey_unpack(data, key);
 			if (ret != 0) {
 				DINFO("unpack tag error! ret: %d\n", ret);
-				break;
+                goto wdata_apply_over;
 			}
 
             DINFO("unpack rmkey, key:%s\n", key);
 			if (key[0] == 0) {
 				ret = MEMLINK_ERR_PARAM;
-				break;
+                goto wdata_apply_over;
 			}
 
             ret = hashtable_remove_key(g_runtime->ht, key);
             DINFO("hashtable_remove_key ret: %d\n", ret);
-            if (ret >= 0 && writelog) {
-                int sret = synclog_write(g_runtime->synclog, data, datalen);
-                if (sret < 0) {
-                    DERROR("synclog_write error: %d\n", sret);
-                    MEMLINK_EXIT;
-                }
-            }
             break;
-
 		case CMD_DEL_BY_MASK:
 			DINFO("<<< cmd DEL_BY_MASK >>>\n");
 			ret = cmd_del_by_mask_unpack(data, key, maskarray, &masknum);
 			if (ret != 0) {
 				DINFO("unpack del_by_mask error! ret: %d\n", ret);
-				break;
+                goto wdata_apply_over;
 			}
 			DINFO("unpack key: %s, masknum: %d, maskarray: %d,%d,%d\n", key, masknum, maskarray[0], maskarray[1],maskarray[2]);
 			ret = hashtable_del_by_mask(g_runtime->ht, key, maskarray, masknum);
 			DINFO("hashtable_del_by_mask ret: %d\n", ret);
-			break;
 
+			break;
         case CMD_LPUSH:
             DINFO("<<< cmd LPUSH >>>\n");
 			ret = cmd_lpush_unpack(data, key, value, &valuelen, &masknum, maskarray);
 			if (ret != 0) {
 				DINFO("unpack lpush error! ret: %d\n", ret);
-				break;
+                goto wdata_apply_over;
 			}
 			DINFO("unpack key: %s, masknum: %d, maskarray: %d,%d,%d\n", key, masknum, maskarray[0], maskarray[1],maskarray[2]);
 			ret = hashtable_lpush(g_runtime->ht, key, value, maskarray, masknum);
@@ -622,7 +552,7 @@ wdata_apply(char *data, int datalen, int writelog)
 			ret = cmd_rpush_unpack(data, key, value, &valuelen, &masknum, maskarray);
 			if (ret != 0) {
 				DINFO("unpack rpush error! ret: %d\n", ret);
-				break;
+                goto wdata_apply_over;
 			}
 			DINFO("unpack key: %s, masknum: %d, maskarray: %d,%d,%d\n", key, masknum, maskarray[0], maskarray[1],maskarray[2]);
 			ret = hashtable_rpush(g_runtime->ht, key, value, maskarray, masknum);
@@ -634,31 +564,26 @@ wdata_apply(char *data, int datalen, int writelog)
 			ret = cmd_pop_unpack(data, key, &num);
 			if (ret != 0) {
 				DINFO("unpack rpush error! ret: %d\n", ret);
-				break;
+                goto wdata_apply_over;
 			}
-            /*
-            unsigned char masksize = 0, valuesize = 0;
-            // len(4B) + retcode(2B) + valuesize(1B) + masksize(1B) + masknum(1B) + maskformat(masknum B) + value.mask * le
-            int rlen = sizeof(int) + sizeof(short) + sizeof(char) + sizeof(char) + sizeof(char) + \ 
-                       masknum * sizeof(int) + (HASHTABLE_VALUE_MAX + (HASHTABLE_MASK_MAX_BIT/8 + 2) * masknum) * len;
-            if (rlen >= CMD_RANGE_MAX_SIZE) {
-                ret = MEMLINK_ERR_RANGE_SIZE;
-                goto rdata_ready_error;
+
+            if (num <= 0) {
+                DINFO("num small than 0. num:%d\n", num);
+                ret = MEMLINK_ERR_PARAM;
+                goto wdata_apply_over;
             }   
-            DINFO("ret buffer len: %d\n", rlen);
-            char retrec[rlen];
 
-            ret = hashtable_lpop(g_runtime->ht, key, num, retrec + sizeof(char)*2, &retlen, &valuesize, &masksize);
-            DINFO("hashtable_lpop return: %d, retlen:%d, valuesize:%d, masksize:%d\n", ret, retlen, valuesize, masksize);
-            memcpy(retrec, &valuesize, sizeof(char));
-            memcpy(retrec + sizeof(char), &masksize, sizeof(char));
-
-            retlen += sizeof(char) * 2;
-
-            ret = data_reply(conn, ret, retrec, retlen);
+            if (key[0] == 0) {
+                ret = MEMLINK_ERR_PARAM;
+                goto wdata_apply_over;
+            }   
+            //ret = hashtable_lpop(g_runtime->ht, key, num, conn); 
+            //DINFO("hashtable_range return: %d\n", ret);
+            //if (ret >= 0 && writelog) {
+                //ret = data_reply_direct(conn);
+            //}
             DINFO("data_reply return: %d\n", ret);
-            */
-            ret = MEMLINK_ERR_CLIENT_CMD;
+            ret = MEMLINK_REPLIED;
             break;
         case CMD_RPOP:
             ret = MEMLINK_ERR_CLIENT_CMD;
@@ -667,9 +592,18 @@ wdata_apply(char *data, int datalen, int writelog)
             ret = MEMLINK_ERR_CLIENT_CMD;
             break;
     }
-	
-	wdata_check_clean(key);
 
+    // write binlog
+    if (ret >= 0 && writelog) {
+        int sret = synclog_write(g_runtime->synclog, data, datalen);
+        if (sret < 0) {
+            DERROR("synclog_write error: %d\n", sret);
+            MEMLINK_EXIT;
+        }
+    }
+
+	wdata_check_clean(key);
+wdata_apply_over:
     return ret;
 }
 
@@ -696,11 +630,13 @@ wdata_ready(Conn *conn, char *data, int datalen)
 
     gettimeofday(&start, NULL);
     pthread_mutex_lock(&g_runtime->mutex);
-    ret = wdata_apply(data, datalen, 1);
+    ret = wdata_apply(data, datalen, MEMLINK_WRITE_LOG);
     pthread_mutex_unlock(&g_runtime->mutex);
 
 wdata_ready_over:
-    data_reply(conn, ret, NULL, 0);
+    if (ret != MEMLINK_REPLIED) {
+        data_reply(conn, ret, NULL, 0);
+    }
     gettimeofday(&end, NULL);
 	DNOTE("%s:%d cmd:%d %d %u us\n", conn->client_ip, conn->client_port, cmd, ret, timediff(&start, &end));
     DINFO("data_reply return: %d\n", ret);

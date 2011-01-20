@@ -112,7 +112,7 @@ sslave_recv_package_log(SSlave *ss)
 			char cmd;
 			memcpy(&cmd, ptr + SYNCPOS_LEN + sizeof(int), sizeof(char));
 			pthread_mutex_lock(&g_runtime->mutex);
-			ret = wdata_apply(ptr + SYNCPOS_LEN, rlen, 0);
+			ret = wdata_apply(ptr + SYNCPOS_LEN, rlen, MEMLINK_NO_LOG);
 			DINFO("wdata_apply return: %d\n", ret);
 			if (ret == 0) {
 				DINFO("write to binlog\n");
