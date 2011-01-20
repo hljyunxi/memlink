@@ -111,6 +111,7 @@ def restart_master():
     cmd = "killall memlink_master"
     print '   ',cmd
     os.system(cmd)
+    time.sleep(1)
     global memlink_master_start
     print 'restart master:', memlink_master_start
     x1 = subprocess.Popen(memlink_master_start, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
@@ -136,6 +137,7 @@ def restart_slave():
     cmd = "killall memlink_slave"
     print '   ',cmd
     os.system(cmd)
+    time.sleep(1)
     global memlink_slave_start
     print 'restart slave: ', memlink_slave_start
     x2 = subprocess.Popen(memlink_slave_start, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 

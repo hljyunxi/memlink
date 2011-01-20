@@ -171,7 +171,7 @@ def test():
     x2 = subprocess.Popen(memlink_slave_start, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
                              shell=True, env=os.environ, universal_newlines=True) 
 
-    time.sleep(5)
+    time.sleep(3)
     
     if 0 != result_check():
         print 'test d error!'
