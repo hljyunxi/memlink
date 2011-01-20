@@ -125,7 +125,6 @@ def test():
     
     print 'test f ok'
 
-    return 0
     x1.kill()
     x2.kill()
     

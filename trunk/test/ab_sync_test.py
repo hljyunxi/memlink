@@ -17,48 +17,6 @@ SLAVE_WRITE_PORT = 11022
 client2master = MemLinkClient('127.0.0.1', MASTER_READ_PORT, MASTER_WRITE_PORT, 30);
 client2slave  = MemLinkClient('127.0.0.1', SLAVE_READ_PORT, SLAVE_WRITE_PORT, 30);
 
-def test_result():
-    key = 'haha000'
-    m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30);
-    
-    ret, stat = m.stat(key)
-    if stat:
-        if stat.data_used != 500:
-            print 'stat data_used error!', stat
-            return -3
-        """if stat.data != 500:
-            print 'stat data error!', stat
-            return -3"""
-    else:
-        print 'stat error:', stat, ret
-        return -3
-
-    ret, result = m.range(key, MEMLINK_VALUE_VISIBLE, "", 0, 1000)
-    if not result or result.count != 250:
-        print 'range error!', result, ret
-        return -4
-
-    #print 'count:', result.count
-    item = result.root;
-
-    i = 250
-    while i > 0:
-        i -= 1
-        v = '%010d' % (i*2 + 1)
-        if v != item.value:
-            print 'range item error!', item.value, v
-            return -5
-        item = item.next
-
-    print '---------', i
-
-    if i != 0:
-        print 'ranged items are not right!'
-
-    m.destroy()
-
-    return 0
-
 def result_check():
     ret1, stat1 = client2master.stat_sys()
     ret2, stat2 = client2slave.stat_sys()
@@ -176,7 +134,6 @@ def test():
     cmd = "killall memlink_master"
     print cmd
     os.system(cmd)
-    time.sleep(1)
     print memlink_master_start
     x1 = subprocess.Popen(memlink_master_start, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
                              shell=True, env=os.environ, universal_newlines=True) 
@@ -249,60 +206,6 @@ def test():
     client2slave.destroy()
 
     return 0
-    '''
-    #move reverse the list
-    for i in range(0, num2):
-        val = '%010d' % (i * 2 + 1)
-        ret = m.move(key, val, 0)
-        if ret != MEMLINK_OK:
-            print 'move val error:', ret, val
-            return -1
-    print 'move reverse the list'
-
-    # set all the values' mask = 4:4:1
-    for i in range(0, 500):
-        val = '%010d' % (i*2 + 1)
-        ret = m.mask(key, val, "4:4:1")
-        if ret != MEMLINK_OK:
-            print 'mask val error:', ret, val
-            return -1
-    print 'set all the values mask = 4:4:1'
-
-    #tag del 250 - 499
-    for i in range(250, 500):
-        val = '%010d' % (i*2 + 1)
-        ret = m.tag(key, val, 1)
-        if ret != MEMLINK_OK:
-            print 'tag val error:', ret, val
-            return -1
-    print 'tag del 250 - 499'
-
-    """ret = m.clean(key)
-    if ret != MEMLINK_OK:
-        print 'clean error:', ret"""
-        
-    m.destroy()
-
-    cmd = "killall memlink"
-    print cmd
-    os.system(cmd)
-   
-    time.sleep(1)
-
-    print memlinkstart
-    #x = subprocess.Popen(memlinkstart, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
-    #                         shell=True, env=os.environ, universal_newlines=True) 
-    x = subprocess.Popen(memlinkstart, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
-                             shell=True, env=os.environ, universal_newlines=True) 
-    #x = subprocess.Popen(memlinkstart, shell=True, env=os.environ, universal_newlines=True) 
-     
-    time.sleep(1)
-    ret = test_result()
-
-    x.kill()
-
-    return ret
-    '''
 
 if __name__ == '__main__':
     sys.exit(test())

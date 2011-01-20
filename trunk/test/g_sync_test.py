@@ -15,7 +15,69 @@ def test():
     test_init()
 
     print 
-    print '============================= test g  =============================='
+    print '============================= test g1  =============================='
+    cmd = 'rm test.log'
+    print cmd
+    os.system(cmd)
+    cmd = 'rm -rf data'
+    print cmd
+    os.system(cmd)
+    cmd = 'cp -rf data_bak data'
+    print cmd
+    os.system(cmd)
+    
+    x1 = restart_master()
+    time.sleep(3) # wait master to load data
+    
+    cmd = 'rm data/dump.dat'
+    print cmd
+    os.system(cmd)
+    cmd = 'mv data/dump.dat_bak data/dump.dat'
+    os.system(cmd)
+
+    x2 = start_a_new_slave()
+    print 'sleep 10'
+    time.sleep(10)
+
+    #2 kill slave 1
+    print 'kill slave'
+    x2.kill()
+    x2 = restart_slave()
+    print 'sleep 20'
+    time.sleep(20)
+
+    #2 kill slave 2
+    print 'kill slave'
+    x2.kill()
+    x2 = restart_slave()
+    print 'sleep 30'
+    time.sleep(30)
+
+    #2 kill slave 3
+    print 'kill slave'
+    x2.kill()
+    x2 = restart_slave()
+    print 'sleep 60'    
+    time.sleep(60)
+    
+    if 0 != stat_check(client2master, client2slave):
+        print 'test g error!'
+        return -1
+    print 'stat ok'
+    
+    print 'test g ok'
+
+    x1.kill()
+    x2.kill()
+    
+    client2master.close()
+    client2slave.close()
+
+    print 
+    print '============================= test g2  =============================='
+    cmd = 'rm test.log'
+    print cmd
+    os.system(cmd)
     cmd = 'rm -rf data'
     print cmd
     os.system(cmd)
@@ -33,28 +95,21 @@ def test():
     os.system(cmd)
 
     x2 = start_a_new_slave()
-
-    #2 kill slave
+    print 'sleep 10'
     time.sleep(10)
-    print 'kill slave'
-    x2.kill()
 
-    x2 = restart_slave()
-    time.sleep(180)
-    
-    if 0 != stat_check(client2master, client2slave):
-        print 'test g error!'
-        return -1
-    print 'stat ok'
-    
-    print 'test g ok'
-
+    #kill master 1
+    print 'kill master!'
     x1.kill()
-    x2.kill()
+    cmd = 'cp data_bak/dump.dat data/'
+    print cmd
+    os.system(cmd)
     
-    client2master.destroy()
-    client2slave.destroy()
+    x1 = restart_master()
+    time.sleep(3) # wait master to load data
 
+    #cmd = 'cp data_bak/dump.dat_bak data/dump.dat'
+    
     return 0
 
 if __name__ == '__main__':
