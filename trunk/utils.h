@@ -15,6 +15,8 @@ void    printh(char *data, int datalen);
 char*   formatb(char *data, int datalen, char *buf, int blen);
 char*   formath(char *data, int datalen, char *buf, int blen);
 
+void         timestart(struct timeval *start);
+unsigned int timeend(struct timeval *start, struct timeval *end, char *info);
 unsigned int timediff(struct timeval *start, struct timeval *end);
 
 int			isfile(char *path);
