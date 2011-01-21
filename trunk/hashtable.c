@@ -1527,6 +1527,19 @@ datablock_free(DataBlock *headbk, DataBlock *tobk, int datalen)
     return MEMLINK_OK;
 }
 
+static int
+datablock_free_inverse(DataBlock *startbk, DataBlock *endbk, int datalen)
+{
+    DataBlock   *tmp;
+
+    while (startbk && startbk != endbk) {
+        tmp = startbk->prev;
+        mempool_put(g_runtime->mpool, startbk, sizeof(DataBlock) + startbk->data_count * datalen);
+        startbk = tmp;
+    }
+    return MEMLINK_OK;
+}
+
 int
 hashtable_clean(HashTable *ht, char *key)
 {
@@ -1842,14 +1855,16 @@ hashtable_lpop(HashTable *ht, char *key, int num, Conn *conn)
     int  wlen = CMD_REPLY_HEAD_LEN + 3 + node->masknum + (node->valuesize + node->masksize) * num;
     DINFO("range wlen: %d\n", wlen);
     if (conn) {
+        DINFO("conn is true.\n");
         wbuf = conn_write_buffer(conn, wlen);
+    }else{
+        DINFO("conn is null!\n");
     }
     idx += CMD_REPLY_HEAD_LEN;
 
     DataBlock *dbk = node->data;
     DataBlock *newdbk = NULL;
     DataBlock *startdbk = dbk, *enddbk = NULL;
-    char      *endaddr = NULL;
     char      *itemdata;
     int datalen = node->valuesize + node->masksize;
     int n     = 0; 
@@ -1875,15 +1890,14 @@ hashtable_lpop(HashTable *ht, char *key, int num, Conn *conn)
         for (i = 0; i < dbk->data_count; i++) {
             ret = dataitem_check_data(node, itemdata);
             if (ret == MEMLINK_VALUE_VISIBLE) {
-                char buf[128];
+                /*char buf[128];
 				snprintf(buf, node->valuesize + 1, "%s", itemdata);
 				DINFO("\tok, copy item ... i:%d, value:%s\n", i, buf);
-				
+			    */	
                 if (wbuf) {
 				    memcpy(wbuf + idx, itemdata, datalen);
                 }
 				idx += datalen;
-                endaddr = itemdata;
 				n += 1;
                 dbkcpnv++;
 				if (n >= num) { // copy complete!
@@ -1894,18 +1908,20 @@ hashtable_lpop(HashTable *ht, char *key, int num, Conn *conn)
                         char *todata = newdbk->data + datalen * (i + 1);
                         node->data   = newdbk;
                         newdbk->next = dbk->next;
-                        memcpy(todata, itemdata + datalen, dbk->data_count - i - 1);
-                        enddbk = dbk;
+                        DINFO("copy todata from: %d, count:%d\n", i, dbk->data_count - i - 1);
+                        memcpy(todata, itemdata + datalen, (dbk->data_count - i - 1) * datalen);
+                        //enddbk = dbk;
                     }else{ // current datablock is all poped
                         rmn += dbk->data_count;
-                        enddbk = dbk->next; 
                     }
+                    enddbk = dbk->next; 
 
                     if (dbk->next == NULL) {
                         node->data_tail = newdbk;
                     }
                     node->all  -= rmn;
                     node->used -= n;
+                    ret = MEMLINK_OK;
 					goto hashtable_lpop_over;
 				}
             }
@@ -1914,6 +1930,11 @@ hashtable_lpop(HashTable *ht, char *key, int num, Conn *conn)
         rmn += dbk->data_count;
         dbk = dbk->next;
     }
+    enddbk     = NULL;
+    node->all  = 0;
+    node->used = 0;
+    node->data = node->data_tail = NULL;
+    ret = MEMLINK_OK;
     
 hashtable_lpop_over:
 	DINFO("count: %d\n", n);
@@ -1924,6 +1945,9 @@ hashtable_lpop_over:
 hashtable_lpop_end:
     if (conn) {
         conn_write_buffer_head(conn, ret, idx);
+        char bufw[4096] = {0};
+
+        DINFO("bufw:%s\n", formath(conn->wbuf, conn->wlen, bufw, 4096));
     }
 
     return ret;
@@ -1932,7 +1956,123 @@ hashtable_lpop_end:
 int
 hashtable_rpop(HashTable *ht, char *key, int num, Conn *conn)
 {
-    return MEMLINK_ERR_CLIENT_CMD;
+    HashNode    *node;
+    char        *wbuf = NULL;
+    int         idx = 0;
+    int         ret = MEMLINK_OK;
+	
+	if (num <= 0) {
+		ret =  MEMLINK_ERR_PARAM;
+        goto hashtable_rpop_end;
+	}
+
+    node = hashtable_find(ht, key);
+    if (NULL == node) {
+        DINFO("hashtable_find not found node for key:%s\n", key);
+        ret = MEMLINK_ERR_NOKEY;
+        goto hashtable_rpop_end;
+    }
+
+    int  wlen = CMD_REPLY_HEAD_LEN + 3 + node->masknum + (node->valuesize + node->masksize) * num;
+    DINFO("range wlen: %d\n", wlen);
+    if (conn) {
+        DINFO("conn is true.\n");
+        wbuf = conn_write_buffer(conn, wlen);
+    }else{
+        DINFO("conn is null!\n");
+    }
+    idx += CMD_REPLY_HEAD_LEN;
+
+    DataBlock *dbk = node->data_tail;
+    DataBlock *newdbk = NULL;
+    DataBlock *startdbk = dbk, *enddbk = NULL;
+    char      *itemdata;
+    int datalen = node->valuesize + node->masksize;
+    int n     = 0; 
+    int i;
+    int rmn   = 0;  // delete value count in whole block
+
+    if (wbuf) {
+        memcpy(wbuf + idx, &node->valuesize, sizeof(char));
+        idx += sizeof(char);
+        memcpy(wbuf + idx, &node->masksize, sizeof(char));
+        idx += sizeof(char);
+        memcpy(wbuf + idx, &node->masknum, sizeof(char));
+        idx += sizeof(char);
+        memcpy(wbuf + idx, node->maskformat, node->masknum);
+        idx += node->masknum;
+    }else{
+        idx += 3 + node->masknum;
+    }
+
+    while (dbk) {
+        itemdata = dbk->data + (dbk->data_count * datalen);
+        int dbkcpnv = 0;
+        //for (i = 0; i < dbk->data_count; i++) {
+        for (i = dbk->data_count - 1; i >= 0; i--) {
+            ret = dataitem_check_data(node, itemdata);
+            if (ret == MEMLINK_VALUE_VISIBLE) {
+                /*char buf[128];
+				snprintf(buf, node->valuesize + 1, "%s", itemdata);
+				DINFO("\tok, copy item ... i:%d, value:%s\n", i, buf);
+			    */	
+                if (wbuf) {
+				    memcpy(wbuf + idx, itemdata, datalen);
+                }
+				idx += datalen;
+				n += 1;
+                dbkcpnv++;
+				if (n >= num) { // copy complete!
+                    //if (i < dbk->data_count - 1) {
+                    if (i > 0) {
+                        newdbk = mempool_get(g_runtime->mpool, sizeof(DataBlock) + dbk->data_count * datalen);
+                        newdbk->data_count    = dbk->data_count;
+                        newdbk->visible_count = dbk->visible_count - dbkcpnv; 
+                        //char *todata = newdbk->data + datalen * (i + 1);
+                        node->data_tail   = newdbk;
+                        newdbk->prev = dbk->prev;
+                        //DINFO("copy todata from: %d, count:%d\n", i, dbk->data_count - i - 1);
+                        memcpy(newdbk->data, dbk->data, i * datalen);
+                        //enddbk = dbk;
+                    }else{ // current datablock is all poped
+                        rmn += dbk->data_count;
+                    }
+                    enddbk = dbk->prev; 
+
+                    if (dbk->next == NULL) {
+                        node->data_tail = newdbk;
+                    }
+                    node->all  -= rmn;
+                    node->used -= n;
+                    ret = MEMLINK_OK;
+					goto hashtable_rpop_over;
+				}
+            }
+            itemdata -= datalen;
+        }
+        rmn += dbk->data_count;
+        dbk = dbk->prev;
+    }
+    enddbk     = NULL;
+    node->all  = 0;
+    node->used = 0;
+    node->data = node->data_tail = NULL;
+    ret = MEMLINK_OK;
+    
+hashtable_rpop_over:
+	DINFO("count: %d\n", n);
+    if (n > 0) {
+        datablock_free_inverse(startdbk, enddbk, datalen);
+    }
+
+hashtable_rpop_end:
+    if (conn) {
+        conn_write_buffer_head(conn, ret, idx);
+        //char bufw[4096] = {0};
+        //DINFO("bufw:%s\n", formath(conn->wbuf, conn->wlen, bufw, 4096));
+    }
+
+    return ret;
 }
 
 

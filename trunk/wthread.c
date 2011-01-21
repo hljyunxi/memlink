@@ -280,6 +280,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
     unsigned char   tag;
     int				pos;
     int             vnum;
+    int             num = 0;
 
     //memcpy(&cmd, data + sizeof(short), sizeof(char));
 	memcpy(&cmd, data + sizeof(int), sizeof(char));
@@ -531,7 +532,6 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             break;
         case CMD_LPOP:
             DINFO("<<< cmd LPOP >>>\n");
-            int num = 0;
 			ret = cmd_pop_unpack(data, key, &num);
 			if (ret != 0) {
 				DINFO("unpack rpush error! ret: %d\n", ret);
@@ -544,16 +544,54 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
                 goto wdata_apply_over;
             }   
 
+            //hashtable_print(g_runtime->ht, key);
             ret = hashtable_lpop(g_runtime->ht, key, num, conn); 
             DINFO("hashtable_range return: %d\n", ret);
+            //hashtable_print(g_runtime->ht, key);
+
             if (conn && ret >= 0 && writelog) {
                 ret = data_reply_direct(conn);
             }
             DINFO("data_reply return: %d\n", ret);
-            ret = MEMLINK_REPLIED;
+            if (ret >= 0) {
+                if (conn) {
+                    ret = MEMLINK_REPLIED;
+                }else{
+                    ret = MEMLINK_OK;
+                }
+            }
             break;
         case CMD_RPOP:
-            ret = MEMLINK_ERR_CLIENT_CMD;
+            DINFO("<<< cmd RPOP >>>\n");
+			ret = cmd_pop_unpack(data, key, &num);
+			if (ret != 0) {
+				DINFO("unpack rpush error! ret: %d\n", ret);
+                goto wdata_apply_over;
+			}
+
+            if (num <= 0 || key[0] == 0) {
+                DINFO("num:%d, key:%s\n", num, key);
+                ret = MEMLINK_ERR_PARAM;
+                goto wdata_apply_over;
+            }   
+
+            hashtable_print(g_runtime->ht, key);
+            ret = hashtable_rpop(g_runtime->ht, key, num, conn); 
+            DINFO("hashtable_range return: %d\n", ret);
+            hashtable_print(g_runtime->ht, key);
+
+            if (conn && ret >= 0 && writelog) {
+                ret = data_reply_direct(conn);
+            }
+            DINFO("data_reply return: %d\n", ret);
+            //ret = MEMLINK_REPLIED;
+            if (ret >= 0) {
+                if (conn) {
+                    ret = MEMLINK_REPLIED;
+                }else{
+                    ret = MEMLINK_OK;
+                }
+            }
             goto wdata_apply_over;
             break;
         default:
