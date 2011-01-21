@@ -105,7 +105,7 @@ def test_init():
         f.close()
     
     memlink_master_file  = os.path.join(home, 'memlink_master')
-    memlink_master_start = memlink_master_file + ' etc/memlink.conf'
+    memlink_master_start = memlink_master_file + ' test/memlink_master.conf'
 
     memlink_slave_file  = os.path.join(home, 'memlink_slave')
     memlink_slave_start = memlink_slave_file + ' test/memlink_slave.conf'
