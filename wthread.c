@@ -105,25 +105,6 @@ data_set_reply(Conn *conn, short retcode, char *retdata, int retlen)
     datalen = CMD_REPLY_HEAD_LEN + retlen;
     DINFO("datalen: %d, retcode: %d, conn->wsize: %d\n", datalen, retcode, conn->wsize); 
    
-    /*
-    if (conn->wsize >= datalen) {
-        wdata = conn->wbuf;
-    }else{
-        wdata = (char*)zz_malloc(datalen);
-        if (NULL == wdata) {
-            DERROR("datareply malloc error: %s\n", strerror(errno));
-            MEMLINK_EXIT;
-            return -1;
-        }
-        if (conn->wbuf) {
-            zz_free(conn->wbuf);
-        }
-        conn->wbuf = wdata;
-        conn->wsize = datalen;
-    }
-    conn->wlen = conn->wpos = 0;
-    */
-
     wdata = conn_write_buffer(conn, datalen);
 
     int count = 0; 
@@ -558,6 +539,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
 			}
 
             if (num <= 0 || key[0] == 0) {
+                DINFO("num:%d, key:%s\n", num, key);
                 ret = MEMLINK_ERR_PARAM;
                 goto wdata_apply_over;
             }   

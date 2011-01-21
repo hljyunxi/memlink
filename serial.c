@@ -913,7 +913,7 @@ cmd_pop_pack(char *data, unsigned char cmd, char *key, int num)
 
     count += pack_string(data + count, key, 0);
     memcpy(data + count, &num, sizeof(int));
-
+    count += sizeof(int);
     len = count - CMD_REQ_SIZE_LEN;
     memcpy(data, &len, CMD_REQ_SIZE_LEN);
     return count;
@@ -930,8 +930,6 @@ cmd_rpop_pack(char *data, char *key, int num)
 {
     return cmd_pop_pack(data, CMD_RPOP, key, num);
 }
-
-
 
 int 
 cmd_pop_unpack(char *data, char *key, int *num)
