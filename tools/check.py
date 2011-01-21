@@ -127,10 +127,14 @@ def checklog(filename):
     #print 'head:', repr(s)
     #print 'format:%d, logver:%d, index:%d, data:%d' % tuple(v)
     print 'filesize: ', filesize
-    
+    if filesize == 2 + 4 + 4 + maxdata * 4:
+        print 'log size ok!'
+        return 0
+        
     last_data_pos = 0
     last_index_offset = 0
     rdc = 0
+    indexnum = 0
     while rdc < maxdata * 4:
         ns = f.read(4)
         v = struct.unpack('I', ns)
@@ -139,10 +143,17 @@ def checklog(filename):
             last_index_offset = f.tell() 
             ns = f.read(4)
             llen = struct.unpack('I', ns)
-            last_data_pos = llen[0] #begin of the last cmd
+            last_data_pos = llen[0] #pos of the last cmd
             break
         rdc += 4
-
+        
+    if rdc == maxdata * 4: # if the index zone is full
+        f.seek(-4, 1) #move to the last index
+        last_index_offset = f.tell() 
+        ns = f.read(4)
+        llen = struct.unpack('I', ns)
+        last_data_pos = llen[0] #pos of the last cmd
+        
     flag = 0
     lllen = 0
     print 'last_data_pos: ', last_data_pos
