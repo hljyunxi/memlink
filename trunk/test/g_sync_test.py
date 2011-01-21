@@ -16,7 +16,7 @@ def test():
     data_produce1()
 
     print 
-    print '============================= test g1  =============================='
+    print '============================= test g  =============================='
     cmd = 'rm test.log'
     print cmd
     os.system(cmd)
