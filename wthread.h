@@ -22,7 +22,7 @@ void        client_write(int fd, short event, void *arg);
 int		    data_set_reply(Conn *conn, short retcode, char *retdata, int retlen);
 int         data_reply(Conn *conn, short retcode, char *retdata, int retlen);
 int         data_reply_direct(Conn *conn);
-int         wdata_apply(char *data, int datalen, int writelog);
+int         wdata_apply(char *data, int datalen, int writelog, Conn *conn);
 int			change_event(Conn *conn, int newflag, int timeout, int isnew);
 
 #endif
