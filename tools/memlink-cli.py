@@ -47,13 +47,15 @@ class MemLinkTest:
     def create(self, args):
         '''Command -- create.
 
-        Command Description:
+Command Description:
 
-            create key valuesize maskformat   --- for instance : create haha 12 (4:3:1)
+    create key valuesize maskformat 
+    
+        --- for instance : create haha 12 (4:3:1)
 
-                                                  If maskformat is not input, it'll be set to ''. In this case, the maskstr
+            If maskformat is not input, it'll be set to ''. In this case, the maskstr
 
-                                                  must be '' too when values are inserted.
+            must be '' too when values are inserted.
         '''
         try:
             argc = len(args)
@@ -84,9 +86,9 @@ class MemLinkTest:
     def rmkey(self, args):
         '''Command -- rmkey.
 
-        Command Description:
+Command Description:
 
-            rmkey key
+    rmkey key
         '''
         try:
             argc = len(args)
@@ -111,13 +113,15 @@ class MemLinkTest:
     def insert(self, args):
         '''Command insert.
 
-        Command Description:
+Command Description:
 
-            insert key value pos maskstr   --- for instance: insert haha value 0 (8:2:1)  
+    insert key value pos maskstr 
+    
+        --- for instance: insert haha value 0 (8:2:1)  
 
-                                               If maskstr is not input, it'll be set to ''. In this case, it only be used 
+            If maskstr is not input, it'll be set to ''. In this case, it'll only be used 
 
-                                               when the maskformat is '', or it will cause an error!
+            when the maskformat is '', or it will cause an error!
         '''
         #insert key value  --- mask is set to '8:2:1' and pos to 0 implicitly.
         try:
@@ -194,19 +198,19 @@ class MemLinkTest:
     def range(self, args):
         '''Command range.
         
-        Command Description:
+Command Description:
 
-            range [option] key frompos len maskstr 
+    range [option] key frompos len maskstr 
 
-        Options:
-            
-            -v : visible value (default option)   --- for instance: range -v haha 10 1000 (8::1)
-            
-            -a : all value                        
-            
-            -t : tagdel value                     --- for instance: range -t haha 10 1000
-            
-            -r : removed value  
+Options:
+    
+    -v : visible value (default option)   --- for instance: range -v haha 10 1000 (8::1)
+    
+    -a : all value                        
+    
+    -t : tagdel value                     --- for instance: range -t haha 10 1000
+    
+    -r : removed value  
         '''
         #range haha
         try:
@@ -267,7 +271,8 @@ class MemLinkTest:
         print 'range count:', recs.count
         items = recs.root
         while items:
-            print items.value, items.mask
+            #print items.value, repr(items.value), items.mask
+            print items.value, items.mask            
             items = items.next
             
         return 0
@@ -275,15 +280,15 @@ class MemLinkTest:
     def delete(self, args):
         '''Command delete.
         
-        Command Description:
-    
-            delete [option] key value/maskstr
+Command Description:
 
-        Options:
+    delete [option] key value/maskstr
 
-            -v : delete by value (default option)   --- for instance: delete (-v) haha 123
-                        
-            -m : delete by mask                     --- for instance: delete -m haha 4::1
+Options:
+
+    -v : delete by value (default option)   --- for instance: delete (-v) haha 123
+                
+    -m : delete by mask                     --- for instance: delete -m haha 4::1
         '''
         #delete key frompos len : delete haha 10 50        
         try:
@@ -368,12 +373,12 @@ class MemLinkTest:
                 print 'ERROR: ', ret
             return ret
             
-    def update(self, args):
+    def move(self, args):
         '''Command update.
 
-        Command Description:
+Command Description:
 
-            update key value pos   --- for instance: update haha 123 0
+    move key value pos   --- for instance: move haha 123 0
         '''
         try:
             argc = len(args)
@@ -386,8 +391,8 @@ class MemLinkTest:
             print 'bad input! expected at least %d' % x.atleast
             return -1
             
-        ret = self.m.update(key, value, pos)
-        print 'update (%s, %s, %d) ' % (key, value, pos)
+        ret = self.m.move(key, value, pos)
+        print 'move (%s, %s, %d) ' % (key, value, pos)
         if ret == MEMLINK_OK:
             print 'OK!'
         elif ret == MEMLINK_ERR_RECV:
@@ -399,15 +404,15 @@ class MemLinkTest:
     def stat(self, args):
         '''Command stat.
 
-        Command Description:
+Command Description:
 
-            stat [option] key
+    stat [option] key
 
-        Options:
+Options:
 
-            -k : show stat of some key      --- for instance:  stat haha  or  stat -k haha
+    -k : show stat of some key      --- for instance:  stat haha  or  stat -k haha
 
-            -s : show stat of the memlink   --- for instance:  stat  or  stat -s
+    -s : show stat of the memlink   --- for instance:  stat  or  stat -s
         '''
         try:
             argc = len(args)
@@ -454,9 +459,9 @@ class MemLinkTest:
     def dump(self, args):
         '''Command dump.
 
-        Command Description:
+Command Description:
 
-            dump
+    dump
         '''
         ret = self.m.dump()
         print 'dump ',
@@ -471,9 +476,9 @@ class MemLinkTest:
     def clean(self, args):
         '''Command clean.
 
-        Command Description:
+Command Description:
 
-            clean key
+    clean key
         '''
         try:
             argc = len(args)
@@ -497,9 +502,9 @@ class MemLinkTest:
     def tag(self, args):
         '''Command tag.
 
-        Command Description:
-    
-            tag key value flag  --- flag : 1 for tag_del ; 0 for restore
+Command Description:
+
+    tag key value flag  --- flag : 1 for tag_del ; 0 for restore
         '''
         try:
             argv = len(args)
@@ -525,9 +530,9 @@ class MemLinkTest:
     def mask(self, args):
         '''Command mask.
 
-        Command Description:
-    
-            mask key value maskstr   --- for instance: update haha 123 0
+Command Description:
+
+    mask key value maskstr   --- for instance: update haha 123 0
         '''
         try:
             argv = len(args)
@@ -553,9 +558,9 @@ class MemLinkTest:
     def count(self, args):
         '''Command count.
 
-        Command Description:
-    
-            count key maskstr   --- for instance: count haha 4::1 ; count haha (count all)
+Command Description:
+
+    count key maskstr   --- for instance: count haha 4::1 ; count haha (count all)
         '''
         try:
             argv = len(args)
@@ -583,7 +588,7 @@ class MemLinkTest:
         return ret;
 
 def test_main(args):
-    all_the_cmd = ('create', 'rmkey', 'insert', 'delete', 'range', 'update', 'tag', 'mask', 'count', 'stat', 'dump', 'clean')
+    all_the_cmd = ('create', 'rmkey', 'insert', 'delete', 'range', 'move', 'tag', 'mask', 'count', 'stat', 'dump', 'clean')
     mtest = MemLinkTest(args)
     print ''
     print 'help -- type "help command" for some help. for instance: help insert.'
@@ -602,7 +607,7 @@ def test_main(args):
             return
         cmd_str = string.split(sstr)
         cmd = cmd_str[0]
-        if not hasattr(mtest, cmd) and cmd != 'help'and cmd != 'list':            
+        if not hasattr(mtest, cmd) and cmd != 'help'and cmd != 'list':
             print 'Bad input! DO NOT have this command.'
             continue
 
