@@ -13,16 +13,17 @@ def test():
     client2slave  = MemLinkClient('127.0.0.1', SLAVE_READ_PORT, SLAVE_WRITE_PORT, 30);
     
     test_init()
+    data_produce1()
 
     print 
     print '============================= test g1  =============================='
     cmd = 'rm test.log'
     print cmd
     os.system(cmd)
-    cmd = 'rm -rf data'
+    cmd = 'rm data/*'
     print cmd
     os.system(cmd)
-    cmd = 'cp -rf data_bak data'
+    cmd = 'cp data_bak/* data/'
     print cmd
     os.system(cmd)
     
@@ -57,8 +58,8 @@ def test():
     print 'kill slave'
     x2.kill()
     x2 = restart_slave()
-    print 'sleep 60'    
-    time.sleep(60)
+    print 'sleep 30'    
+    time.sleep(30)
     
     if 0 != stat_check(client2master, client2slave):
         print 'test g error!'
@@ -70,46 +71,9 @@ def test():
     x1.kill()
     x2.kill()
     
-    client2master.close()
-    client2slave.close()
+    client2master.destroy()
+    client2slave.destroy()
 
-    print 
-    print '============================= test g2  =============================='
-    cmd = 'rm test.log'
-    print cmd
-    os.system(cmd)
-    cmd = 'rm -rf data'
-    print cmd
-    os.system(cmd)
-    cmd = 'cp -rf data_bak data'
-    print cmd
-    os.system(cmd)
-    
-    x1 = restart_master()
-    time.sleep(3)
-    
-    cmd = 'rm data/dump.dat'
-    print cmd
-    os.system(cmd)
-    cmd = 'mv data/dump.dat_bak data/dump.dat'
-    os.system(cmd)
-
-    x2 = start_a_new_slave()
-    print 'sleep 10'
-    time.sleep(10)
-
-    #kill master 1
-    print 'kill master!'
-    x1.kill()
-    cmd = 'cp data_bak/dump.dat data/'
-    print cmd
-    os.system(cmd)
-    
-    x1 = restart_master()
-    time.sleep(3) # wait master to load data
-
-    #cmd = 'cp data_bak/dump.dat_bak data/dump.dat'
-    
     return 0
 
 if __name__ == '__main__':
