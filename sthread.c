@@ -98,7 +98,6 @@ cmd_get_dump(SyncConn *conn, char *data, int datalen)
 		conn->status = NOT_SEND;
 	}
 	
-	DINFO("------------------------------------------conn->status:%d\n", conn->status);
 	ret = data_reply((Conn *)conn, retcode, retrc, retlen);
 
 	return ret;
@@ -120,7 +119,6 @@ decode_package(char *buffer)
 		memcpy(&logline, ptr + sizeof(int), sizeof(int));
 		memcpy(&cmdlen, ptr + sizeof(int) * 2, sizeof(int));
 
-		DINFO("====================================check logver: %d, logline: %d, cmdlen:%d\n", logver, logline, cmdlen);
 
 		ptr += sizeof(int) * 3 + cmdlen;
 		count += sizeof(int) *3 + cmdlen;
@@ -140,7 +138,6 @@ get_synclog_record(SyncConn *conn)
 	SyncLog *synclog = conn->synclog;
 	int *indxdata = (int *)(synclog->index + SYNCLOG_HEAD_LEN);
 	
-	DINFO("]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]] i: %d\n", i);
 	if ( i == SYNCLOG_INDEXNUM) {
 		return 0;
 	}
@@ -391,6 +388,7 @@ check_binlog_local(SyncConn *conn, unsigned int log_ver, unsigned int log_line)
 					//conn->synclog->index_pos = log_line - 1;
 					return 0;
 				} else {
+					synclog_destroy(conn->synclog);
 					return -6;
 				}
 			} else {
@@ -400,6 +398,7 @@ check_binlog_local(SyncConn *conn, unsigned int log_ver, unsigned int log_line)
 			if (indxdata[log_line - 1] != 0) {
 				return 0;	
 			} else {
+				synclog_destroy(conn->synclog);
 				return -7;
 			}
 		}
