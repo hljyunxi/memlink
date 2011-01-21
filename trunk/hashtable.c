@@ -1823,7 +1823,7 @@ int
 hashtable_lpop(HashTable *ht, char *key, int num, Conn *conn)
 {
     HashNode    *node;
-    char        *wbuf;
+    char        *wbuf = NULL;
     int         idx = 0;
     int         ret = MEMLINK_OK;
 	
@@ -1841,7 +1841,9 @@ hashtable_lpop(HashTable *ht, char *key, int num, Conn *conn)
 
     int  wlen = CMD_REPLY_HEAD_LEN + 3 + node->masknum + (node->valuesize + node->masksize) * num;
     DINFO("range wlen: %d\n", wlen);
-    wbuf = conn_write_buffer(conn, wlen);
+    if (conn) {
+        wbuf = conn_write_buffer(conn, wlen);
+    }
     idx += CMD_REPLY_HEAD_LEN;
 
     DataBlock *dbk = node->data;
@@ -1854,14 +1856,18 @@ hashtable_lpop(HashTable *ht, char *key, int num, Conn *conn)
     int i;
     int rmn   = 0;  // delete value count in whole block
 
-    memcpy(wbuf + idx, &node->valuesize, sizeof(char));
-    idx += sizeof(char);
-    memcpy(wbuf + idx, &node->masksize, sizeof(char));
-    idx += sizeof(char);
-    memcpy(wbuf + idx, &node->masknum, sizeof(char));
-    idx += sizeof(char);
-    memcpy(wbuf + idx, node->maskformat, node->masknum);
-    idx += node->masknum;
+    if (wbuf) {
+        memcpy(wbuf + idx, &node->valuesize, sizeof(char));
+        idx += sizeof(char);
+        memcpy(wbuf + idx, &node->masksize, sizeof(char));
+        idx += sizeof(char);
+        memcpy(wbuf + idx, &node->masknum, sizeof(char));
+        idx += sizeof(char);
+        memcpy(wbuf + idx, node->maskformat, node->masknum);
+        idx += node->masknum;
+    }else{
+        idx += 3 + node->masknum;
+    }
 
     while (dbk) {
         itemdata = dbk->data;
@@ -1872,8 +1878,10 @@ hashtable_lpop(HashTable *ht, char *key, int num, Conn *conn)
                 char buf[128];
 				snprintf(buf, node->valuesize + 1, "%s", itemdata);
 				DINFO("\tok, copy item ... i:%d, value:%s\n", i, buf);
-				 
-				memcpy(wbuf + idx, itemdata, datalen);
+				
+                if (wbuf) {
+				    memcpy(wbuf + idx, itemdata, datalen);
+                }
 				idx += datalen;
                 endaddr = itemdata;
 				n += 1;
@@ -1914,7 +1922,9 @@ hashtable_lpop_over:
     }
 
 hashtable_lpop_end:
-    conn_write_buffer_head(conn, ret, idx);
+    if (conn) {
+        conn_write_buffer_head(conn, ret, idx);
+    }
 
     return ret;
 }

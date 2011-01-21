@@ -235,7 +235,7 @@ load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
 		}
 		DINFO("command, len:%d\n", blen);
 		if (have_key == 0) {
-			ret = wdata_apply(data + SYNCPOS_LEN, blen + sizeof(int), MEMLINK_NO_LOG);       
+			ret = wdata_apply(data + SYNCPOS_LEN, blen + sizeof(int), MEMLINK_NO_LOG, NULL);
 			if (ret != 0) {
 				DERROR("wdata_apply log error: %d\n", ret);
 				MEMLINK_EXIT;

@@ -61,7 +61,7 @@
 #define MEMLINK_ERR_DUMP_VER        -101
 
 // 命令已回复
-#define MEMLINK_REPLIED             100
+#define MEMLINK_REPLIED             -10000
 
 #define ROLE_MASTER		1
 #define ROLE_SLAVE		0
