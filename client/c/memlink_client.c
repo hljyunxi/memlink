@@ -25,7 +25,7 @@ memlink_create(char *host, int readport, int writeport, int timeout)
     MemLink *m;
 
 #ifdef DEBUG
-	logfile_create("stdout", 3);
+	logfile_create("stdout", 4);
 #endif
 
     m = (MemLink*)zz_malloc(sizeof(MemLink));
@@ -252,12 +252,11 @@ memlink_do_cmd(MemLink *m, int fdtype, char *data, int len, char *retdata, int r
 
     if (ret > 0) {
         short retcode;
-        /*
+        
 #ifdef DEBUG
         char buf[10240];
         DINFO("ret:%d, read: %s\n", ret, formath(retdata, ret, buf, 10240));
 #endif
-        */
 
         memcpy(&retcode, retdata + RECV_PKG_SIZE_LEN, sizeof(short));
         DINFO("retcode: %d\n", retcode);
@@ -896,6 +895,31 @@ memlink_cmd_lpop(MemLink *m, char *key, int num, MemLinkResult *result)
 int 
 memlink_cmd_rpop(MemLink *m, char *key, int num, MemLinkResult *result)
 {
+    if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
+		return MEMLINK_ERR_PARAM;
+	
+    char data[1024] = {0};
+    int  len;
+
+    len = cmd_rpop_pack(data, key, num);
+    DINFO("pack rpop len: %d\n", len);
+
+    // len(4B) + retcode(2B) + valuesize(1B) + masksize(1B) + masknum(1B) + maskformat(masknum B) + value.mask * len
+    int retlen = CMD_REPLY_HEAD_LEN + 3 + HASHTABLE_MASK_MAX_ITEM + \
+                 (HASHTABLE_VALUE_MAX + HASHTABLE_MASK_MAX_BYTE * HASHTABLE_MASK_MAX_ITEM + 1) * num;
+    if (retlen > 1024000) { // do not more than 1M
+		return MEMLINK_ERR_RANGE_SIZE;
+	}
+    char retdata[retlen];
+
+    int ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, retlen);
+	if (ret <= 0) {
+        DERROR("memlink_do_cmd error: %d\n", ret);
+		return ret;
+    }
+
+    memlink_result_parse(retdata, result);
+
     return MEMLINK_OK;
 }
 
