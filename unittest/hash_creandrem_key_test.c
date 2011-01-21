@@ -37,7 +37,7 @@ int main()
 	ht = g_runtime->ht;
 
 	///////////begin test;
-	//test1 : hashtable_add_info_mask //Ìí¼Ókey
+	//test1 : hashtable_add_info_mask - create key
 	for(i = 0; i < num; i++)
 	{
 		sprintf(key, "heihei%03d", i);

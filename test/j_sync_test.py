@@ -13,27 +13,7 @@ def test():
     client2slave  = MemLinkClient('127.0.0.1', SLAVE_READ_PORT, SLAVE_WRITE_PORT, 30);
     
     test_init()
-    '''
-    #insert 500
-    num2 = 10000000
-    num = 0
-    maskstr = '4:2:2'
-    key = 'hehe'
-    ret = client2master.create(key, 12, '3:3:3')
-    if ret != MEMLINK_OK:
-        print 'create error: %d' % ret
-        return -1
     
-    for i in xrange(num, num2):
-        val = '%012d' % i
-        ret = client2master.insert(key, val, maskstr, i)
-        if ret != MEMLINK_OK:
-            print 'insert error!', key, val, maskstr, ret
-            return -2;
-    print 'insert %d val' % (num2 - num)
-    client2master.dump()
-    return 0
-    '''
     print 
     print '============================= test i  =============================='
     cmd = 'rm test.log'
@@ -42,7 +22,7 @@ def test():
     cmd = 'rm -rf data/*'
     print cmd
     os.system(cmd)
-    cmd = 'cp -rf data_bak2/* data/'
+    cmd = 'cp -rf data_bak3/* data/'
     print cmd
     os.system(cmd)
     
@@ -51,22 +31,22 @@ def test():
 
     x2 = start_a_new_slave()
     print 'sleep 10'
-    time.sleep(2)
+    time.sleep(1)
     
     #kill slave 1
     print 'kill slave!'
     x2.kill()
-    time.sleep(10)
+    time.sleep(3)
     x2 = restart_slave()
-    time.sleep(10) # wait slave to load data
-    '''
+    time.sleep(2) # wait slave to load data
+    
     #kill slave 1
     print 'kill slave!'
     x2.kill()
-    time.sleep(2)
+    time.sleep(3)
     x2 = restart_slave()
-    time.sleep(6) # wait slave to load data
-    ''' 
+    time.sleep(10) # wait slave to load data
+    
     '''
     #kill master 1
     print 'kill master!'
