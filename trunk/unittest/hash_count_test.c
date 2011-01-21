@@ -30,7 +30,7 @@ int main()
 
 
 	///////////begin test;
-	//test1 : hashtable_add_info_mask //添加key
+	//test1 : hashtable_add_info_mask - create key
 	for(i = 0; i < num; i++)
 	{
 		sprintf(key, "heihei%03d", i);
@@ -47,7 +47,7 @@ int main()
 		}
 	}
 
-	///////test : hashtable_add_mask 插入num个value
+	///////test : hashtable_add_mask - insert num value
 	HashNode *node = NULL;
 	DataBlock *dbk = NULL;
 	char	 *item = NULL; 	
@@ -87,7 +87,7 @@ int main()
 		}
 	}
 	
-	///超出maskfomat规定: {8, 8, 8}
+	///maskfomat is out of bound: {8, 8, 8}
 	ret = hashtable_count(ht, key, maskarray[4], masknum, &visible_count, &mask_count);
 	if (ret < 0) {
 		printf("count key err: %d, %s\n", ret, key);
@@ -99,7 +99,7 @@ int main()
 		return ret;
 	}
 
-	//mask为空	
+	//mask is none
 	ret = hashtable_count(ht, key, maskarray[5], masknum, &visible_count, &mask_count);
 	if (ret < 0) {
 		printf("count key err: %d, %s\n", ret, key);

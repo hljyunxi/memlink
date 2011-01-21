@@ -28,7 +28,7 @@ int main()
 
 
 	///////////begin test;
-	//test1 : hashtable_add_info_mask //Ìí¼Ókey
+	//test1 : hashtable_add_info_mask - create key
 	for(i = 0; i < num; i++)
 	{
 		sprintf(key, "heihei%03d", i);
@@ -45,7 +45,7 @@ int main()
 		}
 	}
 
-///////test2 : hashtable_add_mask ²åÈëvalue
+///////test : hashtable_add_mask insert num value
 	printf("1 insert 1000 \n");
 
 	int pos = 0;

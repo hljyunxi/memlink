@@ -29,7 +29,7 @@ int main()
 
 
 	///////////begin test;
-	//test1 : hashtable_add_info_mask //Ìí¼Ókey
+	//test1 : hashtable_add_info_mask - craete key
 	for(i = 0; i < 1; i++)
 	{
 		sprintf(key, "heihei%03d", i);
@@ -46,7 +46,7 @@ int main()
 		}
 	}
 
-	///////test : hashtable_add_mask ²åÈënum¸övalue
+	///////test : hashtable_add_mask - insert 'num' value
 	HashNode *node = NULL;
 	DataBlock *dbk = NULL;
 	char	 *item = NULL; 
@@ -136,7 +136,4 @@ int main()
 	printf("hashtable clean test end!\n");
 	return 0;
 }
-
-
-
 

@@ -28,7 +28,7 @@ int main()
 
 
 	///////////begin test;
-	//test1 : hashtable_add_info_mask //Ìí¼Ókey
+	//test1 : hashtable_add_info_mask - create key
 	for(i = 0; i < num; i++)
 	{
 		sprintf(key, "heihei%03d", i);
@@ -46,7 +46,7 @@ int main()
 	}
 
 
-	///////test : hashtable_add_mask ²åÈë200¸övalue
+	///////test : hashtable_add_mask insert 200 value
 	HashNode *node = NULL;
 	DataBlock *dbk = NULL;
 	char	 *item = NULL; 	

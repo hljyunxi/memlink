@@ -86,11 +86,25 @@ def test_init():
     home = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     os.chdir(home)
 
+    slave_data_dir = 'data_slave'
+    if not os.path.isdir(slave_data_dir):
+        cmd = 'mkdir data_slave'
+        print cmd
+        os.system(cmd)
+
+    filename = 'clean_slave.sh'
+    if not os.path.isfile(filename):
+        f = open(filename, 'wb')
+        f.write('#!/bin/bash\n')
+        f.write('rm -rf data_slave/*\n')
+        f.write('rm -rf slave.log\n')
+        f.close()
+    
     memlink_master_file  = os.path.join(home, 'memlink_master')
     memlink_master_start = memlink_master_file + ' etc/memlink.conf'
 
     memlink_slave_file  = os.path.join(home, 'memlink_slave')
-    memlink_slave_start = memlink_slave_file + ' etc_slave/memlink.conf'
+    memlink_slave_start = memlink_slave_file + ' test/memlink_slave.conf'
 
 def start_a_new_master():
     global memlink_master_start
