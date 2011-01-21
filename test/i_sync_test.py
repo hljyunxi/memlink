@@ -13,27 +13,8 @@ def test():
     client2slave  = MemLinkClient('127.0.0.1', SLAVE_READ_PORT, SLAVE_WRITE_PORT, 30);
     
     test_init()
-    '''
-    #insert 500
-    num2 = 10000000
-    num = 0
-    maskstr = '4:2:2'
-    key = 'hehe'
-    ret = client2master.create(key, 12, '3:3:3')
-    if ret != MEMLINK_OK:
-        print 'create error: %d' % ret
-        return -1
-    
-    for i in xrange(num, num2):
-        val = '%012d' % i
-        ret = client2master.insert(key, val, maskstr, i)
-        if ret != MEMLINK_OK:
-            print 'insert error!', key, val, maskstr, ret
-            return -2;
-    print 'insert %d val' % (num2 - num)
-    client2master.dump()
-    return 0
-    '''
+    data_produce2()
+
     print 
     print '============================= test i  =============================='
     cmd = 'rm test.log'

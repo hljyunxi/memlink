@@ -75,11 +75,11 @@ def test_init():
     global memlink_master_start
     global memlink_slave_start
     
-    cmd = "cp ../memlink ../memlink_master -rf"
+    cmd = "cp ../memlink ../memlink_master"
     print cmd
     os.system(cmd)
     
-    cmd = "cp ../memlink ../memlink_slave -rf"
+    cmd = "cp ../memlink ../memlink_slave"
     print cmd
     os.system(cmd)
     
@@ -106,6 +106,129 @@ def test_init():
     memlink_slave_file  = os.path.join(home, 'memlink_slave')
     memlink_slave_start = memlink_slave_file + ' test/memlink_slave.conf'
 
+def data_produce1():
+    if not os.path.isdir('data_bak'):
+        cmd = 'mkdir data_bak'
+        print cmd
+        os.system(cmd)
+    else:
+        return 0
+        
+    client2master = MemLinkClient('127.0.0.1', MASTER_READ_PORT, MASTER_WRITE_PORT, 30);    
+    x1 = start_a_new_master()
+    time.sleep(1)
+    cmd = 'cp data/dump.dat data_bak/dump.dat_bak'
+    print cmd
+    os.system(cmd)
+    
+    #insert 500wan
+    num2 = 5000000
+    num = 0
+    maskstr = '4:2:2'
+    key = 'haha'
+    ret = client2master.create(key, 12, '3:3:3')
+    if ret != MEMLINK_OK:
+        print 'create error: %d' % ret
+        return -1
+    
+    for i in xrange(num, num2):
+        val = '%012d' % i
+        ret = client2master.insert(key, val, maskstr, i)
+        if ret != MEMLINK_OK:
+            print 'insert error!', key, val, maskstr, ret
+            return -2;
+    print 'insert %d val' % (num2 - num)
+    
+    client2master.dump()
+    
+    cmd = 'cp data/* data_bak/'
+    print cmd
+    os.system(cmd)
+
+    x1.kill()
+    client2master.destroy()
+    return 0
+
+def data_produce2():
+    if not os.path.isdir('data_bak2'):
+        cmd = 'mkdir data_bak2'
+        print cmd
+        os.system(cmd)
+    else:
+        return 0
+        
+    client2master = MemLinkClient('127.0.0.1', MASTER_READ_PORT, MASTER_WRITE_PORT, 30);    
+    x1 = start_a_new_master()
+    time.sleep(1)
+    
+    #insert 500wan
+    num2 = 10000000
+    num = 0
+    maskstr = '4:2:2'
+    key = 'haha'
+    ret = client2master.create(key, 12, '3:3:3')
+    if ret != MEMLINK_OK:
+        print 'create error: %d' % ret
+        return -1
+    
+    for i in xrange(num, num2):
+        val = '%012d' % i
+        ret = client2master.insert(key, val, maskstr, i)
+        if ret != MEMLINK_OK:
+            print 'insert error!', key, val, maskstr, ret
+            return -2;
+    print 'insert %d val' % (num2 - num)
+    
+    client2master.dump()
+    
+    cmd = 'cp data/dump.dat data/bin.log data_bak2/'
+    print cmd
+    os.system(cmd)
+
+    x1.kill()
+    client2master.destroy()
+    return 0
+
+def data_produce3():
+    if not os.path.isdir('data_bak3'):
+        cmd = 'mkdir data_bak3'
+        print cmd
+        os.system(cmd)
+    else:
+        return 0
+        
+    client2master = MemLinkClient('127.0.0.1', MASTER_READ_PORT, MASTER_WRITE_PORT, 30);    
+    x1 = start_a_new_master()
+    time.sleep(1)
+    
+    #insert 500wan
+    num2 = 20000000
+    num = 0
+    maskstr = '4:2:2'
+    key = 'haha'
+    ret = client2master.create(key, 12, '3:3:3')
+    if ret != MEMLINK_OK:
+        print 'create error: %d' % ret
+        return -1
+    
+    for i in xrange(num, num2):
+        val = '%012d' % i
+        ret = client2master.insert(key, val, maskstr, i)
+        if ret != MEMLINK_OK:
+            print 'insert error!', key, val, maskstr, ret
+            return -2;
+    print 'insert %d val' % (num2 - num)
+    
+    client2master.dump()
+    
+    cmd = 'cp data/dump.dat data/bin.log data_bak3/'
+    print cmd
+    os.system(cmd)
+
+    x1.kill()
+    client2master.destroy()
+    return 0
+    
 def start_a_new_master():
     global memlink_master_start
     #start a new master
@@ -148,11 +271,17 @@ def start_a_new_slave():
     return x2
 
 def restart_slave():
+    global memlink_slave_start
+
     cmd = "killall memlink_slave"
     print '   ',cmd
     os.system(cmd)
     time.sleep(1)
-    global memlink_slave_start
+    
+    cmd = 'python tools/check.py -c data_slave/bin.log'
+    print cmd
+    os.system(cmd)
+
     print 'restart slave: ', memlink_slave_start
     x2 = subprocess.Popen(memlink_slave_start, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
                              shell=True, env=os.environ, universal_newlines=True)

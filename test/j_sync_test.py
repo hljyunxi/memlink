@@ -13,9 +13,10 @@ def test():
     client2slave  = MemLinkClient('127.0.0.1', SLAVE_READ_PORT, SLAVE_WRITE_PORT, 30);
     
     test_init()
+    data_produce3()
     
     print 
-    print '============================= test i  =============================='
+    print '============================= test j  =============================='
     cmd = 'rm test.log'
     print cmd
     os.system(cmd)
@@ -30,8 +31,8 @@ def test():
     time.sleep(3)
 
     x2 = start_a_new_slave()
-    print 'sleep 10'
-    time.sleep(1)
+    print 'sleep 2'
+    time.sleep(2)
     
     #kill slave 1
     print 'kill slave!'
@@ -45,7 +46,7 @@ def test():
     x2.kill()
     time.sleep(3)
     x2 = restart_slave()
-    time.sleep(10) # wait slave to load data
+    time.sleep(20) # wait slave to load data
     
     '''
     #kill master 1
@@ -55,11 +56,11 @@ def test():
     time.sleep(100) # wait master to load data
     '''    
     if 0 != stat_check(client2master, client2slave):
-        print 'test i error!'
+        print 'test j error!'
         return -1
     print 'stat ok'
     
-    print 'test i ok'
+    print 'test j ok'
 
     x1.kill()
     x2.kill()

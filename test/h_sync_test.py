@@ -13,16 +13,17 @@ def test():
     client2slave  = MemLinkClient('127.0.0.1', SLAVE_READ_PORT, SLAVE_WRITE_PORT, 30);
     
     test_init()
+    data_produce1()
     
     print 
     print '============================= test h  =============================='
     cmd = 'rm test.log'
     print cmd
     os.system(cmd)
-    cmd = 'rm -rf data'
+    cmd = 'rm data/*'
     print cmd
     os.system(cmd)
-    cmd = 'cp -rf data_bak data'
+    cmd = 'cp data_bak/* data/'
     print cmd
     os.system(cmd)
     
