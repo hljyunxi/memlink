@@ -183,10 +183,10 @@ sslave_recv_log(SSlave *ss)
         struct timeval start, end;
         char cmd;
 
-		        memcpy(&cmd, recvbuf + SYNCPOS_LEN + sizeof(int), sizeof(char));
+		memcpy(&cmd, recvbuf + SYNCPOS_LEN + sizeof(int), sizeof(char));
         pthread_mutex_lock(&g_runtime->mutex);
         gettimeofday(&start, NULL);
-        ret = wdata_apply(recvbuf + SYNCPOS_LEN, rlen, 0);
+        ret = wdata_apply(recvbuf + SYNCPOS_LEN, rlen, 0, NULL);
         DINFO("wdata_apply return:%d\n", ret);
         if (ret == 0) {
             //DINFO("synclog index_pos:%d, pos:%d\n", g_runtime->synclog->index_pos, g_runtime->synclog->pos);
