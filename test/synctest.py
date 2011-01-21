@@ -75,16 +75,20 @@ def test_init():
     global memlink_master_start
     global memlink_slave_start
     
-    cmd = "cp ../memlink ../memlink_master"
-    print cmd
-    os.system(cmd)
-    
-    cmd = "cp ../memlink ../memlink_slave"
-    print cmd
-    os.system(cmd)
-    
     home = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     os.chdir(home)
+
+    cmd = 'rm memlink_master memlink_slave'
+    print cmd 
+    os.system(cmd)
+    
+    cmd = "cp memlink memlink_master"
+    print cmd
+    os.system(cmd)
+    
+    cmd = "cp memlink memlink_slave"
+    print cmd
+    os.system(cmd)
 
     slave_data_dir = 'data_slave'
     if not os.path.isdir(slave_data_dir):
@@ -278,7 +282,7 @@ def restart_slave():
     os.system(cmd)
     time.sleep(1)
     
-    cmd = 'python tools/check.py -c data_slave/bin.log'
+    cmd = 'python tools/check.py -c data_slave/bin.log -r'
     print cmd
     os.system(cmd)
 
