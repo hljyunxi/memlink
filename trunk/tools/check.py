@@ -4,6 +4,7 @@ import struct
 import getopt
 
 onlyheader = False
+restore = False
 
 def binlog(filename='bin.log'):
     global onlyheader
@@ -112,7 +113,6 @@ def checklog(filename):
 
     f.seek(0, 2)
     filesize = f.tell()
-    print filesize
     f.seek(0)
     s = f.read(2 + 4 + 4)
     v = []
@@ -123,31 +123,29 @@ def checklog(filename):
     d = f.tell() + 4 * v[-1]
     v.append(d)
 
-    print '====================== bin log   ========================='
+    print '====================== check binlog   ========================='
     #print 'head:', repr(s)
     #print 'format:%d, logver:%d, index:%d, data:%d' % tuple(v)
+    print 'filesize: ', filesize
     
-    indexes = []
     last_data_pos = 0
-    last_index_pos = 0
+    last_index_offset = 0
     rdc = 0
     while rdc < maxdata * 4:
         ns = f.read(4)
         v = struct.unpack('I', ns)
-        if v[0] == 0:
-            f.seek(-8, 1)
-            last_index_pos = f.tell()
+        if v[0] == 0: #the index after the last index
+            f.seek(-8, 1) #move to the last index
+            last_index_offset = f.tell() 
             ns = f.read(4)
             llen = struct.unpack('I', ns)
-            last_data_pos = llen[0]
+            last_data_pos = llen[0] #begin of the last cmd
             break
-        else:
-            indexes.append(v[0])
         rdc += 4
 
     flag = 0
     lllen = 0
-    print last_data_pos
+    print 'last_data_pos: ', last_data_pos
     while 1:
         f.seek(last_data_pos, 0)
         s1 = f.read(8)
@@ -159,9 +157,8 @@ def checklog(filename):
             flag = 1
             break
         slen = struct.unpack('I', s2)[0]
-        print slen
         lllen = last_data_pos + 8 + 4 + slen
-        print lllen
+        print 'last_data_pos + last_cmd_len: ', lllen
         if filesize == lllen:
             flag = 0
             break
@@ -175,10 +172,12 @@ def checklog(filename):
     if 0 == flag:
         print 'log size ok!'
     elif 1 == flag:
-        print 'log size is too smaller than expected size'
+        print 'log size is smaller than expected!'
     elif 2 == flag:
-        print 'log size is too larger than expected size'
-        f.truncate(lllen)
+        print 'log size is larger than expected!'
+        if restore == True:
+            print 'restore the file!'
+            f.truncate(lllen)
         
     f.close()
     
@@ -189,14 +188,17 @@ def show_help():
     print '\t-b binlog file name'
     print '\t-d dump file name'
     print '\t-h only print header'
+    print '\t-c check wether bin.log\'s size is ok or not'
+    print '\t-r restore the file'
 
 def main():
     global onlyheader
+    global restore
     binlog_filename = ''
     dump_filename   = ''
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'b:d:c:h')
+        opts, args = getopt.getopt(sys.argv[1:], 'b:d:c:h:r')
     except:
         show_help()
         return
@@ -212,6 +214,8 @@ def main():
         elif opt == '-c':
             flag = True
             binlog_filename = arg
+        elif opt == '-r':
+            restore = True
 
     if not binlog_filename and not dump_filename:
         show_help()
