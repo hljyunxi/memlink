@@ -1908,11 +1908,18 @@ hashtable_lpop(HashTable *ht, char *key, int num, Conn *conn)
                         char *todata = newdbk->data + datalen * (i + 1);
                         node->data   = newdbk;
                         newdbk->next = dbk->next;
+                        if (dbk->next) {
+                            dbk->next->prev = newdbk;
+                        }
                         DINFO("copy todata from: %d, count:%d\n", i, dbk->data_count - i - 1);
                         memcpy(todata, itemdata + datalen, (dbk->data_count - i - 1) * datalen);
                         //enddbk = dbk;
                     }else{ // current datablock is all poped
                         rmn += dbk->data_count;
+                        node->data = dbk->next;
+                        if (dbk->next) {
+                            dbk->next->prev = NULL;
+                        }
                     }
                     enddbk = dbk->next; 
 
@@ -2006,16 +2013,16 @@ hashtable_rpop(HashTable *ht, char *key, int num, Conn *conn)
     }
 
     while (dbk) {
-        itemdata = dbk->data + (dbk->data_count * datalen);
+        itemdata = dbk->data + ((dbk->data_count - 1) * datalen);
         int dbkcpnv = 0;
         //for (i = 0; i < dbk->data_count; i++) {
         for (i = dbk->data_count - 1; i >= 0; i--) {
             ret = dataitem_check_data(node, itemdata);
             if (ret == MEMLINK_VALUE_VISIBLE) {
-                /*char buf[128];
+                char buf[128];
 				snprintf(buf, node->valuesize + 1, "%s", itemdata);
 				DINFO("\tok, copy item ... i:%d, value:%s\n", i, buf);
-			    */	
+			    	
                 if (wbuf) {
 				    memcpy(wbuf + idx, itemdata, datalen);
                 }
@@ -2028,19 +2035,25 @@ hashtable_rpop(HashTable *ht, char *key, int num, Conn *conn)
                         newdbk = mempool_get(g_runtime->mpool, sizeof(DataBlock) + dbk->data_count * datalen);
                         newdbk->data_count    = dbk->data_count;
                         newdbk->visible_count = dbk->visible_count - dbkcpnv; 
-                        //char *todata = newdbk->data + datalen * (i + 1);
-                        node->data_tail   = newdbk;
+                        node->data_tail = newdbk;
                         newdbk->prev = dbk->prev;
-                        //DINFO("copy todata from: %d, count:%d\n", i, dbk->data_count - i - 1);
+                        if (dbk->prev) {
+                            dbk->prev->next = newdbk;
+                        }
+                        DINFO("copy todata count:%d\n", i);
                         memcpy(newdbk->data, dbk->data, i * datalen);
                         //enddbk = dbk;
                     }else{ // current datablock is all poped
                         rmn += dbk->data_count;
+                        node->data_tail = dbk->prev;
+                        if (dbk->prev) {
+                            dbk->prev->next = NULL;
+                        }
                     }
                     enddbk = dbk->prev; 
 
-                    if (dbk->next == NULL) {
-                        node->data_tail = newdbk;
+                    if (dbk->prev == NULL) {
+                        node->data = NULL;
                     }
                     node->all  -= rmn;
                     node->used -= n;
@@ -2111,7 +2124,7 @@ hashtable_print(HashTable *ht, char *key)
         datablock_print(node, dbk);
         
         if (prev != dbk->prev) {
-            DERROR("prev link error! blocks:%d, %p\n", blocks, dbk);
+            DERROR("prev link error! blocks:%d, %p, prev:%p, dbk->prev:%p\n", blocks, dbk, prev, dbk->prev);
         }
 
         prev = dbk;

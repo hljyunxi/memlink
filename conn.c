@@ -48,6 +48,8 @@ conn_create(int svrfd, int connsize)
         DERROR("conn malloc error.\n");
         MEMLINK_EXIT;
     }
+    zz_check(conn);
+
     memset(conn, 0, connsize); 
     conn->sock = newfd;
 	conn->destroy = conn_destroy;
@@ -57,6 +59,8 @@ conn_create(int svrfd, int connsize)
     gettimeofday(&conn->ctime, NULL);
 
     DINFO("accept newfd: %d, %s:%d\n", newfd, conn->client_ip, conn->client_port);
+
+    zz_check(conn);
 
     return conn;
 }

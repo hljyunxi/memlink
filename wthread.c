@@ -575,10 +575,10 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
                 goto wdata_apply_over;
             }   
 
-            hashtable_print(g_runtime->ht, key);
+            //hashtable_print(g_runtime->ht, key);
             ret = hashtable_rpop(g_runtime->ht, key, num, conn); 
             DINFO("hashtable_range return: %d\n", ret);
-            hashtable_print(g_runtime->ht, key);
+            //hashtable_print(g_runtime->ht, key);
 
             if (conn && ret >= 0 && writelog) {
                 ret = data_reply_direct(conn);
@@ -592,7 +592,6 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
                     ret = MEMLINK_OK;
                 }
             }
-            goto wdata_apply_over;
             break;
         default:
             ret = MEMLINK_ERR_CLIENT_CMD;
@@ -639,6 +638,8 @@ wdata_ready(Conn *conn, char *data, int datalen)
     pthread_mutex_lock(&g_runtime->mutex);
     ret = wdata_apply(data, datalen, MEMLINK_WRITE_LOG, conn);
     pthread_mutex_unlock(&g_runtime->mutex);
+    
+    zz_check(conn);
 
 wdata_ready_over:
     if (ret != MEMLINK_REPLIED) {
@@ -675,6 +676,9 @@ wthread_read(int fd, short event, void *arg)
         DINFO("new conn: %d\n", conn->sock);
 		DINFO("change event to read.\n");
 		ret = change_event(conn, EV_READ|EV_PERSIST, g_cf->timeout, 1);
+
+        zz_check(conn);
+
 		if (ret < 0) {
 			DERROR("change_event error: %d, close conn.\n", ret);
 			conn->destroy(conn);
@@ -696,6 +700,8 @@ client_read(int fd, short event, void *arg)
     int     ret;
     //unsigned short   datalen = 0;
 	unsigned int datalen = 0;
+
+    zz_check(conn);
 
 	if (event & EV_TIMEOUT) {
 		DWARNING("read timeout:%d, close\n", fd);
@@ -744,6 +750,8 @@ client_read(int fd, short event, void *arg)
 
         break;
     }
+
+    zz_check(conn);
 
     DINFO("conn rbuf len: %d\n", conn->rlen);
     while (conn->rlen >= 2) {
