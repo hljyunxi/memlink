@@ -62,7 +62,7 @@ zz_check_dbg(void *ptr, char *file, int line)
         DERROR("check NULL, file:%s, line:%d\n", file, line);
         MEMLINK_EXIT;
     }
-#ifdef DEBUG
+#ifdef DEBUGMEM
 	char *b = ptr - 8;
 	int  size = *((int*)b);
 
