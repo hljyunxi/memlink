@@ -29,7 +29,7 @@ zz_malloc(size_t size)
         DERROR("mallloc error!\n");
         MEMLINK_EXIT;
     }
-    return ptr
+    return ptr;
 #else
     ptr = malloc(size);
     if (NULL == ptr) {
