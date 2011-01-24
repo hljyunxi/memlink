@@ -57,7 +57,7 @@ conn_create(int svrfd, int connsize)
 	inet_ntop(AF_INET, &(clientaddr.sin_addr), conn->client_ip, slen);	
 	conn->client_port = ntohs((short)clientaddr.sin_port);
     gettimeofday(&conn->ctime, NULL);
-
+    g_runtime->conn_num++;
     DINFO("accept newfd: %d, %s:%d\n", newfd, conn->client_ip, conn->client_port);
 
     zz_check(conn);
@@ -76,6 +76,8 @@ conn_destroy(Conn *conn)
 	event_del(&conn->evt);
     close(conn->sock);
     zz_free(conn);
+
+    g_runtime->conn_num--;
 }
 
 char*

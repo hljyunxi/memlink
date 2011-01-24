@@ -76,7 +76,7 @@
 #define DUMP_HEAD_LEN	    (sizeof(short)+sizeof(int)+sizeof(int)+sizeof(int)+sizeof(long long))
 // format + version + index size
 #define SYNCLOG_HEAD_LEN	(sizeof(short)+sizeof(int)+sizeof(int))
-#define SYNCLOG_INDEXNUM	5000000	
+#define SYNCLOG_INDEXNUM	5000000
 #define SYNCPOS_LEN		    (sizeof(int)+sizeof(int))
 
 #define MEMLINK_TAG_DEL         1

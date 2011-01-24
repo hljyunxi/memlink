@@ -24,6 +24,7 @@ SyncLog*    synclog_open(char *filename);
 int         synclog_new(SyncLog *slog);
 int         synclog_validate(SyncLog *slog);
 int         synclog_write(SyncLog *slog, char *data, int datalen);
+void        synclog_close(SyncLog *slog);
 void        synclog_destroy(SyncLog *slog);
 int         synclog_rotate(SyncLog *slog);
 int			synclog_version(SyncLog *slog, unsigned int *logver);

@@ -269,7 +269,6 @@ load_data()
     int    ret;
     struct stat stbuf;
     int    havedump = 0;
-    //char   *filename = "data/dump.dat";
     char   filename[PATH_MAX];
 
     snprintf(filename, PATH_MAX, "%s/dump.dat", g_cf->datadir);
@@ -349,20 +348,9 @@ load_data_slave()
 				MEMLINK_EXIT;
 				return -1;
 			}
-		
 			SSlave	*slave = g_runtime->slave;
 
-			slave->logver  = dumpfile_logver(master_filename);
-			slave->logline = g_runtime->dumplogpos;
-			//slave->logline = 0;
-
-			//slave->dump_logver   = 0;
-			//slave->dumpsize      = 0;
-			//slave->dumpfile_size = 0;
-
-			//g_runtime->dumpver	  = 0;
-			//g_runtime->dumplogver = 0;
-
+            dumpfile_logver(master_filename, &slave->logver, &slave->logline);
 			load_master_dump = 1;
 		}
 	}else{
@@ -398,7 +386,6 @@ load_data_slave()
 			if (logids[i] < g_runtime->dumplogver) {
 				continue;
 			}
-			//snprintf(logname, PATH_MAX, "%s/data/bin.log.%d", g_runtime->home, logids[i]);
 			snprintf(logname, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, logids[i]);
 			DINFO("load synclog: %s\n", logname);
 			ret = load_synclog(logname, g_runtime->dumplogver, g_runtime->dumplogpos);
@@ -406,8 +393,6 @@ load_data_slave()
 				g_runtime->slave->binlog_ver = logids[i];
 			}
 		}
-
-		//snprintf(logname, PATH_MAX, "%s/data/bin.log", g_runtime->home);
 		snprintf(logname, PATH_MAX, "%s/bin.log", g_cf->datadir);
 		DINFO("load synclog: %s\n", logname);
 		ret = load_synclog(logname, g_runtime->dumplogver, g_runtime->dumplogpos);

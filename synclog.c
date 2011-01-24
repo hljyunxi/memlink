@@ -514,6 +514,23 @@ synclog_version(SyncLog *slog, unsigned int *logver)
 }
 
 void
+synclog_close(SyncLog *slog)
+{
+    if (NULL == slog)
+        return;
+    
+    if (munmap(slog->index, slog->len) == -1) {
+        DERROR("munmap error: %s\n", strerror(errno));
+    }
+    slog->index = NULL;
+    close(slog->fd); 
+    slog->fd = -1;
+    slog->index_pos = 0;
+    slog->pos = 0;
+    slog->version = 0;
+}
+
+void
 synclog_destroy(SyncLog *slog)
 {
     if (NULL == slog)

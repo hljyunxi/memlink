@@ -246,6 +246,7 @@ dataitem_lookup_pos_mask(HashNode *node, int pos, unsigned char kind,
 /**
  * find a insert pos in DataBlock link. skip DataBlock
  */
+/*
 static int
 datablock_lookup_valid_pos(HashNode *node, int pos, unsigned char kind, DataBlock **dbk)
 {
@@ -282,7 +283,7 @@ datablock_lookup_valid_pos(HashNode *node, int pos, unsigned char kind, DataBloc
     }
     return -2;
 }
-
+*/
 static int
 datablock_lookup_valid_pos2(HashNode *node, int pos, unsigned char kind, DataBlock **dbk)
 {
@@ -315,7 +316,7 @@ datablock_lookup_valid_pos2(HashNode *node, int pos, unsigned char kind, DataBlo
 	// no datablock in node
     return -1;
 }
-
+/*
 int
 dataitem_lookup_pos(HashNode *node, int pos, unsigned char kind, DataBlock **dbk, char **data)
 {
@@ -392,6 +393,7 @@ dataitem_lookup_pos(HashNode *node, int pos, unsigned char kind, DataBlock **dbk
     *data = NULL;
     return MEMLINK_OK;
 }
+*/
 
 /**
  * copy a value, mask to special address
