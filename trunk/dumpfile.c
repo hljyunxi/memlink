@@ -174,7 +174,13 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
         g_runtime->dumplogver = dumplogver;
     }
 
-	ret = ffread(&g_runtime->dumplogpos, sizeof(int), 1, fp);
+    unsigned int dumplogpos;
+	ret = ffread(&dumplogpos, sizeof(int), 1, fp);
+    DINFO("load dumpfile log pos: %u\n", dumplogpos);
+    if (localdump) {
+        g_runtime->dumplogpos = dumplogpos;
+    }
+
 
 	long long size;
 	ret = ffread(&size, sizeof(long long), 1, fp);
@@ -287,7 +293,7 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
 }
 
 int
-dumpfile_logver(char *filename)
+dumpfile_logver(char *filename, unsigned int *logver, unsigned int *logpos)
 {
     int  ret;
     FILE    *dumpf;
@@ -302,16 +308,22 @@ dumpfile_logver(char *filename)
     int pos = sizeof(short) + sizeof(int);
     fseek(dumpf, pos, SEEK_SET);
 
-    int dump_logver = 0;
-    ret = fread(&dump_logver, sizeof(int), 1, dumpf);
+    ret = fread(&logver, sizeof(int), 1, dumpf);
     if (ret != sizeof(int)) {
         DERROR("fread error: %s\n", strerror(errno));
         fclose(dumpf);
         return -1;
     }
+    ret = fread(&logpos, sizeof(int), 1, dumpf);
+    if (ret != sizeof(int)) {
+        DERROR("fread error: %s\n", strerror(errno));
+        fclose(dumpf);
+        return -1;
+    }
+
     fclose(dumpf);
 
-    return dump_logver;
+    return 0;
 }
 
 void

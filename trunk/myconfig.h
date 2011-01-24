@@ -60,6 +60,7 @@ typedef struct _runtime
     MainServer      *server;
     SSlave          *slave; // sync slave
     SThread         *sthread; // sync thread
+    unsigned int    conn_num; // current conn count
 }Runtime;
 
 extern MyConfig *g_cf;

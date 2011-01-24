@@ -3,6 +3,9 @@
 #include "logfile.h"
 #include "utils.h"
 #include "zzmalloc.h"
+#ifdef TCMALLOC
+#include <google/tcmalloc.h>
+#endif
 
 void*
 zz_malloc(size_t size)
