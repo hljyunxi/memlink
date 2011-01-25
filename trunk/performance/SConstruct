@@ -29,6 +29,8 @@ for fn in files[:1]:
 #env.Program("testmemlink", ["testmemlink.c", env.Object("test-testframe", "testframe.c"), env.Object("test-utils", "../utils.c"), "../client/c/libmemlink.a"])
 env.Program("testmemlink", testfiles)
 
+perffiles = ['perf.c', '../client/c/libmemlink.a']
+env.Program("perf", perffiles)
 
 if os.path.isdir(hiredis_home):
 	env2 = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
