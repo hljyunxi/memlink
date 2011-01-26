@@ -67,9 +67,9 @@ class MemLinkClient:
     def tag(self, key, value, tag):
         return memlink_cmd_tag(self.client, key, value, len(value), tag)
 
-    def range(self, key, kind, maskstr, frompos, len):
+    def range(self, key, kind, maskstr, frompos, rlen):
         result = MemLinkResult()
-        ret = memlink_cmd_range(self.client, key, kind, maskstr, frompos, len, result)
+        ret = memlink_cmd_range(self.client, key, kind, maskstr, frompos, rlen, result)
         if ret != MEMLINK_OK:
             result = None
         return ret, result
@@ -83,6 +83,29 @@ class MemLinkClient:
         if ret != MEMLINK_OK:
             result = None
         return ret, result
+
+    def lpush(self, key, value, maskstr):
+        return memlink_cmd_lpush(self.client, key, value, len(value), maskstr)
+
+    def rpush(self, key, value, maskstr):
+        return memlink_cmd_rpush(self.client, key, value, len(value), maskstr)
+
+    def lpop(self, key, num=1):
+        result = MemLinkResult()
+        ret = memlink_cmd_lpop(self.client, key, num, result)
+        if ret != MEMLINK_OK:
+            result = None
+        return ret, result
+
+    def rpop(self, key, num=1):
+        result = MemLinkResult()
+        ret = memlink_cmd_rpop(self.client, key, num, result)
+        if ret != MEMLINK_OK:
+            result = None
+        return ret, result
+
+
+
 
 def memlinkresult_free(self):
     memlink_result_free(self)
