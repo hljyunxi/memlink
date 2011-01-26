@@ -224,6 +224,43 @@ int test_del(TestArgs *args)
 }
 int test_mask(TestArgs *args)
 {
+    MemLink *m;
+    int ret, i;
+    
+    DINFO("====== mask ======\n");
+
+    if (args->longconn) {
+        m = memlink_create(MEMLINK_HOST, MEMLINK_PORT_READ, MEMLINK_PORT_WRITE, MEMLINK_TIMEOUT);
+        if (NULL == m) {
+            DERROR("memlink_create error!\n");
+            exit(-1);
+            return -1;
+        }
+        for (i = 0; i < args->testcount; i++) {
+            ret = memlink_cmd_mask(m, args->key, args->value, args->valuelen, args->maskstr);
+            if (ret != MEMLINK_OK) {
+                DERROR("mask error! ret:%d, key:%s, value:%s, mask:%s\n", ret, args->key, args->value, args->maskstr);
+                return -2;
+            }
+        }
+        memlink_destroy(m); 
+    }else{
+        for (i = 0; i < args->testcount; i++) {
+            m = memlink_create(MEMLINK_HOST, MEMLINK_PORT_READ, MEMLINK_PORT_WRITE, MEMLINK_TIMEOUT);
+            if (NULL == m) {
+                DERROR("memlink_create error!\n");
+                exit(-1);
+                return -1;
+            }
+            ret = memlink_cmd_mask(m, args->key, args->value, args->valuelen, args->maskstr);
+            if (ret != MEMLINK_OK) {
+                DERROR("mask error! ret:%d, key:%s, value:%s, mask:%s\n", ret, args->key, args->value, args->maskstr);
+                return -2;
+            }
+            memlink_destroy(m); 
+        }
+    }
+
     return 0;
 }
 
@@ -254,18 +291,30 @@ void* thread_start(void *args)
     pthread_mutex_unlock(&lock);
 
     gettimeofday(&start, NULL);
-    DINFO("run func ...\n");
     ta->func(ta->args);
     gettimeofday(&end, NULL);
 
     unsigned int tmd = timediff(&start, &end);
-    double speed = ((double)ta->args->testcount / tmd) * 100000;
+    double speed = ((double)ta->args->testcount / tmd) * 1000000;
     DINFO("thread test use time:%u, speed:%.2f\n", tmd, speed);
 
     return NULL;
 }
 
+int single_start(ThreadArgs *ta)
+{
+    struct timeval start, end;  
+	
+	gettimeofday(&start, NULL);
+    ta->func(ta->args);
+    gettimeofday(&end, NULL);
 
+    unsigned int tmd = timediff(&start, &end);
+    double speed = ((double)ta->args->testcount / tmd) * 1000000;
+    DINFO("thread test use time:%u, speed:%.2f\n", tmd, speed);
+
+	return 0;
+}
 
 int test_start(TestConfig *cf)
 {
@@ -299,7 +348,7 @@ int test_start(TestConfig *cf)
     gettimeofday(&end, NULL);
 
     unsigned int tmd = timediff(&start, &end);
-    double speed = (((double)cf->args.testcount * cf->threads)/ tmd) * 100000;
+    double speed = (((double)cf->args.testcount * cf->threads)/ tmd) * 1000000;
     DINFO("thread all test use time:%u, speed:%.2f\n", tmd, speed);
 
     return 0;
@@ -468,8 +517,17 @@ int main(int argc, char *argv[])
             break;
         }
     }
-    
-    test_start(&tcf);
+	
+	if (tcf.threads > 0) {
+		test_start(&tcf);
+	}else{
+		ThreadArgs  ta;// = (ThreadArgs*)malloc(sizeof(ThreadArgs));
+		ta.func = tcf.func;
+		ta.args = &tcf.args;
+		ta.threads = tcf.threads;
+        
+		single_start(&ta);
+	}
 
 	return 0;
 }
