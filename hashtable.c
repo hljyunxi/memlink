@@ -105,7 +105,7 @@ hashtable_clear_all(HashTable *ht)
  * 创建HashTable中一个key的结构信息
  */
 int
-hashtable_key_create(HashTable *ht, char *key, int valuesize, char *maskstr)
+hashtable_key_create(HashTable *ht, char *key, int valuesize, char *maskstr, unsigned char listtype, unsigned char valuetype)
 {
     unsigned int format[HASHTABLE_MASK_MAX_ITEM] = {0};
     int  masknum = mask_string2array(maskstr, format);
@@ -122,11 +122,12 @@ hashtable_key_create(HashTable *ht, char *key, int valuesize, char *maskstr)
         }
     }
 
-    return hashtable_key_create_mask(ht, key, valuesize, format, masknum);
+    return hashtable_key_create_mask(ht, key, valuesize, format, masknum, listtype, valuetype);
 }
 
 int
-hashtable_key_create_mask(HashTable *ht, char *key, int valuesize, unsigned int *maskarray, char masknum)
+hashtable_key_create_mask(HashTable *ht, char *key, int valuesize, 
+                        unsigned int *maskarray, char masknum, unsigned char listtype, unsigned char valuetype)
 {
     int             keylen = strlen(key);
     unsigned int    hash   = hashtable_hash(key, keylen);
@@ -149,6 +150,8 @@ hashtable_key_create_mask(HashTable *ht, char *key, int valuesize, unsigned int 
     node->data = NULL;
     node->next = ht->bunks[hash];
     node->valuesize = valuesize;
+    node->type = listtype;
+    node->valuetype = valuetype;
 
     int masksize = 0;
     int i;

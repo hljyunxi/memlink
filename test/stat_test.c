@@ -62,7 +62,7 @@ int main()
 	char buf[32];
 
 	sprintf(buf, "haha");
-	ret = memlink_cmd_create(m, buf, 6, "4:3:1");
+	ret = memlink_cmd_create_list(m, buf, 6, "4:3:1");
 	
 	if (ret != MEMLINK_OK) {
 		DERROR("1 memlink_cmd_create %s error: %d\n", buf, ret);

@@ -11,7 +11,7 @@
 #include "daemon.h"
 #include "common.h"
 
-char *VERSION = "memlink-0.2.4";
+char *VERSION = "memlink-0.2.5";
 
 static void 
 sig_handler(const int sig) {
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
         DFATALERR("failed to getrlimit number of files\n");
         MEMLINK_EXIT;
     } else {
-        int maxfiles = g_cf->max_conn + 100;
+        int maxfiles = g_cf->max_conn + 20;
         if (rlim.rlim_cur < maxfiles)
             rlim.rlim_cur = maxfiles;
         if (rlim.rlim_max < rlim.rlim_cur)

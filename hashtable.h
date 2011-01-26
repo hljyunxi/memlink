@@ -16,7 +16,7 @@ typedef struct _hashnode
     unsigned char   type; // key type: list/queue
     unsigned char   sortfield; // which sort? 0:value, 1-255:mask[0-xx]
     unsigned char   valuesize;
-    //unsigned char   valuetype;
+    unsigned char   valuetype;
     unsigned char   masksize;
     unsigned char   masknum; // maskformat count
     unsigned char   *maskformat; // mask format:  3:4:5 => [3, 4, 5]
@@ -36,9 +36,10 @@ void            hashtable_destroy(HashTable *ht);
 void			hashtable_clear_all(HashTable *ht);
 int				hashtable_remove_key(HashTable *ht, char *key);
 int				hashtable_remove_list(HashTable *ht, char *key);
-int             hashtable_key_create(HashTable *ht, char *key, int valuesize, char *maskstr);
+int             hashtable_key_create(HashTable *ht, char *key, int valuesize, char *maskstr, 
+                                    unsigned char listtype, unsigned char valuetype);
 int             hashtable_key_create_mask(HashTable *ht, char *key, int valuesize, 
-                                        unsigned int *maskarray, char masknum);
+                                        unsigned int *maskarray, char masknum, unsigned char listtype, unsigned char valuetype);
 HashNode*       hashtable_find(HashTable *ht, char *key);
 int             hashtable_find_value(HashTable *ht, char *key, void *value, 
                                      HashNode **node, DataBlock **dbk, char **data);
@@ -56,7 +57,6 @@ int             hashtable_tag(HashTable *ht, char *key, void *value, unsigned ch
 int             hashtable_mask(HashTable *ht, char *key, void *value, unsigned int *maskarray, int masknum);
 int             hashtable_range(HashTable *ht, char *key, unsigned char kind, unsigned int *maskarray, int masknum, 
                                 int frompos, int len, Conn *conn);
-                                //int frompos, int len, char *data, int *datanum);
 int             hashtable_clean(HashTable *ht, char *key);
 int             hashtable_stat(HashTable *ht, char *key, HashTableStat *stat);
 int				hashtable_stat_sys(HashTable *ht, HashTableStatSys *stat);

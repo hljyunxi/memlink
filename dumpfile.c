@@ -75,6 +75,9 @@ dumpfile(HashTable *ht)
         node = bks[i];
         while (NULL != node) {
             DINFO("start dump key: %s\n", node->key);
+            ffwrite(&node->type, sizeof(char), 1, fp);
+            ffwrite(&node->sortfield, sizeof(char), 1, fp);
+            ffwrite(&node->valuetype, sizeof(char), 1, fp);
             keylen = strlen(node->key);
             ffwrite(&keylen, sizeof(char), 1, fp);
 			//DINFO("dump keylen: %d\n", keylen);
@@ -226,14 +229,20 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
     unsigned char masknum;
     unsigned char maskformat[HASHTABLE_MASK_MAX_ITEM];
     unsigned char valuelen;
+    unsigned char valuetype;
     unsigned int  itemnum;
     char          key[256];
+    unsigned char type;
+    unsigned char sortfield;
     int           i;
     int           datalen;
     int           load_count = 0;
 
     while (ftell(fp) < filelen) {
         //DINFO("--- cur: %d, filelen: %d, %d ---\n", (int)ftell(fp), filelen, feof(fp));
+        ret = ffread(&type, sizeof(char), 1, fp);
+        ret = ffread(&sortfield, sizeof(char), 1, fp);
+        ret = ffread(&valuetype, sizeof(char), 1, fp);
         ret = ffread(&keylen, sizeof(unsigned char), 1, fp);
         DINFO("keylen: %d\n", keylen);
         ret = ffread(key, keylen, 1, fp);
@@ -262,7 +271,7 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
             maskarray[i] = maskformat[i];
         }
         DINFO("create info, key:%s, valuelen:%d, masknum:%d\n", key, valuelen, masknum);
-        ret = hashtable_key_create_mask(ht, key, valuelen, maskarray, masknum);
+        ret = hashtable_key_create_mask(ht, key, valuelen, maskarray, masknum, type, valuetype);
         if (ret != MEMLINK_OK) {
             DERROR("hashtable_key_create_mask error, ret:%d\n", ret);
             return -2;

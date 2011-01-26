@@ -27,14 +27,44 @@ class MemLinkClient
         $this->client = null;
     }
 
-	function create($key, $valuesize, $maskformat)
+	function create($key, $valuesize, $maskformat, $listtype, $valuetype)
 	{
     	if( False == is_int($valuesize) or False == is_string($key) or False == is_string($maskformat) )
     	{
     		return -1;
     	}
     	
-		return memlink_cmd_create($this->client, $key, $valuesize, $maskformat);
+		return memlink_cmd_create($this->client, $key, $valuesize, $maskformat, $listtype, $valuetype);
+	}
+
+	function create_list($key, $valuesize, $maskformat)
+	{
+    	if( False == is_int($valuesize) or False == is_string($key) or False == is_string($maskformat) )
+    	{
+    		return -1;
+    	}
+    	
+		return memlink_cmd_create_list($this->client, $key, $valuesize, $maskformat);
+	}
+
+	function create_queue($key, $valuesize, $maskformat)
+	{
+    	if( False == is_int($valuesize) or False == is_string($key) or False == is_string($maskformat) )
+    	{
+    		return -1;
+    	}
+    	
+		return memlink_cmd_create_queue($this->client, $key, $valuesize, $maskformat);
+	}
+
+    function create_sortlist($key, $valuesize, $maskformat, $valuetype)
+	{
+    	if( False == is_int($valuesize) or False == is_string($key) or False == is_string($maskformat) )
+    	{
+    		return -1;
+    	}
+    	
+		return memlink_cmd_create_sortlist($this->client, $key, $valuesize, $maskformat, $valuetype);
 	}
 
 	function ping()

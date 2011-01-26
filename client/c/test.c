@@ -28,13 +28,11 @@ int main(int argc, char *argv[])
     printf("============== create ===============\n");
     for (i = 0; i < 2; i++) {
         sprintf(buf, "haha%d", i);
-        ret = memlink_cmd_create(m, buf, 6, "4:3:1");
+        ret = memlink_cmd_create_list(m, buf, 6, "4:3:1");
         DINFO("memlink_cmd_xx: %d\n", ret);
     }
 
-
     //ret = memlink_cmd_del(m, "haha", "gogo", 4);
-   
     
     for (i = 0; i < 30; i++) {
         printf("============== insert ===============\n");
@@ -44,14 +42,11 @@ int main(int argc, char *argv[])
         DINFO("memlink_cmd_insert: %d\n", ret);
     }
 
-
-
     printf("============= stat ================\n");
     MemLinkStat stat;
     ret = memlink_cmd_stat(m, "haha1", &stat);
     DINFO("memlink_cmd_stat: %d\n", ret);
     DINFO("valuesize:%d, masksize:%d, blocks:%d, data:%d, data_used:%d, mem:%d\n", stat.valuesize, stat.masksize, stat.blocks, stat.data, stat.data_used, stat.mem);
-
 
     /*
     printf("=============================\n");
@@ -74,7 +69,6 @@ int main(int argc, char *argv[])
         DINFO("valuesize:%d, masksize:%d, count:%d\n", result.valuesize, result.masksize,
                 result.count);
     }
-
 
     printf("============== dump %d ===============\n", i);
     ret = memlink_cmd_dump(m);

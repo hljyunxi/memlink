@@ -41,7 +41,7 @@ int main()
 	for(i = 0; i < num; i++)
 	{
 		sprintf(key, "heihei%03d", i);
-		ret = hashtable_key_create_mask(ht, key, valuesize, maskformat, masknum);
+		ret = hashtable_key_create_mask(ht, key, valuesize, maskformat, masknum, MEMLINK_LIST, 0);
 		if(ret < 0)
 		{
 			DERROR("hashtable_add_info_mask error. %s\n", key);

@@ -21,7 +21,7 @@ int main()
 	char key[64];
 	
 	sprintf(key, "haha");
-	ret = memlink_cmd_create(m, key, 6, "4:3:2");
+	ret = memlink_cmd_create_list(m, key, 6, "4:3:2");
 	if (ret != MEMLINK_OK) {
 		DERROR("memlink_cmd_create %s error: %d\n", key, ret);
 		return -2;

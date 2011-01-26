@@ -25,7 +25,7 @@ def insert(*args):
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
    
-    ret = m.create(key, 12, "1")
+    ret = m.create_list(key, 12, "1")
     if ret != MEMLINK_OK:
         print 'create haha error!', ret
         #return
@@ -68,22 +68,38 @@ def delete(*args):
 
 def range(*args):
     try:
-        frompos = int(args[0])
-        slen    = int(args[1])
+        kind    = args[0]
+        
+        if kind.startswith('vis'):
+            kind = MEMLINK_VALUE_VISIBLE
+        elif kind.startswith('tag'):
+            kind = MEMLINK_VALUE_TAGDEL
+        elif kind.startswith('all'):
+            kind = MEMLINK_VALUE_ALL
+        else:
+            print 'kind error! must visible/tagdel/all'
+            return
+    except:
+        kind    = MEMLINK_VALUE_VISIBLE
+
+    try:
+        frompos = int(args[1])
+        slen    = int(args[2])
     except:
         frompos = 0
         slen    = 1000
 
     try:
-        mask = args[2]
+        mask = args[3]
     except:
         mask    = ''
-
-    print 'range from:%d, len:%d, mask:%s' % (frompos, slen, mask)
+    
+    print 'ALL:%d, VISIBLE:%d, TAGDEL:%d' % (MEMLINK_VALUE_ALL, MEMLINK_VALUE_VISIBLE, MEMLINK_VALUE_TAGDEL)
+    print 'range kind:%d, from:%d, len:%d, mask:%s' % (kind, frompos, slen, mask)
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
     
-    ret, recs = m.range(key, MEMLINK_VALUE_VISIBLE, mask, frompos, slen)
+    ret, recs = m.range(key, kind, mask, frompos, slen)
     if ret != MEMLINK_OK:
         print 'range error:', ret
         return
@@ -145,6 +161,117 @@ def ping(*args):
     end = time.time()
 
     print 'use time:', end - start, 'speed:', count / (end-start)
+
+def lpush(*args):
+    try:
+        start = int(args[0])
+        num   = int(args[1])
+    except:
+        start = 0
+        num   = 1000
+
+    try:
+        val = '%012d' % int(args[2])
+    except:
+        val = None
+
+    print 'lpush:', start, num, val
+
+    m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
+   
+    ret = m.create_list(key, 12, "1")
+    if ret != MEMLINK_OK:
+        print 'create haha error!', ret
+        #return
+
+    for i in xrange(start, start + num):
+        if not val:
+            val2 = '%012d' % i
+        else:
+            val2 = val
+        print 'lpush:', val2
+        ret = m.lpush(key, val2, "1")
+        if ret != MEMLINK_OK:
+            print 'lpush error:', ret, i
+            return
+
+    m.destroy()
+
+def rpush(*args):
+    try:
+        start = int(args[0])
+        num   = int(args[1])
+    except:
+        start = 0
+        num   = 1000
+
+    try:
+        val = '%012d' % int(args[2])
+    except:
+        val = None
+
+    print 'lpush:', start, num, val
+
+    m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
+   
+    ret = m.create_list(key, 12, "1")
+    if ret != MEMLINK_OK:
+        print 'create haha error!', ret
+        #return
+
+    for i in xrange(start, start + num):
+        if not val:
+            val2 = '%012d' % i
+        else:
+            val2 = val
+        print 'rpush:', val2
+        ret = m.rpush(key, val2, "1")
+        if ret != MEMLINK_OK:
+            print 'rpush error:', ret, i
+            return
+
+    m.destroy()
+
+def lpop(*args):
+    try:
+        count = int(args[0])
+    except:
+        count = 1
+    print 'lpop count:', count
+    m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
+    ret, result = m.lpop(key, count)
+    if ret != MEMLINK_OK:
+        print 'lpop error:', ret
+        return 
+    print 'lpop result:', result.count
+    item = result.root
+    while item:
+        print item.value, item.mask
+        item = item.next
+
+    m.destroy()
+
+def rpop(*args):
+    try:
+        count = int(args[0])
+    except:
+        count = 1
+    print 'rpop count:', count
+    m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
+    ret, result = m.rpop(key, count)
+    if ret != MEMLINK_OK:
+        print 'rpop error:', ret
+        return 
+    print 'rpop result:', result.count
+    item = result.root
+    while item:
+        print item.value, item.mask
+        item = item.next
+
+    m.destroy()
+
+
+
 
 if __name__ == '__main__':
     action = sys.argv[1]

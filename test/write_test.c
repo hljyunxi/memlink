@@ -236,7 +236,7 @@ int createKey()
 	char my_key[32];
 	int num = my_rand(200);
 	sprintf(my_key, "haha%d", num);
-	ret = memlink_cmd_create(m, my_key, 6, "4:3:1");
+	ret = memlink_cmd_create_list(m, my_key, 6, "4:3:1");
 	if (ret != MEMLINK_OK && ret != MEMLINK_ERR_EKEY) {
 		DERROR("create %s error: %d\n", my_key, ret);
 		return -2;
@@ -364,7 +364,7 @@ int main()
 	int  ret;
 
 	sprintf(key, "haha");
-	ret = memlink_cmd_create(m, key, 6, "4:3:1");
+	ret = memlink_cmd_create_list(m, key, 6, "4:3:1");
 	creatList(list, key);
 	if (ret != MEMLINK_OK) {
 		DERROR("create %s error: %d\n", key, ret);

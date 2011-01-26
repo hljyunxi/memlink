@@ -57,7 +57,12 @@ int         memlink_cmd_dump(MemLink *m);
 int			memlink_cmd_clean(MemLink *m, char *key);
 int			memlink_cmd_stat(MemLink *m, char *key, MemLinkStat *stat);
 int			memlink_cmd_stat_sys(MemLink *m, MemLinkStatSys *stat);
-int			memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr);
+int			memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr, 
+                                unsigned char listtype, unsigned char valuetype);
+
+int			memlink_cmd_create_list(MemLink *m, char *key, int valuelen, char *maskstr);
+int			memlink_cmd_create_queue(MemLink *m, char *key, int valuelen, char *maskstr);
+int			memlink_cmd_create_sortlist(MemLink *m, char *key, int valuelen, char *maskstr, unsigned char valuetype);
 int			memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen);
 int			memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen, 
                                char *maskstr, int pos);

@@ -59,7 +59,7 @@ def testb():
     num = 50000
     for i in xrange(0, num):
         key = 'haha%05d' % i
-        ret = m.create(key, 10, "4:3:1")
+        ret = m.create_list(key, 10, "4:3:1")
         if ret != MEMLINK_OK:
             print 'create error:', ret
             return -1
@@ -82,7 +82,7 @@ def testc():
     num = 100000
     for i in xrange(0, num):
         key = 'haha%05d' % i
-        ret = m.create(key, 10, "4:3:1")
+        ret = m.create_list(key, 10, "4:3:1")
         if ret != MEMLINK_OK:
             print 'create error:', ret
             return -1
@@ -131,7 +131,7 @@ def testd():
     num = 100000
     for i in xrange(0, num):
         key = 'haha%05d' % i
-        ret = m.create(key, 10, "4:3:1")
+        ret = m.create_list(key, 10, "4:3:1")
         if ret != MEMLINK_OK:
             print 'create error:', ret
             return -1
@@ -177,7 +177,7 @@ def teste():
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30);
     
     key = 'haha999999'
-    ret = m.create(key, 10, "4:3:1")
+    ret = m.create_list(key, 10, "4:3:1")
     if ret != MEMLINK_OK and ret != MEMLINK_ERR_EKEY:
         print 'create error:', ret
         return -1
@@ -241,7 +241,7 @@ def testg():
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30);
     key = 'haha999999'
-    ret = m.create(key, 10, "4:3:1")
+    ret = m.create_list(key, 10, "4:3:1")
     if ret != MEMLINK_OK and ret != MEMLINK_ERR_EKEY:
         print 'create error:', ret
         return -1
@@ -259,7 +259,7 @@ def testg():
     c = raw_input()'''
 
     key = 'haha999999'
-    ret = m.create(key, 10, "4:3:1")
+    ret = m.create_list(key, 10, "4:3:1")
     if ret != MEMLINK_OK and ret != MEMLINK_ERR_EKEY:
         print 'create error:', ret
         return -1
@@ -290,7 +290,7 @@ def testg():
 def testi():
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30);
     key = 'haha888888'
-    ret = m.create(key, 10, "4:3:1")
+    ret = m.create_list(key, 10, "4:3:1")
     if ret != MEMLINK_OK and ret != MEMLINK_ERR_EKEY:
         print 'create error:', ret
         return -1
@@ -315,7 +315,7 @@ def test():
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30);
     
     key = 'haha777777'
-    ret = m.create(key, 10, "4:3:1")
+    ret = m.create_list(key, 10, "4:3:1")
     if ret != MEMLINK_OK and ret != MEMLINK_ERR_EKEY:
         print 'create error:', ret
         return -1

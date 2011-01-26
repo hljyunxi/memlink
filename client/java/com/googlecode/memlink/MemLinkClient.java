@@ -42,9 +42,24 @@ public class MemLinkClient
 		}
 	}
 
-	public int create(String key, int valuesize, String maskstr)
+	public int create(String key, int valuesize, String maskstr, int listtype, int valuetype)
 	{
-		return memlink.memlink_cmd_create(client, key, valuesize, maskstr);
+		return memlink.memlink_cmd_create(client, key, valuesize, maskstr, listtype, valuetype);
+	}
+
+    public int create_list(String key, int valuesize, String maskstr)
+	{
+		return memlink.memlink_cmd_create_list(client, key, valuesize, maskstr);
+	}
+
+    public int create_queue(String key, int valuesize, String maskstr)
+	{
+		return memlink.memlink_cmd_create_queue(client, key, valuesize, maskstr);
+	}
+    
+    public int create_sortlist(String key, int valuesize, String maskstr, int valuetype)
+	{
+		return memlink.memlink_cmd_create_sortlist(client, key, valuesize, maskstr, valuetype);
 	}
 	public int dump()
 	{
