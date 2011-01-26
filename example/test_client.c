@@ -26,7 +26,7 @@ int my_test_create_key()
 
 	snprintf(buf, 128, "%s", "test");
 
-	ret = memlink_cmd_create(m, buf, 6, "4:3:1");
+	ret = memlink_cmd_create_list(m, buf, 6, "4:3:1");
 	DINFO("memlink_cmd_crate: %d\n", ret);
 	
 	return 1;

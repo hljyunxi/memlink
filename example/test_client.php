@@ -5,7 +5,7 @@ function test_create($m, $key)
 {
     $maskformat = "4:3:1";
     $valuesize  = 12;
-    $ret = $m->create($key, $valuesize, $maskformat);
+    $ret = $m->create_list($key, $valuesize, $maskformat);
     if ($ret != MEMLINK_OK) {
         echo "create error: $ret\n";
         return -1;
