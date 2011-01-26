@@ -73,7 +73,7 @@ Command Description:
             print 'bad input! expected at least %d' % x.atleast
             return -1
         
-        ret = self.m.create(key, valuesize, maskformat)
+        ret = self.m.create_list(key, valuesize, maskformat)
         print 'create (%s %d %s) '% (key, valuesize, maskformat), 
         if ret == MEMLINK_OK:
             print 'OK!'

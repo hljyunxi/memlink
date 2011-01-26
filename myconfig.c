@@ -218,7 +218,7 @@ load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
 	}
 
 	unsigned int blen; 
-	unsigned int logver = 0, logline = 0, indexpos = 0;
+	unsigned int logver = 0, logline = 0, count = 0;
 	while (data < enddata) {
 		//blen = *(unsigned short*)(data + SYNCPOS_LEN);
 		blen = *(unsigned int*)(data + SYNCPOS_LEN);
@@ -240,7 +240,7 @@ load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
 				DERROR("wdata_apply log error: %d\n", ret);
 				MEMLINK_EXIT;
 			}
-			indexpos ++;
+			count ++;
 		}
 
 		data += SYNCPOS_LEN + blen + sizeof(int); 
@@ -250,9 +250,9 @@ load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
 		g_runtime->slave->logver  = logver;
 		g_runtime->slave->logline = logline;
 		if (dumplogver == binlogver) {
-			g_runtime->slave->binlog_index = indexpos + dumplogpos;
+			g_runtime->slave->binlog_index = count + dumplogpos;
 		}else{
-			g_runtime->slave->binlog_index = indexpos;
+			g_runtime->slave->binlog_index = count;
 		}
 	}
 
@@ -260,7 +260,7 @@ load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
 
 	close(ffd);
 
-	return indexpos;
+	return count;
 }
 
 static int
@@ -333,6 +333,8 @@ load_data()
 			MEMLINK_EXIT;
 		}
 	}
+
+    unsigned int count = 0;
     for (i = 0; i < n; i++) {
 		if (logids[i] < g_runtime->dumplogver) {
 			continue;
@@ -340,18 +342,18 @@ load_data()
         //snprintf(logname, PATH_MAX, "%s/data/bin.log.%d", g_runtime->home, logids[i]);
         snprintf(logname, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, logids[i]);
         DINFO("load synclog: %s\n", logname);
-        load_synclog(logname, g_runtime->dumplogver, g_runtime->dumplogpos);
+        count += load_synclog(logname, g_runtime->dumplogver, g_runtime->dumplogpos);
     }
 
     //snprintf(logname, PATH_MAX, "%s/data/bin.log", g_runtime->home);
     snprintf(logname, PATH_MAX, "%s/bin.log", g_cf->datadir);
     DINFO("load synclog: %s\n", logname);
-    load_synclog(logname, g_runtime->dumplogver, g_runtime->dumplogpos);
+    count += load_synclog(logname, g_runtime->dumplogver, g_runtime->dumplogpos);
 	
     if (havedump == 0) {
         dumpfile(g_runtime->ht);
     }
-
+    DNOTE("load binlog %u ok!\n", count);
     return 0;
 }
 
@@ -410,6 +412,7 @@ load_data_slave()
     int n;
     char logname[PATH_MAX];
     int  logids[10000] = {0};
+    unsigned int count = 0;
 		
 	n = synclog_scan_binlog(logids, 10000);
 	if (n < 0) {
@@ -450,6 +453,7 @@ load_data_slave()
 			if (ret > 0 && g_cf->role == ROLE_SLAVE) {
 				g_runtime->slave->binlog_ver = logids[i];
 			}
+            count += ret;
 		}
 		snprintf(logname, PATH_MAX, "%s/bin.log", g_cf->datadir);
 		DINFO("load synclog: %s\n", logname);
@@ -457,6 +461,7 @@ load_data_slave()
 		if (ret > 0 && g_cf->role == ROLE_SLAVE) {
 			g_runtime->slave->binlog_ver = g_runtime->synclog->version;
 		}
+        count += ret;
 	}
 
     if (havedump == 0) {
@@ -468,6 +473,8 @@ load_data_slave()
     }
 
 	DINFO("======== slave binlog_ver:%d, binlog_index:%d, logver:%d, logline:%d, dump_logver:%d, dumpsize:%lld, dumpfile_size:%lld\n", g_runtime->slave->binlog_ver, g_runtime->slave->binlog_index, g_runtime->slave->logver, g_runtime->slave->logline, g_runtime->slave->dump_logver, g_runtime->slave->dumpsize, g_runtime->slave->dumpfile_size);
+
+    DNOTE("load binlog %u ok!\n", count);
 
     return 0;
 }
