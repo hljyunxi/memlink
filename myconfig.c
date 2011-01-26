@@ -267,19 +267,31 @@ static int
 load_data()
 {
     int    ret;
-    struct stat stbuf;
     int    havedump = 0;
     char   filename[PATH_MAX];
+	char   dumpfileok[PATH_MAX];
 
     snprintf(filename, PATH_MAX, "%s/dump.dat", g_cf->datadir);
     // check dumpfile exist
+	/*
     ret = stat(filename, &stbuf);
     if (ret == -1 && errno == ENOENT) {
         DINFO("not found dumpfile: %s\n", filename);
-    }   
+    }*/
+ 	ret = isfile(filename);
+	if (ret == 0) {
+		DINFO("node fount dumpfile: %s\n", filename);
+		snprintf(dumpfileok, PATH_MAX, "%s/dump.dat.ok", g_cf->datadir);
+		if (!isfile(dumpfileok)) {
+			ret = 0;
+		} else {
+			rename(dumpfileok, filename);
+			ret = 1;
+		}
+	}	
   
     // have dumpfile, load
-    if (ret == 0) {
+    if (ret == 1) {
         havedump = 1;
     
         DINFO("try load dumpfile ...\n");
@@ -296,13 +308,31 @@ load_data()
     char logname[PATH_MAX];
     int  logids[10000] = {0};
 		
+	DINFO("havedump: %d\n", havedump);
 	n = synclog_scan_binlog(logids, 10000);
 	if (n < 0) {
 		DERROR("get binlog error! %d\n", n);
 		return -1;
 	}
-    DINFO("dumplogver: %d, n: %d\n", g_runtime->dumplogver, n);
-	
+	DINFO("dumplogver: %d, n: %d\n", g_runtime->dumplogver, n);
+	//没有dump.dat也没有dump.dat.ok,且本地binlog不是从1开始记录的
+	if (havedump == 0) {
+		/*
+		if (logids[0] == 0 && g_runtime->logver != 1) {//本地只有bin.log，且bin.log的logver不为1
+			DERROR("no dump.dat, binlog version must start from 1. logver: %d\n", g_runtime->logver);
+			MEMLINK_EXIT;
+		} else {
+			if (logids[0] != 1 ) {//本地有一系列的bin.log.xxx，但是logver不是从1开始的
+				DERROR("no dump.dat, binlog version must start from 1. binlog version start: %d\n", logids[0]);
+				MEMLINK_EXIT;
+			}
+		}	
+		*/
+		if (!(logids[0] == 1 || g_runtime->logver == 1)) {
+			DERROR("no dump.dat, binlog version must start from 1. binlog version start: %d\n", logids[0]);
+			MEMLINK_EXIT;
+		}
+	}
     for (i = 0; i < n; i++) {
 		if (logids[i] < g_runtime->dumplogver) {
 			continue;
@@ -334,9 +364,16 @@ load_data_slave()
 	int    load_master_dump = 0;
     char   dump_filename[PATH_MAX];
 	char   master_filename[PATH_MAX];
+	char   dumpfileok[PATH_MAX];
 
     snprintf(dump_filename, PATH_MAX, "%s/dump.dat", g_cf->datadir);
     snprintf(master_filename, PATH_MAX, "%s/dump.master.dat", g_cf->datadir);
+	if (!isfile(dump_filename)) {
+		snprintf(dumpfileok, PATH_MAX, "%s/dump.dat.ok", g_cf->datadir);
+		if(isfile(dumpfileok)) {
+			rename(dumpfileok, dump_filename);
+		}
+	}
     // check dumpfile exist
 	if (isfile(dump_filename) == 0) {
 		if (isfile(master_filename)) {
@@ -352,6 +389,8 @@ load_data_slave()
 
             dumpfile_logver(master_filename, &slave->logver, &slave->logline);
 			load_master_dump = 1;
+			//如果要加载dump.master.dat，清空本地binlog
+			synclog_clean(slave->logver, slave->logline);
 		}
 	}else{
 		// have dumpfile, load
@@ -380,6 +419,25 @@ load_data_slave()
     DINFO("dumplogver: %d, n: %d\n", g_runtime->dumplogver, n);
 
 	if (load_master_dump == 0) {
+		//没有dump.dat也没有dump.dat.ok,且本地binlog不是从1开始记录的
+		if (havedump == 0) {
+			/*
+			if (logids[0] == 0 && g_runtime->logver != 1) {//本地只有bin.log，且bin.log的logver不为1
+				DERROR("no dump.dat, binlog version must start from 1. logver: %d\n", g_runtime->logver);
+				MEMLINK_EXIT;
+			} else {
+				if (logids[0] != 1 ) {//本地有一系列的bin.log.xxx，但是logver不是从1开始的
+					DERROR("no dump.dat, binlog version must start from 1. binlog version start: %d\n", logids[0]);
+					MEMLINK_EXIT;
+				}
+			}	
+			*/
+			if (!(logids[0] == 1 || g_runtime->logver == 1)) {
+				DERROR("no dump.dat, binlog version must start from 1. binlog version start: %d\n", logids[0]);
+				MEMLINK_EXIT;
+			}
+
+		}
 		int i;
 		DINFO("load binlog ...\n");
 		for (i = 0; i < n; i++) {

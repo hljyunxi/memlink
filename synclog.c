@@ -399,11 +399,11 @@ synclog_validate(SyncLog *slog)
         }else{
             DERROR("index too small, at:%u, index:%d\n", cur, i);
             MEMLINK_EXIT;
-            /*
-            lastidx = lastidx + sizeof(short) + dlen; // skip to next
+			/*
+            lastidx = lastidx + sizeof(int) + dlen; // skip to next
             if (i == 0 || lastidx > oldidx) { // add index
-                //loopdata[slog->index_pos] = cur;
-                //slog->index_pos += 1;
+                loopdata[slog->index_pos] = lastidx;
+                slog->index_pos += 1;
 				DNOTE("lastidx: %d, oldidx: %d\n", lastidx, oldidx);
             }*/
         }
@@ -627,7 +627,11 @@ synclog_scan_binlog(int *result, int rsize)
     if (NULL == mydir) {
         DERROR("opendir %s error: %s\n", g_cf->datadir, strerror(errno));
         return -2; 
-    }   
+    } 
+   	//本地没有dump.dat文件	
+   	if (g_runtime->dumplogver == 0) {
+		minid = 1;
+	}	
     while ((nodes = readdir(mydir)) != NULL) {
         //DINFO("name: %s\n", nodes->d_name);
         if (strncmp(nodes->d_name, "bin.log.", 8) == 0) {
@@ -841,6 +845,8 @@ int synclog_clean(unsigned int logver, unsigned int dumplogpos)
 {
 	DIR     *mydir; 
     struct  dirent *nodes;
+	char logname[PATH_MAX];
+	char logname_new[PATH_MAX];
 
     DINFO("try get synclog ...\n");
     mydir = opendir(g_cf->datadir);
@@ -852,26 +858,33 @@ int synclog_clean(unsigned int logver, unsigned int dumplogpos)
 		//DINFO("name: %s\n", nodes->d_name);
 		if (strncmp(nodes->d_name, "bin.log.", 8) == 0) {
 			int binid = atoi(&nodes->d_name[8]);
-			if (binid >= logver) {
-				char logname[PATH_MAX];
-				char logname_new[PATH_MAX];
 
-				snprintf(logname, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, binid);
-				snprintf(logname_new, PATH_MAX, "%s/rm.bin.log.%d", g_cf->datadir, binid);
-				if (isfile(logname)) {
-					int ret;
+			snprintf(logname, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, binid);
+			snprintf(logname_new, PATH_MAX, "%s/rm.bin.log.%d", g_cf->datadir, binid);
+			if (isfile(logname)) {
+				int ret;
 
-					DINFO("ok, rename %s to %s\n", logname, logname_new);
-					ret = rename(logname, logname_new);
-					if (ret < 0) {
-						DERROR("rename %s error: %d, %s\n", logname, ret, strerror(errno));
-						MEMLINK_EXIT;
-					}
+				DINFO("ok, rename %s to %s\n", logname, logname_new);
+				ret = rename(logname, logname_new);
+				if (ret < 0) {
+					DERROR("rename %s error: %d, %s\n", logname, ret, strerror(errno));
+					MEMLINK_EXIT;
 				}
 			}
 		}   
-	}   
-	closedir(mydir);        
-	synclog_truncate(g_runtime->synclog, logver, dumplogpos);	
+	}  
+
+	synclog_close(g_runtime->synclog);
+	snprintf(logname, PATH_MAX, "%s/bin.log", g_cf->datadir);
+	snprintf(logname_new, PATH_MAX, "%s/rm.bin.log", g_cf->datadir);
+	if (isfile(logname)) {
+		rename(logname, logname_new);
+	}
+	g_runtime->synclog->version = logver - 1;
+	g_runtime->logver = logver;
+	synclog_new(g_runtime->synclog);
+	g_runtime->synclog->index_pos = dumplogpos;
+	//closedir(mydir);
+	//synclog_truncate(g_runtime->synclog, logver, dumplogpos);	
 	return 1;
 }
