@@ -95,8 +95,9 @@ int main()
 	    //int count = 0;
 	    char *posaddr  = NULL;
 	    //DataBlock *last = NULL;
-	    ret = dataitem_lookup_pos(node, pos, 0, &dbk, &posaddr);
-        DINFO("ret:%d, posaddr:%p\n", ret, posaddr);
+        /*
+	    posaddr = dataitem_lookup(node, pos, 0, &dbk);
+        DINFO("posaddr:%p\n", posaddr);
 		if(NULL == posaddr)
 		{
 			DERROR("not found value:%s, pos:%d, posaddr:%p, dbk:%p\n",val, pos, posaddr, dbk);
@@ -114,7 +115,8 @@ int main()
 				DERROR("err value! pos:%d is not the right value%s!\n", pos, val);
 				return -1;
 			}
-		}
+		}*/
+
 	}
 	//hashtable_print(ht, key);
 	DINFO("hashtable_move test end!\n");

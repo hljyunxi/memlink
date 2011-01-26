@@ -78,6 +78,106 @@ dataitem_lookup(HashNode *node, void *value, DataBlock **dbk)
     }
     return NULL;
 }
+/**
+ * copy a value, mask to special address
+ * @param node  HashNode be copied
+ * @param addr  to address
+ * @param value copied value
+ * @param mask  copied mask, binary
+ */
+int
+dataitem_copy(HashNode *node, char *addr, void *value, void *mask)
+{
+    //char *m = mask;
+    //*m = *m | (*addr & 0x03);
+
+    DINFO("dataitem_copy valuesize: %d, masksize: %d\n", node->valuesize, node->masksize);
+    memcpy(addr, value, node->valuesize);
+    memcpy(addr + node->valuesize, mask, node->masksize);
+    
+    return MEMLINK_OK;
+}
+
+/**
+ * set mask to a value
+ */
+int
+dataitem_copy_mask(HashNode *node, char *addr, char *maskflag, char *mask)
+{
+    //char *m = mask;
+    //*m = *m | (*addr & 0x03);
+    int i;
+    char *maskaddr = addr + node->valuesize;
+    //char buf[128];
+    //DINFO("copy_mask before: %s\n", formatb(addr, node->masksize, buf, 128)); 
+
+    for (i = 0; i < node->masksize; i++) {
+        maskaddr[i] = (maskaddr[i] & maskflag[i]) | mask[i];
+    }
+    //memcpy(addr + node->valuesize, mask, node->masksize);
+    //DINFO("copy_mask after: %s\n", formatb(addr, node->masksize, buf, 128)); 
+
+    return MEMLINK_OK;
+}
+
+/**
+ * find a position with mask in datablock link
+ */
+int
+dataitem_lookup_pos_mask(HashNode *node, int pos, unsigned char kind, 
+						char *maskval, char *maskflag, DataBlock **dbk, char **addr)
+{
+    DataBlock *root = node->data;
+
+	int n = 0, startn = 0;
+	int i, k;
+	int datalen = node->valuesize + node->masksize;
+    
+    while (root) {
+		startn = n;
+		char *itemdata = root->data;
+
+		//for (i = 0; i < g_cf->block_data_count; i++) {
+		for (i = 0; i < root->data_count; i++) {
+			if (dataitem_have_data(node, itemdata, kind)) {
+				char *maskdata = itemdata + node->valuesize;	
+                /*
+				char buf[64], buf2[64];
+				DINFO("i: %d, maskdata: %s maskflag: %s\n", i, formatb(maskdata, node->masksize, buf, 64), formatb(maskflag, node->masksize, buf2, 64));
+                */
+				for (k = 0; k < node->masksize; k++) {
+					DINFO("check k:%d, maskdata:%x, maskflag:%x, maskval:%x\n", k, maskdata[k], maskflag[k], maskval[k]);
+					if ((maskdata[k] & maskflag[k]) != maskval[k]) {
+						break;
+					}
+				}
+				if (k < node->masksize) { // not equal
+					DINFO("not equal.\n");
+			        itemdata += datalen;
+					continue;
+				}
+
+				if (n >= pos) {
+					*dbk  = root;
+					*addr = itemdata;
+					return startn;
+				}
+				n += 1;
+			}
+			itemdata += datalen;
+		}
+		/*
+		if (n >= pos) {
+			*dbk = root;
+			return startn;
+		}*/
+
+        root = root->next;
+    }
+
+    return -1;
+}
+
 
 /**
  * print info in a datablock
@@ -189,64 +289,6 @@ datablock_lookup_pos(HashNode *node, int pos, unsigned char kind, DataBlock **db
 
 
 /**
- * find a position with mask in datablock link
- */
-int
-dataitem_lookup_pos_mask(HashNode *node, int pos, unsigned char kind, 
-						char *maskval, char *maskflag, DataBlock **dbk, char **addr)
-{
-    DataBlock *root = node->data;
-
-	int n = 0, startn = 0;
-	int i, k;
-	int datalen = node->valuesize + node->masksize;
-    
-    while (root) {
-		startn = n;
-		char *itemdata = root->data;
-
-		//for (i = 0; i < g_cf->block_data_count; i++) {
-		for (i = 0; i < root->data_count; i++) {
-			if (dataitem_have_data(node, itemdata, kind)) {
-				char *maskdata = itemdata + node->valuesize;	
-                /*
-				char buf[64], buf2[64];
-				DINFO("i: %d, maskdata: %s maskflag: %s\n", i, formatb(maskdata, node->masksize, buf, 64), formatb(maskflag, node->masksize, buf2, 64));
-                */
-				for (k = 0; k < node->masksize; k++) {
-					DINFO("check k:%d, maskdata:%x, maskflag:%x, maskval:%x\n", k, maskdata[k], maskflag[k], maskval[k]);
-					if ((maskdata[k] & maskflag[k]) != maskval[k]) {
-						break;
-					}
-				}
-				if (k < node->masksize) { // not equal
-					DINFO("not equal.\n");
-			        itemdata += datalen;
-					continue;
-				}
-
-				if (n >= pos) {
-					*dbk  = root;
-					*addr = itemdata;
-					return startn;
-				}
-				n += 1;
-			}
-			itemdata += datalen;
-		}
-		/*
-		if (n >= pos) {
-			*dbk = root;
-			return startn;
-		}*/
-
-        root = root->next;
-    }
-
-    return -1;
-}
-
-/**
  * find a position in datablock link
  */
 int
@@ -282,47 +324,6 @@ datablock_lookup_valid_pos(HashNode *node, int pos, unsigned char kind, DataBloc
     return -1;
 }
 
-/**
- * copy a value, mask to special address
- * @param node  HashNode be copied
- * @param addr  to address
- * @param value copied value
- * @param mask  copied mask, binary
- */
-int
-dataitem_copy(HashNode *node, char *addr, void *value, void *mask)
-{
-    //char *m = mask;
-    //*m = *m | (*addr & 0x03);
-
-    DINFO("dataitem_copy valuesize: %d, masksize: %d\n", node->valuesize, node->masksize);
-    memcpy(addr, value, node->valuesize);
-    memcpy(addr + node->valuesize, mask, node->masksize);
-    
-    return MEMLINK_OK;
-}
-
-/**
- * set mask to a value
- */
-int
-dataitem_copy_mask(HashNode *node, char *addr, char *maskflag, char *mask)
-{
-    //char *m = mask;
-    //*m = *m | (*addr & 0x03);
-    int i;
-    char *maskaddr = addr + node->valuesize;
-    //char buf[128];
-    //DINFO("copy_mask before: %s\n", formatb(addr, node->masksize, buf, 128)); 
-
-    for (i = 0; i < node->masksize; i++) {
-        maskaddr[i] = (maskaddr[i] & maskflag[i]) | mask[i];
-    }
-    //memcpy(addr + node->valuesize, mask, node->masksize);
-    //DINFO("copy_mask after: %s\n", formatb(addr, node->masksize, buf, 128)); 
-
-    return MEMLINK_OK;
-}
 
 /**
  * create a new small datablock and add  value
