@@ -28,6 +28,10 @@
 
 #define CMD_PING			20
 #define CMD_STAT_SYS		21
+// for sorted list
+#define CMD_SL_INSERT       22
+#define CMD_SL_DEL          23
+#define CMD_SL_COUNT        24
 
 #define CMD_SYNC            100 
 #define CMD_GETDUMP		    101
@@ -63,9 +67,11 @@ int cmd_stat_sys_pack(char *data);
 int cmd_stat_sys_unpack(char *data);
 
 int cmd_create_pack(char *data, char *key, unsigned char valuelen, 
-                    unsigned char masknum, unsigned int *maskformat);
+                    unsigned char masknum, unsigned int *maskformat,
+                    unsigned char listtype, unsigned char valuetype);
 int cmd_create_unpack(char *data, char *key, unsigned char *valuelen, 
-                      unsigned char *masknum, unsigned int *maskformat);
+                      unsigned char *masknum, unsigned int *maskformat,
+                      unsigned char *listtype, unsigned char *valuetype);
 
 int cmd_del_pack(char *data, char *key, char *value, unsigned char valuelen);
 int cmd_del_unpack(char *data, char *key, char *value, unsigned char *valuelen);

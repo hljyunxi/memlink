@@ -26,7 +26,7 @@ int main()
 	for( i = 0 ; i < nodenum; i++) 
 	{
 		sprintf(key, "haha%d", i);
-		ret = memlink_cmd_create(m, key, 6, "4:3:1");
+		ret = memlink_cmd_create_list(m, key, 6, "4:3:1");
 		
 		if (ret != MEMLINK_OK) {
 			DERROR("memlink_cmd_create %s error: %d\n", key, ret);
@@ -34,28 +34,28 @@ int main()
 		}
 	}
 	
-	ret = memlink_cmd_create(m, key, 6, "4:3:1");
+	ret = memlink_cmd_create_list(m, key, 6, "4:3:1");
 	if (ret == MEMLINK_OK) {
 		DERROR("memlink_cmd_create %s error: %d\n", key, ret);
 		return -3;
 	}
 
 	strcpy(key, "haha1111");
-	ret = memlink_cmd_create(m, key, -1, "4:3:1");
+	ret = memlink_cmd_create_list(m, key, -1, "4:3:1");
 	if (ret == MEMLINK_OK) {
 		DERROR("memlink_cmd_create %s error: %d\n", key, ret);
 		return -3;
 	}
 
 	strcpy(key, "haha2222");
-	ret = memlink_cmd_create(m, key, 12, "4:3:21474");
+	ret = memlink_cmd_create_list(m, key, 12, "4:3:21474");
 	if (ret == MEMLINK_OK) {
 		DERROR("memlink_cmd_create %s error: %d, mask=%s\n", key, ret, "4:3:21474");
 		return -3;
 	}
 
 	strcpy(key, "haha3333");
-	ret = memlink_cmd_create(m, key, 12, "");
+	ret = memlink_cmd_create_list(m, key, 12, "");
 	if (ret != MEMLINK_OK) {
 		DERROR("memlink_cmd_create %s error: %d, mask=%s\n", key, ret, "");
 		return -3;

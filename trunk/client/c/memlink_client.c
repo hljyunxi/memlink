@@ -391,7 +391,8 @@ memlink_cmd_stat_sys(MemLink *m, MemLinkStatSys *stat)
 }
 
 int
-memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr)
+memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr,
+                   unsigned char listtype, unsigned char valuetype)
 {
 	if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
 		return MEMLINK_ERR_PARAM;
@@ -417,7 +418,7 @@ memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr)
 		}
 	}
    
-    len = cmd_create_pack(data, key, valuelen, masknum, maskarray);
+    len = cmd_create_pack(data, key, valuelen, masknum, maskarray, listtype, valuetype);
     DINFO("pack create len: %d\n", len);
 
     //printh(data, len); 
@@ -427,6 +428,24 @@ memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr)
 		return ret;
 	return MEMLINK_OK;
 
+}
+
+int 
+memlink_cmd_create_list(MemLink *m, char *key, int valuelen, char *maskstr)
+{
+    return memlink_cmd_create(m, key, valuelen, maskstr, MEMLINK_LIST, 0);
+}
+
+int 
+memlink_cmd_create_queue(MemLink *m, char *key, int valuelen, char *maskstr)
+{
+    return memlink_cmd_create(m, key, valuelen, maskstr, MEMLINK_QUEUE, 0);
+}
+
+int 
+memlink_cmd_create_sortlist(MemLink *m, char *key, int valuelen, char *maskstr, unsigned char valuetype)
+{
+    return memlink_cmd_create(m, key, valuelen, maskstr, MEMLINK_SORT_LIST, valuetype);
 }
 
 int

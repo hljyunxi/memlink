@@ -278,6 +278,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
     unsigned int    maskformat[HASHTABLE_MASK_MAX_ITEM];
     unsigned int    maskarray[HASHTABLE_MASK_MAX_ITEM];
     unsigned char   tag;
+    unsigned char   listtype, valuetype;
     int				pos;
     int             vnum;
     int             num = 0;
@@ -314,8 +315,8 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             break;
         case CMD_CREATE:
             DINFO("<<< cmd CREATE >>>\n");
-
-            ret = cmd_create_unpack(data, key, &valuelen, &masknum, maskformat);
+            
+            ret = cmd_create_unpack(data, key, &valuelen, &masknum, maskformat, &listtype, &valuetype);
 			if (ret != 0) {
 				DINFO("unpack create error! ret: %d\n", ret);
                 goto wdata_apply_over;
@@ -323,7 +324,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
 
             DINFO("unpack key: %s, valuelen: %d, masknum: %d, maskarray: %d,%d,%d\n", 
 					key, valuelen, masknum, maskformat[0], maskformat[1], maskformat[2]);
-			if (key[0] == 0 || valuelen <= 0) {
+			if (key[0] == 0 || valuelen <= 0 || listtype <= 0 || listtype > MEMLINK_SORT_LIST) {
 				ret = MEMLINK_ERR_PARAM;
                 goto wdata_apply_over;
 			}
@@ -334,7 +335,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
                 goto wdata_apply_over;
 			}
             vnum = valuelen;
-            ret = hashtable_key_create_mask(g_runtime->ht, key, vnum, maskformat, masknum);
+            ret = hashtable_key_create_mask(g_runtime->ht, key, vnum, maskformat, masknum, listtype, valuetype);
             DINFO("hashtable_key_create_mask return: %d\n", ret);
             break;
         case CMD_DEL:

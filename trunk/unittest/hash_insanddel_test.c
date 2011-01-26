@@ -32,7 +32,7 @@ int main()
 	for(i = 0; i < num; i++)
 	{
 		sprintf(key, "heihei%03d", i);
-		hashtable_key_create_mask(ht, key, valuesize, maskformat, masknum);
+		hashtable_key_create_mask(ht, key, valuesize, maskformat, masknum, MEMLINK_LIST, 0);
 	}
 	for(i = 0; i < num; i++)
 	{

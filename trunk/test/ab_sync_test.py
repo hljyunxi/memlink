@@ -23,7 +23,7 @@ def test():
    
     key = 'haha'
     maskstr = "8:1:1"
-    ret = client2master.create(key , 12, "4:3:1")
+    ret = client2master.create_list(key , 12, "4:3:1")
     if ret != MEMLINK_OK:
         print 'create error:', ret, key
         return -1
@@ -74,7 +74,7 @@ def test():
     x1 = start_a_new_master()
     time.sleep(1)
    
-    ret = client2master.create(key , 12, "4:3:1")
+    ret = client2master.create_list(key , 12, "4:3:1")
     if ret != MEMLINK_OK:
         print 'create error:', ret, key
         return -1

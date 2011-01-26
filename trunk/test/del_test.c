@@ -21,7 +21,7 @@ int main()
 	char buf[64];
 	
 	sprintf(buf, "haha");
-	ret = memlink_cmd_create(m, buf, 6, "4:3:2");
+	ret = memlink_cmd_create_list(m, buf, 6, "4:3:2");
 	if (ret != MEMLINK_OK) {
 		printf("memlink_cmd_create %s error: %d\n", buf, ret);
 		return -2;
@@ -36,7 +36,7 @@ int main()
 
 		ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr, i);
 		if (ret != MEMLINK_OK) {
-			printf("insert error, key:%s, value:%s, mask:%s, i:%d\n", buf, val, maskstr, i);
+			printf("insert error, ret:%d, key:%s, value:%s, mask:%s, i:%d\n", ret, buf, val, maskstr, i);
 			return -3;
 		}
 	}
@@ -126,7 +126,7 @@ int main()
 	}
 
 	sprintf(buf, "hihi");
-	ret = memlink_cmd_create(m, buf, 255, "4:3:1");
+	ret = memlink_cmd_create_list(m, buf, 255, "4:3:1");
 	if (ret != MEMLINK_OK) {
 		DERROR("1 memlink_cmd_create %s error: %d\n", buf, ret);
 		return -2;
@@ -137,7 +137,7 @@ int main()
 		sprintf(val2, "%06d", i);
 		ret = memlink_cmd_insert(m, buf, val2, strlen(val2), maskstr, i);	
 		if (ret != MEMLINK_OK) {
-			DERROR("insert error, key:%s, val:%s, mask:%s, i:%d\n", buf, val, maskstr, i);
+			DERROR("insert error, ret:%d, key:%s, val:%s, mask:%s, i:%d\n", ret, buf, val, maskstr, i);
 			return -3;
 		}
 	}

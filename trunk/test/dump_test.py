@@ -64,7 +64,7 @@ def test():
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30);
    
     key = 'haha000'
-    ret = m.create(key, 10, "4:3:1")
+    ret = m.create_list(key, 10, "4:3:1")
     if ret != MEMLINK_OK:
         print 'create error:', ret, key
         return -1
@@ -97,7 +97,7 @@ def test():
     #create 199 key
     for i in range(1, 200):
         key = 'haha%03d' % i
-        ret = m.create(key, 6, "4:3:1")
+        ret = m.create_list(key, 6, "4:3:1")
         if ret != MEMLINK_OK:
             print 'create error:', ret, key
             return -1

@@ -29,8 +29,17 @@ class MemLinkClient:
     def clean(self, key):
         return memlink_cmd_clean(self.client, key)
 
-    def create(self, key, valuesize, maskstr):
-        return memlink_cmd_create(self.client, key, valuesize, maskstr)
+    def create(self, key, valuesize, maskstr, listtype, valuetype):
+        return memlink_cmd_create(self.client, key, valuesize, maskstr, listtype, valuetype)
+
+    def create_list(self, key, valuesize, maskstr):
+        return memlink_cmd_create_list(self.client, key, valuesize, maskstr);
+    
+    def create_queue(self, key, valuesize, maskstr):
+        return memlink_cmd_create_queue(self.client, key, valuesize, maskstr);
+
+    def create_sortlist(self, key, valuesize, maskstr, valuetype):
+        return memlink_cmd_create_sortlist(self.client, key, valuesize, maskstr, valuetype);
 
     def stat(self, key):
         mstat = MemLinkStat()

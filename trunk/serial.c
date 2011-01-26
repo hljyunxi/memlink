@@ -574,7 +574,9 @@ cmd_stat_sys_unpack(char *data)
  * @param return the length of the whole command.
  */
 int 
-cmd_create_pack(char *data, char *key, unsigned char valuelen, unsigned char masknum, unsigned int *maskarray)
+cmd_create_pack(char *data, char *key, unsigned char valuelen, 
+                unsigned char masknum, unsigned int *maskarray,
+                unsigned char listtype, unsigned char valuetype)
 {
     unsigned char  cmd = CMD_CREATE;
     unsigned short count = CMD_REQ_SIZE_LEN;
@@ -588,6 +590,10 @@ cmd_create_pack(char *data, char *key, unsigned char valuelen, unsigned char mas
 
     //count += pack_string(data + count, maskarray, masknum);
     count += pack_mask(data + count, maskarray, masknum);
+    memcpy(data + count, &listtype, sizeof(char));
+    count += sizeof(char);
+    memcpy(data + count, &valuetype, sizeof(char));
+    count += sizeof(char);
     len = count - CMD_REQ_SIZE_LEN;
     memcpy(data, &len, CMD_REQ_SIZE_LEN);
     
@@ -595,7 +601,9 @@ cmd_create_pack(char *data, char *key, unsigned char valuelen, unsigned char mas
 }
 
 int 
-cmd_create_unpack(char *data, char *key, unsigned char *valuelen, unsigned char *masknum, unsigned int *maskarray)
+cmd_create_unpack(char *data, char *key, unsigned char *valuelen, 
+                  unsigned char *masknum, unsigned int *maskarray,
+                  unsigned char *listtype, unsigned char *valuetype)
 {
     int count = CMD_REQ_HEAD_LEN;
     unsigned char len;
@@ -603,8 +611,10 @@ cmd_create_unpack(char *data, char *key, unsigned char *valuelen, unsigned char 
     count += unpack_string(data + count, key, &len);
     memcpy(valuelen, data + count, sizeof(char));
     count += sizeof(char);
-    //unpack_string(data + count, maskarray, masknum);
-    unpack_mask(data + count, maskarray, masknum);
+    count += unpack_mask(data + count, maskarray, masknum);
+    memcpy(listtype, data + count, sizeof(char));
+    count += sizeof(char);
+    memcpy(valuetype, data + count, sizeof(char));
 
     return 0;
 }

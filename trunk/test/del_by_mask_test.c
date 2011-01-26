@@ -21,7 +21,7 @@ int main()
 	char buf[64];
 	
 	sprintf(buf, "haha");
-	ret = memlink_cmd_create(m, buf, 6, "4:3:2");
+	ret = memlink_cmd_create_list(m, buf, 6, "4:3:2");
 	if (ret != MEMLINK_OK) {
 		printf("memlink_cmd_create %s error: %d\n", buf, ret);
 		return -2;
@@ -80,7 +80,7 @@ int main()
 	}
 
 	sprintf(buf, "hehe");
-	ret = memlink_cmd_create(m, buf, 6, "4:3:2");
+	ret = memlink_cmd_create_list(m, buf, 6, "4:3:2");
 	if (ret != MEMLINK_OK) {
 		printf("memlink_cmd_create %s error: %d\n", buf, ret);
 		return -2;
