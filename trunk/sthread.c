@@ -218,6 +218,7 @@ read_synclog(int fd, short event, void *arg)
 	if (synclog->index_pos >= SYNCLOG_INDEXNUM) {
 		if (synclog->version < g_runtime->logver) {
 			synclog_destroy(conn->synclog);
+			conn->synclog = NULL;
 			if (check_binlog_local(conn, synclog->version + 1, 0) < 0) {
 				MEMLINK_EXIT;
 			}
@@ -389,6 +390,7 @@ check_binlog_local(SyncConn *conn, unsigned int log_ver, unsigned int log_line)
 					return 0;
 				} else {
 					synclog_destroy(conn->synclog);
+					conn->synclog = NULL;
 					return -6;
 				}
 			} else {
@@ -399,6 +401,7 @@ check_binlog_local(SyncConn *conn, unsigned int log_ver, unsigned int log_line)
 				return 0;	
 			} else {
 				synclog_destroy(conn->synclog);
+				conn->synclog = NULL;
 				return -7;
 			}
 		}
@@ -473,6 +476,7 @@ sync_conn_destroy(Conn *c)
 	}
 	if (conn->synclog != NULL && conn->synclog->fd > 0) {
 		synclog_destroy(conn->synclog);
+		conn->synclog = NULL;
 	}
 	zz_free(conn);
 }

@@ -535,10 +535,10 @@ sslave_conn_init(SSlave *ss)
     unsigned int  dumpver;
     //long long     dumpsize;
 	char    mdumpfile[PATH_MAX];
-	char    mdumpfile_tmp[PATH_MAX];
+	//char    mdumpfile_tmp[PATH_MAX];
 
     snprintf(mdumpfile, PATH_MAX, "%s/dump.master.dat", g_cf->datadir);
-    snprintf(mdumpfile_tmp, PATH_MAX, "%s/dump.master.dat.tmp", g_cf->datadir);
+    //snprintf(mdumpfile_tmp, PATH_MAX, "%s/dump.master.dat.tmp", g_cf->datadir);
 
     DINFO("slave init ...\n");
     DINFO("ss->dumpsize:%lld, ss->dumpfile_size:%lld, ss->dump_logver:%d\n", ss->dumpsize, ss->dumpfile_size, ss->dump_logver);
@@ -581,7 +581,7 @@ sslave_conn_init(SSlave *ss)
 			DINFO("sync ok! try recv push message.\n");
 			return 0;
 		}
-		if (syncret == CMD_SYNC_FAILED) {
+		if (syncret == CMD_SYNC_FAILED && (ss->logver == 0 && ss->logline == 0)) {
 			if (sslave_do_getdump(ss) == 0) {
 				DINFO("load dump ...\n");
 				hashtable_clear_all(g_runtime->ht);
@@ -603,7 +603,8 @@ sslave_conn_init(SSlave *ss)
 				is_getdump = 1;
 				synclog_clean(ss->logver, g_runtime->dumplogpos);
 			}else{
-				return -1;
+				DERROR("The slave data may be error!\n");
+				MEMLINK_EXIT;
 			}
 		}
 	} 

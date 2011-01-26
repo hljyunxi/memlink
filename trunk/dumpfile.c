@@ -33,6 +33,8 @@ dumpfile(HashTable *ht)
 
     char        tmpfile[PATH_MAX];
     char        dumpfile[PATH_MAX];
+	char        dumpfileok[PATH_MAX];
+	char        dumpfiletime[PATH_MAX];
     int         i;
 	long long   size = 0;
 	struct timeval start, end;
@@ -41,6 +43,7 @@ dumpfile(HashTable *ht)
 
     snprintf(dumpfile, PATH_MAX, "%s/%s", g_cf->datadir, DUMP_FILE_NAME);
     snprintf(tmpfile, PATH_MAX, "%s/%s.tmp", g_cf->datadir, DUMP_FILE_NAME);
+	snprintf(dumpfileok, PATH_MAX, "%s/%s.ok", g_cf->datadir, DUMP_FILE_NAME);
 
     DINFO("dumpfile to tmp: %s\n", tmpfile);
    
@@ -114,13 +117,46 @@ dumpfile(HashTable *ht)
 	ffwrite(&size, sizeof(long long), 1, fp);
 
     fclose(fp);
-
-    int ret = rename(tmpfile, dumpfile);
-    DINFO("rename %s to %s return: %d\n", tmpfile, dumpfile, ret);
+	
+	//把dump.dat.tmp变成dump.dat.ok，以备后面使用
+    int ret = rename(tmpfile, dumpfileok);
+    DINFO("rename %s to %s return: %d\n", tmpfile, dumpfileok, ret);
     if (ret == -1) {
         DERROR("dumpfile rename error: %s\n", strerror(errno));
     }
-    
+	
+	if (isfile(dumpfile)) {
+		//保存当前的dump.dat，在后面加上时间以区分
+		time_t timep;
+		struct tm result, *p;
+
+		time(&timep);
+		localtime_r(&timep, &result);
+		p = &result;
+		snprintf(dumpfiletime, PATH_MAX, "%s/%s.%d%02d%02d.%02d%02d%02d", g_cf->datadir, DUMP_FILE_NAME, 
+			p->tm_year + 1900, 1 + p->tm_mon, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec); 
+		//如果加了这个日期后缀的文件存在，再在文件后面加一个随机数
+		int i = 1;
+		while (isfile(dumpfiletime)) {
+			snprintf(dumpfiletime, PATH_MAX, "%s/%s.%d%02d%02d.%02d%02d%02d.%02d", g_cf->datadir, DUMP_FILE_NAME,
+				p->tm_year + 1900, 1 + p->tm_mon, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec, i);
+			i++;
+		}
+
+		//如果dump.dat存在，则在后面加上日期后缀
+		ret = rename(dumpfile, dumpfiletime);
+		DINFO("rename %s to %s return: %d\n", dumpfile, dumpfiletime, ret);
+		if (ret == -1) {
+			DERROR("dumpfile rename error %s\n", strerror(errno));
+		}
+	}	
+	//把当前的dump.dat.ok，改名为dump.dat	
+	ret = rename (dumpfileok, dumpfile);
+	DINFO("rename %s to %s return: %d\n", dumpfileok, dumpfile, ret);
+	if (ret == -1) {
+		DERROR("dumpfile rename error %s\n", strerror(errno));
+	}
+   		
 	gettimeofday(&end, NULL);
 	DNOTE("dump time: %u us\n", timediff(&start, &end));
     return ret;
