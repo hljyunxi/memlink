@@ -409,7 +409,7 @@ synclog_validate(SyncLog *slog)
         }
     }
     
-    DWARNING("sync_validate index_pos:%d, pos:%d\n", slog->index_pos, slog->pos);
+    DNOTE("sync_validate index_pos:%d, pos:%d\n", slog->index_pos, slog->pos);
     return 0;
 }
 

@@ -29,9 +29,10 @@ def binlog(filename='bin.log'):
     while rdc < maxdata * 4:
         ns = f.read(4)
         v = struct.unpack('I', ns)
-        if v[0] == 0:
-            break
-        else:
+        #if v[0] == 0:
+        #    break
+        #else:
+        if v[0] > 0:
             indexes.append(v[0])
         rdc += 4
         
@@ -76,11 +77,17 @@ def dumpfile(filename):
         return
 
     while True:
-        klenstr = f.read(1)
-        if not klenstr:
+        ltypestr = f.read(1)
+        if not ltypestr:
             break
+        # list type
+        listtype = struct.unpack('B', ltypestr)[0]
+        # value sort field
+        sortfield = struct.unpack('B', f.read(1))[0]
+        # value type 
+        valuetype = struct.unpack('B', f.read(1))[0]
         # key len (1B)
-        klen = struct.unpack('B', klenstr)[0]
+        klen = struct.unpack('B', f.read(1))[0]
         # key string (keylen B)
         key  = struct.unpack(str(klen) + 's', f.read(klen))[0]
         # valuesize (1B)
@@ -97,7 +104,8 @@ def dumpfile(filename):
 
         itemnum  = struct.unpack('I', f.read(4))[0] 
         
-        print 'key:%s, valuelen:%d, masklen:%d, masknum:%d, maskformat:%s, itemnum:%d' % (key, valuelen, masklen, masknum, maskformat, itemnum)
+        print 'listtype:%d, valuetype:%d, sortfield:%d, key:%s, valuelen:%d, masklen:%d, masknum:%d, maskformat:%s, itemnum:%d' % \
+                (listtype, valuetype, sortfield, key, valuelen, masklen, masknum, maskformat, itemnum)
 
         datalen  = valuelen + masklen
 

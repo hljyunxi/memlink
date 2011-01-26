@@ -178,6 +178,7 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
 	int		ret;
 	struct timeval start, end;
 
+    DNOTE("dumpfile load: %s\n", filename);
 	gettimeofday(&start, NULL);
     fp = fopen64(filename, "rb");
     if (NULL == fp) {
