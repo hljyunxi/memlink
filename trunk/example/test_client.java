@@ -20,7 +20,7 @@ public class Test
         int ret;
         int valuelen = 12;
         String maskformat = "4:3:1";
-	    ret = m.create(key, valuelen, maskformat);
+	    ret = m.create_list(key, valuelen, maskformat);
         if (0 != ret)
         {
             System.out.println("create error:" + ret);
