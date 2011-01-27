@@ -551,6 +551,36 @@ hashtable_add_mask(HashTable *ht, char *key, void *value, unsigned int *maskarra
     return hashtable_add_mask_bin(ht, key, value, mask, pos);
 }
 
+
+int
+hashtable_sortlist_add_mask_bin(HashTable *ht, char *key, void *value, void *mask)
+{
+    return 0;
+}
+
+int
+hashtable_sortlist_add_mask(HashTable *ht, char *key, void *value, unsigned int *maskarray, char masknum)
+{
+    char mask[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
+    int  ret;
+    HashNode *node = hashtable_find(ht, key);
+    if (NULL == node) {
+        DINFO("hashtable_add_mask not found node for key:%s\n", key);
+        return MEMLINK_ERR_NOKEY;
+    }
+   
+	if (node->masknum != masknum) {
+		return MEMLINK_ERR_MASK;
+	}
+    ret = mask_array2binary(node->maskformat, maskarray, masknum, mask);
+    if (ret <= 0) {
+        DINFO("mask_array2binary error: %d\n", ret);
+        return MEMLINK_ERR_MASK;
+    }
+
+    return hashtable_sortlist_add_mask_bin(ht, key, value, mask);
+}
+
 /**
  * move value to another position
  */

@@ -9,7 +9,7 @@
  * @param itemdata
  * @param kind
  */
-int 
+inline int 
 dataitem_have_data(HashNode *node, char *itemdata, unsigned char kind)
 {
     char *maskdata  = itemdata + node->valuesize;
@@ -36,7 +36,7 @@ dataitem_have_data(HashNode *node, char *itemdata, unsigned char kind)
 /**
  * check value type
  */
-int
+inline int
 dataitem_check_data(HashNode *node, char *itemdata)
 {
     char *maskdata  = itemdata + node->valuesize;
@@ -83,9 +83,9 @@ static inline int
 valuecmp(unsigned char type, void *v1, void *v2, int size)
 {
     switch(type) {
-        case MEMLINK_VALUE_INTEGER:
+        case MEMLINK_VALUE_INT:
             return *(int*)v1 - *(int*)v2; 
-        case MEMLINK_VALUE_UINTEGER:
+        case MEMLINK_VALUE_UINT:
             return *(unsigned int*)v1 - *(unsigned int*)v2; 
         case MEMLINK_VALUE_LONG:
             return *(long*)v1 - *(long*)v2; 
@@ -113,45 +113,48 @@ valuecmp(unsigned char type, void *v1, void *v2, int size)
 /**
  * find one data in link of datablock
  */
-char*
-sortlist_dataitem_lookup(HashNode *node, void *value, DataBlock **dbk)
+int
+sortlist_lookup(HashNode *node, void *value, DataBlock **dbk)
 {
     int i, ret;
     int datalen = node->valuesize + node->masksize;
     DataBlock *root = node->data;
     char *data;
+    int  skipn;
 
     while (root) {
         data = root->data;
 		//DINFO("root: %p, data: %p, next: %p\n", root, data, root->next);
+        skipn = 0;
         for (i = 0; i < root->data_count; i++) {
             if (dataitem_have_data(node, data, 0)) {
                 ret = valuecmp(node->valuetype, value, data, node->valuesize);
                 if (ret == 0) {
                     *dbk = root;
-                    return data;
+                    return skipn;
                 }else if (ret < 0) {
-                    goto sortlist_dataitem_lookup_dbk;
+                    goto sortlist_lookup_dbk;
                 }
                 break;
             }
             data += datalen;
+            skipn++;
         }
         root = root->next;
     }
-    return NULL;
-sortlist_dataitem_lookup_dbk:
+    return -1;
+sortlist_lookup_dbk:
     data = root->data;
     for (i = 0; i < root->data_count; i++) {
         if (dataitem_have_data(node, data, 0) && \
             valuecmp(node->valuetype, value, data, node->valuesize) == 0) {
             *dbk = root;
-            return data;
+            return skipn;
         }
         data += datalen;
     }
 
-    return NULL;
+    return -1;
 }
 
 /**

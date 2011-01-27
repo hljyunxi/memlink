@@ -115,8 +115,8 @@
 #define MEMLINK_QUEUE       2
 #define MEMLINK_SORT_LIST   3
 
-#define MEMLINK_VALUE_INTEGER       1
-#define MEMLINK_VALUE_UINTEGER      2
+#define MEMLINK_VALUE_INT           1
+#define MEMLINK_VALUE_UINT          2
 #define MEMLINK_VALUE_LONG          3 
 #define MEMLINK_VALUE_ULONG         4
 #define MEMLINK_VALUE_FLOAT         5 
