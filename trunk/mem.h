@@ -5,7 +5,7 @@
 
 #define MEMLINK_MEM_NUM     100
 
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__FreeBSD__)
 #define fopen64 fopen
 #endif
 
