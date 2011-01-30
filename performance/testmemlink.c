@@ -56,9 +56,9 @@ int create_key(char *key)
 	}
 
 	int  ret;
-    ret = memlink_cmd_create(m, key, VALUE_SIZE, "4:3:1");
+    ret = memlink_cmd_create_list(m, key, VALUE_SIZE, "4:3:1");
     if (ret != MEMLINK_OK) {
-        DERROR("create error! ret:%d\n", ret);
+        DERROR("create list error! ret:%d\n", ret);
         return -1;
     }
     
@@ -85,10 +85,10 @@ int test_insert_long(int count, int docreate)
 
 	sprintf(key, "haha");
     if (docreate == 1) {
-        ret = memlink_cmd_create(m, key, VALUE_SIZE, "4:3:1");
+        ret = memlink_cmd_create_list(m, key, VALUE_SIZE, "4:3:1");
 
         if (ret != MEMLINK_OK) {
-            DERROR("create %s error: %d\n", key, ret);
+            DERROR("create list %s error: %d\n", key, ret);
             return -2;
         }
     }
@@ -140,10 +140,10 @@ int test_insert_short(int count, int docreate)
 		}
 
 		if (docreate == 1 && iscreate == 0) {
-			ret = memlink_cmd_create(m, key, VALUE_SIZE, "4:3:1");
+			ret = memlink_cmd_create_list(m, key, VALUE_SIZE, "4:3:1");
 
 			if (ret != MEMLINK_OK) {
-				DERROR("create %s error: %d\n", key, ret);
+				DERROR("create list %s error: %d\n", key, ret);
 				return -2;
 			}
 			iscreate = 1;

@@ -31,9 +31,9 @@ int test_create(TestArgs *args)
         }
         for (i = 0; i < args->testcount; i++) {
             sprintf(key, "%s%d", args->key, i);
-            ret = memlink_cmd_create(m, key, args->valuesize, args->maskstr);
+            ret = memlink_cmd_create_list(m, key, args->valuesize, args->maskstr);
             if (ret != MEMLINK_OK) {
-                DERROR("memlink_cmd_create error! ret:%d\n", ret);
+                DERROR("create list error! ret:%d\n", ret);
                 return -2;
             }
         }
@@ -47,9 +47,9 @@ int test_create(TestArgs *args)
                 return -1;
             }
             sprintf(key, "%s%d", args->key, i);
-            ret = memlink_cmd_create(m, key, args->valuesize, args->maskstr);
+            ret = memlink_cmd_create_list(m, key, args->valuesize, args->maskstr);
             if (ret != MEMLINK_OK) {
-                DERROR("memlink_cmd_create error! ret:%d\n", ret);
+                DERROR("create list error! ret:%d\n", ret);
                 return -2;
             }
             memlink_destroy(m); 
