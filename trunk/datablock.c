@@ -114,47 +114,73 @@ valuecmp(unsigned char type, void *v1, void *v2, int size)
  * find one data in link of datablock
  */
 int
-sortlist_lookup(HashNode *node, void *value, DataBlock **dbk)
+sortlist_lookup(HashNode *node, void *value, int kind, DataBlock **dbk)
 {
     int i, ret;
     int datalen = node->valuesize + node->masksize;
-    DataBlock *root = node->data;
+    DataBlock *checkbk = node->data;
+    DataBlock *startbk = node->data;
     char *data;
-    int  skipn;
+    int  checkn = 2;
 
-    while (root) {
-        data = root->data;
-		//DINFO("root: %p, data: %p, next: %p\n", root, data, root->next);
-        skipn = 0;
-        for (i = 0; i < root->data_count; i++) {
-            if (dataitem_have_data(node, data, 0)) {
+    while (checkbk) {
+		//DINFO("checkbk: %p, data: %p, next: %p\n", checkbk, data, checkbk->next);
+        data = checkbk->data + checkbk->data_count * datalen;
+        for (i = checkbk->data_count - 1; i >= 0; i--) {
+            if (dataitem_have_data(node, data, kind)) {
                 ret = valuecmp(node->valuetype, value, data, node->valuesize);
-                if (ret == 0) {
-                    *dbk = root;
-                    return skipn;
+                if (ret == 0) { // equal
+                    *dbk = checkbk;
+                    return i;
                 }else if (ret < 0) {
-                    goto sortlist_lookup_dbk;
-                }
+                    goto sortlist_lookup_found; //
+                } 
                 break;
             }
-            data += datalen;
-            skipn++;
+            data -= datalen;
         }
-        root = root->next;
-    }
-    return -1;
-sortlist_lookup_dbk:
-    data = root->data;
-    for (i = 0; i < root->data_count; i++) {
-        if (dataitem_have_data(node, data, 0) && \
-            valuecmp(node->valuetype, value, data, node->valuesize) == 0) {
-            *dbk = root;
-            return skipn;
+        startbk = checkbk;
+        for (i = 0; i < checkn; i++) {
+            checkbk = checkbk->next;
+            if (checkbk == NULL) {
+                if (i == 0) {
+                    return MEMLINK_ERR_NOVAL;
+                }
+                checkbk = node->data_tail;
+                break;
+            }
         }
-        data += datalen;
     }
+    return MEMLINK_ERR_NOVAL;
 
-    return -1;
+sortlist_lookup_found:
+
+    do {
+        data = startbk->data + startbk->data_count * datalen;
+        for (i = 0; i < startbk->data_count; i++) {
+            if (dataitem_have_data(node, data, kind)) {
+                ret = valuecmp(node->valuetype, value, data, node->valuesize);
+                if (ret == 0) { // found datablock and pos
+                    *dbk = startbk;
+                    return i;
+                }else if (ret > 0) { // found datablock, find in every data 
+                    int k = i;
+                    for (;k < startbk->data_count; k++) {
+                        ret = valuecmp(node->valuetype, value, data, node->valuesize);
+                        if (ret <= 0) {
+                            *dbk = startbk;
+                            return k;
+                        }
+                        data += datalen;
+                    }
+                    return MEMLINK_ERR_NOVAL;
+                }
+            }
+            data += datalen;
+        }
+    } while (startbk != checkbk);
+
+    return MEMLINK_ERR_NOVAL;
 }
 
 /**
@@ -240,6 +266,7 @@ dataitem_lookup_pos_mask(HashNode *node, int pos, unsigned char kind,
 					*dbk  = root;
 					*addr = itemdata;
 					return startn;
+                    //return i;
 				}
 				n += 1;
 			}
