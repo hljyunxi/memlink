@@ -13,7 +13,7 @@
 #define MEMLINK_ERR_NOKEY           -14 
 // key已经存在
 #define MEMLINK_ERR_EKEY            -15
-// 网络错误
+// 网络连接错误
 #define MEMLINK_ERR_CONNECT         -16
 // 返回代码错误
 #define MEMLINK_ERR_RETCODE         -17
@@ -43,6 +43,18 @@
 #define MEMLINK_ERR_IO              -29
 // list类型错误
 #define MEMLINK_ERR_LIST_TYPE       -30
+// 客户端接收缓冲区错误
+#define MEMLINK_ERR_RECV_BUFFER     -31
+// 客户端socket创建错误
+#define MEMLINK_ERR_CLIENT_SOCKET   -32
+// 客户端连接server端口错误
+#define MEMLINK_ERR_CONN_PORT       -33
+// 客户端接收头部长度信息失败
+#define MEMLINK_ERR_RECV_HEADER     -34
+// 客户端连接读端口失败
+#define MEMLINK_ERR_CONNECT_READ    -35
+// 客户端连接写端口失败
+#define MEMLINK_ERR_CONNECT_WRITE   -36
 
 // 其他错误
 #define MEMLINK_ERR                 -1

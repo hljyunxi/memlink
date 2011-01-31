@@ -54,7 +54,7 @@ memlink_connect(MemLink *m, int fdtype)
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (-1 == sock) {
         DERROR("socket create error: %s\n", strerror(errno));
-        return -1;
+        return MEMLINK_ERR_CLIENT_SOCKET;
     }
 
     struct linger ling = {0, 0}; 
@@ -80,7 +80,7 @@ memlink_connect(MemLink *m, int fdtype)
     }else if (fdtype == MEMLINK_WRITER) {
         sin.sin_port = htons((short)(m->write_port));
     }else{
-        return -2;
+        return MEMLINK_ERR_CONN_PORT;
     }
 
     if (m->host[0] == 0) {
@@ -103,6 +103,7 @@ memlink_connect(MemLink *m, int fdtype)
     }else{
         DINFO("connect error: %s\n", strerror(errno));
         close(sock);
+        ret = MEMLINK_ERR_CONNECT;
     }
 
     return ret;
@@ -123,15 +124,16 @@ memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
     }else if (fdtype == MEMLINK_WRITER) {
         fd = m->writefd;
     }else{
-        return -1;
+        return MEMLINK_ERR_CLIENT;
     }
     //DINFO("fd: %d\n", fd);
     
     if (fd <= 0) {
         DINFO("read fd connect ...\n");
         ret = memlink_connect(m, fdtype);
-        if (ret < 0)
+        if (ret < 0) {
             return ret;
+        }
     }
     ret = readn(fd, rbuf, RECV_PKG_SIZE_LEN, m->timeout);
     DINFO("read head: %d\n", ret);
@@ -144,7 +146,7 @@ memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
         }else{
             m->writefd = 0;
         }
-        return -2;
+        return MEMLINK_ERR_RECV_HEADER;
     }
     memcpy(&datalen, rbuf, RECV_PKG_SIZE_LEN);
     //char buf[64];
@@ -153,7 +155,7 @@ memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
 
     if (datalen + RECV_PKG_SIZE_LEN > rlen) {
         DERROR("datalen bigger than buffer size: %d, %d\n", datalen, rlen);
-        return -3;
+        return MEMLINK_ERR_RECV_BUFFER;
     }
 
     ret = readn(fd, rbuf + RECV_PKG_SIZE_LEN, datalen, m->timeout);
@@ -167,7 +169,7 @@ memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
         }else{
             m->writefd = 0;
         }
-		return -4;
+		return MEMLINK_ERR_RECV;
     }
 
     return ret + RECV_PKG_SIZE_LEN;
@@ -186,7 +188,7 @@ memlink_write(MemLink *m, int fdtype, char *wbuf, int wlen)
     }else if (fdtype == MEMLINK_WRITER) {
         fd = m->writefd;
     }else{
-        return -100;
+        return MEMLINK_ERR_CLIENT;
     }
     //DINFO("fd: %d\n", fd);
     if (fd <= 0) {
@@ -213,7 +215,7 @@ memlink_write(MemLink *m, int fdtype, char *wbuf, int wlen)
         }else{
             m->writefd = 0;
         }
-
+        ret = MEMLINK_ERR_SEND;
     }
 
     return ret;
@@ -246,6 +248,9 @@ memlink_do_cmd(MemLink *m, int fdtype, char *data, int len, char *retdata, int r
         DERROR("memlink write data error! ret:%d, len:%d\n", ret, len);
         return MEMLINK_ERR_SEND;
     }
+    if (ret < 0)
+        return ret;
+
 	DINFO("read from server ...\n"); 
     ret = memlink_read(m, fdtype, retdata, retlen);
     DINFO("memlink_read return: %d\n", ret);
@@ -268,7 +273,8 @@ memlink_do_cmd(MemLink *m, int fdtype, char *data, int len, char *retdata, int r
 		return ret;  // return read data len
     }else{
         DERROR("memlink recv data error! ret:%d\n", ret);
-		return MEMLINK_ERR_RECV;
+		//return MEMLINK_ERR_RECV;
+        return ret;
 	}
 }
 
