@@ -713,7 +713,7 @@ client_read(int fd, short event, void *arg)
      * Called more than one time for the same command and aready receive the 
      * 2-byte command length.
      */
-    if (conn->rlen >= 2) {
+    if (conn->rlen >= sizeof(int)) {
         //memcpy(&datalen, conn->rbuf, sizeof(short)); 
 		memcpy(&datalen, conn->rbuf, sizeof(int));
     }
@@ -755,7 +755,7 @@ client_read(int fd, short event, void *arg)
     zz_check(conn);
 
     DINFO("conn rbuf len: %d\n", conn->rlen);
-    while (conn->rlen >= 2) {
+    while (conn->rlen >= sizeof(int)) {
         //memcpy(&datalen, conn->rbuf, sizeof(short));
 		memcpy(&datalen, conn->rbuf, sizeof(int));
         DINFO("check datalen: %d, rlen: %d\n", datalen, conn->rlen);
