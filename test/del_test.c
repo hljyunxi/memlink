@@ -4,11 +4,46 @@
 #include "logfile.h"
 #include "test.h"
 
+int range_check(MemLink *m, char *key, int from, int len)
+{
+    int i;
+    int ret;
+    MemLinkResult result;
+
+	ret = memlink_cmd_range(m, key, MEMLINK_VALUE_VISIBLE,  "", from, len, &result);
+    if (ret != MEMLINK_OK) {
+        DERROR("range error: %d\n", ret);
+        return -1;
+    }
+    if (result.count != len) {
+        DERROR("range count error: %d\n", result.count);
+        return -1;
+    }
+
+    char buf[64] = {0};
+
+    MemLinkItem *item = result.root;
+    int n = from;
+    while (item) {
+        sprintf(buf, "%06d", n);
+        //DINFO("value: %s\n", item->value);
+        if (strcmp(item->value, buf) != 0) {
+            DERROR("result error, value:%s, test:%s\n", item->value, buf);
+            return -1;
+        }
+        n++;
+        item = item->next;
+    }
+    
+    return 0;
+}
+
+
 int main()
 {
 	MemLink	*m;
 #ifdef DEBUG
-	logfile_create("stdout", 3);
+	logfile_create("stdout", 4);
 #endif
 	
 	m = memlink_create("127.0.0.1", MEMLINK_READ_PORT, MEMLINK_WRITE_PORT, 30);
@@ -135,22 +170,43 @@ int main()
 	int insertnum = 1000;
 	for (i = 0; i < insertnum; i++) {
 		sprintf(val2, "%06d", i);
+        //DINFO("insert %s\n", val2);
 		ret = memlink_cmd_insert(m, buf, val2, strlen(val2), maskstr, i);	
 		if (ret != MEMLINK_OK) {
 			DERROR("insert error, ret:%d, key:%s, val:%s, mask:%s, i:%d\n", ret, buf, val, maskstr, i);
 			return -3;
 		}
 	}
-	printf("insert 1000!\n");
-	for (i = 0; i < insertnum; i++) {
+        
+    MemLinkStat stat;
+
+    ret = memlink_cmd_stat(m, buf, &stat);
+    if (ret != MEMLINK_OK) {
+        DERROR("stat error! %d\n", ret);
+        return -3;
+    }
+    
+    if (stat.data_used != insertnum) {
+        DERROR("stat error data_userd:%d, insertnum:%d\n", stat.data_used, insertnum);
+        return -3;
+    }
+
+	printf("insert %d!\n", insertnum);
+
+    if (range_check(m, buf, 0, insertnum) < 0) {
+        DERROR("range check error!\n");
+        return -3;
+    }
+
+	/*for (i = 0; i < insertnum; i++) {
 		sprintf(val2, "%06d", i);
 		ret = memlink_cmd_del(m, buf, val2, strlen(val2));
 		if (ret != MEMLINK_OK) {
 			DERROR("del error, key:%s, val:%s, mask:%s, ret:%d\n", buf, val, maskstr, ret);
 			return -3;
 		}
-	}
-	printf("del 1000!\n");	
+	}*/
+	printf("del %d!\n", insertnum);	
 memlink_over:
 	memlink_destroy(m);
 

@@ -345,10 +345,12 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
         dbk = node->data_tail;
         if (dbk == NULL)
             ret = -1;
+        dbkpos = pos;
+        DNOTE("insert last skip:%d, pos:%d\n", pos, dbkpos);
     }else{
         ret = datablock_lookup_valid_pos(node, pos, 0, &dbk);
         dbkpos = dataitem_skip2pos(node, dbk, pos, MEMLINK_VALUE_ALL);
-
+        DNOTE("skip:%d, pos:%d\n", pos, dbkpos);
         startn = ret;
         skipn = pos - startn;
     }
@@ -394,7 +396,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 				DINFO("last dbk is full, append a new small\n");
 				// create a new small datablock	
 				//if (skipn >= dbk->data_count) { // pos out of block
-                if (dbkpos > 0) {
+                if (dbkpos >= dbk->data_count) {
 					newbk = datablock_new_copy_small(node, value, mask);
                     newbk->prev = dbk;
                     dbk->next = newbk;
@@ -876,30 +878,12 @@ hashtable_range(HashTable *ht, char *key, unsigned char kind,
 						continue;
 					}
 				}
-#ifdef RANGE_MASK_STR
-				char            maskstr[256];
-				unsigned char   mlen;
-
-                mlen = mask_binary2string(node->maskformat, node->masknum, maskdata, node->masksize, maskstr);
-                /*
-				char buf[128];
-				snprintf(buf, node->valuesize + 1, "%s", itemdata);
-				DINFO("ok, copy item ... i:%d, value:%s maskstr:%s, mlen:%d\n", i, buf, maskstr, mlen);
-                */
-				memcpy(wbuf + idx, itemdata, node->valuesize);
-                idx += node->valuesize;
-                memcpy(wbuf + idx, &mlen, sizeof(char));
-                idx += sizeof(char);
-                memcpy(wbuf + idx, maskstr, mlen);
-                idx += mlen;
-#else
                 /*char buf[128];
 				snprintf(buf, node->valuesize + 1, "%s", itemdata);
 				DINFO("\tok, copy item ... i:%d, value:%s\n", i, buf);
 				*/ 
 				memcpy(wbuf + idx, itemdata, datalen);
 				idx += datalen;
-#endif
 				n += 1;
 				if (n >= len) {
 					goto hashtable_range_over;
