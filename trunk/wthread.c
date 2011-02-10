@@ -380,6 +380,8 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
 
             ret = hashtable_add_mask(g_runtime->ht, key, value, maskarray, masknum, pos);
             DINFO("hashtable_add_mask: %d\n", ret);
+
+            //hashtable_print(g_runtime->ht, key);
             break;
         }
         case CMD_INSERT_MVALUE: {
