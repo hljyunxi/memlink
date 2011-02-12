@@ -127,6 +127,8 @@
 #define MEMLINK_QUEUE       2
 #define MEMLINK_SORT_LIST   3
 
+#define MEMLINK_SORTLIST_LOOKUP_STEP    10
+
 #define MEMLINK_VALUE_INT           1
 #define MEMLINK_VALUE_UINT          2
 #define MEMLINK_VALUE_LONG          3 
@@ -140,6 +142,9 @@
 
 #define MEMLINK_WRITE_LOG   1
 #define MEMLINK_NO_LOG      0
+
+#define MEMLINK_FIND_NEXT   1
+#define MEMLINK_FIND_PREV   2
 
 typedef struct _memlink_insert_mvalue_item
 {

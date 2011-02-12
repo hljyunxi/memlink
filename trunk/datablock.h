@@ -30,5 +30,6 @@ int         datablock_free_inverse(DataBlock *startbk, DataBlock *endbk, int dat
 int         mask_array2_binary_flag(unsigned char *maskformat, unsigned int *maskarray, 
                     int masknum, char *maskval, char *maskflag);
 
+int         sortlist_lookup(HashNode *node, int step, void *value, int kind, DataBlock **dbk);
 
 #endif

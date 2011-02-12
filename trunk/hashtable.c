@@ -335,24 +335,29 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
     DataBlock *dbk = node->data;
 	DataBlock *newbk = NULL;
     int datalen = node->valuesize + node->masksize;
-    int i, startn, skipn;
+    int i;//, startn, skipn;
     DataBlock *prev = NULL;
 
 	int ret = 0;
     int dbkpos = 0; 
 
-    if (pos >= node->used) {
-        dbk = node->data_tail;
-        if (dbk == NULL)
-            ret = -1;
-        dbkpos = pos;
-        DNOTE("insert last skip:%d, pos:%d\n", pos, dbkpos);
+    if (node->type == MEMLINK_SORT_LIST) {
+        dbkpos = sortlist_lookup(node, MEMLINK_SORTLIST_LOOKUP_STEP, value, MEMLINK_VALUE_ALL, &dbk);
+        ret = dbkpos;
     }else{
-        ret = datablock_lookup_valid_pos(node, pos, 0, &dbk);
-        dbkpos = dataitem_skip2pos(node, dbk, pos, MEMLINK_VALUE_ALL);
-        DNOTE("skip:%d, pos:%d\n", pos, dbkpos);
-        startn = ret;
-        skipn = pos - startn;
+        if (pos >= node->used) {
+            dbk = node->data_tail;
+            if (dbk == NULL)
+                ret = -1;
+            dbkpos = pos;
+            DNOTE("insert last skip:%d, pos:%d\n", pos, dbkpos);
+        }else{
+            ret = datablock_lookup_valid_pos(node, pos, 0, &dbk);
+            dbkpos = dataitem_skip2pos(node, dbk, pos, MEMLINK_VALUE_ALL);
+            DNOTE("skip:%d, pos:%d\n", pos, dbkpos);
+            //startn = ret;
+            //skipn = pos - startn;
+        }
     }
 
     if (dbk) {
@@ -360,7 +365,8 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
     }
 
 	DINFO("lookup pos, ret:%d, pos:%d, dbk:%p, prev:%p\n", ret, pos, dbk, prev);
-	if (ret == -1) { // no datablock, create a small datablock
+	//if (ret == -1) { // no datablock, create a small datablock
+	if (ret < 0) { // no datablock, create a small datablock
 		DINFO("create first small dbk.\n");
 		newbk = datablock_new_copy_small(node, value, mask);
         newbk->prev = NULL;
@@ -568,7 +574,7 @@ hashtable_add_mask(HashTable *ht, char *key, void *value, unsigned int *maskarra
 int
 hashtable_sortlist_add_mask_bin(HashTable *ht, char *key, void *value, void *mask)
 {
-    return 0;
+    return hashtable_add_mask_bin(ht, key, value, mask, -1);
 }
 
 int
