@@ -242,41 +242,109 @@ sortlist_lookup_step_prev(HashNode *node, int step, DataBlock *start,
 }
 */
 
+static inline int
+sortlist_datablock_check(HashNode *node, DataBlock *dbk, void *value, int kind, int datalen, int direction, int *pos)
+{
+    char *data;
+    int i, ret;
+
+    if (direction == MEMLINK_FIND_NEXT) {
+        data = dbk->data;
+        for (i = 0; i < dbk->data_count; i++) {
+            if (dataitem_have_data(node, data, kind)) {
+                *pos = i;
+                ret = valuecmp(node->valuetype, value, data, node->valuesize);
+                return ret;
+                //break;
+            }
+            data += datalen;
+        }
+    }else{
+        data = dbk->data + dbk->data_count * datalen;
+        for (i = dbk->data_count - 1; i >= 0; i--) {
+            if (dataitem_have_data(node, data, kind)) {
+                *pos = i;
+                ret = valuecmp(node->valuetype, value, data, node->valuesize);
+                return ret;
+                //break;
+            }
+            data -= datalen;
+        }
+    }
+    return MEMLINK_ERR_NOVAL;
+}
+
+static inline int
+sortlist_datablock_check_all(HashNode *node, DataBlock *dbk, void *value, int kind, int datalen, int direction)
+{
+    char *data;
+    int i, ret;
+
+    if (direction == MEMLINK_FIND_PREV) {
+        data = dbk->data;
+        for (i = 0; i < dbk->data_count; i++) {
+            if (dataitem_have_data(node, data, kind)) {
+                ret = valuecmp(node->valuetype, value, data, node->valuesize);
+                if (ret >= 0)
+                    return i;
+                //break;
+            }
+            data += datalen;
+        }
+    }else{
+        data = dbk->data + dbk->data_count * datalen;
+        for (i = dbk->data_count - 1; i >= 0; i--) {
+            if (dataitem_have_data(node, data, kind)) {
+                ret = valuecmp(node->valuetype, value, data, node->valuesize);
+                if (ret <= 0) {
+                    return i;
+                }
+                //break;
+            }
+            data -= datalen;
+        }
+    }
+    return MEMLINK_ERR_NOVAL;
+}
+
+int
+datablock_last_valid_pos(HashNode *node, DataBlock *dbk, int kind, int datalen)
+{
+    char* data = dbk->data + dbk->data_count * datalen;
+    int i;
+    for (i = dbk->data_count - 1; i >= 0; i--) {
+        if (dataitem_have_data(node, data, kind)) {
+            return i + 1;
+        }
+        data -= datalen;
+    }
+    return 0;
+}
+
 /**
  * find one data in link of datablock
  */
 int
 sortlist_lookup(HashNode *node, int step, void *value, int kind, DataBlock **dbk)
 {
-    int i, ret;
+    int i = 0; //, ret;
     int datalen = node->valuesize + node->masksize;
     DataBlock *checkbk = node->data;
     DataBlock *startbk = node->data;
-    char *data;
-    //int  step = 2;
 
+    // find in datablock list
     while (checkbk) {
 		//DINFO("checkbk: %p, data: %p, next: %p\n", checkbk, data, checkbk->next);
-        data = checkbk->data + checkbk->data_count * datalen;
-        for (i = checkbk->data_count - 1; i >= 0; i--) {
-            if (dataitem_have_data(node, data, kind)) {
-                ret = valuecmp(node->valuetype, value, data, node->valuesize);
-                if (ret == 0) { // equal
-                    *dbk = checkbk;
-                    return i;
-                }else if (ret < 0) {
-                    goto sortlist_lookup_found; //
-                } 
-                break;
-            }
-            data -= datalen;
+        if (sortlist_datablock_check(node, checkbk, value, kind, datalen, MEMLINK_FIND_NEXT, &i) > 0) {
+            goto sortlist_lookup_found;
         }
         startbk = checkbk;
         for (i = 0; i < step; i++) {
             checkbk = checkbk->next;
             if (checkbk == NULL) {
                 if (i == 0) {
-                    return MEMLINK_ERR_NOVAL;
+                    DINFO("sortlist next null. %d\n", i);
+                    return datablock_last_valid_pos(node, startbk, kind, datalen);
                 }
                 checkbk = node->data_tail;
                 break;
@@ -286,32 +354,13 @@ sortlist_lookup(HashNode *node, int step, void *value, int kind, DataBlock **dbk
     return MEMLINK_ERR_NOVAL;
 
 sortlist_lookup_found:
-    do {
-        data = startbk->data + startbk->data_count * datalen;
-        for (i = 0; i < startbk->data_count; i++) {
-            if (dataitem_have_data(node, data, kind)) {
-                ret = valuecmp(node->valuetype, value, data, node->valuesize);
-                if (ret == 0) { // found datablock and pos
-                    *dbk = startbk;
-                    return i;
-                }else if (ret > 0) { // found datablock, find in every data 
-                    int k = i;
-                    for (;k < startbk->data_count; k++) {
-                        ret = valuecmp(node->valuetype, value, data, node->valuesize);
-                        if (ret <= 0) {
-                            *dbk = startbk;
-                            return k;
-                        }
-                        data += datalen;
-                    }
-                    return MEMLINK_ERR_NOVAL;
-                }
-            }
-            data += datalen;
+    while (checkbk) {
+        if (sortlist_datablock_check(node, checkbk, value, kind, datalen, MEMLINK_FIND_PREV, &i) <= 0) {
+            return sortlist_datablock_check_all(node, checkbk, value, kind, datalen, MEMLINK_FIND_PREV);
         }
-    } while (startbk != checkbk);
-
-    return MEMLINK_ERR_NOVAL;
+        checkbk = checkbk->prev;
+    }
+    return 0;
 }
 
 /**

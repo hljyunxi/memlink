@@ -32,6 +32,7 @@
 #define CMD_SL_INSERT       22
 #define CMD_SL_DEL          23
 #define CMD_SL_COUNT        24
+#define CMD_SL_RANGE        25
 
 #define CMD_SYNC            100 
 #define CMD_GETDUMP		    101

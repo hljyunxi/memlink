@@ -364,7 +364,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
         prev = dbk->prev;
     }
 
-	DINFO("lookup pos, ret:%d, pos:%d, dbk:%p, prev:%p\n", ret, pos, dbk, prev);
+	DINFO("lookup pos, ret:%d, pos:%d, dbpos:%d, dbk:%p, prev:%p\n", ret, pos, dbkpos, dbk, prev);
 	//if (ret == -1) { // no datablock, create a small datablock
 	if (ret < 0) { // no datablock, create a small datablock
 		DINFO("create first small dbk.\n");
@@ -574,7 +574,7 @@ hashtable_add_mask(HashTable *ht, char *key, void *value, unsigned int *maskarra
 int
 hashtable_sortlist_add_mask_bin(HashTable *ht, char *key, void *value, void *mask)
 {
-    return hashtable_add_mask_bin(ht, key, value, mask, -1);
+    return hashtable_add_mask_bin(ht, key, value, mask, INT_MAX);
 }
 
 int
