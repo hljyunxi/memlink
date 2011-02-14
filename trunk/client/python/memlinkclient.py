@@ -64,8 +64,12 @@ class MemLinkClient:
     def insert(self, key, value, maskstr, pos):
         return memlink_cmd_insert(self.client, key, value, len(value), maskstr, pos)
 
-    def insert_mvalue(self, key, items):
-        return memlink_cmd_insert_mvalue(self.client, key, values, num)
+    def sortlist_insert(self, key, value, maskstr):
+        return memlink_cmd_insert(self.client, key, value, len(value), maskstr, -1)
+
+
+    #def insert_mvalue(self, key, items):
+    #    return memlink_cmd_insert_mvalue(self.client, key, values, num)
 
     def move(self, key, value, pos):
         return memlink_cmd_move(self.client, key, value, len(value), pos)
