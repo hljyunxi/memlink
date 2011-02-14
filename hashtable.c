@@ -344,6 +344,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
     if (node->type == MEMLINK_SORT_LIST) {
         dbkpos = sortlist_lookup(node, MEMLINK_SORTLIST_LOOKUP_STEP, value, MEMLINK_VALUE_ALL, &dbk);
         ret = dbkpos;
+        DINFO("sortlist lookup: %s, %d\n", (char*)value, dbkpos);
     }else{
         if (pos >= node->used) {
             dbk = node->data_tail;
@@ -366,7 +367,8 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
 
 	DINFO("lookup pos, ret:%d, pos:%d, dbpos:%d, dbk:%p, prev:%p\n", ret, pos, dbkpos, dbk, prev);
 	//if (ret == -1) { // no datablock, create a small datablock
-	if (ret < 0) { // no datablock, create a small datablock
+	//if (ret < 0) { // no datablock, create a small datablock
+	if (dbk == NULL) { // no datablock, create a small datablock
 		DINFO("create first small dbk.\n");
 		newbk = datablock_new_copy_small(node, value, mask);
         newbk->prev = NULL;
