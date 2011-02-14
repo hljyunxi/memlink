@@ -66,6 +66,7 @@ int			memlink_cmd_create_sortlist(MemLink *m, char *key, int valuelen, char *mas
 int			memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen);
 int			memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen, 
                                char *maskstr, int pos);
+int			memlink_cmd_sortlist_insert(MemLink *m, char *key, char *value, int valuelen, char *maskstr);
 
 int			memlink_cmd_lpush(MemLink *m, char *key, char *value, int valuelen, char *maskstr);
 int			memlink_cmd_rpush(MemLink *m, char *key, char *value, int valuelen, char *maskstr);

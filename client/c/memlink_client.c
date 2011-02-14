@@ -485,6 +485,12 @@ memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen)
 }
 
 int
+memlink_cmd_sorlist_rdel(MemLink *m, char *key, char *value, int valuelen, int count)
+{
+    return MEMLINK_OK;
+}
+
+int
 memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen, char *maskstr, int pos)
 {
 	if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
@@ -515,6 +521,12 @@ memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen, char *masks
 	return MEMLINK_OK;
 }
 
+int
+memlink_cmd_sortlist_insert(MemLink *m, char *key, char *value, int valuelen, char *maskstr)
+{
+    return memlink_cmd_insert(m, key, value, valuelen, maskstr, -1);
+}
+
 int 
 memlink_cmd_move(MemLink *m, char *key, char *value, int valuelen, int pos)
 {
@@ -537,7 +549,6 @@ memlink_cmd_move(MemLink *m, char *key, char *value, int valuelen, int pos)
 		return ret;
 	return MEMLINK_OK;
 }
-
 
 int
 memlink_cmd_mask(MemLink *m, char *key, char *value, int valuelen, char *maskstr)
@@ -780,6 +791,13 @@ memlink_cmd_range(MemLink *m, char *key, int kind,  char *maskstr,
 
     memlink_result_parse(retdata, result);
 
+    return MEMLINK_OK;
+}
+
+int 
+memlink_cmd_sortlist_range(MemLink *m, char *key, int kind,  char *maskstr, 
+                  void *value, int valuelen , int len, MemLinkResult *result)
+{
     return MEMLINK_OK;
 }
 
