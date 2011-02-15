@@ -324,7 +324,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
 
             DINFO("unpack key: %s, valuelen: %d, masknum: %d, maskarray: %d,%d,%d\n", 
 					key, valuelen, masknum, maskformat[0], maskformat[1], maskformat[2]);
-			if (key[0] == 0 || valuelen <= 0 || listtype <= 0 || listtype > MEMLINK_SORT_LIST) {
+			if (key[0] == 0 || valuelen <= 0 || listtype <= 0 || listtype > MEMLINK_SORTLIST) {
 				ret = MEMLINK_ERR_PARAM;
                 goto wdata_apply_over;
 			}
@@ -355,6 +355,29 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             ret = hashtable_del(g_runtime->ht, key, value);
             DINFO("hashtable_del: %d\n", ret);
             break;
+        case CMD_SL_DEL: {
+            DINFO("<<< cmd SL_DEL >>>\n");
+            char valmin[512] = {0};
+            char valmax[512] = {0};
+            unsigned char vminlen = 0, vmaxlen = 0;
+
+            ret = cmd_sortlist_del_unpack(data, key, valmin, &vminlen, valmax, &vmaxlen);
+			if (ret != 0) {
+				DINFO("unpack sortlist_del error! ret: %d\n", ret);
+                goto wdata_apply_over;
+			}
+
+            DINFO("unpack del, key: %s, value: %s, valuelen: %d\n", key, value, valuelen);
+			if (key[0] == 0) {
+				ret = MEMLINK_ERR_PARAM;
+                goto wdata_apply_over;
+			}
+
+            ret = hashtable_sortlist_mdel(g_runtime->ht, key, valmin, valmax);
+            DINFO("hashtable_sortlist_del: %d\n", ret);
+
+            break;
+        }
         case CMD_INSERT: {
             DINFO("<<< cmd INSERT >>>\n");
             ret = cmd_insert_unpack(data, key, value, &valuelen, &masknum, maskarray, &pos);

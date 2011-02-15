@@ -56,6 +56,7 @@ void    conn_write(Conn *conn);
 void    conn_destroy(Conn *conn);
 int     conn_wrote(Conn *conn);
 char*   conn_write_buffer(Conn *conn, int size);
+char*   conn_write_buffer_append(Conn *conn, void *data, int datalen);
 int     conn_write_buffer_head(Conn *conn, int retcode, int len);
 
 

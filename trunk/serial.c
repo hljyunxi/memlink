@@ -504,6 +504,44 @@ cmd_count_unpack(char *data, char *key, unsigned char *masknum, unsigned int *ma
     return 0;
 }
 
+int 
+cmd_sortlist_count_pack(char *data, char *key, unsigned char masknum, unsigned int *maskarray,
+                        void *valmin, unsigned char vminlen, void *valmax, unsigned char vmaxlen)
+{
+    unsigned char  cmd = CMD_COUNT;
+    unsigned int  len;
+    int count = CMD_REQ_SIZE_LEN;
+    int ret;
+
+    memcpy(data + count, &cmd, sizeof(char)); 
+    count += sizeof(char);
+
+    ret = pack_string(data + count, key, 0);
+    count += ret;
+	count += pack_mask(data + count, maskarray, masknum);
+    count += pack_string(data + count, valmin, vminlen);
+    count += pack_string(data + count, valmax, vmaxlen);
+
+    len = count - CMD_REQ_SIZE_LEN;
+    memcpy(data, &len, CMD_REQ_SIZE_LEN);
+    
+    return count;
+}
+
+int 
+cmd_sortlist_count_unpack(char *data, char *key, unsigned char *masknum, unsigned int *maskarray,
+                    void *valmin, unsigned char *vminlen, void *valmax, unsigned char *vmaxlen)
+{
+    unsigned char keylen;
+    int count = CMD_REQ_HEAD_LEN;
+
+    count += unpack_string(data + count, key, &keylen);
+	count += unpack_mask(data + count, maskarray, masknum);
+    count += unpack_string(data + count, valmin, vminlen);
+    unpack_string(data + count, valmax, vmaxlen);
+
+    return 0;
+}
 
 int 
 cmd_stat_pack(char *data, char *key)  //, HashTableStat  *stat)
@@ -646,6 +684,41 @@ cmd_del_unpack(char *data, char *key, char *value, unsigned char *valuelen)
     
     count += unpack_string(data + count, key, &len);
     unpack_string(data + count, value, valuelen);
+    
+    return 0;
+}
+
+int 
+cmd_sortlist_del_pack(char *data, char *key, char *valmin, unsigned char vminlen, 
+            char *valmax, unsigned char vmaxlen)
+{
+    unsigned char cmd = CMD_DEL;
+    unsigned int len;
+    int count = CMD_REQ_SIZE_LEN;
+
+    memcpy(data + count, &cmd, sizeof(char));
+    count += sizeof(char);
+
+    count += pack_string(data + count, key, 0);
+    count += pack_string(data + count, valmin, vminlen);
+    count += pack_string(data + count, valmax, vmaxlen);
+
+    len = count - CMD_REQ_SIZE_LEN;
+    memcpy(data, &len, CMD_REQ_SIZE_LEN);
+
+    return count;
+}
+
+int 
+cmd_sortlist_del_unpack(char *data, char *key, char *valmin, unsigned char *vminlen,
+                        char *valmax, unsigned char *vmaxlen)
+{
+    int count = CMD_REQ_HEAD_LEN;
+    unsigned char len;
+    
+    count += unpack_string(data + count, key, &len);
+    count += unpack_string(data + count, valmin, vminlen);
+    unpack_string(data + count, valmax, vmaxlen);
     
     return 0;
 }
@@ -836,6 +909,57 @@ cmd_range_unpack(char *data, char *key, unsigned char *kind, unsigned char *mask
     memcpy(frompos, data + count, sizeof(int));
     count += sizeof(int);
     memcpy(len, data + count, sizeof(int));
+    //*masknum = mlen;
+    return 0;
+}
+
+int 
+cmd_sortlist_range_pack(char *data, char *key, unsigned char kind, 
+                unsigned char masknum, unsigned int *maskarray, 
+                void *valmin, unsigned char vminlen, void *valmax, unsigned char vmaxlen)
+{
+    unsigned char cmd = CMD_RANGE;
+    unsigned int len;
+    int count = CMD_REQ_SIZE_LEN;
+
+    memcpy(data + count, &cmd, sizeof(char));
+    count += sizeof(char);
+    count += pack_string(data + count, key, 0);
+	memcpy(data + count, &kind, sizeof(char));
+	count += sizeof(char);
+    //count += pack_string(data + count, maskformat, masknum);
+    count += pack_mask(data + count, maskarray, masknum);
+    //memcpy(data + count, &frompos, sizeof(int));
+    //count += sizeof(int);
+    count += pack_string(data + count, valmin, vminlen);
+    count += pack_string(data + count, valmax, vmaxlen);
+    //memcpy(data + count, &rlen, sizeof(int));
+    //count += sizeof(int);
+
+    len = count - CMD_REQ_SIZE_LEN;
+    memcpy(data, &len, CMD_REQ_SIZE_LEN);
+
+    return count;
+}
+
+int 
+cmd_sortlist_range_unpack(char *data, char *key, unsigned char *kind, 
+                    unsigned char *masknum, unsigned int *maskarray, 
+                    void *valmin, unsigned char *vminlen, void *valmax, unsigned char *vmaxlen)
+{
+    int count = CMD_REQ_HEAD_LEN;
+    //unsigned char mlen;
+    count += unpack_string(data + count, key, NULL); 
+	memcpy(kind, data + count, sizeof(char));
+	count += sizeof(char);
+    //count += unpack_string(data + count, maskformat, &mlen);
+    count += unpack_mask(data + count, maskarray, masknum);
+    //memcpy(frompos, data + count, sizeof(int));
+    //count += sizeof(int);
+    count += unpack_string(data + count, valmin, vminlen);
+    count += unpack_string(data + count, valmax, vmaxlen);
+
+    //memcpy(len, data + count, sizeof(int));
     //*masknum = mlen;
     return 0;
 }
