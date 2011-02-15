@@ -1022,10 +1022,7 @@ hashtable_sortlist_range(HashTable *ht, char *key, unsigned char kind,
 {
     char maskval[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
 	char maskflag[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
-
     HashNode    *node;
-    //int         idx   = 0;
-    char        *wbuf = NULL;
     int         ret   = 0;
 	
     node = hashtable_find(ht, key);
@@ -1038,44 +1035,18 @@ hashtable_sortlist_range(HashTable *ht, char *key, unsigned char kind,
         masknum = mask_array2_binary_flag(node->maskformat, maskarray, masknum, maskval, maskflag);
     }
 
-    //int  wlen = CMD_REPLY_HEAD_LEN + 3 + node->masknum + (node->valuesize + node->masksize) * len;
     int wlen = 102400;
-    DINFO("range wlen: %d\n", wlen);
-    wbuf = conn_write_buffer(conn, wlen);
+    conn_write_buffer(conn, wlen);
     conn->wlen += CMD_REPLY_HEAD_LEN;
-    //idx += CMD_REPLY_HEAD_LEN;
-    //DINFO("valuesize:%d, masksize:%d, masknum:%d\n", node->valuesize, node->masksize, node->masknum);
-    /*
-    memcpy(wbuf + idx, &node->valuesize, sizeof(char));
-    idx += sizeof(char);
-    memcpy(wbuf + idx, &node->masksize, sizeof(char));
-    idx += sizeof(char);
-    memcpy(wbuf + idx, &node->masknum, sizeof(char));
-    idx += sizeof(char);
-    memcpy(wbuf + idx, node->maskformat, node->masknum);
-    idx += node->masknum;
-    */
-
-    wbuf = conn_write_buffer_append(conn, &node->valuesize, sizeof(char));
-    wbuf = conn_write_buffer_append(conn, &node->masksize, sizeof(char));
-    wbuf = conn_write_buffer_append(conn, &node->masknum, sizeof(char));
-    wbuf = conn_write_buffer_append(conn, &node->maskformat, node->masknum);
+    conn_write_buffer_append(conn, &node->valuesize, sizeof(char));
+    conn_write_buffer_append(conn, &node->masksize, sizeof(char));
+    conn_write_buffer_append(conn, &node->masknum, sizeof(char));
+    conn_write_buffer_append(conn, &node->maskformat, node->masknum);
 
     DataBlock *dbk = NULL;
     int datalen = node->valuesize + node->masksize;
     int dbkpos = 0;
 
-    /*
-    if (masknum > 0) {
-		ret = dataitem_lookup_pos_mask(node, 0, kind, maskval, maskflag, &dbk, &dbkpos);
-		DINFO("dataitem_lookup_pos_mask ret:%d, dbkpos:%d\n", ret, dbkpos);
-		if (ret < 0) { // out of range
-			ret = MEMLINK_OK;
-            goto hashtable_sortlist_range_over;
-		}
-    }else{
-        dbkpos = sortlist_lookup(node, MEMLINK_SORTLIST_LOOKUP_STEP, value, MEMLINK_VALUE_ALL, &dbk);
-	}*/
     dbkpos = sortlist_lookup(node, MEMLINK_SORTLIST_LOOKUP_STEP, valmin, MEMLINK_VALUE_ALL, &dbk);
     DINFO("dbkpos: %d, kind:%d\n", dbkpos, kind);
 	
@@ -1086,7 +1057,6 @@ hashtable_sortlist_range(HashTable *ht, char *key, unsigned char kind,
 			DINFO("data_count is 0, dbk:%p\n", dbk);
 			break;
 		}
-
         char *itemdata = dbk->data + dbkpos * datalen;
         int  i;
         for (i = dbkpos; i < dbk->data_count; i++) {
@@ -1095,11 +1065,9 @@ hashtable_sortlist_range(HashTable *ht, char *key, unsigned char kind,
 
             if (dataitem_have_data(node, itemdata, kind)) {
 				char *maskdata = itemdata + node->valuesize;
-
                 if (((char*)valmax)[0] != 0 && sortlist_valuecmp(node->type, valmax, itemdata, node->valuesize) <= 0) {
                     goto hashtable_sortlist_range_over;
                 }
-     
 				if (masknum > 0) {
 					int k;
 					for (k = 0; k < node->masksize; k++) {
@@ -1107,24 +1075,13 @@ hashtable_sortlist_range(HashTable *ht, char *key, unsigned char kind,
 							break;
 						}
 					}
-					if (k < node->masksize) { // not equal
+					if (k < node->masksize) {
 						itemdata += datalen;
 						continue;
 					}
 				}
-                /*char buf[128];
-				snprintf(buf, node->valuesize + 1, "%s", itemdata);
-				DINFO("\tok, copy item ... i:%d, value:%s\n", i, buf);
-				*/ 
-				//memcpy(wbuf + idx, itemdata, datalen);
-				//idx += datalen;
-
-                wbuf = conn_write_buffer_append(conn, itemdata, datalen);
-
+                conn_write_buffer_append(conn, itemdata, datalen);
 				n += 1;
-				/*if (n >= len) {
-					goto hashtable_sortlist_range_over;
-				}*/
             }
             itemdata += datalen;
         }
