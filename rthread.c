@@ -22,7 +22,7 @@ int
 rdata_ready(Conn *conn, char *data, int datalen)
 {
     char key[512] = {0}; 
-    //char value[1024];
+    //char value[512] = {0};
     char cmd;
     int  ret = 0;
     //char *msg = NULL;
@@ -65,6 +65,39 @@ rdata_ready(Conn *conn, char *data, int datalen)
             //int wlen = sizeof(int) + sizeof(short) + sizeof(char) + sizeof(char) + sizeof(char) + 
 			//		   masknum * sizeof(int) + (HASHTABLE_VALUE_MAX + (HASHTABLE_MASK_MAX_BIT/8 + 2) * masknum) * len;
             ret = hashtable_range(g_runtime->ht, key, kind, maskarray, masknum, frompos, len, conn); 
+            DINFO("hashtable_range return: %d\n", ret);
+            //ret = data_reply(conn, ret, retrec, retlen);
+            ret = data_reply_direct(conn);
+            DINFO("data_reply return: %d\n", ret);
+
+            break;
+        }
+        case CMD_SL_RANGE: {
+            DINFO("<<< cmd SL_RANGE >>>\n");
+			unsigned char kind;
+            char valmin[512] = {0};
+            char valmax[512] = {0};
+            unsigned char vminlen = 0, vmaxlen = 0;
+
+            ret = cmd_sortlist_range_unpack(data, key, &kind, &masknum, maskarray, valmin, &vminlen, valmax, &vmaxlen);
+            DINFO("unpack range return:%d, key:%s, masknum:%d, vminlen:%d, vmaxlen:%d, len:%d\n", 
+                            ret, key, masknum, vminlen, vmaxlen, len);
+
+            /*
+			if (frompos < 0 || len <= 0) {
+				DERROR("from or len small than 0. from:%d, len:%d\n", frompos, len);
+				ret = MEMLINK_ERR_RANGE_SIZE;
+				goto rdata_ready_error;
+			}*/
+
+			if (key[0] == 0) {
+				ret = MEMLINK_ERR_PARAM;
+				goto rdata_ready_error;
+			}
+            // len(4B) + retcode(2B) + valuesize(1B) + masksize(1B) + masknum(1B) + maskformat(masknum B) + value.mask * len
+            //int wlen = sizeof(int) + sizeof(short) + sizeof(char) + sizeof(char) + sizeof(char) + 
+			//		   masknum * sizeof(int) + (HASHTABLE_VALUE_MAX + (HASHTABLE_MASK_MAX_BIT/8 + 2) * masknum) * len;
+            ret = hashtable_sortlist_range(g_runtime->ht, key, kind, maskarray, masknum, valmin, valmax, conn); 
             DINFO("hashtable_range return: %d\n", ret);
             //ret = data_reply(conn, ret, retrec, retlen);
             ret = data_reply_direct(conn);

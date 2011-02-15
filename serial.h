@@ -129,4 +129,20 @@ int cmd_insert_mvalue_unpack(char *data, char *key, MemLinkInsertVal **items, in
 int cmd_del_by_mask_pack(char *data, char *key, unsigned int *maskarray, unsigned char masknum);
 int cmd_del_by_mask_unpack(char *data, char *key, unsigned int *maskarray, unsigned char *masknum);
 
+int cmd_sortlist_count_pack(char *data, char *key, unsigned char masknum, unsigned int *maskarray,
+                        void *valmin, unsigned char vminlen, void *valmax, unsigned char vmaxlen);
+int cmd_sortlist_count_unpack(char *data, char *key, unsigned char *masknum, unsigned int *maskarray,
+                        void *valmin, unsigned char *vminlen, void *valmax, unsigned char *vmaxlen);
+int cmd_sortlist_del_pack(char *data, char *key, char *valmin, unsigned char vminlen, 
+                        char *valmax, unsigned char vmaxlen);
+int cmd_sortlist_del_unpack(char *data, char *key, char *valmin, unsigned char *vminlen,
+                        char *valmax, unsigned char *vmaxlen);
+
+int cmd_sortlist_range_pack(char *data, char *key, unsigned char kind, 
+                        unsigned char masknum, unsigned int *maskarray, 
+                        void *valmin, unsigned char vminlen, void *valmax, unsigned char vmaxlen);
+int cmd_sortlist_range_unpack(char *data, char *key, unsigned char *kind, 
+                        unsigned char *masknum, unsigned int *maskarray, 
+                        void *valmin, unsigned char *vminlen, void *valmax, unsigned char *vmaxlen);
+
 #endif

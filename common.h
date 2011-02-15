@@ -55,6 +55,8 @@
 #define MEMLINK_ERR_CONNECT_READ    -35
 // 客户端连接写端口失败
 #define MEMLINK_ERR_CONNECT_WRITE   -36
+// 不支持的操作
+#define MEMLINK_ERR_NOACTION        -37
 
 // 其他错误
 #define MEMLINK_ERR                 -1
@@ -123,10 +125,14 @@
 // 真实删除
 #define MEMLINK_VALUE_REMOVED        4
 
+// 列表
 #define MEMLINK_LIST        1
+// 队列
 #define MEMLINK_QUEUE       2
-#define MEMLINK_SORT_LIST   3
+// 按value排序的列表
+#define MEMLINK_SORTLIST    3
 
+// 查找排序列表时，每次每次跳过多少个大块
 #define MEMLINK_SORTLIST_LOOKUP_STEP    10
 
 #define MEMLINK_VALUE_INT           1
@@ -136,15 +142,23 @@
 #define MEMLINK_VALUE_FLOAT         5 
 #define MEMLINK_VALUE_DOUBLE        6 
 #define MEMLINK_VALUE_STRING        7 
+#define MEMLINK_VALUE_OBJ           8
 
+#define MEMLINK_SORTLIST_ORDER_ASC  0x00010000
+#define MEMLINK_SORTLIST_ORDER_DESC 0x00020000
 
 #define SYNC_BUF_SIZE       8192 
 
 #define MEMLINK_WRITE_LOG   1
 #define MEMLINK_NO_LOG      0
 
+// 从前往后查找
 #define MEMLINK_FIND_NEXT   1
+// 从后往前查找
 #define MEMLINK_FIND_PREV   2
+
+#define MEMLINK_CMP_RANGE   1
+#define MEMLINK_CMP_EQUAL   2
 
 typedef struct _memlink_insert_mvalue_item
 {

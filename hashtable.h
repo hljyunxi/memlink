@@ -74,4 +74,12 @@ int				dataitem_have_data(HashNode *node, char *itemdata, unsigned char kind);
 int				dataitem_check_data(HashNode *node, char *itemdata);
 
 int             hashtable_del_by_mask(HashTable *ht, char *key, unsigned int *maskarray, int masknum);
+
+int             hashtable_sortlist_mdel(HashTable *ht, char *key, void *valmin, void *valmax);
+int             hashtable_sortlist_count(HashTable *ht, char *key, unsigned int *maskarray, int masknum, 
+                                        void* valmin, void *valmax, int *visible_count, int *tagdel_count);
+int             hashtable_sortlist_range(HashTable *ht, char *key, unsigned char kind, 
+				                        unsigned int *maskarray, int masknum, void *valmin,
+                                        void *valmax, Conn *conn);
+
 #endif

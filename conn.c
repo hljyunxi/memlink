@@ -98,6 +98,27 @@ conn_write_buffer(Conn *conn, int size)
     return conn->wbuf;
 }
 
+inline char*
+conn_write_buffer_append(Conn *conn, void *data, int datalen)
+{
+    if (conn->wlen + datalen > conn->wsize) {
+        int   newsize = (conn->wlen + datalen) * 2;
+        char *newdata = zz_malloc(newsize);
+    
+        if (conn->wlen > 0) {
+            memcpy(newdata, conn->wbuf, conn->wlen);
+        }
+        zz_free(conn->wbuf);
+        conn->wsize = newsize;
+        conn->wbuf  = newdata;
+    }
+    
+    memcpy(conn->wbuf + conn->wlen, data, datalen);
+    conn->wlen += datalen;
+
+    return conn->wbuf;
+}
+
 // put datalen and return code to header
 int
 conn_write_buffer_head(Conn *conn, int retcode, int len)
