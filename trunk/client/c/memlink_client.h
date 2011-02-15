@@ -64,29 +64,37 @@ int			memlink_cmd_create_list(MemLink *m, char *key, int valuelen, char *maskstr
 int			memlink_cmd_create_queue(MemLink *m, char *key, int valuelen, char *maskstr);
 int			memlink_cmd_create_sortlist(MemLink *m, char *key, int valuelen, char *maskstr, unsigned char valuetype);
 int			memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen);
+//int			memlink_cmd_sortlist_del(MemLink *m, char *key, char *value, int valuelen, int count);
 int			memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen, 
                                char *maskstr, int pos);
-int			memlink_cmd_sortlist_insert(MemLink *m, char *key, char *value, int valuelen, char *maskstr);
 
 int			memlink_cmd_lpush(MemLink *m, char *key, char *value, int valuelen, char *maskstr);
 int			memlink_cmd_rpush(MemLink *m, char *key, char *value, int valuelen, char *maskstr);
 int			memlink_cmd_lpop(MemLink *m, char *key, int num, MemLinkResult *result);
 int			memlink_cmd_rpop(MemLink *m, char *key, int num, MemLinkResult *result);
 
-int			memlink_cmd_move(MemLink *m, char *key, char *value, int valuelen, 
-                               int pos);
-int			memlink_cmd_mask(MemLink *m, char *key, char *value, int valuelen, 
-                             char *maskstr);
+int			memlink_cmd_move(MemLink *m, char *key, char *value, int valuelen, int pos);
+int			memlink_cmd_mask(MemLink *m, char *key, char *value, int valuelen, char *maskstr);
 int			memlink_cmd_tag(MemLink *m, char *key, char *value, int valuelen, int tag);
 int			memlink_cmd_range(MemLink *m, char *key, int kind, char *maskstr, 
-                              int frompos, int len,
-                              MemLinkResult *result);
+                              int frompos, int len, MemLinkResult *result);
 int         memlink_cmd_rmkey(MemLink *m, char *key);
 int         memlink_cmd_count(MemLink *m, char *key, char *maskstr, MemLinkCount *count);
 int         memlink_cmd_insert_mvalue(MemLink *m, char *key, MemLinkInsertVal *values, int num);
 
 //add by lanwenhong
 int         memlink_cmd_del_by_mask(MemLink *m, char *key, char *maskstr);
+
+int			memlink_cmd_sortlist_insert(MemLink *m, char *key, char *value, int valuelen, char *maskstr);
+int			memlink_cmd_sortlist_range(MemLink *m, char *key, int kind, char *maskstr, 
+                              char *valmin, unsigned char vminlen, 
+                              char *valmax, unsigned char vmaxlen, MemLinkResult *result);
+
+int			memlink_cmd_sortlist_del(MemLink *m, char *key, char *valmin, unsigned char vminlen, 
+                            char *valmax, unsigned char vmaxlen);
+int         memlink_cmd_sortlist_count(MemLink *m, char *key, char *maskstr, 
+                            char *valmin, unsigned char vminlen, 
+                            char *valmax, unsigned char vmaxlen, MemLinkCount *count);
 
 #endif
 
