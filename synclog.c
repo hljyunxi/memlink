@@ -1,3 +1,10 @@
+/**
+ * 数据redo log
+ * @file synclog.c
+ * @author zhaowei
+ * @ingroup memlink
+ * @{
+ */
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -888,3 +895,7 @@ int synclog_clean(unsigned int logver, unsigned int dumplogpos)
 	//synclog_truncate(g_runtime->synclog, logver, dumplogpos);	
 	return 1;
 }
+
+/**
+ * @}
+ */

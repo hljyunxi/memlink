@@ -1,3 +1,9 @@
+/**
+ * linux守护进程
+ * @file daemon.c
+ * @ingroup memlink
+ * @{
+ */
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,3 +56,7 @@ int daemonize(int nochdir, int noclose)
     }
     return (0);
 }
+
+/**
+ * @}
+ */

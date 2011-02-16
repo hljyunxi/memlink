@@ -1,3 +1,10 @@
+/**
+ * 写操作线程
+ * @file wthread.c
+ * @author zhaowei
+ * @ingroup memlink
+ * @{
+ */
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -901,3 +908,7 @@ wthread_destroy(WThread *wt)
 {
     zz_free(wt);
 }
+
+/**
+ * @}
+ */

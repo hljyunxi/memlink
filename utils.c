@@ -1,3 +1,10 @@
+/**
+ * 通用函数
+ * @file utils.c
+ * @author zhaowei
+ * @ingroup memlink
+ * @{
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -351,3 +358,7 @@ ffread(void *ptr, size_t size, size_t nmemb, FILE *stream)
 	}
 	return ret;
 }
+
+/**
+ * @}
+ */

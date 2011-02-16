@@ -1,3 +1,10 @@
+/**
+ * 数据包编码解码
+ * @file serial.c
+ * @author zhaowei
+ * @ingroup memlink
+ * @{
+ */
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -1227,4 +1234,6 @@ cmd_del_by_mask_unpack(char *data, char *key, unsigned int *maskarray, unsigned 
 
 	return 0;
 }
-
+/**
+ * @}
+ */

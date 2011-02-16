@@ -1,3 +1,10 @@
+/**
+ * 内部哈希表
+ * @file hashtable.c
+ * @author zhaowei
+ * @ingroup memlink
+ * @{
+ */
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -22,7 +29,10 @@ hashtable_find_value(HashTable *ht, char *key, void *value, HashNode **node, Dat
         *node = fnode;
     }
 
-    //DINFO("find dataitem ... node: %p\n", fnode);
+    /*char buf[256] = {0};
+    memcpy(buf, value, fnode->valuesize);
+    DINFO("find dataitem ... node: %p, type:%d, key:%s, value:%s\n", fnode, fnode->type, key, buf);*/
+
     if (fnode->type == MEMLINK_SORTLIST) {
         int ret;
         ret = sortlist_lookup(fnode, MEMLINK_SORTLIST_LOOKUP_STEP, value, MEMLINK_VALUE_ALL, dbk);
@@ -32,7 +42,7 @@ hashtable_find_value(HashTable *ht, char *key, void *value, HashNode **node, Dat
     }else{ 
         char *item = dataitem_lookup(fnode, value, dbk);
         if (NULL == item) {
-            //DWARNING("dataitem_lookup error: %s, %x\n", key, *(unsigned int*)value);
+            //DWARNING("dataitem_lookup error: key:%s, value:%s\n", key, (char*)value);
             return MEMLINK_ERR_NOVAL;
         }
         *data = item;
@@ -45,7 +55,6 @@ int
 hashtable_find_value_pos(HashTable *ht, char *key, void *value, HashNode **node, DataBlock **dbk)
 {
     HashNode *fnode = hashtable_find(ht, key);
-
     if (NULL == fnode) {
         return MEMLINK_ERR_NOKEY;
     }
@@ -53,7 +62,6 @@ hashtable_find_value_pos(HashTable *ht, char *key, void *value, HashNode **node,
         *node = fnode;
     }
 
-    //DINFO("find dataitem ... node: %p\n", fnode);
     if (fnode->type == MEMLINK_SORTLIST) {
         return sortlist_lookup(fnode, MEMLINK_SORTLIST_LOOKUP_STEP, value, MEMLINK_VALUE_ALL, dbk);
     }else{ 
@@ -360,7 +368,7 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
     memcpy(bufv, value, node->valuesize);
     DINFO("add_mask_bin: %s, %s\n", key, bufv);
     */
-
+    //DINFO("add key:%s, value:%s, pos:%d\n", key, value, pos);
     DataBlock *dbk = node->data;
 	DataBlock *newbk = NULL;
     int datalen = node->valuesize + node->masksize;
@@ -382,14 +390,13 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
             dbkpos = pos;
             DNOTE("insert last skip:%d, pos:%d\n", pos, dbkpos);
         }else{
-            ret = datablock_lookup_valid_pos(node, pos, 0, &dbk);
-            dbkpos = dataitem_skip2pos(node, dbk, pos, MEMLINK_VALUE_ALL);
-            DNOTE("skip:%d, pos:%d\n", pos, dbkpos);
+            ret = datablock_lookup_valid_pos(node, pos, MEMLINK_VALUE_ALL, &dbk);
+            dbkpos = dataitem_skip2pos(node, dbk, pos - ret, MEMLINK_VALUE_ALL);
+            DNOTE("pos:%d, dbk:%p, pos in dbk:%d, skipn:%d\n", pos, dbk, dbkpos, pos - ret);
             //startn = ret;
             //skipn = pos - startn;
         }
     }
-
     if (dbk) {
         prev = dbk->prev;
     }
@@ -693,7 +700,7 @@ hashtable_del(HashTable *ht, char *key, void *value)
     HashNode    *node = NULL;
     DataBlock   *dbk  = NULL, *prev = NULL;
 
-    DINFO("hashtable_find_value: %s, value: %s\n", key, (char*)value);
+    //DINFO("hashtable_find_value: %s, value: %s\n", key, (char*)value);
     int ret = hashtable_find_value(ht, key, value, &node, &dbk, &item);
     //DINFO("hashtable_find_value ret: %d, dbk:%p, prev:%p\n", ret, dbk, prev);
     if (ret < 0) {
@@ -1510,7 +1517,7 @@ hashtable_lpop(HashTable *ht, char *key, int num, Conn *conn)
     int i;
     int rmn   = 0;  // delete value count in whole block
 
-    if (wbuf) {
+    if (conn) {
         memcpy(wbuf + idx, &node->valuesize, sizeof(char));
         idx += sizeof(char);
         memcpy(wbuf + idx, &node->masksize, sizeof(char));
@@ -1533,7 +1540,7 @@ hashtable_lpop(HashTable *ht, char *key, int num, Conn *conn)
 				snprintf(buf, node->valuesize + 1, "%s", itemdata);
 				DINFO("\tok, copy item ... i:%d, value:%s\n", i, buf);
 			    */	
-                if (wbuf) {
+                if (conn) {
 				    memcpy(wbuf + idx, itemdata, datalen);
                 }
 				idx += datalen;
@@ -1635,7 +1642,7 @@ hashtable_rpop(HashTable *ht, char *key, int num, Conn *conn)
     int i;
     int rmn   = 0;  // delete value count in whole block
 
-    if (wbuf) {
+    if (conn) {
         memcpy(wbuf + idx, &node->valuesize, sizeof(char));
         idx += sizeof(char);
         memcpy(wbuf + idx, &node->masksize, sizeof(char));
@@ -1659,7 +1666,7 @@ hashtable_rpop(HashTable *ht, char *key, int num, Conn *conn)
 				snprintf(buf, node->valuesize + 1, "%s", itemdata);
 				DINFO("\tok, copy item ... i:%d, value:%s\n", i, buf);*/
 			    	
-                if (wbuf) {
+                if (conn) {
 				    memcpy(wbuf + idx, itemdata, datalen);
                 }
 				idx += datalen;
@@ -1828,4 +1835,6 @@ hashtable_del_by_mask(HashTable *ht, char *key, unsigned int *maskarray, int mas
 
     return count;
 }
-
+/**
+ * @}
+ */

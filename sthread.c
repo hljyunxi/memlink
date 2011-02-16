@@ -1,3 +1,10 @@
+/**
+ * 主同步线程
+ * @file sthread.c
+ * @author zhaowei
+ * @ingroup memlink
+ * @{
+ */
 #include <stdlib.h>
 #include <network.h>
 #include <string.h>
@@ -553,4 +560,6 @@ sthread_create()
 	
 	return st;
 }
-
+/**
+ * @}
+ */

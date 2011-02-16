@@ -1,3 +1,10 @@
+/**
+ * 数据保存到磁盘
+ * @file dumpfile.c
+ * @author zhaowei
+ * @ingroup memlink
+ * @{
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -399,4 +406,6 @@ dumpfile_call()
     return ret;
 }
 
-
+/**
+ * @}
+ */

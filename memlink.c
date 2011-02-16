@@ -1,3 +1,10 @@
+/**
+ * 入口
+ * @file memlink.c
+ * @defgroup memlink
+ & @author zhaowei
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
