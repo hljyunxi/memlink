@@ -52,15 +52,16 @@ int main()
 	HashNode *node = NULL;
 	DataBlock *dbk = NULL;
 	char	 *item = NULL; 
-	num = 1000;
+	num = 200;
+
 	for(i = 0; i < num; i++)
 	{
 		sprintf(val, "value%03d", i);
-		//pos = i;
-		pos = my_rand(num + 50);
+		pos = i;
+		//pos = my_rand(num + 50);
+
 		//DINFO("<<<<<<<hashtable_print>>>>>>>>>>>>\n");
 		//hashtable_print(g_runtime->ht, key);
-		
 		//DINFO("<<<<<<hashtable_add_mask>>>> val:%s, pos:%d \n", val, pos);
 		ret = hashtable_add_mask(ht, key, val, maskarray[i%3], 3, pos);
 		if (ret < 0) {
@@ -69,7 +70,17 @@ int main()
 		}
 	}
 
-	printf("2 insert 1000 \n");
+	printf("2 insert %d\n", num);
+    
+    MemLinkStat stat;
+
+    ret = hashtable_stat(ht, key, &stat);
+    if (ret != MEMLINK_OK) {
+        printf("stat error!\n");
+    }
+
+    printf("blocks:%d, data_used:%d\n", stat.blocks, stat.data_used);
+
 	//return 0;
 	//DINFO("<<<<<<<hashtable_end>>>>>>>>>>>>\n");
 	//hashtable_print(g_runtime->ht, key);
@@ -90,12 +101,16 @@ int main()
 		DERROR("del value: %d, %s\n", ret, val);
 		return ret;
 	}
-	
+    DINFO("deleted %s\n", val);	
+	//hashtable_print(g_runtime->ht, key);
+
 	ret = hashtable_add_mask(ht, key, val, maskarray[2], masknum, 100);
 	if (ret < 0) {
 		DERROR("add value err: %d, %s\n", ret, val);
 		return ret;
 	}
+
+	//hashtable_print(g_runtime->ht, key);
 
 	ret = hashtable_find_value(ht, key, val, &node, &dbk, &item);
 	if (ret < 0) {
@@ -104,7 +119,7 @@ int main()
 	}
 	printf("test: insert ok!\n");
 
-/////////// hashtable_del
+    /////////// hashtable_del
 	for(i = 0; i < num; i++)
 	{
 		sprintf(val, "value%03d", i);
@@ -115,7 +130,7 @@ int main()
 			return ret;
 		}
 	}
-	printf("del 1000!\n");
+	printf("del %d!\n", num);
 
 	for(i = 0; i < num; i++)
 	{
