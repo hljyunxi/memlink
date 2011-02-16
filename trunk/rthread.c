@@ -1,3 +1,10 @@
+/** 
+ * 读操作线程
+ * @file rthread.c
+ * @author zhaowei
+ * @ingroup memlink
+ * @{
+ */
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
@@ -192,4 +199,6 @@ rdata_ready_error:
 
     return 0;
 }
-
+/**
+ * @}
+ */

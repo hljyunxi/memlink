@@ -1,3 +1,10 @@
+/**
+ * 从数据同步线程
+ * @file sslave.c
+ * @author zhaowei
+ * @ingroup memlink
+ * @{
+ */
 #include <stdio.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -731,4 +738,6 @@ sslave_destroy(SSlave *ss)
     zz_free(ss);
 }
 
-
+/**
+ * @}
+ */

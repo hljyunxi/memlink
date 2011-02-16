@@ -1,3 +1,10 @@
+/**
+ * 内存分配与调试
+ * @file zzmalloc.c
+ * @author zhaowei
+ * @ingroup memlink
+ * @{
+ */
 #include <stdlib.h>
 #include <string.h>
 #include "logfile.h"
@@ -109,3 +116,7 @@ zz_strdup(char *s)
 
     return ss;
 }
+
+/**
+ * @}
+ */

@@ -1,3 +1,10 @@
+/**
+ * unix socket package
+ * @file network.c
+ * @author zhaowei
+ * @ingroup memlink
+ * @{
+ */
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -141,3 +148,6 @@ tcp_server_setopt(int fd)
 
     return 0;
 }
+/**
+ * @}
+ */

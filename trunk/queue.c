@@ -1,3 +1,11 @@
+/**
+ * 事件队列
+ * @file queue.c
+ * @author zhaowei
+ * @ingroup memlink
+ * @{
+ */
+
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
@@ -145,4 +153,6 @@ queue_free(Queue *q, QueueItem *item)
     }
 }
 
-
+/**
+ * @}
+ */

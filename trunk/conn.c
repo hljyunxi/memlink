@@ -1,3 +1,10 @@
+/**
+ * 连接处理
+ * @file conn.c
+ * @author zhaowei
+ * @ingroup memlink
+ * @{
+ */
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/ioctl.h>
@@ -181,3 +188,7 @@ conn_write(Conn *conn)
         break;
     } 
 }
+
+/**
+ * @}
+ */

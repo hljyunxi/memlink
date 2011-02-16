@@ -1,3 +1,10 @@
+/**
+ * 内存池
+ * @file mem.c
+ * @author zhaowei
+ * @ingroup memlink
+ * @{
+ */
 #include <stdlib.h>
 #include <string.h>
 #include "zzmalloc.h"
@@ -171,5 +178,7 @@ mempool_destroy(MemPool *mp)
     zz_free(mp);
 }
 
-
+/**
+ * @}
+ */
 

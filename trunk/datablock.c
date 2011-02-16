@@ -1,3 +1,11 @@
+/**
+ * 哈希表内部数据块处理
+ * @file datablock.c
+ * @author zhaowei
+ * @ingroup memlink
+ * @{
+ */
+
 #include "datablock.h"
 #include "logfile.h"
 #include "common.h"
@@ -165,18 +173,18 @@ sortlist_datablock_check(HashNode *node, DataBlock *dbk, void *value, int kind, 
 {
     char *data;
     int i, ret;
-    char buf[128];
+    //char buf[128];
 
     if (direction == MEMLINK_FIND_PREV) {
         data = dbk->data;
         for (i = 0; i < dbk->data_count; i++) {
-            DINFO("check i:%d\n", i);
+            //DINFO("check i:%d\n", i);
             if (dataitem_have_data(node, data, kind)) {
                 *pos = i;
                 ret = sortlist_valuecmp(node->valuetype, value, data, node->valuesize);
                 //memcpy(buf, data, node->valuesize);
                 //DINFO("1 valuecmp: %s %s, ret:%d\n", (char*)value, buf, ret);
-                DINFO("1 valuecmp: %s %s, ret:%d\n", (char*)value, formath(value, node->valuesize, buf, 128), ret);
+                //DINFO("1 valuecmp: %s %s, ret:%d\n", (char*)value, formath(value, node->valuesize, buf, 128), ret);
                 return ret;
             }
             data += datalen;
@@ -184,13 +192,13 @@ sortlist_datablock_check(HashNode *node, DataBlock *dbk, void *value, int kind, 
     }else{
         data = dbk->data + (dbk->data_count - 1) * datalen;
         for (i = dbk->data_count - 1; i >= 0; i--) {
-            DINFO("check i:%d\n", i);
+            //DINFO("check i:%d\n", i);
             if (dataitem_have_data(node, data, kind)) {
                 *pos = i;
                 ret = sortlist_valuecmp(node->valuetype, value, data, node->valuesize);
                 //memcpy(buf, data, node->valuesize);
                 //DINFO("1 valuecmp: %s %s, ret:%d\n", (char*)value, buf, ret);
-                DINFO("1 valuecmp: %s %s, ret:%d\n", (char*)value, formath(value, node->valuesize, buf, 128), ret);
+                //DINFO("1 valuecmp: %s %s, ret:%d\n", (char*)value, formath(value, node->valuesize, buf, 128), ret);
                 return ret;
             }
             data -= datalen;
@@ -215,7 +223,7 @@ sortlist_datablock_check_all(HashNode *node, DataBlock *dbk, void *value, int ki
 {
     char *data;
     int i, ret;
-    char buf[128];
+    //char buf[128];
 
     if (direction == MEMLINK_FIND_NEXT) {
         data = dbk->data;
@@ -224,7 +232,7 @@ sortlist_datablock_check_all(HashNode *node, DataBlock *dbk, void *value, int ki
                 ret = sortlist_valuecmp(node->valuetype, value, data, node->valuesize);
                 //memcpy(buf, data, node->valuesize);
                 //DINFO("2 valuecmp: %s %s, i:%d, ret:%d\n", (char*)value, buf, i, ret);
-                DINFO("2 valuecmp: %s %s, i:%d, ret:%d\n", (char*)value, formath(value, node->valuesize, buf, 128), i, ret);
+                //DINFO("2 valuecmp: %s %s, i:%d, ret:%d\n", (char*)value, formath(value, node->valuesize, buf, 128), i, ret);
                 if (cmptype == MEMLINK_CMP_RANGE) {
                     if (ret <= 0)
                         return i;
@@ -242,7 +250,7 @@ sortlist_datablock_check_all(HashNode *node, DataBlock *dbk, void *value, int ki
                 ret = sortlist_valuecmp(node->valuetype, value, data, node->valuesize);
                 //memcpy(buf, data, node->valuesize);
                 //DINFO("2 valuecmp: %s %s, i:%d, ret:%d\n", (char*)value, buf, i, ret);
-                DINFO("2 valuecmp: %s %s, i:%d, ret:%d\n", (char*)value, formath(value, node->valuesize, buf, 128), i, ret);
+                //DINFO("2 valuecmp: %s %s, i:%d, ret:%d\n", (char*)value, formath(value, node->valuesize, buf, 128), i, ret);
                 if (cmptype == MEMLINK_CMP_RANGE) {
                     if (ret >= 0) {
                         return i;
@@ -529,10 +537,10 @@ datablock_print(HashNode *node, DataBlock *dbk)
         }else if (dataitem_have_data(node, itemdata, 0)) {
             memcpy(buf2, itemdata, node->valuesize);
             buf2[node->valuesize] = 0;
-            DINFO("i: %d, value: %s, mask: %s\tdel\n", i, buf2, 
+            DINFO("i: %03d, value: %s, mask: %s\tdel\n", i, buf2, 
                     formath(itemdata + node->valuesize, node->masksize, buf1, 128));
         }else{
-            DINFO("i: %d, no data, mask: %s\n", i, formath(itemdata + node->valuesize, node->masksize, buf1, 128));
+            DINFO("i: %03d, no data, mask: %s\n", i, formath(itemdata + node->valuesize, node->masksize, buf1, 128));
         }
 
         itemdata += datalen;
@@ -580,7 +588,7 @@ datablock_del_restore(HashNode *node, DataBlock *dbk, char *data)
     return 0;
 }
 /**
- * 在数据链中找到某位置所在数据块
+ * 在数据链中找到某位置所在数据块, 
  * @param node 
  * @param pos
  * @param kind
@@ -604,7 +612,8 @@ datablock_lookup_pos(HashNode *node, int pos, unsigned char kind, DataBlock **db
 			n += root->tagdel_count;
 		}
 	
-		if (n >= pos) {
+		//if (n >= pos) {
+		if (n > pos) {
 			*dbk = root;
 			return startn;
 		}
@@ -806,6 +815,7 @@ datablock_new_copy_pos(HashNode *node, DataBlock *dbk, int pos, void *value, voi
     int iscopy = 0;
 	for (i = 0; i < dbk->data_count; i++) {
         if (i == pos) {
+            DINFO("data copyed. %d\n", i);
             dataitem_copy(node, todata, value, mask);
             todata += datalen;
             n++;
@@ -837,6 +847,7 @@ datablock_new_copy_pos(HashNode *node, DataBlock *dbk, int pos, void *value, voi
 
 	//if (n <= skipn && todata < end_todata) {
     if (iscopy == 0 && todata < end_todata) {
+        DINFO("data copyed. %d\n", i);
 		dataitem_copy(node, todata, value, mask);
 		newbk->visible_count++;
 	}
@@ -928,4 +939,7 @@ mask_array2_binary_flag(unsigned char *maskformat, unsigned int *maskarray, int 
     return masknum;
 }
 
+/**
+ * @}
+ */
 

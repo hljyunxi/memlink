@@ -1,3 +1,10 @@
+/**
+ * 调试信息
+ * @file logfile.c
+ * @author zhaowei
+ * @ingroup memlink
+ * @{
+ */
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -134,5 +141,7 @@ logfile_write(LogFile *log, char *level, char *file, int line, char *format, ...
 	}
 }
 
-
+/**
+ * @}
+ */
 

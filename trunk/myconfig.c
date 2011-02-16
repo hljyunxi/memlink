@@ -1,3 +1,10 @@
+/**
+ * 配置和初始化
+ * @file myconfig.c
+ * @author zhaowei
+ * @ingroup memlink
+ * @{
+ */
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -647,4 +654,6 @@ runtime_destroy(Runtime *rt)
     zz_free(rt);
 }
 
-
+/**
+ * @}
+ */

@@ -1,3 +1,10 @@
+/**
+ * 接受网络连接的主线程
+ * @file server.c
+ * @author zhaowei
+ * @ingroup memlink
+ * @{
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -197,4 +204,6 @@ thserver_init(ThreadServer *ts)
     return 0;
 }
 
-
+/**
+ * @}
+ */
