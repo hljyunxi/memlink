@@ -30,7 +30,8 @@
 
 #define CONN_MEMBER \
     int     sock;\
-    char    rbuf[CONN_MAX_READ_LEN];\
+	char    *rbuf;\
+	int     rsize;\
     int     rlen;\
     char    *wbuf;\
     int     wsize;\

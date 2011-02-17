@@ -23,16 +23,18 @@
 #define CMD_INSERT_MVALUE   17
 #define CMD_INSERT_MKEY     18
 
-//add by lanwenhong
+	//add by lanwenhong
 #define CMD_DEL_BY_MASK     19
 
 #define CMD_PING			20
 #define CMD_STAT_SYS		21
-// for sorted list
+	// for sorted list
 #define CMD_SL_INSERT       22
 #define CMD_SL_DEL          23
 #define CMD_SL_COUNT        24
 #define CMD_SL_RANGE        25
+
+#define CMD_INSERT_MKV      26 
 
 #define CMD_SYNC            100 
 #define CMD_GETDUMP		    101
@@ -144,5 +146,10 @@ int cmd_sortlist_range_pack(char *data, char *key, unsigned char kind,
 int cmd_sortlist_range_unpack(char *data, char *key, unsigned char *kind, 
                         unsigned char *masknum, unsigned int *maskarray, 
                         void *valmin, unsigned char *vminlen, void *valmax, unsigned char *vmaxlen);
+
+int cmd_insert_mkv_pack(char *data, MemLinkInsertMkv *mkv);
+int cmd_insert_mkv_unpack_packagelen(char *data, unsigned int *package_len);
+int cmd_insert_mkv_unpack_key(char *data, char *key, unsigned int *valcount, char **conutstart);
+int cmd_insert_mkv_unpack_val(char *data, char *value, unsigned char *valuelen, unsigned char *masknum, unsigned int *maskarray, int *pos);
 
 #endif

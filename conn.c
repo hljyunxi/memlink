@@ -56,8 +56,10 @@ conn_create(int svrfd, int connsize)
         MEMLINK_EXIT;
     }
     zz_check(conn);
-
+	
     memset(conn, 0, connsize); 
+	conn->rbuf = (char *)zz_malloc(CONN_MAX_READ_LEN);
+	conn->rsize = CONN_MAX_READ_LEN;
     conn->sock = newfd;
 	conn->destroy = conn_destroy;
 	conn->wrote = conn_wrote;    
@@ -66,7 +68,7 @@ conn_create(int svrfd, int connsize)
     gettimeofday(&conn->ctime, NULL);
     g_runtime->conn_num++;
     DINFO("accept newfd: %d, %s:%d\n", newfd, conn->client_ip, conn->client_port);
-
+	
     zz_check(conn);
 
     return conn;
@@ -80,6 +82,9 @@ conn_destroy(Conn *conn)
     if (conn->wbuf) {
         zz_free(conn->wbuf);
     }
+	if (conn->rbuf) {
+		zz_free(conn->rbuf);
+	}
 	event_del(&conn->evt);
     close(conn->sock);
     zz_free(conn);

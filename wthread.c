@@ -626,6 +626,90 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
                 }
             }
             break;
+		case CMD_INSERT_MKV:
+			{
+				unsigned int package_len = 0, valcount = 0;
+				unsigned int count = 0;//统计解析了多少字节的包	
+				unsigned int psize;
+				unsigned int keysize = 0;
+				unsigned char skip = 1;
+				char retdata[128];
+				
+				DINFO("<<< cmd INSERT MKV >>>\n");
+				//解析包的大小
+				psize = cmd_insert_mkv_unpack_packagelen(data, &package_len);
+				DINFO("package_len: %d\n", package_len);
+				count += psize;
+				//skip cmd
+				count += sizeof(char);
+				int i = 0;
+				int j = 0;
+				while (count < package_len && skip == 1) {
+					char *countstart;
+					//解析key	
+					memset(key, 0x0, 512);	
+					psize = cmd_insert_mkv_unpack_key(data + count, key, &valcount, &countstart);
+					keysize = psize;
+					DINFO("key: %s, valcount: %d\n", key, valcount);
+					count += psize;	
+					//解析value
+					j = 0;
+					while (j < valcount) {
+						memset(value, 0x0, 512);
+						psize = cmd_insert_mkv_unpack_val(data + count, value, &valuelen, &masknum, maskarray, &pos);
+						DINFO("i: %d, value: %s, valuelen: %d, masknum: %d, pos: %d\n", i, value, valuelen, masknum, pos);
+						if (pos == -1) {
+							pos = INT_MAX;
+						} else if (pos < 0) {
+							DINFO("insert pos < 0, %d\n", pos);
+							ret = MEMLINK_ERR_PARAM;
+							//发现插入的位置为负, 直接跳出循环
+							skip = 0;
+							if (j == 0) {
+								//当前key的第一个value就出错了
+								count -= keysize;
+							} else {
+								//当前key的第x个value出错了
+								memcpy(countstart, &j, sizeof(int));
+							}
+							break;	
+						}
+						ret  = hashtable_add_mask(g_runtime->ht, key, value, maskarray, masknum, pos);
+						DINFO("hashtable_add_mask: %d\n", ret);
+						if (ret < 0) {
+							//插入hashtable有错， 直接跳出循环
+							skip = 0;
+							if (j == 0) {
+								count -= keysize;
+							} else {
+								memcpy(countstart, &j, sizeof(int));
+							}
+							break;
+						}
+						count += psize;
+						j++;//value计数
+					}
+					i++;//key计数
+				}
+				DINFO("count: %d\n", count);
+				if (conn && writelog) {
+					memcpy(retdata, &i, sizeof(int));
+					memcpy(retdata + sizeof(int), &j, sizeof(int));
+					data_reply(conn, ret, retdata, sizeof(int) * 2);
+					ret = MEMLINK_REPLIED;
+					//如果插入第一个key的第一个value有错， 不记录binlog
+					if (count == sizeof(int) + sizeof(char)) {
+						goto wdata_apply_over;
+					}
+					//改变包的大小
+					if (count < package_len) {
+						datalen = count;
+						count -= sizeof(int);
+						memcpy(data, &count, sizeof(int));
+					}
+				}
+			}
+			break;
         default:
             ret = MEMLINK_ERR_CLIENT_CMD;
             goto wdata_apply_over;
@@ -759,6 +843,15 @@ client_read(int fd, short event, void *arg)
             rlen = CONN_MAX_READ_LEN - conn->rlen;
         }
         DINFO("try read len: %d\n", rlen);
+		if (conn->rsize - conn->rlen < rlen) {
+
+			DINFO("conn->rsize: %d, conn->rlen: %d, malloc new rbuf\n", conn->rsize, conn->rlen);
+			char *newbuf = (char *)zz_malloc(rlen + conn->rsize);
+			memcpy(newbuf, conn->rbuf, conn->rlen);
+			conn->rsize += rlen;
+			zz_free(conn->rbuf);
+			conn->rbuf = newbuf;
+		}
         ret = read(fd, &conn->rbuf[conn->rlen], rlen);
         DINFO("read return: %d\n", ret);
         if (ret == -1) {
