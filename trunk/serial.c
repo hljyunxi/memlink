@@ -1234,6 +1234,99 @@ cmd_del_by_mask_unpack(char *data, char *key, unsigned int *maskarray, unsigned 
 
 	return 0;
 }
+
+int
+cmd_insert_mkv_pack(char *data, MemLinkInsertMkv *mkv)
+{
+	unsigned char cmd = CMD_INSERT_MKV;
+	unsigned int len;
+	int count = CMD_REQ_SIZE_LEN;
+	MemLinkInsertKey *keyitem;
+	MemLinkInsertVal *valitem;
+
+	memcpy(data + count, &cmd, sizeof(char));
+	count += sizeof(char);
+	//memcpy(data + count, &(mkv->keynum), sizeof(int));
+	//count += sizeof(int);
+
+	keyitem = mkv->keylist;
+
+	while(keyitem != NULL) {
+		valitem = keyitem->vallist;
+		//memcpy(data + count, &(keyitem->keylen), sizeof(char));
+		//count += sizeof(char);
+		//memcpy(data + count , keyitem->key, keyitem->keylen);
+		//count += keyitem->keylen;
+		count += pack_string(data + count, keyitem->key, 0);
+		memcpy(data + count, &(keyitem->valnum), sizeof(int));
+		count += sizeof(int);
+
+		while (valitem != NULL) {
+			count += pack_string(data + count, valitem->value, valitem->valuelen);
+			count += pack_mask(data + count, valitem->maskarray, valitem->masknum);
+			memcpy(data + count, &(valitem->pos), sizeof(int));
+			count += sizeof(int);
+			valitem = valitem->next;
+		}
+		keyitem = keyitem->next;
+	}
+
+	len = count - CMD_REQ_SIZE_LEN;
+	memcpy(data, &len, CMD_REQ_SIZE_LEN);
+	
+	return count;
+}
+
+int
+cmd_insert_mkv_unpack_packagelen(char *data, unsigned int *package_len)
+{
+	int count = 0;
+
+	memcpy(package_len, data, sizeof(int));
+	count += sizeof(int);
+	return count;
+}
+
+int
+cmd_insert_mkv_unpack_keycount(char *data, unsigned int *keycount)
+{
+	int count = 0;
+
+	memcpy(keycount, data, sizeof(int));
+	count += sizeof(int);
+	
+	return count;
+}
+
+int
+cmd_insert_mkv_unpack_key(char *data, char *key, unsigned int *valcount, char **countstart)
+{
+	int count = 0;
+	
+	count += unpack_string(data, key, NULL);
+	memcpy(valcount, data + count, sizeof(int));
+	//记录每个key下面value个数在包中的位置， 这个可能被修改
+	*countstart = data + count;
+	count += sizeof(int);
+
+	return count;
+}
+
+int
+cmd_insert_mkv_unpack_val(char *data, char *value, unsigned char *valuelen,
+	unsigned char *masknum, unsigned int *maskarray, int *pos)
+{
+	int count = 0;
+	unsigned char vlen;
+
+	count += unpack_string(data, value, &vlen);
+	*valuelen = vlen;
+	count += unpack_mask(data + count, maskarray, masknum);
+	memcpy(pos, data + count, sizeof(int));
+	count += sizeof(int);
+
+	return count;
+}
 /**
  * @}
  */

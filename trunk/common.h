@@ -27,7 +27,7 @@
 #define MEMLINK_ERR_PACKAGE			-21
 // 该项已删除
 #define MEMLINK_ERR_REMOVED         -22
-// RANGE条目错误
+// range条目错误 
 #define MEMLINK_ERR_RANGE_SIZE		-23
 // 发送数据错误
 #define MEMLINK_ERR_SEND            -24
@@ -57,7 +57,8 @@
 #define MEMLINK_ERR_CONNECT_WRITE   -36
 // 不支持的操作
 #define MEMLINK_ERR_NOACTION        -37
-
+//客户端发送的数据包过大
+#define MEMLINK_ERR_PACKAGE_SIZE	-38
 // 其他错误
 #define MEMLINK_ERR                 -1
 // 操作失败
@@ -90,6 +91,7 @@
 #define DUMP_HEAD_LEN	    (sizeof(short)+sizeof(int)+sizeof(int)+sizeof(int)+sizeof(long long))
 // format + version + index size
 #define SYNCLOG_HEAD_LEN	(sizeof(short)+sizeof(int)+sizeof(int))
+
 #define SYNCLOG_INDEXNUM	5000000
 #define SYNCPOS_LEN		    (sizeof(int)+sizeof(int))
 
@@ -168,7 +170,29 @@ typedef struct _memlink_insert_mvalue_item
     unsigned int    maskarray[HASHTABLE_MASK_MAX_ITEM];
     unsigned char   masknum;
     int             pos;
+	struct _memlink_insert_mvalue_item *next;
 }MemLinkInsertVal;
+
+typedef struct _memlink_insert_mkey_item
+{
+	unsigned int     sum_val_size;
+
+	char             key[255];
+	unsigned char    keylen; 
+	unsigned int     valnum;
+	MemLinkInsertVal *vallist;
+	MemLinkInsertVal *tail;
+	struct _memlink_insert_mkey_item  *next;
+}MemLinkInsertKey;
+
+typedef struct _memlink_insert_mkv
+{
+	unsigned int sum_size;
+
+	unsigned int keynum;
+	MemLinkInsertKey *keylist;
+	MemLinkInsertKey *tail;
+}MemLinkInsertMkv;
 
 typedef struct _memlink_stat
 {

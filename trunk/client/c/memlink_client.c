@@ -816,7 +816,7 @@ memlink_cmd_range(MemLink *m, char *key, int kind,  char *maskstr,
                 (HASHTABLE_VALUE_MAX + HASHTABLE_MASK_MAX_BYTE * HASHTABLE_MASK_MAX_ITEM + 1) * len;
     DINFO("retlen: %d\n", retlen);
 	if (retlen > 1024000) { // do not more than 1M
-		return MEMLINK_ERR_RANGE_SIZE;
+		return MEMLINK_ERR_PACKAGE_SIZE;
 	}
     char retdata[retlen];
 
@@ -861,7 +861,7 @@ memlink_cmd_sortlist_range(MemLink *m, char *key, int kind,  char *maskstr,
                 (HASHTABLE_VALUE_MAX + HASHTABLE_MASK_MAX_BYTE * HASHTABLE_MASK_MAX_ITEM + 1) * 1000;
     DINFO("retlen: %d\n", retlen);
 	if (retlen > 1024000) {
-		return MEMLINK_ERR_RANGE_SIZE;
+		return MEMLINK_ERR_PACKAGE_SIZE;
 	}
     char retdata[retlen];
 
@@ -996,7 +996,7 @@ memlink_cmd_lpop(MemLink *m, char *key, int num, MemLinkResult *result)
     int retlen = CMD_REPLY_HEAD_LEN + 3 + HASHTABLE_MASK_MAX_ITEM + \
                  (HASHTABLE_VALUE_MAX + HASHTABLE_MASK_MAX_BYTE * HASHTABLE_MASK_MAX_ITEM + 1) * num;
     if (retlen > 1024000) { // do not more than 1M
-		return MEMLINK_ERR_RANGE_SIZE;
+		return MEMLINK_ERR_PACKAGE_SIZE;
 	}
     char retdata[retlen];
 
@@ -1027,7 +1027,7 @@ memlink_cmd_rpop(MemLink *m, char *key, int num, MemLinkResult *result)
     int retlen = CMD_REPLY_HEAD_LEN + 3 + HASHTABLE_MASK_MAX_ITEM + \
                  (HASHTABLE_VALUE_MAX + HASHTABLE_MASK_MAX_BYTE * HASHTABLE_MASK_MAX_ITEM + 1) * num;
     if (retlen > 1024000) { // do not more than 1M
-		return MEMLINK_ERR_RANGE_SIZE;
+		return MEMLINK_ERR_PACKAGE_SIZE;
 	}
     char retdata[retlen];
 
@@ -1116,3 +1116,188 @@ memlink_cmd_del_by_mask(MemLink *m, char *key, char *maskstr)
 
 }
 
+MemLinkInsertMkv*
+memlink_imkv_create()
+{
+	MemLinkInsertMkv *mkv = NULL;
+
+	mkv = (MemLinkInsertMkv *)zz_malloc(sizeof(MemLinkInsertMkv));
+	if (mkv == NULL) {
+		DERROR("malloc MemLinkInsertMkv error!\n");
+		return NULL;
+	}
+	memset(mkv, 0x0, sizeof(MemLinkInsertMkv));
+	
+	mkv->sum_size += sizeof(int);//package_len
+	mkv->sum_size += sizeof(char); //cmd
+	mkv->sum_size += sizeof(int); //key nums
+	return mkv;
+}
+
+MemLinkInsertKey*
+memlink_ikey_create(char *key, unsigned int keylen)
+{
+	MemLinkInsertKey *kobj = NULL;
+
+	if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX) {
+		DERROR("param error!\n");
+		return NULL;
+	}
+	kobj = (MemLinkInsertKey *)zz_malloc(sizeof(MemLinkInsertKey));
+	if (kobj == NULL) {
+		DERROR("malloc MemLinkInsertKey error!\n");
+		return NULL;
+	}
+	memset(kobj, 0x0, sizeof(MemLinkInsertKey));
+ 	memcpy(kobj->key, key, keylen);
+	kobj->keylen = keylen;
+
+	return kobj;
+}
+
+MemLinkInsertVal*
+memlink_ival_create(char *value, unsigned int valuelen, char *maskstr, int pos)
+{
+	MemLinkInsertVal *valobj = NULL;
+
+	if (valuelen <= 0 || valuelen > HASHTABLE_VALUE_MAX) {
+		DERROR("param error!\n");
+		return NULL;
+	}
+	/*
+	if (pos < -1) {
+		DERROR("param error!\n");
+		return NULL;
+	}
+	*/
+	
+	valobj = (MemLinkInsertVal *)zz_malloc(sizeof(MemLinkInsertVal));
+	if (valobj == NULL) {
+		DERROR("malloc MemlinkInsertVal error!\n");
+		return NULL;
+	}
+	memset(valobj, 0x0, sizeof(MemLinkInsertVal));
+
+	memcpy(valobj->value, value, valuelen);
+	valobj->valuelen = valuelen;
+	memcpy(valobj->maskstr, maskstr, strlen(maskstr));
+	valobj->masknum = mask_string2array(valobj->maskstr, valobj->maskarray);
+	DINFO("insert mask len: %d\n", valobj->masknum);
+	if (valobj->masknum < 0 || valobj->masknum > HASHTABLE_MASK_MAX_ITEM)
+		return NULL;
+	valobj->pos = pos;
+
+	return valobj;
+}
+
+int
+memlink_mkv_destroy(MemLinkInsertMkv *mkv)
+{
+	MemLinkInsertKey *keyitem;
+	MemLinkInsertVal *valitem;
+
+	if (mkv == NULL) {
+		return MEMLINK_ERR_PARAM;
+	}
+	while (mkv->keylist!= NULL) {
+		keyitem = mkv->keylist;
+		while (keyitem->vallist != NULL) {
+			valitem = keyitem->vallist;
+			keyitem->vallist = valitem->next;
+			zz_free(valitem);
+		}
+		mkv->keylist = keyitem->next;
+		zz_free(keyitem);
+	}
+	zz_free(mkv);
+	return 0;
+}
+
+int
+memlink_mkv_add_key(MemLinkInsertMkv *mkv, MemLinkInsertKey *keyobj)
+{
+	unsigned int key_size = 0;
+
+	if (mkv == NULL || keyobj == NULL)
+		return MEMLINK_ERR_PARAM;
+
+	key_size += sizeof(char);//key size
+	key_size += keyobj->keylen; //key
+	key_size += sizeof(int);//how match value in key
+
+	if (mkv->tail != NULL) {
+		keyobj->next  = mkv->tail->next;
+		mkv->tail->next = keyobj;
+		mkv->tail = keyobj;
+	} else {
+		mkv->keylist = keyobj;
+		mkv->tail = keyobj;
+	}
+	mkv->keynum++;
+	mkv->sum_size += (key_size + keyobj->sum_val_size);
+	return 0;
+}
+
+int
+memlink_ikey_add_value(MemLinkInsertKey *keyobj, MemLinkInsertVal *valobj)
+{
+	unsigned int val_size = 0;//该value编码到包里面一共要占用多少字节
+
+	if (keyobj == NULL || valobj == NULL)
+		return MEMLINK_ERR_PARAM;
+
+	if (keyobj->vallist == NULL) {
+		keyobj->vallist = valobj;
+		keyobj->tail = valobj;
+	} else {
+		keyobj->tail->next = valobj;
+		keyobj->tail = valobj;
+	}
+	val_size += sizeof(char); //value len
+	val_size += valobj->valuelen;//value
+	val_size += sizeof(char);//mask nums
+	val_size += valobj->masknum * sizeof(int);//mask
+	val_size += sizeof(int);//pos
+	keyobj->sum_val_size += val_size;
+	keyobj->valnum++;
+
+	return 0;
+}
+
+int
+memlink_cmd_insert_mkv(MemLink *m, MemLinkInsertMkv *mkv, int *kindex, int *vindex)
+{
+	char data[MAX_PACKAGE_LEN];
+	int len;
+	int package_len;
+
+	if (m == NULL || mkv == NULL)
+		return MEMLINK_ERR_PARAM;
+	if (mkv->sum_size > MAX_PACKAGE_LEN) {
+		*kindex = 0;
+		*vindex = 0;
+		return MEMLINK_ERR_PACKAGE_SIZE;
+	}
+
+	len = cmd_insert_mkv_pack(data, mkv);
+	memcpy(&package_len, data, sizeof(int));
+	//printf("pack insert mkv len: %d\n", package_len);
+	char retdata[1024];
+	int ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len , retdata, 1024);
+	int recodelen;
+	int i,j;
+	int size = 0;
+	memcpy(&recodelen, retdata, sizeof(int));
+	//printf("recodelen: %d\n", recodelen);
+	size += sizeof(int);
+	size += sizeof(short);
+	memcpy(&i, retdata + size, sizeof(int));
+	size += sizeof(int);
+	memcpy(&j, retdata + size, sizeof(int));
+	*kindex = i;
+	*vindex = j;
+
+	if (ret < 0)
+		return ret;
+	return MEMLINK_OK;
+}

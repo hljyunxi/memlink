@@ -11,6 +11,7 @@
 #define MEMLINK_WRITER  2
 #define MEMLINK_ALL     3
 
+#define MAX_PACKAGE_LEN 1024000
 //#define MEMLINK_TAG_DEL     1
 //#define MEMLINK_TAG_RESTORE 0
 
@@ -95,6 +96,15 @@ int			memlink_cmd_sortlist_del(MemLink *m, char *key, char *valmin, unsigned cha
 int         memlink_cmd_sortlist_count(MemLink *m, char *key, char *maskstr, 
                             char *valmin, unsigned char vminlen, 
                             char *valmax, unsigned char vmaxlen, MemLinkCount *count);
+
+
+int         memlink_cmd_insert_mkv(MemLink *m, MemLinkInsertMkv *mkv, int *kindex, int *vindex);
+int         memlink_mkv_destroy(MemLinkInsertMkv *mkv);
+int         memlink_mkv_add_key(MemLinkInsertMkv *mkv, MemLinkInsertKey *keyobj);
+int         memlink_ikey_add_value(MemLinkInsertKey *keyobj, MemLinkInsertVal *valobj);
+MemLinkInsertMkv*         memlink_imkv_create(); 
+MemLinkInsertKey*         memlink_ikey_create(char *key, unsigned int keylen);
+MemLinkInsertVal*         memlink_ival_create(char *value, unsigned int valuelen, char *maskstr, int pos);
 
 #endif
 
