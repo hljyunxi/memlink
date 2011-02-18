@@ -72,7 +72,7 @@ tcp_socket_connect(char *host, int port, int timeout)
         return -1;
     }
 
-	struct linger ling = {0, 0};
+	struct linger ling = {1, 0};
     ret = setsockopt(fd, SOL_SOCKET, SO_LINGER, (void *)&ling, sizeof(ling));
     if (ret != 0) {
         DERROR("setsockopt LINGER error: %s\n", strerror(errno));
