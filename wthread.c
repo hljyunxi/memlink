@@ -858,8 +858,7 @@ client_read(int fd, short event, void *arg)
             if (errno == EINTR) {
                 continue;
             }else if (errno != EAGAIN) {
-                // maybe close conn?
-                DERROR("%d read error: %s\n", fd, strerror(errno));
+                DINFO("%d read error: %s, close conn.\n", fd, strerror(errno));
                 conn->destroy(conn);
                 return;
             }else{

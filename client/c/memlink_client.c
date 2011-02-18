@@ -57,7 +57,7 @@ memlink_connect(MemLink *m, int fdtype)
         return MEMLINK_ERR_CLIENT_SOCKET;
     }
 
-    struct linger ling = {0, 0}; 
+    struct linger ling = {1, 0}; 
     ret = setsockopt(sock, SOL_SOCKET, SO_LINGER, (void *)&ling, sizeof(ling));
     if (ret != 0) {
         DERROR("setsockopt LINGER error: %s\n", strerror(errno));
