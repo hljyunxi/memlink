@@ -1159,6 +1159,7 @@ MemLinkInsertVal*
 memlink_ival_create(char *value, unsigned int valuelen, char *maskstr, int pos)
 {
 	MemLinkInsertVal *valobj = NULL;
+	int masknum = 0;
 
 	if (valuelen <= 0 || valuelen > HASHTABLE_VALUE_MAX) {
 		DERROR("param error!\n");
@@ -1181,10 +1182,13 @@ memlink_ival_create(char *value, unsigned int valuelen, char *maskstr, int pos)
 	memcpy(valobj->value, value, valuelen);
 	valobj->valuelen = valuelen;
 	memcpy(valobj->maskstr, maskstr, strlen(maskstr));
-	valobj->masknum = mask_string2array(valobj->maskstr, valobj->maskarray);
-	DINFO("insert mask len: %d\n", valobj->masknum);
-	if (valobj->masknum < 0 || valobj->masknum > HASHTABLE_MASK_MAX_ITEM)
+	masknum = mask_string2array(valobj->maskstr, valobj->maskarray);
+	DINFO("insert mask len: %d\n", masknum);
+	if (masknum < 0 || masknum > HASHTABLE_MASK_MAX_ITEM) {
+		zz_free(valobj);
 		return NULL;
+	}
+	valobj->masknum = masknum;
 	valobj->pos = pos;
 
 	return valobj;
