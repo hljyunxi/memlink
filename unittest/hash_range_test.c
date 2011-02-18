@@ -123,13 +123,16 @@ int main()
 		ret = hashtable_range(ht, key, MEMLINK_VALUE_VISIBLE, maskarray2[k], masknum, 
 			            frompos, len, &conn);
 	
-        MemLinkResult   result;
-        memlink_result_parse(conn.wbuf, &result);
+        //MemLinkResult   result;
+        //memlink_result_parse(conn.wbuf, &result);
 
-		if( 0 != ret)
-		{
+		if( 0 != ret) {
 			printf("ret:%d, len:%d\n", ret, len);
+			return -1;
 		}
+		MemLinkResult   result;
+        memlink_result_parse(conn.wbuf, &result);
+		
 		if(result.count != realnum)
 		{			
 			printf("error!! realnum:%d, retnum:%d, i:%d\n", realnum, result.count, i);
