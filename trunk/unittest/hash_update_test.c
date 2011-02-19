@@ -3,7 +3,7 @@
 int main()
 {
 #ifdef DEBUG
-	logfile_create("stdout", 3);
+	logfile_create("test.log", 3);
 #endif
 	HashTable* ht;
 	char key[64];

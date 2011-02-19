@@ -41,7 +41,7 @@ int main()
 		HashNode* pNode = hashtable_find(ht, key);
 		if(NULL == pNode)
 		{
-			printf("hashtable_add_info_mask error. can not find %s\n", key);
+			DERROR("hashtable_add_info_mask error. can not find %s\n", key);
 			return -1;
 		}
 	}
@@ -57,17 +57,17 @@ int main()
 		pos = i;
 		ret = hashtable_add_mask(ht, key, val, maskarray[i%4], masknum, pos);
 		if (ret < 0) {
-			printf("add value err: %d, %s\n", ret, val);
+			DERROR("add value err: %d, %s\n", ret, val);
 			return ret;
 		}
 		
 		ret = hashtable_find_value(ht, key, val, &node, &dbk, &item);
 		if (ret < 0) {
-			printf("not found value: %d, %s\n", ret, key);
+			DERROR("not found value: %d, %s\n", ret, key);
 			return ret;
 		}
 	}
-	printf("insert %d values ok!\n", num);
+	DINFO("insert %d values ok!\n", num);
 
 	//////////test 5 :mask
 	for(i = 0; i < num; i++)
@@ -85,13 +85,13 @@ int main()
 		ret = hashtable_mask(ht, key, val, maskarray[k], masknum);
 		if(MEMLINK_OK != ret)
 		{
-			printf("err hashtable_mask val:%s, k:%d\n", val, k);
+			DERROR("err hashtable_mask val:%s, k:%d\n", val, k);
 			return ret;
 		}
 		
 		ret = hashtable_find_value(ht, key, val, &node, &dbk, &item);
 		if (ret < 0) {
-			printf("not found value: %d, %s\n", ret, val);
+			DERROR("not found value: %d, %s\n", ret, val);
 			return ret;
 		}
 		char data[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
@@ -112,12 +112,12 @@ int main()
 		}
 		if(j != ret)
 		{
-			printf("mask error. %d\n", i);	
+			DERROR("mask error. %d\n", i);	
 			break;
 		}
 
 	}
-	printf("hashtable mask test end!\n");
+	DINFO("hashtable mask test end!\n");
 	return 0;
 }
 

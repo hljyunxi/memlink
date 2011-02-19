@@ -3,27 +3,27 @@
 int check2(HashTableStat *stat, int vs, int ms, int blocks, int data, int datau, int mem, int memu)
 {
 	if (stat->valuesize != vs) {
-		printf("valuesize error: %d\n", stat->valuesize);
+	    DERROR("valuesize error: %d\n", stat->valuesize);
 	}
 
 	if (stat->masksize != ms) {
-		printf("masksize error: %d\n", stat->masksize);
+		DERROR("masksize error: %d\n", stat->masksize);
 	}
 
 	if (stat->blocks != blocks) {
-		printf("blocks error: %d\n", stat->blocks);
+		DERROR("blocks error: %d\n", stat->blocks);
 	}
 	
 	if (stat->data != data)  {
-		printf("data error: %d\n", stat->data);
+		DERROR("data error: %d\n", stat->data);
 	}
 
 	if (stat->data_used != datau) {
-		printf("data_used error: %d\n", stat->data_used);
+		DERROR("data_used error: %d\n", stat->data_used);
 	}
 	
 	if (stat->mem != mem) {
-		printf("mem  error: %d   %d\n", stat->mem, mem);
+		DERROR("mem  error: %d   %d\n", stat->mem, mem);
 	}
 
 	//if (stat->mem_used != memu) {
@@ -90,17 +90,17 @@ int main()
 		pos = i;
 		ret = hashtable_add_mask(ht, key, val, maskarray[i%4], masknum, pos);
 		if (ret < 0) {
-			printf("add value err: %d, %s\n", ret, val);
+			DERROR("add value err: %d, %s\n", ret, val);
 			return ret;
 		}
 		
 		ret = hashtable_find_value(ht, key, val, &node, &dbk, &item);
 		if (ret < 0) {
-			printf("not found value: %d, %s\n", ret, key);
+			DERROR("not found value: %d, %s\n", ret, key);
 			return ret;
 		}
 	}
-	printf("insert %d values ok!\n", num);
+	DINFO("insert %d values ok!\n", num);
 
 	//////////test 8:stat
 	HashTableStat stat;
@@ -109,7 +109,7 @@ int main()
 	int mus = 0;
 	check2(&stat, valuesize, 2, 2, 200, 199, ms, mus);
 	
-	printf("hashtable stat test end!\n");
+	DINFO("hashtable stat test end!\n");
 	return 0;
 }
 

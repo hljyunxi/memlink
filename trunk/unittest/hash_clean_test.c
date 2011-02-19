@@ -68,7 +68,7 @@ int main()
 			return ret;
 		}
 	}
-	printf("insert %d values ok!\n", num);
+	DINFO("insert %d values ok!\n", num);
 
 	//////////test 
 	HashTableStat stat;
@@ -133,7 +133,7 @@ int main()
 		return -1;
 	}
 	
-	printf("hashtable clean test end!\n");
+	DINFO("hashtable clean test end!\n");
 	return 0;
 }
 

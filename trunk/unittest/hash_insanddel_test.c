@@ -46,7 +46,7 @@ int main()
 	}
 
 ///////test : hashtable_add_mask insert num value
-	printf("1 insert 1000 \n");
+	DINFO("1 insert 1000 \n");
 
 	int pos = 0;
 	HashNode *node = NULL;
@@ -70,16 +70,15 @@ int main()
 		}
 	}
 
-	printf("2 insert %d\n", num);
+	DINFO("2 insert %d\n", num);
     
     MemLinkStat stat;
-
     ret = hashtable_stat(ht, key, &stat);
     if (ret != MEMLINK_OK) {
-        printf("stat error!\n");
+        DERROR("stat error!\n");
     }
 
-    printf("blocks:%d, data_used:%d\n", stat.blocks, stat.data_used);
+    DINFO("blocks:%d, data_used:%d\n", stat.blocks, stat.data_used);
 
 	//return 0;
 	//DINFO("<<<<<<<hashtable_end>>>>>>>>>>>>\n");
@@ -117,7 +116,7 @@ int main()
 		DERROR("not found value: %d, %s\n", ret, val);
 		return ret;
 	}
-	printf("test: insert ok!\n");
+	DINFO("test: insert ok!\n");
 
     /////////// hashtable_del
 	for(i = 0; i < num; i++)
@@ -130,7 +129,7 @@ int main()
 			return ret;
 		}
 	}
-	printf("del %d!\n", num);
+	DINFO("del %d!\n", num);
 
 	for(i = 0; i < num; i++)
 	{
@@ -142,6 +141,6 @@ int main()
 		}
 	}
 	
-	printf("test: del ok!\n");
+	DINFO("test: del ok!\n");
 	return 0;
 }
