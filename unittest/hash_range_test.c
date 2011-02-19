@@ -42,7 +42,7 @@ int main()
 		HashNode* pNode = hashtable_find(ht, key);
 		if(NULL == pNode)
 		{
-			printf("hashtable_add_info_mask error. can not find %s\n", key);
+			DERROR("hashtable_add_info_mask error. can not find %s\n", key);
 			return -1;
 		}
 	}
@@ -58,17 +58,17 @@ int main()
 		pos = i;
 		ret = hashtable_add_mask(ht, key, val, maskarray[3], masknum, pos); //{8, 3, 1}
 		if (ret < 0) {
-			printf("add value err: %d, %s\n", ret, val);
+			DERROR("add value err: %d, %s\n", ret, val);
 			return ret;
 		}
 		
 		ret = hashtable_find_value(ht, key, val, &node, &dbk, &item);
 		if (ret < 0) {
-			printf("not found value: %d, %s\n", ret, key);
+			DERROR("not found value: %d, %s\n", ret, key);
 			return ret;
 		}
 	}
-	printf("insert %d values ok!\n", num);
+	DINFO("insert %d values ok!\n", num);
 
 	for(i = 0; i < 100; i++)
 	{
@@ -76,7 +76,7 @@ int main()
 		ret = hashtable_mask(ht, key, val, maskarray[2], masknum); //{ 4, 1, UINT_MAX}
 		if(MEMLINK_OK != ret)
 		{
-			printf("err hashtable_mask val:%s, i:%d\n", val, i);
+			DINFO("err hashtable_mask val:%s, i:%d\n", val, i);
 			return ret;
 		}
 	}
@@ -115,7 +115,7 @@ int main()
 		}
 		else
 			realnum = 0;
-		printf("frompos:%d, len:%d, i:%d\n", frompos, len, i);
+		DINFO("frompos:%d, len:%d, i:%d\n", frompos, len, i);
 	
         Conn    conn;
         memset(&conn, 0, sizeof(Conn));
@@ -126,8 +126,8 @@ int main()
         //MemLinkResult   result;
         //memlink_result_parse(conn.wbuf, &result);
 
-		if( 0 != ret) {
-			printf("ret:%d, len:%d\n", ret, len);
+		if( MEMLINK_OK != ret) {
+			DERROR("ret:%d, len:%d\n", ret, len);
 			return -1;
 		}
 		MemLinkResult   result;
@@ -135,7 +135,7 @@ int main()
 		
 		if(result.count != realnum)
 		{			
-			printf("error!! realnum:%d, retnum:%d, i:%d\n", realnum, result.count, i);
+			DERROR("error!! realnum:%d, retnum:%d, i:%d\n", realnum, result.count, i);
 			//return -1;
 		}
 		//else
@@ -172,7 +172,7 @@ int main()
 				sprintf(val, "value%03d", jj);
                 int ret = memcmp(item->value, val, result.valuesize);
                 if (ret != 0) {
-                    printf("error, pos:%d, val:%s\n", jj, val);
+                    DERROR("error, pos:%d, val:%s\n", jj, val);
                     return -1;
                 }
                 j++;
@@ -183,8 +183,8 @@ int main()
         memlink_result_free(&result);
 	}
 
+	DINFO("hashtable range test end!\n");
 
-	printf("hashtable range test end!\n");
 	return 0;
 }
 

@@ -6,7 +6,7 @@
 #include <utils.h>
 #include "hashtest.h"
 
-int mask_string2array_test()//Ëæ»úÉú³ÉÒ»¸ömask£¬0-20¸öÏî£¬Ã¿ÏîµÄÖµ0-256
+int mask_string2array_test()//éšæœºç”Ÿæˆä¸€ä¸ªmaskï¼Œ0-20ä¸ªé¡¹ï¼Œæ¯é¡¹çš„å€¼0-256
 {
 	int num = 1 + my_rand(HASHTABLE_MASK_MAX_ITEM);
 	//num = 1;
@@ -25,6 +25,7 @@ int mask_string2array_test()//Ëæ»úÉú³ÉÒ»¸ömask£¬0-20¸öÏî£¬Ã¿ÏîµÄÖµ0-256
 				break;			
 			strcat(mask, buf);
 		}while(0);
+
 		if(i != num)
 			strcat(mask, ":");
 		i++;
@@ -32,6 +33,7 @@ int mask_string2array_test()//Ëæ»úÉú³ÉÒ»¸ömask£¬0-20¸öÏî£¬Ã¿ÏîµÄÖµ0-256
 	//printf("mask=%s\n", mask);
 	int result[128];
 	int ret = mask_string2array(mask, result);
+
 	if(ret != num)
 	{		
 		DERROR("mask_string2array error. mask:%s, num:%d, ret:%d\n", mask, num, ret);
@@ -67,9 +69,10 @@ int mask_string2binary_binary2string()
 		char maskstr[512] = {0};
 		DINFO("num:%d\n", num);		
 		int len = 2;
+
 		for(i = 1; i <= num; i++)
 		{
-			//Ëæ»úÉú³Émaskformat
+			//éšæœºç”Ÿæˆmaskformat
 			char buf[10] = {0};
 			char buf2[10] = {0};
 			int val = 1 + my_rand(8);
@@ -79,7 +82,7 @@ int mask_string2binary_binary2string()
 				strcat(maskformat, ":");
 			len += val;
 			maskformatnum[i-1] = (char)val;
-			//Ëæ»úÉú³Émaskstr
+			//éšæœºç”Ÿæˆmaskstr
 			int max = pow(2, val) - 1;
 			int k= 1 + my_rand(max);
 			sprintf(buf2, "%d", k);
@@ -89,6 +92,7 @@ int mask_string2binary_binary2string()
 					break;			
 				strcat(maskstr, buf2);
 			}while(0);
+
 			if(i != num)
 				strcat(maskstr, ":");
 		}		
@@ -98,12 +102,14 @@ int mask_string2binary_binary2string()
 		char mask[512] = {0};
 		int ret;
 		ret = mask_string2binary(maskformatnum, maskstr, mask);		
+
 		char buf2[128];
         //DINFO("mask:%s\n", formath(mask, masklen, buf2, 128));
 		char maskstr1[512] = {0};
 		mask_binary2string(maskformatnum, num, mask, masklen, maskstr1);		
 		//DINFO("maskstr1=%s\n\n", maskstr1);		
 		DINFO("maskformat=%s, maskstr=%s, maskstr1=%s\n", maskformat, maskstr, maskstr1);
+
 		if(0 != strcmp(maskstr, maskstr1))
 		{	
 			DERROR("================ERROR!=============== ");
@@ -139,7 +145,7 @@ int mask_array2binary_test()
 			return -1;
 		}
 		else
-			printf("test1 ok!\n");
+			DINFO("test1 ok!\n");
 	}
     unsigned char format2[3] = {4, 3, 1};
     unsigned int  maskarray2[3] = {5, 2, 2};
@@ -162,7 +168,7 @@ int mask_array2binary_test()
 			return -1;
 		}
 		else
-			printf("test2 ok!\n");
+			DINFO("test2 ok!\n");
 	}
 
     unsigned char format3[3] = {4, 3, 8};
@@ -186,7 +192,7 @@ int mask_array2binary_test()
 			return -1;
 		}
 		else
-			printf("test3 ok!\n");
+			DINFO("test3 ok!\n");
 	}
 
     unsigned char format4[2] = {32, 1};
@@ -205,10 +211,9 @@ int mask_array2binary_test()
 	{
 		DERROR("mask_array2binary error. ret:%d\n", ret);
 		return -1;
-	}
-	else
-	{
-    	printb(data, ret);
+	} else {
+        char buf[512];
+    	DINFO("%s\n", formatb(data, ret, buf, 512));
 		ret = memcmp(data, mask4, 5);
 		if(0 != ret)
 		{
@@ -216,7 +221,7 @@ int mask_array2binary_test()
 			return 0;
 		}
 		else
-			printf("test4 ok!\n");
+			DINFO("test4 ok!\n");
 	}
 
 	return 0;
@@ -228,9 +233,10 @@ int main()
 {
 	//#define DEBUG
 
-	logfile_create("stdout", 4);
+	logfile_create("test.log", 3);
+
 	int n = 0x03 & 0x02;
-	printf("-----------> %d\n", n);
+	DINFO("-----------> %d\n", n);
 	int ret;
 	int i = 0;
 	for(i = 0; i < 10; i++)

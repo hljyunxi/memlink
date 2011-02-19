@@ -80,6 +80,6 @@ int main()
 		}
 	}
 	
-	printf("test: create and remove keys ok!\n");
+	DINFO("test: create and remove keys ok!\n");
 	return 0;
 }

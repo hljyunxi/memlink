@@ -23,9 +23,7 @@ int main()
 	myconfig_create(conffile);
 
 	my_runtime_create_common("memlink");
-
 	ht = g_runtime->ht;
-
 
 	///////////begin test;
 	//test1 : hashtable_add_info_mask - create key
@@ -40,7 +38,7 @@ int main()
 		HashNode* pNode = hashtable_find(ht, key);
 		if(NULL == pNode)
 		{
-			printf("hashtable_add_info_mask error. can not find %s\n", key);
+			DERROR("hashtable_add_info_mask error. can not find %s\n", key);
 			return -1;
 		}
 	}
@@ -54,19 +52,19 @@ int main()
 	{
 		sprintf(val, "value%03d", i);
 		pos = i;
-		hashtable_add_mask(ht, key, val, maskarray[i%3], masknum, pos);
+		ret = hashtable_add_mask(ht, key, val, maskarray[i%3], masknum, pos);
 		if (ret < 0) {
-			printf("add value err: %d, %s\n", ret, val);
+			DERROR("add value err: %d, key:%s, value:%s, pos:%d\n", ret, key, val, pos);
 			return ret;
 		}
 		
 		ret = hashtable_find_value(ht, key, val, &node, &dbk, &item);
 		if (ret < 0) {
-			printf("not found value: %d, %s\n", ret, key);
+			DERROR("not found value: %d, %s\n", ret, key);
 			return ret;
 		}
 	}
-	printf("insert %d values ok!\n", num);
+	DINFO("insert %d values ok!\n", num);
 
 	//////////test 4 :tag
 	for(i = 0; i < num; i++)
@@ -81,12 +79,11 @@ int main()
 		int tag = my_rand(2);
 		
 		//printf("val:%s, tag:%d \n", val, tag);
-
 		//hashtable_find_value(ht, key, val, &node, &dbk, &item);
 		int ret = hashtable_tag(ht, key, val, tag);
 		if(MEMLINK_OK != ret)
 		{
-			printf("err hashtable_tag val:%s, tag:%d\n", val, tag);
+			DERROR("err hashtable_tag val:%s, tag:%d\n", val, tag);
 			return ret;
 		}
 		
@@ -103,11 +100,12 @@ int main()
 		//printf("flag:%d, tag:%d \n", flag, tag);
 		if(flag != tag)
 		{
-			printf("tag err val:%s! \n", val);			
-			printf("flag:%d, tag:%d \n", flag, tag);
+			DERROR("tag err val:%s, flag:%d, tag:%d!\n", val, flag, tag);			
 			break;
 		}
 	}
-	printf("hashtable_tag test end!\n");
+	DINFO("hashtable_tag test end!\n");
+
 	return 0;
 }
+
