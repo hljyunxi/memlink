@@ -1,3 +1,10 @@
+/**
+ * 各种宏定义
+ * @file common.h
+ * @author zhaowei
+ * @ingroup memlink
+ * @{
+ */
 #ifndef MEMLINK_COMMON_H
 #define MEMLINK_COMMON_H
 
@@ -223,3 +230,7 @@ typedef struct _ht_stat_sys
 typedef MemLinkStatSys	HashTableStatSys;
 
 #endif
+
+/**
+ * @}
+ */
