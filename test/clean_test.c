@@ -96,7 +96,7 @@ int main()
 		return -7;
 	}
 
-	printf("stat.data: %d, stat2.data: %d\n", stat.data, stat2.data);
+	DINFO("stat.data: %d, stat2.data: %d\n", stat.data, stat2.data);
 	if (stat2.data >= stat.data) {
 		DERROR("stat data error! stat2 must smaller than stat.\n");
 		return -8;
