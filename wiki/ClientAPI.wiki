@@ -69,13 +69,13 @@
   发送CREATE命令，创建一个key。key为字符串，长度最长为255字节。参数valuelen表示该key下的value的长度，value在memlink内部处理为2进制格式，并且是定长的，也就是说memlink不关心它是什么类型的，只关心它的长度。value的最大长度为255。maskstr为value的属性格式。该属性格式由问号分隔的数字组成。这些数字表示对应属性项所占用的空间的bit数。比如4:3:1表示有三个属性，这三个属性分别占用4bit，3bit，1bit。属性的值必须为正整数，最大值为有符号4字节整型的最大值。支持的最大属性数量默认为16个。listtype为list类型，当前支持MEMLINK_LIST, MEMLINK_QUEUE, MEMLINK_SORTLIST。分别为普通的列表，队列，按value排序的列表。valuetype仅在list类型为MEMLINK_SORTLIST有效，表示list中value的类型，可以为MEMLINK_VALUE_INT(整型), MEMLINK_VALUE_UINT（无符号整型）, MEMLINK_VALUE_LONG（64位长整型）, MEMLINK_VALUE_ULONG（64位无符号长整型）, MEMLINK_VALUE_FLOAT（32位浮点）, MEMLINK_VALUE_DOUBLE（64位浮点）, MEMLINK_VALUE_STRING（字符串）, MEMLINK_VALUE_OBJ（二进制）
 
   * {{{int memlink_cmd_create_list(MemLink *m, char *key, int valuelen, char *maskstr);}}}<br/>
-  发送CREATE命令，创建普通list。实际上是调用的memlink_cmd_create
+  发送CREATE命令，创建list。实际上是调用的memlink_cmd_create
 
   * {{{int memlink_cmd_create_queue(MemLink *m, char *key, int valuelen, char *maskstr);}}}<br/>
-  发送CREATE命令，创建普通queue。实际上是调用的memlink_cmd_create
+  发送CREATE命令，创建queue。实际上是调用的memlink_cmd_create
 
   * {{{int memlink_cmd_create_sortlist(MemLink *m, char *key, int valuelen, char *maskstr, unsigned char valuetype);}}}<br/>
-  发送CREATE命令，创建普通排序list。实际上是调用的memlink_cmd_create
+  发送CREATE命令，创建排序list。实际上是调用的memlink_cmd_create
 
   * {{{int memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen);}}}<br/>
   发送DEL命令。删除一个指定key下的对应value。
