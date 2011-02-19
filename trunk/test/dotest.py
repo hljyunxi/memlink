@@ -24,6 +24,8 @@ def test():
 
     files.append('dump_test.py')
     result = {}
+    print 'do all test ...'
+
     for fn in files:
         fpath = os.path.join(home, 'test', fn)
  
@@ -51,7 +53,7 @@ def test():
         #print 'open memlink:', memlinkstart
         x = subprocess.Popen(memlinkstart, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
                              shell=True, env=os.environ, universal_newlines=True) 
-        time.sleep(1)
+        time.sleep(10)
        
         if fpath.endswith('.py'):
             fpath = 'python ' + fpath
