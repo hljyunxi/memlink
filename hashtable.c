@@ -388,11 +388,11 @@ hashtable_add_mask_bin(HashTable *ht, char *key, void *value, void *mask, int po
             //if (dbk == NULL)
             //    ret = -1;
             dbkpos = pos;
-            DNOTE("insert last skip:%d, pos:%d\n", pos, dbkpos);
+            //DNOTE("insert last skip:%d, pos:%d\n", pos, dbkpos);
         }else{
             ret = datablock_lookup_valid_pos(node, pos, MEMLINK_VALUE_ALL, &dbk);
             dbkpos = dataitem_skip2pos(node, dbk, pos - ret, MEMLINK_VALUE_ALL);
-            DNOTE("pos:%d, dbk:%p, pos in dbk:%d, skipn:%d\n", pos, dbk, dbkpos, pos - ret);
+            //DNOTE("pos:%d, dbk:%p, pos in dbk:%d, skipn:%d\n", pos, dbk, dbkpos, pos - ret);
             //startn = ret;
             //skipn = pos - startn;
         }
