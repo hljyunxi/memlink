@@ -80,10 +80,10 @@ logfile_write(LogFile *log, char *level, char *file, int line, char *format, ...
     time(&timenow);
     localtime_r(&timenow, &timestru);
 
-    ret = snprintf(buffer, 8192, "%d%02d%02d %02d:%02d:%02d %u %s:%d [%s] ", 
+    ret = snprintf(buffer, 8192, "%d%02d%02d %02d:%02d:%02d %lu %s:%d [%s] ", 
                     timestru.tm_year+1900, timestru.tm_mon+1, timestru.tm_mday, 
                     timestru.tm_hour, timestru.tm_min, timestru.tm_sec, 
-                    (unsigned int)pthread_self(), file, line, level);
+                    (unsigned long)pthread_self(), file, line, level);
 
     maxlen -= ret;
     writepos = buffer + ret;
