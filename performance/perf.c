@@ -30,7 +30,7 @@ int test_create(TestArgs *args)
             return -1;
         }
         for (i = 0; i < args->testcount; i++) {
-            sprintf(key, "%s%d", args->key, i);
+            sprintf(key, "%s%d", args->key, args->tid * args->testcount + i);
             ret = memlink_cmd_create_list(m, key, args->valuesize, args->maskstr);
             if (ret != MEMLINK_OK) {
                 DERROR("create list error! ret:%d\n", ret);
@@ -46,7 +46,7 @@ int test_create(TestArgs *args)
                 exit(-1);
                 return -1;
             }
-            sprintf(key, "%s%d", args->key, i);
+            sprintf(key, "%s%d", args->key, args->tid * args->testcount + i);
             ret = memlink_cmd_create_list(m, key, args->valuesize, args->maskstr);
             if (ret != MEMLINK_OK) {
                 DERROR("create list error! ret:%d\n", ret);
@@ -312,7 +312,9 @@ int single_start(ThreadArgs *ta)
     unsigned int tmd = timediff(&start, &end);
     double speed = ((double)ta->args->testcount / tmd) * 1000000;
     DINFO("thread test use time:%u, speed:%.2f\n", tmd, speed);
-
+	
+	free(ta->args);
+	free(ta);
 	return 0;
 }
 
@@ -325,8 +327,11 @@ int test_start(TestConfig *cf)
     DINFO("====== test start with thread:%d ======\n", cf->threads);
     for (i = 0; i < cf->threads; i++) {
         ThreadArgs  *ta = (ThreadArgs*)malloc(sizeof(ThreadArgs));
+		TestArgs	*ts = (TestArgs*)malloc(sizeof(TestArgs));
+		memcpy(ts, &cf->args, sizeof(TestArgs));
+		ts->tid  = i;
         ta->func = cf->func;
-        ta->args = &cf->args;
+        ta->args = ts;
         ta->threads = cf->threads;
         
         ret = pthread_create(&threads[i], NULL, thread_start, ta); 

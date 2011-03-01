@@ -20,6 +20,7 @@ typedef struct
     unsigned int tag; //tag
     int     testcount; // test count
     int     longconn; // is long conn
+	int		tid; // thread seq id
 }TestArgs;
 
 typedef int (*TestFunc)(TestArgs *args);
