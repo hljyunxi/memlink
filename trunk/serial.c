@@ -72,7 +72,6 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
     char    mf;
     // 前两位分别表示真实删除和标记删除，跳过
     // mask[idx] = mask[idx] & 0xfc;
-
     //memset(mask, 0, masknum);
     
     mask[0] = 0x01;  // 默认设置数据有效，非标记删除
@@ -88,32 +87,19 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
         //DINFO("idx:%d, b:%d, format:%d, maskvalue:%d, %x\n", idx, b, mf, v, v);
 
         if (v == UINT_MAX) {
-            b += maskformat[i];
-            continue;
+            v = 0;
         }
         
         unsigned char y = (b + mf) % 8;
         n = (b + mf) / 8 + (y>0 ? 1: 0);
-        //DINFO("y: %d, n: %d\n", y, n);
 		if (n > 4) {
 			flow = v >> (32 - b);
 		}
         v = v << b;
-        //DINFO("v: %x %b\n", v, v); 
-        //unsigned char m = pow(2, b) - 1;
         unsigned char m = 0xffffffff >> (32 - b);
         unsigned char x = mask[idx] & m;
-        //DINFO("m: %d, %x, x: %d, %x\n", m, m, x, x);
 
         v = v | x;
-		
-		//modified by wyx 12/31
-        //m = 0xff >> y;
-        //m = m << y;
-        //x = mask[idx + n - 1] & m;
-
-        //DINFO("copy idx:%d, v:%d, n:%d\n", idx, v, n);
-        //printb((char *)&v, n);
 		if (n > 4) {
         	memcpy(&mask[idx], &v, sizeof(int));
 		} else {
@@ -125,8 +111,6 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
         }else{
             idx += n;
         }
-        
-        //mask[idx] = mask[idx] | x;
 		if (n > 4) {
 			mask[idx] = mask[idx] | flow;
 		}
@@ -224,7 +208,7 @@ mask_binary2string(unsigned char *maskformat, int masknum, char *mask, int maskl
         }else{
             memcpy(&val, &mask[idx], sizeof(int));
             val >>= n;
-            unsigned val2 = 0;
+            unsigned int val2 = 0;
             
             memcpy(&val2, &mask[idx + sizeof(int)], cs - sizeof(int));
             val2 <<= 32 - n;
