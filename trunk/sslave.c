@@ -496,7 +496,7 @@ sslave_do_getdump(SSlave *ss)
             goto sslave_do_getdump_error;
         }
         if (ret == 0) {
-            DINFO("read eof! close conn:%d\n", ss->sock);
+            DERROR("read eof! close conn:%d\n", ss->sock);
             goto sslave_do_getdump_error;
         }
         buflen = ret;
@@ -611,7 +611,8 @@ sslave_conn_init(SSlave *ss)
 				synclog_clean(ss->logver, g_runtime->dumplogpos);
 			}else{
 				DERROR("The slave data may be error!\n");
-				MEMLINK_EXIT;
+				return -1;
+				//MEMLINK_EXIT;
 			}
 		}
 	} 

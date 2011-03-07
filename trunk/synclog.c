@@ -888,10 +888,10 @@ int synclog_clean(unsigned int logver, unsigned int dumplogpos)
 		rename(logname, logname_new);
 	}
 	g_runtime->synclog->version = logver - 1;
-	g_runtime->logver = logver;
+	g_runtime->logver = g_runtime->synclog->version = logver - 1;
 	synclog_new(g_runtime->synclog);
 	g_runtime->synclog->index_pos = dumplogpos;
-	//closedir(mydir);
+	closedir(mydir);
 	//synclog_truncate(g_runtime->synclog, logver, dumplogpos);	
 	return 1;
 }
