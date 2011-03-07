@@ -13,8 +13,7 @@ int mask_string2array_test()//随机生成一个mask，0-20个项，每项的值
 	char buf[10];
 	int i = 1;
 	
-    while(i <= num)
-	{
+    while(i <= num) {
 		int val = my_rand(512);
 		sprintf(buf, "%d", val);
 		do {
@@ -29,14 +28,11 @@ int mask_string2array_test()//随机生成一个mask，0-20个项，每项的值
 	}
 	unsigned int result[128];
 	int ret = mask_string2array(mask, result);
-
-	if(ret != num)
-	{		
+	if(ret != num) {		
 		DERROR("mask_string2array error. mask:%s, num:%d, ret:%d\n", mask, num, ret);
 		return -1;
 	}
 
-	//DERROR("mask_string2array error. num:%d, ret:%d\n", num, ret);
 	return 0;
 }
 
@@ -50,6 +46,7 @@ int mask_string2binary_binary2string()
 		char maskformat[512] = {0};
 		unsigned char maskformatnum[100] = {0};
 		char maskstr[512] = {0};
+
 		DINFO("num:%d\n", num);		
 		int len = 2;
 
@@ -58,10 +55,12 @@ int mask_string2binary_binary2string()
 			char buf[10] = {0};
 			char buf2[10] = {0};
 			int val = 1 + my_rand(8);
+
 			sprintf(buf, "%d", val);
 			strcat(maskformat, buf);
-			if(i != num)
+			if(i != num) {
 				strcat(maskformat, ":");
+            }
 			len += val;
 			maskformatnum[i-1] = (char)val;
 			//随机生成maskstr
@@ -135,7 +134,7 @@ typedef struct testitem
 
 int mask_array2binary_test()
 {
-    TestItem    testitems[7];
+    TestItem    testitems[100];
     
     TestItem    *item = &testitems[0];
     item->num       = 3;
@@ -189,8 +188,8 @@ int mask_array2binary_test()
 
     item = &testitems[4];
     item->num       = 2;
-    item->format[0] = 16;
-    item->format[1] = 2;
+    item->format[0] = 2;
+    item->format[1] = 16;
     item->array[0]  = 1;
     item->array[1]  = 0x1111;
     item->mask[0]   = 0x15;
@@ -201,29 +200,62 @@ int mask_array2binary_test()
     item = &testitems[5];
     item->num       = 2;
     item->format[0] = 32;
-    item->format[1] = 2;
+    item->format[1] = 32;
+    item->array[0]  = 0x0fffffff;
+    item->array[1]  = 0x10101010;
+    item->mask[0]   = 0xfd;
+    item->mask[1]   = 0xff;
+    item->mask[2]   = 0xff;
+    item->mask[3]   = 0x3f;
+    item->mask[4]   = 0x40;
+    item->mask[5]   = 0x40;
+    item->mask[6]   = 0x40;
+    item->mask[7]   = 0x40;
+    item->mask[8]   = 0x0;
+    item->msize     = 9;
+
+    item = &testitems[6];
+    item->num       = 2;
+    item->format[0] = 32;
+    item->format[1] = 32;
+    item->array[0]  = 0xffffffff;
+    item->array[1]  = 0x10101010;
+    item->mask[0]   = 0x01;
+    item->mask[1]   = 0x0;
+    item->mask[2]   = 0x0;
+    item->mask[3]   = 0x0;
+    item->mask[4]   = 0x40;
+    item->mask[5]   = 0x40;
+    item->mask[6]   = 0x40;
+    item->mask[7]   = 0x40;
+    item->mask[8]   = 0x0;
+    item->msize     = 9;
+
+    item = &testitems[7];
+    item->num       = 1;
+    item->format[0] = 32;
+    item->array[0]  = 0xffffffff;
+    item->mask[0]   = 0x01;
+    item->mask[1]   = 0x0;
+    item->mask[2]   = 0x0;
+    item->mask[3]   = 0x0;
+    item->mask[4]   = 0x0;
+    item->msize     = 5;
+
+
+    item = &testitems[8];
+    item->num       = 3;
+    item->format[0] = 2;
+    item->format[1] = 32;
+    item->format[2] = 32;
     item->array[0]  = 1;
-    item->array[1]  = 0xffffffff;
+    item->array[1]  = 0x0fffffff;
+    item->array[2]  = 0x10101010;
     item->mask[0]   = 0xf5;
     item->mask[1]   = 0xff;
     item->mask[2]   = 0xff;
     item->mask[3]   = 0xff;
-    item->mask[4]   = 0x0f;
-    item->msize     = 5;
-
-    item = &testitems[6];
-    item->num       = 3;
-    item->format[0] = 32;
-    item->format[1] = 32;
-    item->format[2] = 2;
-    item->array[0]  = 1;
-    item->array[1]  = 0xfffffff;
-    item->array[2]  = 0x10101010;
-    item->mask[0]   = 0xf1;
-    item->mask[1]   = 0xff;
-    item->mask[2]   = 0xff;
-    item->mask[3]   = 0xff;
-    item->mask[4]   = 0x0f;
+    item->mask[4]   = 0x0;
     item->mask[5]   = 0x01;
     item->mask[6]   = 0x01;
     item->mask[7]   = 0x01;
@@ -231,7 +263,7 @@ int mask_array2binary_test()
     item->msize     = 9;
 
     int i;
-    for (i = 0; i < 5; i++) {
+    for (i = 0; i < 9; i++) {
         item = &testitems[i];
         int ret = array2bin_test_one(item->format, item->array, item->num, 
                 item->mask, item->msize);
