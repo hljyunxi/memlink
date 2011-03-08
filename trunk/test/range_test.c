@@ -8,7 +8,7 @@ int main()
 {
 	MemLink	*m;
 #ifdef DEBUG
-	logfile_create("stdout", 3);
+	logfile_create("stdout", 4);
 #endif
 	m = memlink_create("127.0.0.1", MEMLINK_READ_PORT, MEMLINK_WRITE_PORT, 30);
 	if (NULL == m) {
@@ -42,8 +42,6 @@ int main()
 	}
 
 	int				reterr = 0;
-	
-	
 	MemLinkResult	result;
 	int				range_start = 50;
 	int				range_count = 50;
@@ -85,12 +83,13 @@ int main()
 	MemLinkItem	*item = result.root;
 	char testbuf[64];
 	int  testi = range_start;
-
+    
+    i = 0;
 	while (item) {
 		sprintf(testbuf, "%06d", testi);
-		//DINFO("range item, value:%s, mask:%s\n", item->value, item->mask);
+		//DINFO("range item, %d value:%s, mask:%s\n", i, item->value, item->mask);
 		if (strcmp(item->value, testbuf) != 0) {
-			DERROR("range value error, value:%s, testvalue:%s\n", item->value, testbuf);
+			DERROR("range value error, %d value:%s, testvalue:%s\n", i, item->value, testbuf);
 		}
 		if (strcmp(item->mask, maskstr) != 0) {
 			DERROR("range mask error, mask:%s\n", item->mask);
@@ -98,6 +97,7 @@ int main()
 		}
 
 		testi++;
+        i++;
 		item = item->next;
 	}
 

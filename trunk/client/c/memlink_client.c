@@ -725,7 +725,7 @@ memlink_result_parse(char *retdata, MemLinkResult *result)
 #ifdef DEBUG
     int  datalen  = valuesize + masksize;
     DINFO("vdata: %p, enddata: %p, datalen: %d\n", vdata, enddata, datalen);
-    char buf1[128], buf2[128];
+    //char buf1[128], buf2[128];
 #endif
     //MemLinkResult   *mret;
     MemLinkItem     *root = NULL, *cur = NULL;
@@ -733,9 +733,9 @@ memlink_result_parse(char *retdata, MemLinkResult *result)
     int count = 0;
 
     while (vdata < enddata) {
-        DINFO("value:%s, mask:%s\n", formath(vdata, valuesize, buf1, 128), 
+        /*DINFO("value:%s, mask:%s\n", formath(vdata, valuesize, buf1, 128), 
                             formath(vdata + valuesize, masksize, buf2, 128));
-
+        */
         MemLinkItem     *item;
         item = (MemLinkItem*)zz_malloc(sizeof(MemLinkItem));
         if (NULL == item) {
