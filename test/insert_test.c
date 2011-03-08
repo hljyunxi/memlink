@@ -93,7 +93,6 @@ int main()
 		return -3;
 	}
 	
-	//mask值跟format不一致的情况
 	strcpy(val, "0610");
 	//DERROR("val:%s, mask = 4:3:2:1\n", val);
 	ret = memlink_cmd_insert(m, buf, val, strlen(val), "4:3:2:1", 0); 
@@ -102,7 +101,6 @@ int main()
 		return -3;
 	}
 
-	//mask值跟format不一致的情况
 	strcpy(val, "0610");
 	//DERROR("val:%s, mask = 4:3:2:1\n", val);
 	ret = memlink_cmd_insert(m, buf, val, strlen(val), "2:1", 0); 
@@ -220,7 +218,6 @@ int main()
 	DERROR("11111111111111111111\n");
 	*/
 ////////////////////////////
-	//再中间插入一个
 	char* maskstr = "8:3:1";
 	sprintf(val, "%06d", 300);
 
@@ -279,7 +276,6 @@ int main()
 	}
 	
 	memlink_result_free(&result2);
-	//删除200个
 	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
 		ret = memlink_cmd_del(m, buf, val, strlen(val));
@@ -289,8 +285,6 @@ int main()
 		}
 	}
 
-	// =======================================================
-	//插入200个 插入时的pos只是相对于非标记删除的条目
 	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
 		ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr, i*2+1);	
