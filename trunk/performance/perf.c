@@ -10,8 +10,8 @@
 #include "memlink_client.h"
 
 #define MEMLINK_HOST        "127.0.0.1"
-#define MEMLINK_PORT_READ   11001
-#define MEMLINK_PORT_WRITE  11002
+#define MEMLINK_PORT_READ   11021
+#define MEMLINK_PORT_WRITE  11022
 #define MEMLINK_TIMEOUT     30
 
 int test_create(TestArgs *args)
@@ -67,14 +67,12 @@ int test_insert(TestArgs *args)
     char format[64] = {0};
     
     DINFO("====== insert ======\n");
-
     if (args->key[0] == 0 || args->valuesize == 0) {
         DERROR("key and valuesize must not null!\n");
         return -1;
     }
 
     sprintf(format, "%%0%dd", args->valuesize);
-
     if (args->longconn) {
         m = memlink_create(MEMLINK_HOST, MEMLINK_PORT_READ, MEMLINK_PORT_WRITE, MEMLINK_TIMEOUT);
         if (NULL == m) {
@@ -120,7 +118,6 @@ int test_range(TestArgs *args)
     int ret, i;
 
     DINFO("====== range ======\n");
-
     if (args->longconn) {
         m = memlink_create(MEMLINK_HOST, MEMLINK_PORT_READ, MEMLINK_PORT_WRITE, MEMLINK_TIMEOUT);
         if (NULL == m) {
@@ -177,7 +174,6 @@ int test_move(TestArgs *args)
     char format[64];
 
     DINFO("====== move ======\n");
-
     sprintf(format, "%%0%dd", args->valuesize);
 
     if (args->longconn) {
@@ -228,7 +224,6 @@ int test_mask(TestArgs *args)
     int ret, i;
     
     DINFO("====== mask ======\n");
-
     if (args->longconn) {
         m = memlink_create(MEMLINK_HOST, MEMLINK_PORT_READ, MEMLINK_PORT_WRITE, MEMLINK_TIMEOUT);
         if (NULL == m) {
