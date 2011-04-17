@@ -1,8 +1,8 @@
 #cflags   = '-ggdb -DRANGE_MASK_STR'
 #cflags   = '-ggdb -DDEBUG -DRANGE_MASK_STR'
-cflags   = '-ggdb -Wall -O2'
+cflags   = '-ggdb -Wall'
 #cflags   = '-ggdb -DDEBUG -Wall'
-includes = ['.', '../../', '/Developer/usr/include']
+includes = ['.', '../../']
 libpath  = ['.']
 libs	 = ['m']
 comfiles = ['../../zzmalloc.c', '../../serial.c', '../../logfile.c', '../../utils.c']

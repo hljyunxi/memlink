@@ -3,6 +3,7 @@ import os, sys
 clientpath = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'client/python')
 sys.path.append(clientpath)
 import time
+import getopt
 from memlinkclient import *
 import string
 #print dir(memlink)
@@ -20,42 +21,27 @@ class MemLinkTestException (Exception):
     pass
 
 class MemLinkTest:
-    def __init__(self, args):
-        self.ip = '127.0.0.1'
-        self.r_port = READ_PORT
-        self.w_port = WRITE_PORT
-        self.timeout = 10
-        for item in args:
-            if item.startswith('-'):
-                if item[:2] == '-h':
-                    self.ip = item[2:]
-                elif item[:2] == '-r':
-                    self.r_port = int(item[2:])
-                elif item[:2] == '-w':
-                    self.w_port = int(item[2:])
-                elif item[:2] == '-t':
-                    self.timeout = int(item[2:])
+    def __init__(self, host, rp, wp, timeout):
+        self.ip      = host
+        self.r_port  = int(rp)
+        self.w_port  = int(wp)
+        self.timeout = int(timeout)
 
-        print self.ip, self.r_port, self.w_port, self.timeout
+        print 'memlink: %s r:%d w:%d timeout:%d' % (self.ip, self.r_port, self.w_port, self.timeout)
+
         self.m = MemLinkClient(self.ip, self.r_port, self.w_port, self.timeout)
-        self.allkey = {}
-        self.maskformat = '4:3:1'
-        self.valuesize = 12
         if not self.m:
             raise MemLinkTestException
 
+        self.allkey = {}
+        self.maskformat = '4:3:1'
+        self.valuesize = 12
+
     def create(self, args):
-        '''Command -- create.
-
-Command Description:
-
-    create key valuesize maskformat 
-    
-        --- for instance : create haha 12 (4:3:1)
-
-            If maskformat is not input, it'll be set to ''. In this case, the maskstr
-
-            must be '' too when values are inserted.
+        '''create key valuesize [maskformat]
+\tIf maskformat is not input, it'll be set to ''. In this case, the maskstr
+\tmust be '' too when values are inserted.
+\teg: create haha 12 4:3:1
         '''
         try:
             argc = len(args)
@@ -84,11 +70,8 @@ Command Description:
         return ret
 
     def rmkey(self, args):
-        '''Command -- rmkey.
-
-Command Description:
-
-    rmkey key
+        '''rmkey key
+\tremove key and all values
         '''
         try:
             argc = len(args)
@@ -111,17 +94,10 @@ Command Description:
         return ret
                 
     def insert(self, args):
-        '''Command insert.
-
-Command Description:
-
-    insert key value pos maskstr 
-    
-        --- for instance: insert haha value 0 (8:2:1)  
-
-            If maskstr is not input, it'll be set to ''. In this case, it'll only be used 
-
-            when the maskformat is '', or it will cause an error!
+        '''insert key value pos [maskstr]
+\tIf maskstr is not input, it'll be set to ''. In this case, it'll only be used 
+\twhen the maskformat is '', or it will cause an error!
+\teg: insert haha value 0 (8:2:1)  
         '''
         #insert key value  --- mask is set to '8:2:1' and pos to 0 implicitly.
         try:
@@ -196,12 +172,7 @@ Command Description:
         return ret
     
     def range(self, args):
-        '''Command range.
-        
-Command Description:
-
-    range [option] key frompos len maskstr 
-
+        '''range [option] key frompos len maskstr 
 Options:
     
     -v : visible value (default option)   --- for instance: range -v haha 10 1000 (8::1)
@@ -278,16 +249,9 @@ Options:
         return 0
 
     def delete(self, args):
-        '''Command delete.
-        
-Command Description:
-
-    delete [option] key value/maskstr
-
+        '''delete [option] key value/maskstr
 Options:
-
     -v : delete by value (default option)   --- for instance: delete (-v) haha 123
-                
     -m : delete by mask                     --- for instance: delete -m haha 4::1
         '''
         #delete key frompos len : delete haha 10 50        
@@ -374,11 +338,9 @@ Options:
             return ret
             
     def move(self, args):
-        '''Command update.
-
-Command Description:
-
-    move key value pos   --- for instance: move haha 123 0
+        '''move key value pos   
+\tmove value to pos
+\teg: move haha 123 0
         '''
         try:
             argc = len(args)
@@ -402,16 +364,9 @@ Command Description:
         return ret
 
     def stat(self, args):
-        '''Command stat.
-
-Command Description:
-
-    stat [option] key
-
+        '''stat [option] key
 Options:
-
     -k : show stat of some key      --- for instance:  stat haha  or  stat -k haha
-
     -s : show stat of the memlink   --- for instance:  stat  or  stat -s
         '''
         try:
@@ -457,11 +412,8 @@ Options:
         return ret
      
     def dump(self, args):
-        '''Command dump.
-
-Command Description:
-
-    dump
+        '''dump
+\twrite all memory data to disk
         '''
         ret = self.m.dump()
         print 'dump ',
@@ -474,11 +426,7 @@ Command Description:
         return ret
 
     def clean(self, args):
-        '''Command clean.
-
-Command Description:
-
-    clean key
+        '''clean key
         '''
         try:
             argc = len(args)
@@ -500,11 +448,8 @@ Command Description:
         return ret
                 
     def tag(self, args):
-        '''Command tag.
-
-Command Description:
-
-    tag key value flag  --- flag : 1 for tag_del ; 0 for restore
+        '''tag key value flag  
+\teg: 1 for tag_del ; 0 for restore
         '''
         try:
             argv = len(args)
@@ -528,11 +473,8 @@ Command Description:
         return ret
 
     def mask(self, args):
-        '''Command mask.
-
-Command Description:
-
-    mask key value maskstr   --- for instance: update haha 123 0
+        '''mask key value maskstr
+\teg: update haha 123 0
         '''
         try:
             argv = len(args)
@@ -556,11 +498,8 @@ Command Description:
         return ret
 
     def count(self, args):
-        '''Command count.
-
-Command Description:
-
-    count key maskstr   --- for instance: count haha 4::1 ; count haha (count all)
+        '''count key maskstr
+\teg: count haha 4::1 ; count haha (count all)
         '''
         try:
             argv = len(args)
@@ -587,43 +526,52 @@ Command Description:
             print 'ERROR: ', ret
         return ret;
 
-def test_main(args):
-    all_the_cmd = ('create', 'rmkey', 'insert', 'delete', 'range', 'move', 'tag', 'mask', 'count', 'stat', 'dump', 'clean')
-    mtest = MemLinkTest(args)
-    print ''
-    print 'help -- type "help command" for some help. for instance: help insert.'
-    print 'list -- type "list" to list all the commands that are supported.'
-    print '   q -- quit.'
+def test_main():
+    args = sys.argv[1:]
+    optlist, args = getopt.getopt(args, 'h:r:w:t:')
+    opts = dict(optlist)
+ 
+    all_the_cmd = ('create', 'rmkey', 'insert', 'delete', 'range', 
+                   'move', 'tag', 'mask', 'count', 'stat', 'dump', 'clean')
+
+    all_cmd_str = 'commands:\n\t%s' % ' '.join(all_the_cmd)
+    mtest = MemLinkTest(opts.get('-h', '127.0.0.1'),
+                        opts.get('-r', '11011'),
+                        opts.get('-w', '11012'),
+                        opts.get('-t', '30'))
+    print 'command:'
+    print '\thelp -- type "help / help command" for some help. for instance: help insert.'
+    print '\tq    -- quit.'
     print ''
     
-    while 1:
+    while True:
         try:
             sstr = raw_input('memlink> ')
         except EOFError:
-            return;
+            return
         if not sstr:
             continue
         if sstr in ('q', 'quit'):
             return
+
         cmd_str = string.split(sstr)
-        cmd = cmd_str[0]
+        cmd     = cmd_str[0]
+
         if not hasattr(mtest, cmd) and cmd != 'help'and cmd != 'list':
             print 'Bad input! DO NOT have this command.'
             continue
 
-        if cmd == 'list':
-            print all_the_cmd
-        elif cmd == 'help':
+        if cmd == 'help':
             if len(cmd_str) < 2:
-                print 'type "help command" for some help. for instance: help insert'
+                print all_cmd_str
             elif hasattr(mtest, cmd_str[1]):
                 print getattr(mtest, cmd_str[1]).__doc__
             else:
                 print 'command "%s" don\'t exist! All are as follows:' % cmd_str[1]
-                print all_the_cmd
+                print all_cmd_str
         else:
             opnum = 0;
-            while 1:
+            while True:
                 opnum += 1
                 args = cmd_str[1:]
                 ret = getattr(mtest, cmd)(args)
@@ -637,10 +585,6 @@ def test_main(args):
                     break;
 
 if __name__ == '__main__':
-    args = []
-    if len(sys.argv) > 1:
-        args.extend(sys.argv[1:])
-    #print args
-    test_main(args)
+    test_main()
 
 

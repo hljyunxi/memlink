@@ -29,15 +29,17 @@ typedef struct _data_block_one
 
 typedef struct _mem_item
 {
-    int         memsize;
-    DataBlock   *data;
+    int          memsize;
+	unsigned int block_count;
+    unsigned int total;
+    DataBlock    *data;
 }MemItem;
 
 typedef struct _mempool
 {
     MemItem     *freemem;
-    int         idxnum;  // freemem size
-    int         idxused; // freemem used size
+    int         size;  // freemem size
+    int         used; // freemem used size
 	int			blocks;
 }MemPool;
 
@@ -45,7 +47,9 @@ typedef struct _mempool
 
 MemPool*    mempool_create();
 DataBlock*  mempool_get(MemPool *mp, int blocksize);
+DataBlock*  mempool_get2(MemPool *mp, int blocks, int datalen);
 int         mempool_put(MemPool *mp, DataBlock *dbk, int blocksize);
+int         mempool_put2(MemPool *mp, DataBlock *dbk, int datalen);
 int         mempool_expand(MemPool *mp);
 void        mempool_free(MemPool *mp, int blocksize);
 void        mempool_destroy(MemPool *mp);

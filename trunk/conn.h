@@ -45,7 +45,8 @@
     struct timeval      ctime;\
 	void	(*destroy)(struct _conn *conn);\
 	int		(*ready)(struct _conn *conn, char *data, int datalen);\
-	int		(*wrote)(struct _conn *conn);
+	int		(*wrote)(struct _conn *conn);\
+	void    *thread;
 
 typedef struct _conn
 {

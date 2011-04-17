@@ -49,17 +49,16 @@ int main()
 
 	sprintf(key, "haha");
 	ret = memlink_cmd_create_list(m, key, 6, "4:3:1");
-	
 	if (ret != MEMLINK_OK) {
 		DERROR("1 memlink_cmd_create %s error: %d\n", key, ret);
 		return -2;
 	}
 
-	char *val		= "111111";
-	char *maskstr	= "8:3:1";
+	char *val	  = "111111";
+	char *maskstr = "8:3:1";
 	int i;
 	char value[64];
-	for(i = 0; i < 20; i++)
+	for (i = 0; i < 20; i++)
 	{
 		sprintf(value, "%06d", i);
 		ret = memlink_cmd_insert(m, key, val, strlen(val), maskstr, 0);
@@ -69,9 +68,9 @@ int main()
 		}
 	}
 	
-//////added by wyx 
+    // added by wyx 
 	maskstr = "1:1:1";
-	for(i = 0; i < 20; i++)
+	for (i = 0; i < 20; i++)
 	{
 		sprintf(value, "%06d", i);
 		ret = memlink_cmd_mask(m, key, "xxxx", 4, maskstr);
@@ -91,7 +90,7 @@ int main()
 		DERROR("mask error, must nokey, key:%s\n", key);
 		return -4;
 	}
-////////////end
+    // end
 
 	char *newmask  = "7:2:1";
 	ret = memlink_cmd_mask(m, key, val, strlen(val), newmask);
@@ -100,7 +99,6 @@ int main()
 		return -4;
 	}
 	check_mask(m, key, newmask);
-
 
 	newmask  = "7:2:0";
 	ret = memlink_cmd_mask(m, key, val, strlen(val), newmask);

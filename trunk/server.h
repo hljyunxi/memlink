@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include "queue.h"
+#include "info.h"
 
 #define MEMLINK_MAX_THREADS 16
 
@@ -17,6 +18,8 @@ typedef struct _thread_server
     Queue               *cq;
     int                 running;
     int                 complete;
+	unsigned short     	conns; 
+	RwConnInfo          *rw_conn_info;
 }ThreadServer;
 
 typedef struct _main_server
@@ -26,6 +29,7 @@ typedef struct _main_server
     struct event        event;
     ThreadServer        threads[MEMLINK_MAX_THREADS];
     int                 lastth; // last thread for dispath
+	int                 conn_read;
 }MainServer;
 
 MainServer*     mainserver_create();

@@ -21,7 +21,7 @@ typedef struct linkNode
 static LinkNode linkList;
 static LinkNode* list = &linkList;
 
-void creatList(LinkNode* l, char* key)
+void create_list(LinkNode* l, char* key)
 {
 	strcpy(l->key, key);
 	l->flag = MEMLINK_TAG_RESTORE;
@@ -31,7 +31,7 @@ void creatList(LinkNode* l, char* key)
 	strcpy(l->mask, "");
 }
 
-void destroyList(LinkNode* l)
+void destroy_list(LinkNode* l)
 {
 	LinkNode* p = l->next;
 	int i = 0;
@@ -45,7 +45,7 @@ void destroyList(LinkNode* l)
 	}
 }
 
-int linkNodeInsert(LinkNode* l, char* key, char* val, char* mask, int pos)
+int link_node_insert(LinkNode* l, char* key, char* val, char* mask, int pos)
 {
 	LinkNode* node = (LinkNode*)malloc(sizeof(LinkNode));
 	memset(node, 0, sizeof(node));
@@ -181,8 +181,7 @@ int check_result(LinkNode* l)
 	}
 	//printf("range count:%d\n", result.count);
 	MemLinkItem	*item = result.root;
-	while( p != NULL )
-	{	
+	while ( p != NULL ) {	
 		/*
 		DINFO("i: %d, value:%s, mask:%s ", i, p->val, p->mask);
 		if(p->flag)
@@ -190,13 +189,11 @@ int check_result(LinkNode* l)
 		else
 			printf(" \n");
 		*/
-		if(p->flag == MEMLINK_TAG_DEL)
-		{
+		if (p->flag == MEMLINK_TAG_DEL) {
 			p = p->next;
 			continue;
 		}
-		if(NULL == item)
-		{
+		if(NULL == item) {
 			DERROR("item must not be NULL!\n");
 			return -1;
 		}
@@ -223,14 +220,13 @@ int my_rand(int base)
 	usleep(10);
 	srand((unsigned)time(NULL)+rand());//在种子里再加一个随机数
 	
-	while (i < 0 )
-	{
+	while (i < 0 ) {
 		i = rand()%base;
 	}
 	return i;
 } 
 
-int createKey()
+int create_key()
 {
 	int  ret;
 	char my_key[32];
@@ -244,7 +240,7 @@ int createKey()
 	return 0;
 }
 
-int delVal()
+int del_val()
 {
 	int  ret;
 	char val[64];
@@ -254,13 +250,13 @@ int delVal()
 	
 	linkNodeDel(list, key, val);
 	if (ret != MEMLINK_OK && ret != MEMLINK_ERR_NOVAL) {
-		DERROR("delVal error, key:%s, val:%s\n", key, val);
+		DERROR("del_val error, key:%s, val:%s\n", key, val);
 		return -5;
 	}
 	return 0;
 }
 
-int insertVal()
+int insert_val()
 {
 	int  ret;
 	char val[64];
@@ -270,15 +266,15 @@ int insertVal()
 	sprintf(val, "%06d", num);
 	ret = memlink_cmd_insert(m, key, val, strlen(val), mask, 0);
 	
-	linkNodeInsert(list, key, val, mask, 0);
+	link_node_insert(list, key, val, mask, 0);
 	if (ret != MEMLINK_OK) {
-		DERROR("insertVal error, key:%s, val:%s\n", key, val);
+		DERROR("insert_val error, key:%s, val:%s\n", key, val);
 		return -5;
 	}
 	return 0;
 }
 
-int moveVal()
+int move_val()
 {
 	int  ret;
 	char val[64];
@@ -289,14 +285,14 @@ int moveVal()
 	
 	linkNodeUpdate(list, key, val, 0);
 	if (ret != MEMLINK_OK && ret != MEMLINK_ERR_NOVAL) {
-		DERROR("moveVal error, key:%s, val:%s, ret:%d\n", key, val, ret);
+		DERROR("move_val error, key:%s, val:%s, ret:%d\n", key, val, ret);
 		return -4;
 	}
 
 	return 0;
 }
 
-int tagVal()
+int tag_val()
 {
 	int  ret;
 	char val[64];
@@ -309,13 +305,13 @@ int tagVal()
 	ret = memlink_cmd_tag(m, key, val, strlen(val), tag);
 	linkNodeTag(list, key, val, tag);
 	if (ret != MEMLINK_OK && ret != MEMLINK_ERR_NOVAL) {
-		DERROR("tagVal error, ret:%d\n", ret);
+		DERROR("tag_val error, ret:%d\n", ret);
 		return -4;
 	}
 	return 0;
 }
 
-int maskVal()
+int mask_val()
 {
 	int  ret;
 	char val[64];
@@ -328,13 +324,13 @@ int maskVal()
 	ret = memlink_cmd_mask(m, key, val, strlen(val), newmask);
 	linkNodeMask(list, key, val, newmask);
 	if (ret != MEMLINK_OK && ret != MEMLINK_ERR_NOVAL) {
-		DERROR("maskVal error, key:%s, val:%s, mask:%s, ret:%d\n", key, val, newmask, ret);
+		DERROR("mask_val error, key:%s, val:%s, mask:%s, ret:%d\n", key, val, newmask, ret);
 		return -4;
 	}
 	return 0;
 }
 
-int cleanKey()
+int clean_key()
 {
 	int ret;
 	ret = memlink_cmd_clean(m, key);
@@ -346,8 +342,8 @@ int cleanKey()
 	return 0;
 }
 
-typedef int (*pFunc)();
-pFunc p[7] = {createKey, delVal, insertVal, moveVal, tagVal, maskVal, cleanKey};
+typedef int (*opfunc)();
+opfunc p[7] = {create_key, del_val, insert_val, move_val, tag_val, mask_val, clean_key};
 
 
 int main()
@@ -365,7 +361,7 @@ int main()
 
 	sprintf(key, "haha");
 	ret = memlink_cmd_create_list(m, key, 6, "4:3:1");
-	creatList(list, key);
+	create_list(list, key);
 	if (ret != MEMLINK_OK) {
 		DERROR("create %s error: %d\n", key, ret);
 		return -2;
@@ -380,7 +376,7 @@ int main()
 		int k = i%3;
 		ret = memlink_cmd_insert(m, key, val, strlen(val), maskstr1[k], 0);
 		////////////////////////////////
-		linkNodeInsert(list, key, val, maskstr1[k], 0);
+		link_node_insert(list, key, val, maskstr1[k], 0);
 
 		if (ret != MEMLINK_OK) {
 			DERROR("insert error, key:%s, val:%s, mask:%s, i:%d\n", key, val, maskstr1[k], i);
@@ -388,12 +384,12 @@ int main()
 		}
 	}
 
-	int loopNum = 150;
-	int opNum[7] = {0};
-	for(i = 0; i < loopNum; i++)
+	int loop_num = 150;
+	int op_num[7] = {0};
+	for (i = 0; i < loop_num; i++)
 	{
 		int index = my_rand(7);
-		opNum[index] += 1;
+		op_num[index] += 1;
 		//printf("index:%d\n", index);
 		ret = p[index]();
 		if (ret != MEMLINK_OK) {
@@ -403,16 +399,15 @@ int main()
 		ret = check_result(list);
 		if (ret != MEMLINK_OK) {
 			DERROR("Function %d err!\n", index);
-			printf("createKey:%d, delVal:%d, insertVal:%d, moveVal:%d, tagVal:%d, maskVal:%d, cleanKey:%d\n", 
-				opNum[0], opNum[1],opNum[2],opNum[3],opNum[4],opNum[5],opNum[6]);
+			printf("create_key:%d, del_val:%d, insert_val:%d, move_val:%d, tag_val:%d, mask_val:%d, clean_key:%d\n", 
+				op_num[0], op_num[1],op_num[2],op_num[3],op_num[4],op_num[5],op_num[6]);
 			return -3;
 		}
 	}
-	printf("createKey:%d, delVal:%d, insertVal:%d, moveVal:%d, tagVal:%d, maskVal:%d, cleanKey:%d\n", 
-		opNum[0], opNum[1],opNum[2],opNum[3],opNum[4],opNum[5],opNum[6]);
+	//DINFO("create_key:%d, del_val:%d, insert_val:%d, move_val:%d, tag_val:%d, mask_val:%d, clean_key:%d\n", op_num[0], op_num[1],op_num[2],op_num[3],op_num[4],op_num[5],op_num[6]);
 	//ret = check_result(list);
 
-	destroyList(list);
+	destroy_list(list);
 	memlink_destroy(m);
 	
 	return ret;

@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include "common.h"
+#include "info.h"
 
 #define CMD_DUMP		    1
 #define CMD_CLEAN		    2
@@ -20,8 +21,8 @@
 #define CMD_LPOP		    14
 #define CMD_RPUSH		    15
 #define CMD_RPOP		    16
-#define CMD_INSERT_MVALUE   17
-#define CMD_INSERT_MKEY     18
+//#define CMD_INSERT_MVALUE   17
+//#define CMD_INSERT_MKEY     18
 
 	//add by lanwenhong
 #define CMD_DEL_BY_MASK     19
@@ -35,8 +36,11 @@
 #define CMD_SL_RANGE        25
 
 #define CMD_INSERT_MKV      26 
+#define CMD_READ_CONN_INFO  27
+#define CMD_WRITE_CONN_INFO 28
+#define CMD_SYNC_CONN_INFO  29
 
-#define CMD_SYNC            100 
+#define CMD_SYNC            100
 #define CMD_GETDUMP		    101
 
 #define cmd_lpush_unpack    cmd_push_unpack
@@ -124,8 +128,8 @@ int cmd_sync_unpack(char *data, unsigned int *logver, unsigned int *logpos);
 int cmd_getdump_pack(char *data, unsigned int dumpver, unsigned long long size);
 int cmd_getdump_unpack(char *data, unsigned int *dumpver, unsigned long long *size);
 
-int cmd_insert_mvalue_pack(char *data, char *key, MemLinkInsertVal *items, int num);
-int cmd_insert_mvalue_unpack(char *data, char *key, MemLinkInsertVal **items, int *num);
+//int cmd_insert_mvalue_pack(char *data, char *key, MemLinkInsertVal *items, int num);
+//int cmd_insert_mvalue_unpack(char *data, char *key, MemLinkInsertVal **items, int *num);
 
 //add by lanwenhong
 int cmd_del_by_mask_pack(char *data, char *key, unsigned int *maskarray, unsigned char masknum);
@@ -151,5 +155,11 @@ int cmd_insert_mkv_pack(char *data, MemLinkInsertMkv *mkv);
 int cmd_insert_mkv_unpack_packagelen(char *data, unsigned int *package_len);
 int cmd_insert_mkv_unpack_key(char *data, char *key, unsigned int *valcount, char **conutstart);
 int cmd_insert_mkv_unpack_val(char *data, char *value, unsigned char *valuelen, unsigned char *masknum, unsigned int *maskarray, int *pos);
+int cmd_read_conn_info_pack(char *data);
+int cmd_read_conn_info_unpack(char *data);
+int cmd_write_conn_info_pack(char *data);
+int cmd_write_conn_info_unpack(char *data);
+int cmd_sync_conn_info_pack(char *data);
+int cmd_sync_conn_info_unpack(char *data);
 
 #endif

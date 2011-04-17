@@ -9,19 +9,19 @@
 
 typedef struct _hashnode
 {
-    char            *key;
-    DataBlock       *data; // DataBlock link
-    DataBlock       *data_tail; // DataBlock link tail
-    struct _hashnode *next;
-    unsigned char   type; // key type: list/queue
-    unsigned char   sortfield; // which sort? 0:value, 1-255:mask[0-xx]
-    unsigned char   valuesize;
-    unsigned char   valuetype;
-    unsigned char   masksize;
-    unsigned char   masknum; // maskformat count
-    unsigned char   *maskformat; // mask format:  3:4:5 => [3, 4, 5]
-    unsigned int    used; // used data item
-    unsigned int    all;  // all data item;
+    char              *key;
+    DataBlock         *data; // DataBlock link
+    DataBlock         *data_tail; // DataBlock link tail
+    struct _hashnode  *next;
+    unsigned char     *maskformat; // mask format:  3:4:5 => [3, 4, 5]
+    unsigned char     type:4; // key type: list/queue
+    unsigned char     sortfield:4; // which sort? 0:value, 1-255:mask[0-xx]
+    unsigned char     valuetype:4;
+    unsigned char     masknum:4; // maskformat count
+    unsigned char     valuesize;
+    unsigned char     masksize;
+    unsigned int      used; // used data item
+    unsigned int      all;  // all data item;
 }HashNode;
 
 
@@ -39,7 +39,8 @@ int				hashtable_remove_list(HashTable *ht, char *key);
 int             hashtable_key_create(HashTable *ht, char *key, int valuesize, char *maskstr, 
                                     unsigned char listtype, unsigned char valuetype);
 int             hashtable_key_create_mask(HashTable *ht, char *key, int valuesize, 
-                                        unsigned int *maskarray, char masknum, unsigned char listtype, unsigned char valuetype);
+                                        unsigned int *maskarray, char masknum, 
+                                        unsigned char listtype, unsigned char valuetype);
 HashNode*       hashtable_find(HashTable *ht, char *key);
 int             hashtable_find_value(HashTable *ht, char *key, void *value, 
                                      HashNode **node, DataBlock **dbk, char **data);
@@ -69,6 +70,8 @@ int             hashtable_lpop(HashTable *ht, char *key, int num, Conn *conn);
 int             hashtable_rpop(HashTable *ht, char *key, int num, Conn *conn);
 
 int             hashtable_print(HashTable *ht, char *key);
+int             hashtable_check(HashTable *ht, char *key);
+int             hashnode_check(HashNode *node);
 
 int				dataitem_have_data(HashNode *node, char *itemdata, unsigned char kind);
 int				dataitem_check_data(HashNode *node, char *itemdata);
@@ -81,5 +84,7 @@ int             hashtable_sortlist_count(HashTable *ht, char *key, unsigned int 
 int             hashtable_sortlist_range(HashTable *ht, char *key, unsigned char kind, 
 				                        unsigned int *maskarray, int masknum, void *valmin,
                                         void *valmax, Conn *conn);
+int				hashtable_sortlist_add_mask_bin(HashTable *ht, char *key, void *value, void *mask);
+int				hashtable_sortlist_add_mask(HashTable *ht, char *key, void *value, unsigned int *maskarray, char masknum);
 
 #endif

@@ -77,6 +77,13 @@ conn_create(int svrfd, int connsize)
 void
 conn_destroy(Conn *conn)
 {
+	int i;
+	ThreadServer *ts;
+	WThread *wt;
+	//SThread *st;
+	RwConnInfo *conninfo = NULL;
+	//SyncConnInfo *sconninfo;
+
     zz_check(conn);
 
     if (conn->wbuf) {
@@ -86,10 +93,30 @@ conn_destroy(Conn *conn)
 		zz_free(conn->rbuf);
 	}
 	event_del(&conn->evt);
-    close(conn->sock);
-    zz_free(conn);
-
+	
     g_runtime->conn_num--;
+	
+	if (conn->port == g_cf->read_port) {
+		ts = (ThreadServer *)conn->thread;
+		conninfo = ts->rw_conn_info;
+		ts->conns--;
+	} else if (conn->port == g_cf->write_port) {
+		wt = (WThread *)conn->thread;
+		conninfo = wt->rw_conn_info;
+		wt->conns--;
+	} 
+
+	if (conninfo && (conn->port == g_cf->read_port || conn->port == g_cf->write_port)) {
+		for (i = 0; i < g_cf->max_conn; i++) {
+			if (conn->sock == conninfo[i].fd) {
+				conninfo[i].fd = 0;
+				break;
+			}
+		}
+
+	}
+ 	close(conn->sock);
+    zz_free(conn);
 }
 
 char*

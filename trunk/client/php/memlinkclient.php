@@ -269,6 +269,107 @@ class MemLinkClient
 	
 		return memlink_cmd_count($this->client, $key, $maskstr, $count);
 	}
+    function read_conn_info()
+    {
+        $rcinfo = new MemLinkRcInfo();
+        $ret = memlink_cmd_read_conn_info($this->client, $rcinfo);
+        if ($ret == MEMLINK_OK) {
+            return $rcinfo;
+        }
+        return NULL;
+    }
+    function write_conn_info()
+    {
+        $wcinfo = new MemLinkWcInfo();
+        $ret = memlink_cmd_write_conn_info($this->client, $wcinfo);
+        if ($ret == MEMLINK_OK) {
+            return $wcinfo;
+        }
+        return NULL;
+    }
+    function sync_conn_info()
+    {
+        $scinfo = new MemLinkScInfo();
+        $ret = memlink_cmd_sync_conn_info($this->client, $scinfo);
+        if ($ret == MEMLINK_OK) {
+            return $scinfo;
+        }
+        return NULL;
+    }
+    static function memlink_imkv_create() {
+        $r=memlink_imkv_create();
+        if (is_resource($r)) {
+            $c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+            if (!class_exists($c)) {
+                return new MemLinkInsertMkv($r);
+            }
+            return new $c($r);
+        }
+        return $r;
+    }
+    static function memlink_ikey_create($key,$keylen) {
+        $r=memlink_ikey_create($key,$keylen);
+        if (is_resource($r)) {
+            $c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+            if (!class_exists($c)) {
+                return new MemLinkInsertKey($r);
+            }
+            return new $c($r);
+        }
+        return $r;
+    }
+    static function memlink_ival_create($value,$valuelen,$maskstr,$pos) {
+        $r=memlink_ival_create($value,$valuelen,$maskstr,$pos);
+        if (is_resource($r)) {
+            $c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+            if (!class_exists($c)) {
+                return new MemLinkInsertVal($r);
+            }
+            return new $c($r);
+        }
+        return $r;
+    }
+
+    function insert_mkv($array)
+    {
+        $mkv = $this->memlink_imkv_create();
+        foreach ($array as $item) {
+            if (is_array($item) && count($item) == 4) {
+                if (is_null($item["key"]) || is_null($item["value"]) || 
+                    is_null($item["mask"]) || is_null($item["pos"])) {
+                    return $mkv;
+                }
+                $keyobj = $this->memlink_ikey_create($item["key"], strlen($item["key"]));
+                $valobj = $this->memlink_ival_create($item["value"], strlen($item["value"]), $item["mask"], $item["pos"]);
+                $ret = memlink_ikey_add_value($keyobj, $valobj); 
+                if ($ret != MEMLINK_OK) {
+                    return $mkv;
+                }
+                $ret = memlink_mkv_add_key($mkv, $keyobj);
+                if ($ret != MEMLINK_OK) {
+                    return $mkv;
+                }
+            }
+        }
+        $ret = memlink_cmd_insert_mkv($this->client, $mkv);
+        return $mkv;
+    }
+
+    function rcinfo_free($info) {
+        return memlink_rcinfo_free($info);
+    }
+
+    function wcinfo_free($info) {
+        return memlink_wcinfo_free($info);
+    }
+
+    function scinfo_free($info) {
+        return memlink_scinfo_free($info);
+    }
+
+    function mkv_destroy($mkv) {
+        return memlink_mkv_destroy($mkv);
+    }
 }
 
 ?>

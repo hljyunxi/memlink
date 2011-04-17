@@ -17,6 +17,7 @@
 #include "wthread.h"
 #include "utils.h"
 #include "common.h"
+#include "info.h"
 
 /**
  * Execute the read command and send response.
@@ -40,6 +41,16 @@ rdata_ready(Conn *conn, char *data, int datalen)
     unsigned int    maskarray[HASHTABLE_MASK_MAX_ITEM] = {0};
     int    frompos, len;
     struct timeval start, end;
+	ThreadServer *st = (ThreadServer *)conn->thread;
+	RwConnInfo *conninfo = NULL; 
+
+
+	int i;
+	for (i = 0; i <= g_cf->max_conn; i++) {
+		conninfo = &(st->rw_conn_info[i]);
+		if (conninfo->fd == conn->sock)
+			break;
+	}
 
     gettimeofday(&start, NULL);
     memcpy(&cmd, data + sizeof(int), sizeof(char));
@@ -49,7 +60,9 @@ rdata_ready(Conn *conn, char *data, int datalen)
     switch(cmd) {
 		case CMD_PING: {
 			ret = MEMLINK_OK;
-			goto rdata_ready_error;
+            if (conninfo)
+                conninfo->cmd_count++;
+            goto rdata_ready_error;
 			break;
 		}
         case CMD_RANGE: {
@@ -76,7 +89,8 @@ rdata_ready(Conn *conn, char *data, int datalen)
             //ret = data_reply(conn, ret, retrec, retlen);
             ret = data_reply_direct(conn);
             DINFO("data_reply return: %d\n", ret);
-
+            if (conninfo)
+                conninfo->cmd_count++;
             break;
         }
         case CMD_SL_RANGE: {
@@ -109,7 +123,8 @@ rdata_ready(Conn *conn, char *data, int datalen)
             //ret = data_reply(conn, ret, retrec, retlen);
             ret = data_reply_direct(conn);
             DINFO("data_reply return: %d\n", ret);
-
+            if (conninfo)
+                conninfo->cmd_count++;
             break;
         }
         case CMD_STAT: {
@@ -133,14 +148,17 @@ rdata_ready(Conn *conn, char *data, int datalen)
 
             ret = data_reply(conn, ret, retdata, retlen);
             DINFO("data_reply return: %d\n", ret);
-
+            if (conninfo)
+                conninfo->cmd_count++;
             break;
         }
 		case CMD_STAT_SYS: {
             DINFO("<<< cmd STAT_SYS >>>\n");
-            HashTableStatSys   stat;
+            //HashTableStatSys   stat;
+			MemLinkStatSys stat;
 
-            ret = hashtable_stat_sys(g_runtime->ht, &stat);
+            //ret = hashtable_stat_sys(g_runtime->ht, &stat);
+			ret = info_sys_stat(&stat);
             DINFO("hashtable stat sys: %d\n", ret);
     
             retdata = (char*)&stat;
@@ -148,6 +166,8 @@ rdata_ready(Conn *conn, char *data, int datalen)
 
             ret = data_reply(conn, ret, retdata, retlen);
             DINFO("data_reply return: %d\n", ret);
+            if (conninfo)
+                conninfo->cmd_count++;
             break;
         }
         case CMD_COUNT: {
@@ -175,8 +195,40 @@ rdata_ready(Conn *conn, char *data, int datalen)
 
             ret = data_reply(conn, ret, retrec, retlen);
             DINFO("data_reply return: %d\n", ret);
+            if (conninfo)
+                conninfo->cmd_count++;
             break;
         }
+		case CMD_READ_CONN_INFO: {
+			DINFO("<<< cmd READ_CONN_INFO >>>\n");
+            if (conninfo)
+                conninfo->cmd_count++;
+            ret = read_conn_info(conn);
+			ret = data_reply_direct(conn);
+			DINFO("data_reply return: %d\n", ret);
+			break;
+
+		}
+		case CMD_WRITE_CONN_INFO: {
+			DINFO("<<< cmd WRITE_CONN_INFO >>>\n");
+            if (conninfo)
+                conninfo->cmd_count++;
+            ret = write_conn_info(conn);
+			DINFO("write_conn_info return: %d\n", ret);
+			ret = data_reply_direct(conn);
+			DINFO("data_reply return: %d\n", ret);
+			break;
+		}
+		case CMD_SYNC_CONN_INFO: {
+			DINFO("<<< cmd SYNC_CONN_INFO >>>\n");
+            if (conninfo)
+                conninfo->cmd_count++;
+            ret = sync_conn_info(conn);
+			DINFO("sync_conn_info return: %d\n", ret);
+			ret = data_reply_direct(conn);
+			DINFO("data_reply return: %d\n", ret);
+			break;
+		}
         default: {
             ret = MEMLINK_ERR_CLIENT_CMD;
 

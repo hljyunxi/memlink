@@ -19,83 +19,75 @@ public class Test
 	{
         //String str = System.getProperty("java.library.path");
         //System.out.println(str);
-
-		MemLinkClient m = new MemLinkClient("127.0.0.1", 11011, 11012, 10);
-        //ddmemlink.memlink_create("127.0.0.1", 11011, 11012, 10);
+		MemLinkClient m = new MemLinkClient("127.0.0.1", 11001, 11002, 10);
         
         int ret;
+        int num = 100;
         int valuelen = 12;
         String maskformat = "4:3:1";
 		String key = "haha";
-	    ret = m.create(key, valuelen, maskformat);
-        if (0 != ret)
-        {
+
+	    ret = m.create_list(key, valuelen, maskformat);
+        if (memlink.MEMLINK_OK != ret) {
             System.out.println("create error:" + ret);
             return;
-        }
-        else
-        {
-            System.out.println("create " + key); 
+        }else{
+            System.out.println("create ok:" + key); 
         }
         
         int i = 0;
         //String value = "012345678912";
-        for (i = 0; i < 200; i++)
-        {
+        for (i = 0; i < num; i++) {
             String value = String.format("%012d", i);
             ret = m.insert(key, value, "8:3:1", 0);
-            if (0 != ret)
-            {
+            if (memlink.MEMLINK_OK != ret) {
                 System.out.println("errr insert!");
                 return;
             }
         }
         
-        System.out.println("insert 200"); 
+        System.out.println("insert 200 ok!"); 
         
         MemLinkStat stat;
         stat = m.stat(key);
-        if (null == stat)
-        {
+        if (null == stat) {
             System.out.println("errr stat!");
             return;
         }
-        if (stat.getData() != 200 || stat.getData_used() != 200)
-        {    
+        //System.out.println("data: %d, used: %d", stat.getData(), stat.getData_used());
+
+        if (stat.getData() != num || stat.getData_used() != num) {
             System.out.println("errr stat result!");
             return;
         }
         
         MemLinkResult rs;
-        rs = m.range(key, memlinkConstants.MEMLINK_VALUE_VISIBLE, "", 0, 200);
-        if (null == rs)
-        {
+        rs = m.range(key, memlink.MEMLINK_VALUE_VISIBLE, "", 0, 100);
+        if (null == rs) {
             System.out.println("err range!");
             return;
         }
-        if (rs.getCount() != 200)
-        {
+        if (rs.getCount() != num) {
             System.out.println("err count:" + rs.getCount());
             return;
         }
-        i = 200;
+        i = num; 
         MemLinkItem item = rs.getRoot();
-        while(i > 0)
-        {
+        while(i > 0) {
             i--;
             String value = String.format("%012d", i);
-            if ( !value.equals( item.getValue() ) )
-            {
+            System.out.println(item.getValue());
+            if (!value.equals(item.getValue())){
                 System.out.println("item.value: " + item.getValue());
                 return;
             }
             item = item.getNext();
         }
+		m.range_result_destroy(rs);
 
         MemLinkCount count;
         count = m.count(key, "8:3:1");
-        if (null == count)
-        {
+        if (null == count) {
             System.out.println("err count!");
             return;
         }

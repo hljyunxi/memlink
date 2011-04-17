@@ -74,11 +74,16 @@ logfile_write(LogFile *log, char *level, char *file, int line, char *format, ...
     int     maxlen = 8192;
     int     ret, wlen = 0;
     time_t  timenow;
-
+    char    *shortname;
     struct tm   timestru;
    
     time(&timenow);
     localtime_r(&timenow, &timestru);
+
+    shortname = strrchr(file, '/');
+    if (shortname) {
+        file = shortname + 1;
+    }
 
     ret = snprintf(buffer, 8192, "%d%02d%02d %02d:%02d:%02d %lu %s:%d [%s] ", 
                     timestru.tm_year+1900, timestru.tm_mon+1, timestru.tm_mday, 

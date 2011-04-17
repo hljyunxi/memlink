@@ -64,8 +64,10 @@
 #define MEMLINK_ERR_CONNECT_WRITE   -36
 // 不支持的操作
 #define MEMLINK_ERR_NOACTION        -37
-//客户端发送的数据包过大
+// 客户端发送的数据包过大
 #define MEMLINK_ERR_PACKAGE_SIZE	-38
+// 连接已断开
+#define MEMLINK_ERR_CONN_LOST		-39
 // 其他错误
 #define MEMLINK_ERR                 -1
 // 操作失败
@@ -99,7 +101,7 @@
 // format + version + index size
 #define SYNCLOG_HEAD_LEN	(sizeof(short)+sizeof(int)+sizeof(int))
 
-#define SYNCLOG_INDEXNUM	5000000
+#define SYNCLOG_INDEXNUM    5000000 
 #define SYNCPOS_LEN		    (sizeof(int)+sizeof(int))
 
 #define MEMLINK_TAG_DEL         1
@@ -119,7 +121,7 @@
 /// 最大允许的mask项数
 #define HASHTABLE_MASK_MAX_BIT      32
 #define HASHTABLE_MASK_MAX_BYTE     4
-#define HASHTABLE_MASK_MAX_ITEM     16
+#define HASHTABLE_MASK_MAX_ITEM     15
 // key最大长度
 #define HASHTABLE_KEY_MAX           255
 // value最大长度
@@ -145,11 +147,17 @@
 #define MEMLINK_SORTLIST_LOOKUP_STEP    10
 
 #define MEMLINK_VALUE_INT           1
+#define MEMLINK_VALUE_INT4          1
 #define MEMLINK_VALUE_UINT          2
+#define MEMLINK_VALUE_UINT4         2
 #define MEMLINK_VALUE_LONG          3 
+#define MEMLINK_VALUE_INT8          3 
 #define MEMLINK_VALUE_ULONG         4
+#define MEMLINK_VALUE_UINT8         4
 #define MEMLINK_VALUE_FLOAT         5 
+#define MEMLINK_VALUE_FLOAT4         5 
 #define MEMLINK_VALUE_DOUBLE        6 
+#define MEMLINK_VALUE_FLOAT8        6 
 #define MEMLINK_VALUE_STRING        7 
 #define MEMLINK_VALUE_OBJ           8
 
@@ -197,6 +205,8 @@ typedef struct _memlink_insert_mkv
 	unsigned int sum_size;
 
 	unsigned int keynum;
+    int          kindex;
+    int          vindex;
 	MemLinkInsertKey *keylist;
 	MemLinkInsertKey *tail;
 }MemLinkInsertMkv;
@@ -217,14 +227,27 @@ typedef MemLinkStat HashTableStat;
 
 typedef struct _ht_stat_sys
 {
+	int          version;
     unsigned int keys;
     unsigned int values;
     unsigned int blocks;
-    unsigned int data;
-    unsigned int data_used;
-    unsigned int block_values;
-    unsigned int ht_mem;
-    unsigned int pool_blocks;
+	unsigned int data_all;
+	unsigned int ht_mem;
+	unsigned int pool_mem;
+	unsigned int pool_blocks;
+	unsigned int all_mem;
+
+	unsigned short conn_read;
+	unsigned short conn_write;
+	unsigned short conn_sync;
+	unsigned short threads;
+	
+	unsigned int   pid;
+	unsigned int   uptime;
+	
+	unsigned char  bit;
+	
+	unsigned int   last_dump;
 }MemLinkStatSys;
 
 typedef MemLinkStatSys	HashTableStatSys;
