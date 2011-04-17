@@ -18,7 +18,7 @@
 #include "daemon.h"
 #include "common.h"
 
-char *VERSION = "memlink-0.2.5";
+char *VERSION = "memlink-0.3.0";
 
 static void 
 sig_handler(const int sig) {
@@ -30,6 +30,12 @@ static void
 sig_handler_segv(const int sig) {
     DFATALERR("====== SIGSEGV handled ======\n");
 	abort();
+}
+
+static void 
+sig_handler_hup(const int sig) {
+    DNOTE("====== SIGHUP handled ======\n");
+	g_log->loglevel = 4;
 }
 
 int 
@@ -45,6 +51,9 @@ signal_install()
     
 	sigact.sa_handler = sig_handler_segv;
     sigaction(SIGSEGV, &sigact, NULL);
+
+	sigact.sa_handler = sig_handler_hup;
+    sigaction(SIGHUP, &sigact, NULL);
 
     sigact.sa_handler = SIG_IGN;
     sigaction(SIGPIPE, &sigact, NULL);
