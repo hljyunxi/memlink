@@ -10,9 +10,9 @@
 #include "utils.h"
 #include "memlink_client.h"
 
-#define MEMLINK_HOST        "19.2.171.127"
-#define MEMLINK_PORT_READ   11021
-#define MEMLINK_PORT_WRITE  11022
+#define MEMLINK_HOST        "127.0.0.1"
+#define MEMLINK_PORT_READ   11001
+#define MEMLINK_PORT_WRITE  11002
 #define MEMLINK_TIMEOUT     30
 
 int test_create(TestArgs *args)
@@ -107,9 +107,9 @@ int test_insert(TestArgs *args)
                 return -1;
             }
             sprintf(value, format, i);
-			sprintf(maskstr, "%d:%d", args->tid * args->testcount + i, 1);
-            //ret = memlink_cmd_insert(m, args->key, value, args->valuesize, args->maskstr, args->pos);
-            ret = memlink_cmd_insert(m, args->key, value, args->valuesize, maskstr, args->pos);
+			//sprintf(maskstr, "%d:%d", args->tid * args->testcount + i, 1);
+            ret = memlink_cmd_insert(m, args->key, value, args->valuesize, args->maskstr, args->pos);
+            //ret = memlink_cmd_insert(m, args->key, value, args->valuesize, maskstr, args->pos);
             if (ret != MEMLINK_OK) {
                 DERROR("insert error! ret:%d, key:%s,value:%s,mask:%s,pos:%d\n", 
                         ret, args->key, value, args->maskstr, args->pos);
