@@ -15,11 +15,14 @@
 #include "sthread.h"
 
 // TODO is there a pre-defined const for this?
-#define IP_ADDR_MAX_LEN 100
+#define IP_ADDR_MAX_LEN         20
+#define BLOCK_DATA_COUNT_MAX    16
 
 typedef struct _myconfig
 {
-    unsigned int block_data_count;
+    unsigned int block_data_count[BLOCK_DATA_COUNT_MAX];
+    int          block_data_count_items;
+	float		 block_data_reduce;
     unsigned int dump_interval;                       // in minutes
     float        block_clean_cond;
     int          block_clean_start;
@@ -61,6 +64,8 @@ typedef struct _runtime
     SSlave          *slave; // sync slave
     SThread         *sthread; // sync thread
     unsigned int    conn_num; // current conn count
+	time_t          last_dump;
+	unsigned int    memlink_start;
 }Runtime;
 
 extern MyConfig *g_cf;

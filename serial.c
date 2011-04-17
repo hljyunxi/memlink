@@ -247,43 +247,43 @@ mask_array2flag(unsigned char *maskformat, unsigned int *maskarray, char masknum
     int xlen;
     unsigned int v;
 
-    memset(mask, 0, masknum);
-
     mask[0] = 0x03;
     b = 2;
-
-    DINFO("masknum: %d\n", masknum);
     v = 0;
     for (i = 0; i < masknum; i++) {
         mf = maskformat[i];
         m  = maskarray[i];
         
-        DINFO("i: %d, format: %d, array: %d\n", i, mf, m);
+        //DINFO("i:%d, idx:%d, format:%d, array:%d\n", i, idx, mf, m);
         if (m == UINT_MAX) { // set to 1
             xlen = (b + mf) / 8 + ((b + mf) % 8 > 0 ? 1:0);
-            //v = pow(2, mf) - 1;
             v = 0xffffffff >> (32 - mf);
-            //v = 0xffffffff;
             v = v << b;
 
             char *cpdata = (char *)&v;
-            for (j = 0; j < xlen; j++) {
-                mask[idx + j] |= cpdata[j];
-            }
-            
+			if (xlen <= 4) {
+				for (j = 0; j < xlen; j++) {
+					mask[idx + j] |= cpdata[j];
+				}
+			}else{
+				for (j = 0; j < 4; j++) {
+					mask[idx + j] |= cpdata[j];
+				}
+				unsigned char v2 = 0xff >> (8 - (mf + b) - 32);
+				mask[idx + j] |= v2;
+			}
             idx += xlen - 1;
             b = (b + mf) % 8;
         }else{ // set to 0
             b += mf;
-            if (b >= 8) {
-                idx++;
-                b = b % 8;
+            while (b >= 8) {
+                idx ++;
+                b = b - 8;
             }
         }
     }
 
     if (b > 0) {
-        //mask[idx] = mask[idx] & (char)(pow(2, b) - 1);
         mask[idx] = mask[idx] & (char)(UCHAR_MAX >> (8 - b));
     }
 
@@ -1127,7 +1127,7 @@ cmd_getdump_unpack(char *data, unsigned int *dumpver, unsigned long long *size)
 	return 0;
 }
 
-int 
+/*int 
 cmd_insert_mvalue_pack(char *data, char *key, MemLinkInsertVal *items, int num)
 {
     unsigned char cmd = CMD_INSERT_MVALUE;
@@ -1182,7 +1182,7 @@ cmd_insert_mvalue_unpack(char *data, char *key, MemLinkInsertVal **items, int *n
 
     return 0;
 }
-
+*/
 //add by lanwenhong
 int
 cmd_del_by_mask_pack(char *data, char *key, unsigned int *maskarray, unsigned char masknum)
@@ -1305,6 +1305,68 @@ cmd_insert_mkv_unpack_val(char *data, char *value, unsigned char *valuelen,
 
 	return count;
 }
+
+int
+cmd_read_conn_info_pack(char *data)
+{
+	unsigned char cmd = CMD_READ_CONN_INFO;
+	int count = CMD_REQ_SIZE_LEN;
+
+	memcpy(data + count, &cmd, sizeof(char));
+	count += sizeof(char);
+	
+	int len = count - CMD_REQ_SIZE_LEN;
+	memcpy(data, &len, CMD_REQ_SIZE_LEN);
+	return count;
+}
+int
+conn_read_conn_info_unpack(char *data)
+{
+	return 0;
+}
+
+
+int
+cmd_write_conn_info_pack(char *data)
+{
+	unsigned char cmd = CMD_WRITE_CONN_INFO;
+	int count = CMD_REQ_SIZE_LEN;
+
+	memcpy(data + count, &cmd, sizeof(char));
+	count += sizeof(char);
+	
+	int len = count - CMD_REQ_SIZE_LEN;
+
+	memcpy(data, &len, CMD_REQ_SIZE_LEN);
+	return count;
+}
+int
+cmd_write_conn_info_unpack(char *data)
+{
+	return 0;
+}
+
+int
+cmd_sync_conn_info_pack(char *data)
+{
+	unsigned char cmd = CMD_SYNC_CONN_INFO;
+	int count = CMD_REQ_SIZE_LEN;
+
+	memcpy(data + count, &cmd, sizeof(char));
+	count += sizeof(char);
+	
+	int len = count - CMD_REQ_SIZE_LEN;
+
+	memcpy(data, &len, CMD_REQ_SIZE_LEN);
+	return count;
+}
+
+int
+cmd_sync_conn_info_unpack(char *data)
+{
+	return 0;
+}
+
 /**
  * @}
  */

@@ -39,10 +39,11 @@ myconfig_create(char *filename)
         return NULL;
     }
     memset(mcf, 0, sizeof(MyConfig));
-    mcf->block_data_count = 100;
-    mcf->block_clean_cond = 0.5;
+    mcf->block_data_count[0]    = 100;
+    mcf->block_data_count_items = 1;
+    mcf->block_clean_cond  = 0.5;
     mcf->block_clean_start = 3;
-    mcf->block_clean_num = 100;
+    mcf->block_clean_num   = 100;
     mcf->dump_interval = 60;
     mcf->sync_interval = 60;
     mcf->write_port = 11002;
@@ -54,11 +55,9 @@ myconfig_create(char *filename)
 
     FILE    *fp;
     //char    filepath[PATH_MAX];
-
     // FIXME: must absolute path
     //snprintf(filepath, PATH_MAX, "etc/%s", filename);
 
-    //fp = fopen(filepath, "r");
 	int lineno = 0;
     fp = fopen(filename, "r");
     if (NULL == fp) {
@@ -74,11 +73,9 @@ myconfig_create(char *filename)
         }
 		lineno ++;
         //DINFO("buffer: %s\n", buffer);
-        
         if (buffer[0] == '#') { // skip comment
             continue;
         }
-
         char *sp = strchr(buffer, '=');
         if (sp == NULL) {
             DERROR("config file error at line %d: %s\n", lineno, buffer);
@@ -110,7 +107,36 @@ myconfig_create(char *filename)
         }
         
         if (strcmp(buffer, "block_data_count") == 0) {
-            mcf->block_data_count = atoi(start);
+            char *ptr = start;
+            int  i = 0;
+            while (start) {
+                //DINFO("start:%s\n", start);
+                while (isblank(*start)) {
+                    start++;
+                }
+                ptr = strchr(start, ',');
+                if (ptr) {
+                    *ptr = 0;
+                    ptr++;
+                }
+                
+                mcf->block_data_count[i] = atoi(start);
+                start = ptr;
+                //DINFO("i: %d, %d\n", i, mcf->block_data_count[i]);
+                i++;
+                if (i >= BLOCK_DATA_COUNT_MAX) {
+                    DERROR("config error: block_data_count have too many items.\n");
+                    MEMLINK_EXIT;
+                }
+            }
+            mcf->block_data_count_items = i;
+            qsort(mcf->block_data_count, i, sizeof(int), compare_int);
+
+            //for (i = 0; i < BLOCK_DATA_COUNT_MAX; i++) {
+            //    DINFO("block_data_count: %d, %d\n", i, mcf->block_data_count[i]);
+            //}
+        }else if (strcmp(buffer, "block_data_reduce") == 0) {
+            mcf->block_data_reduce = atof(start);
         }else if (strcmp(buffer, "dump_interval") == 0) {
             mcf->dump_interval = atoi(start);
         }else if (strcmp(buffer, "sync_interval") == 0) {
@@ -136,8 +162,8 @@ myconfig_create(char *filename)
         }else if (strcmp(buffer, "timeout") == 0) {
             mcf->timeout = atoi(start);
         }else if (strcmp(buffer, "thread_num") == 0) {
-            int t_n = atoi(start);
-            mcf->thread_num = t_n > MEMLINK_MAX_THREADS ? MEMLINK_MAX_THREADS : t_n;
+            int tn = atoi(start);
+            mcf->thread_num = tn > MEMLINK_MAX_THREADS ? MEMLINK_MAX_THREADS : tn;
         }else if (strcmp(buffer, "max_conn") == 0) {
             mcf->max_conn = atoi(start);
         }else if (strcmp(buffer, "max_core") == 0) {
@@ -277,6 +303,7 @@ load_data()
     int    havedump = 0;
     char   filename[PATH_MAX];
 	char   dumpfileok[PATH_MAX];
+	struct timeval start, end;
 
     snprintf(filename, PATH_MAX, "%s/dump.dat", g_cf->datadir);
     // check dumpfile exist
@@ -342,6 +369,7 @@ load_data()
 	}
 
     unsigned int count = 0;
+	gettimeofday(&start, NULL);
     for (i = 0; i < n; i++) {
 		if (logids[i] < g_runtime->dumplogver) {
 			continue;
@@ -357,6 +385,8 @@ load_data()
     DINFO("load synclog: %s\n", logname);
     count += load_synclog(logname, g_runtime->dumplogver, g_runtime->dumplogpos);
 	
+	gettimeofday(&end, NULL);
+	DNOTE("load bin.log time: %u us\n", timediff(&start, &end));
     if (havedump == 0) {
         dumpfile(g_runtime->ht);
     }
@@ -499,7 +529,8 @@ runtime_create_common(char *pgname)
     }
     memset(rt, 0, sizeof(Runtime));
     g_runtime = rt;
-
+	
+	rt->memlink_start = time(NULL);
     if (realpath(pgname, rt->home) == NULL) {
 		DERROR("realpath error: %s\n", strerror(errno));
 		MEMLINK_EXIT;

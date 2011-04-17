@@ -144,6 +144,8 @@ get_synclog_record(SyncConn *conn)
 	char *buffer = conn_write_buffer((Conn *)conn, SYNC_BUF_SIZE);
 	SyncLog *synclog = conn->synclog;
 	int *indxdata = (int *)(synclog->index + SYNCLOG_HEAD_LEN);
+	SThread *st;
+	SyncConnInfo *conninfo = NULL;
 	
 	if ( i == SYNCLOG_INDEXNUM) {
 		return 0;
@@ -151,7 +153,15 @@ get_synclog_record(SyncConn *conn)
 	if (i >  SYNCLOG_INDEXNUM || indxdata[i] == 0) {
 		return -1;
 	}
-	
+		
+	st = (SThread *)conn->thread;
+	int j;
+	for (j = 0; j <= g_cf->max_conn; j++) {
+		conninfo = &(st->sync_conn_info[j]);
+		if (conninfo->fd == conn->sock)
+			break;
+	}
+		
 	char *ptr = buffer + sizeof(int);
 	while(i < SYNCLOG_INDEXNUM && indxdata[i] != 0) {
 		char per_buf[1024] = {0};
@@ -160,9 +170,22 @@ get_synclog_record(SyncConn *conn)
 		//读取logver
 		ret = readn(synclog->fd, &logver, sizeof(int), 0);
 		memcpy(per_buf, &logver, sizeof(int));
+		conninfo->logver = logver;
 		//读取logline
 		ret = readn(synclog->fd, &logline, sizeof(int), 0);
 		memcpy(per_buf + sizeof(int), &logline, sizeof(int));
+			
+		conninfo->logline = logline;
+
+		if (logver == g_runtime->synclog->version) {
+			conninfo->delay = g_runtime->synclog->index_pos - logline;
+		} else if (g_runtime->synclog->version - logver == 1) {	
+			conninfo->delay = (SYNCLOG_INDEXNUM - logline) + g_runtime->synclog->index_pos;
+		} else {
+			conninfo->delay = (SYNCLOG_INDEXNUM - logline) + 
+				SYNCLOG_INDEXNUM * (g_runtime->synclog->version - logver - 1) + g_runtime->synclog->index_pos;
+		}		
+			
 		//命令长度
 		ret = readn(synclog->fd, &cmdlen, sizeof(int), 0);
 		memcpy(per_buf + sizeof(int) + sizeof(int), &cmdlen, sizeof(int));
@@ -210,7 +233,13 @@ void
 read_synclog(int fd, short event, void *arg)
 {
 	SyncConn *conn = (SyncConn *)arg;
-
+	
+	if (event == EV_TIMEOUT) {
+		DINFO("time out event\n");
+	} else {
+		DINFO("write event\n");
+	}
+	//read and check bin.log
 	if (get_synclog_record(conn) < 0) {
 
 		if (event == EV_WRITE) {
@@ -229,11 +258,19 @@ read_synclog(int fd, short event, void *arg)
 			if (check_binlog_local(conn, synclog->version + 1, 0) < 0) {
 				MEMLINK_EXIT;
 			}
+		} else if (synclog->version == g_runtime->logver && conn->wpos == 0 && conn->wlen == 0) {
+			if (event == EV_WRITE) {
+				DINFO("remove write event\n");
+				event_del(&conn->sync_write_evt);
+			}
+			DINFO("add interval event\n");
+			evtimer_add(&conn->sync_interval_evt, &conn->interval);
+			return;
 		}
 	}
 	if (event == EV_TIMEOUT) {
-		DINFO("add write evnet");
-		event_add(&conn->sync_write_evt, &conn->timeout);
+		DINFO("add write evnet\n");
+		event_add(&conn->sync_write_evt, NULL);
 	}
 	return;
 }
@@ -280,7 +317,9 @@ sync_write(int fd, short event, void *arg)
 			read_dump(0, EV_WRITE, conn);
 		}
 	}
-	conn_write((Conn *)conn);
+	if (conn->wlen - conn->wpos > 0) {
+		conn_write((Conn *)conn);
+	}
 	return ;
 }
 //设置超时
@@ -299,8 +338,7 @@ set_rw_init(SyncConn *conn)
 	event_del(&conn->evt);
 	event_set(&conn->sync_write_evt, conn->sock, EV_WRITE | EV_PERSIST, sync_write, conn);
 	event_base_set(conn->base, &conn->sync_write_evt);
-	set_timeval(&conn->timeout, g_cf->timeout, 0);
-	event_add(&conn->sync_write_evt, &conn->timeout);
+	event_add(&conn->sync_write_evt, NULL);
 
 	event_set(&conn->sync_read_evt, conn->sock, EV_READ | EV_PERSIST, sync_read, conn);
 	event_base_set(conn->base, &conn->sync_read_evt);
@@ -444,6 +482,18 @@ sdata_ready(Conn *c, char *data, int datalen)
 	int ret;
 	unsigned char cmd;
 	SyncConn *conn = (SyncConn *)c;
+	SThread *st;
+	SyncConnInfo *conninfo = NULL;
+
+	st = (SThread *)conn->thread;
+	
+	int i;
+	for (i = 0; i <= g_cf->max_conn; i++) {
+		conninfo = &(st->sync_conn_info[i]);
+		if (conninfo->fd == conn->sock)
+			break;
+	}
+	
 	
 	memcpy(&cmd, data + sizeof(int), sizeof(char));
 	conn->cmd = cmd;
@@ -453,10 +503,18 @@ sdata_ready(Conn *c, char *data, int datalen)
 		//同步bin.log
 		case CMD_SYNC:
 			ret = cmd_sync(conn, data, datalen);
+            if (conninfo) {
+                conninfo->status = CMD_SYNC;
+                conninfo->cmd_count++;
+            }
 			break;
 		//同步dump.dat
 		case CMD_GETDUMP:
 			ret = cmd_get_dump(conn, data, datalen);
+            if (conninfo) {
+                conninfo->status = CMD_GETDUMP;
+                conninfo->cmd_count++;
+            }
 			break;
 
 		default:
@@ -471,6 +529,9 @@ sdata_ready(Conn *c, char *data, int datalen)
 void
 sync_conn_destroy(Conn *c)
 {
+	SyncConnInfo *sconninfo;
+	SThread *st;
+
 	DINFO("destroy sync connection\n");
 	SyncConn *conn = (SyncConn*) c;
 	event_del(&conn->sync_interval_evt);
@@ -485,6 +546,17 @@ sync_conn_destroy(Conn *c)
 		synclog_destroy(conn->synclog);
 		conn->synclog = NULL;
 	}
+	st = (SThread *)conn->thread;
+	sconninfo = st->sync_conn_info;
+	st->conns--;
+	int i;
+	for (i = 0; i < g_cf->max_conn; i++) {
+		if (conn->sock == sconninfo[i].fd) {
+			sconninfo[i].fd = 0;
+			break;
+		}
+	}
+
 	zz_free(conn);
 }
 
@@ -504,7 +576,24 @@ sthread_read(int fd, short event, void *arg)
 		conn->ready = sdata_ready;
 		conn->destroy = sync_conn_destroy;
 		conn->wrote = sync_conn_wrote;
+		
+		int i;
+		SyncConnInfo *sconninfo = st->sync_conn_info;
 
+		st->conns++;
+		
+		for (i = 0; i < g_cf->max_conn; i++) {
+			sconninfo = &(st->sync_conn_info[i]);
+			if (sconninfo->fd == 0) {
+				sconninfo->fd = conn->sock;
+				strcpy(sconninfo->client_ip, conn->client_ip);
+				sconninfo->port = conn->client_port;
+				memcpy(&sconninfo->start, &conn->ctime, sizeof(struct timeval));
+				break;
+			}
+		}
+		conn->thread = st;
+		
 		DINFO("new conn: %d\n", conn->sock);
 		int ret = change_event((Conn *)conn, EV_READ | EV_PERSIST, 0, 1);
 		if (ret < 0) {
@@ -530,6 +619,18 @@ SThread *
 sthread_create()
 {
 	SThread *st = (SThread *)zz_malloc(sizeof(SThread));
+	if (st == NULL) {
+		DERROR("memlink malloc sthread error.\n");
+		MEMLINK_EXIT;
+	}
+	memset(st, 0x0, sizeof(SThread));
+
+	st->sync_conn_info = (SyncConnInfo *)zz_malloc(sizeof(SyncConnInfo) * g_cf->max_conn);
+	if (st->sync_conn_info == NULL) {
+		DERROR("memlink malloc stread connect info error. \n");
+		MEMLINK_EXIT;
+	}
+	memset(st->sync_conn_info, 0x0, sizeof(SyncConnInfo) * g_cf->max_conn);
 
 	st->sock = tcp_socket_server(g_cf->sync_port);
 	if (st->sock == -1)
@@ -541,7 +642,7 @@ sthread_create()
 	event_base_set(st->base, &st->event);
 	event_add(&st->event, 0);
 
-	g_runtime->sthread = st;
+	//g_runtime->sthread = st;
 
 	pthread_t threadid;
 	pthread_attr_t attr;

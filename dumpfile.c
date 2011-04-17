@@ -82,16 +82,25 @@ dumpfile(HashTable *ht)
         node = bks[i];
         while (NULL != node) {
             DINFO("start dump key: %s\n", node->key);
-            ffwrite(&node->type, sizeof(char), 1, fp);
-            ffwrite(&node->sortfield, sizeof(char), 1, fp);
-            ffwrite(&node->valuetype, sizeof(char), 1, fp);
+			unsigned char wchar; 
+			wchar = node->type;
+            //ffwrite(&node->type, sizeof(char), 1, fp);
+			ffwrite(&wchar, sizeof(char), 1, fp);
+			wchar = node->sortfield;
+            //ffwrite(&node->sortfield, sizeof(char), 1, fp);
+			ffwrite(&wchar, sizeof(char), 1, fp);
+			wchar = node->valuetype;
+            //ffwrite(&node->valuetype, sizeof(char), 1, fp);
+			ffwrite(&wchar, sizeof(char), 1, fp);
             keylen = strlen(node->key);
             ffwrite(&keylen, sizeof(char), 1, fp);
 			//DINFO("dump keylen: %d\n", keylen);
             ffwrite(node->key, keylen, 1, fp);
             ffwrite(&node->valuesize, sizeof(char), 1, fp);
             ffwrite(&node->masksize, sizeof(char), 1, fp);
-            ffwrite(&node->masknum, sizeof(char), 1, fp);
+			wchar = node->masknum;
+            //ffwrite(&node->masknum, sizeof(char), 1, fp);
+			ffwrite(&wchar, sizeof(char), 1, fp);
 
 			if (node->masknum > 0) {
 				ffwrite(node->maskformat, sizeof(char) * node->masknum, 1, fp);
@@ -141,6 +150,7 @@ dumpfile(HashTable *ht)
 		struct tm result, *p;
 
 		time(&timep);
+		memcpy(&g_runtime->last_dump, &timep, sizeof(time_t));
 		localtime_r(&timep, &result);
 		p = &result;
 		snprintf(dumpfiletime, PATH_MAX, "%s/%s.%d%02d%02d.%02d%02d%02d", g_cf->datadir, DUMP_FILE_NAME, 
@@ -245,6 +255,7 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
     int           i;
     int           datalen;
     int           load_count = 0;
+    unsigned int  block_data_count_max = g_cf->block_data_count[g_cf->block_data_count_items - 1];
 
     while (ftell(fp) < filelen) {
         //DINFO("--- cur: %d, filelen: %d, %d ---\n", (int)ftell(fp), filelen, feof(fp));
@@ -285,21 +296,28 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
             return -2;
         }
         HashNode    *node = hashtable_find(ht, key);
-        DataBlock   *dbk = NULL;
+        DataBlock   *dbk  = NULL;
+        DataBlock   *newdbk;
         char        *itemdata = NULL;
 
         for (i = 0; i < itemnum; i++) {
             //DINFO("i: %d\n", i);
-            if (i % g_cf->block_data_count == 0) {
+            if (i % block_data_count_max == 0) {
                 DINFO("create new datablock ...\n");
-                DataBlock *newdbk;
+                /*
 				if (itemnum == 1) {
 					newdbk = mempool_get(g_runtime->mpool, sizeof(DataBlock) + datalen); 
 					newdbk->data_count = 1;
 				}else{
 					newdbk = mempool_get(g_runtime->mpool, sizeof(DataBlock) + g_cf->block_data_count *datalen); 
 					newdbk->data_count = g_cf->block_data_count;
-				}
+				}*/
+                
+                if (itemnum - i > block_data_count_max) {
+                    newdbk = mempool_get2(g_runtime->mpool, block_data_count_max, datalen); 
+                }else{
+                    newdbk = mempool_get2(g_runtime->mpool, itemnum-i, datalen); 
+                }
 
                 if (NULL == newdbk) {
                     DERROR("mempool_get NULL!\n");
@@ -313,7 +331,7 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
                 }
                 newdbk->prev = dbk;
                 dbk = newdbk;
-				node->all += newdbk->data_count;
+				//node->all += newdbk->data_count;
 
                 itemdata = dbk->data;
             }
@@ -335,7 +353,6 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
         }
         node->data_tail = dbk;
     }
-    
     fclose(fp);
     //DINFO("load count: %d\n", load_count);
 

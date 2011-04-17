@@ -138,7 +138,7 @@ memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
     ret = readn(fd, rbuf, RECV_PKG_SIZE_LEN, m->timeout);
     //DINFO("read head: %d\n", ret);
     if (ret != RECV_PKG_SIZE_LEN) {
-        DERROR("read head error! ret:%d, %d\n", ret, RECV_PKG_SIZE_LEN);
+        DERROR("read head error! ret:%d, %ld\n", ret, RECV_PKG_SIZE_LEN);
         close(fd);
 
         if (fd == m->readfd) {
@@ -432,13 +432,13 @@ memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr,
 int 
 memlink_cmd_create_list(MemLink *m, char *key, int valuelen, char *maskstr)
 {
-    return memlink_cmd_create(m, key, valuelen, maskstr, MEMLINK_LIST, 0);
+    return memlink_cmd_create(m, key, valuelen, maskstr, MEMLINK_LIST, MEMLINK_VALUE_OBJ);
 }
 
 int 
 memlink_cmd_create_queue(MemLink *m, char *key, int valuelen, char *maskstr)
 {
-    return memlink_cmd_create(m, key, valuelen, maskstr, MEMLINK_QUEUE, 0);
+    return memlink_cmd_create(m, key, valuelen, maskstr, MEMLINK_QUEUE, MEMLINK_VALUE_OBJ);
 }
 
 int 
@@ -806,7 +806,7 @@ memlink_cmd_range(MemLink *m, char *key, int kind,  char *maskstr,
     //DINFO("range mask len: %d\n", maskn);
 	if (maskn < 0 || maskn > HASHTABLE_MASK_MAX_ITEM)
 		return MEMLINK_ERR_PARAM;
-
+    
     plen = cmd_range_pack(data, key, kind, maskn, maskarray, frompos, len);
     //DINFO("pack range len: %d\n", plen);
 
@@ -817,17 +817,21 @@ memlink_cmd_range(MemLink *m, char *key, int kind,  char *maskstr,
 	if (retlen > 1024000) { // do not more than 1M
 		return MEMLINK_ERR_PACKAGE_SIZE;
 	}
-    char retdata[retlen];
+    //char retdata[retlen];
+    int y = retlen / 4096;
+    int n = retlen % 4096; 
+    char *retdata = (char *)zz_malloc(y * 4096 + (n > 0 ? 1: 0) * 4096);
 
     int ret = memlink_do_cmd(m, MEMLINK_READER, data, plen, retdata, retlen);
     //DINFO("memlink_do_cmd: %d\n", ret);
     if (ret <= 0) {
         DERROR("memlink_do_cmd error: %d\n", ret);
+        zz_free(retdata);
         return ret;
     }
 
     memlink_result_parse(retdata, result);
-
+    zz_free(retdata);
     return MEMLINK_OK;
 }
 
@@ -876,7 +880,7 @@ memlink_cmd_sortlist_range(MemLink *m, char *key, int kind,  char *maskstr,
     return MEMLINK_OK;
 }
 
-int
+/*int
 memlink_cmd_insert_mvalue(MemLink *m, char *key, MemLinkInsertVal *values, int num)
 {
 	if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
@@ -917,7 +921,7 @@ memlink_cmd_insert_mvalue(MemLink *m, char *key, MemLinkInsertVal *values, int n
 	if (ret < 0) 
 		return ret;
 	return MEMLINK_OK;
-}
+}*/
 
 int 
 memlink_cmd_lpush(MemLink *m, char *key, char *value, int valuelen, char *maskstr)
@@ -1267,7 +1271,7 @@ memlink_ikey_add_value(MemLinkInsertKey *keyobj, MemLinkInsertVal *valobj)
 }
 
 int
-memlink_cmd_insert_mkv(MemLink *m, MemLinkInsertMkv *mkv, int *kindex, int *vindex)
+memlink_cmd_insert_mkv(MemLink *m, MemLinkInsertMkv *mkv)
 {
 	char data[MAX_PACKAGE_LEN];
 	int len;
@@ -1276,8 +1280,8 @@ memlink_cmd_insert_mkv(MemLink *m, MemLinkInsertMkv *mkv, int *kindex, int *vind
 	if (m == NULL || mkv == NULL)
 		return MEMLINK_ERR_PARAM;
 	if (mkv->sum_size > MAX_PACKAGE_LEN) {
-		*kindex = 0;
-		*vindex = 0;
+		//*kindex = 0;
+		//*vindex = 0;
 		return MEMLINK_ERR_PACKAGE_SIZE;
 	}
 
@@ -1296,10 +1300,208 @@ memlink_cmd_insert_mkv(MemLink *m, MemLinkInsertMkv *mkv, int *kindex, int *vind
 	memcpy(&i, retdata + size, sizeof(int));
 	size += sizeof(int);
 	memcpy(&j, retdata + size, sizeof(int));
-	*kindex = i;
-	*vindex = j;
+	mkv->kindex = i;
+	mkv->vindex = j;
 
 	if (ret < 0)
 		return ret;
 	return MEMLINK_OK;
+}
+
+int memlink_cmd_read_conn_info(MemLink *m, MemLinkRcInfo *rcinfo)
+{
+	char data[1024];
+	int len;
+	short ret;
+	int psize;
+	int count = 0;
+
+	len = cmd_read_conn_info_pack(data);
+	int retlen = 1000 * sizeof(MemLinkRcItem);
+	char retdata[retlen];
+
+	rcinfo->conncount = 0;
+	rcinfo->root = NULL;
+	ret = memlink_do_cmd(m, MEMLINK_READER, data, len, retdata, retlen);
+	if (ret <= 0) {
+		DERROR("memlink_do cmd error: %d\n", ret);
+		return ret;
+	}
+	//获取包的大小
+	memcpy(&psize, retdata, sizeof(int));
+	memcpy(&ret, retdata + sizeof(int), sizeof(short));
+	if (ret != MEMLINK_OK)
+		return ret;
+	char *rdata = retdata + CMD_REPLY_HEAD_LEN;
+
+	while (count < psize - sizeof(short)) {
+		MemLinkRcItem *item = zz_malloc(sizeof(MemLinkRcItem));
+		memset(item, 0x0, sizeof(MemLinkRcItem));
+		memcpy(&item->fd, rdata + count, sizeof(int));
+		count += sizeof(int);
+		unsigned char clen;
+		memcpy(&clen, rdata + count, sizeof(char));
+		count += sizeof(char);
+		memcpy(item->client_ip, rdata + count, clen);
+		count += clen;
+		memcpy(&item->port, rdata + count, sizeof(int));
+		count += sizeof(int);
+		memcpy(&item->conn_time, rdata + count, sizeof(int));
+		count += sizeof(int);
+		memcpy(&item->cmd_count, rdata + count, sizeof(int));
+		count += sizeof(int);
+		item->next = rcinfo->root;
+		rcinfo->root = item;
+		rcinfo->conncount++;
+	}
+	return MEMLINK_OK;
+}
+
+int memlink_cmd_write_conn_info(MemLink *m, MemLinkWcInfo *wcinfo)
+{
+	char data[1024];
+	int len;
+	int psize;
+	int count = 0;
+	short ret;
+
+	len = cmd_write_conn_info_pack(data);
+	int retlen = 1000 * sizeof(MemLinkRcItem);
+	char retdata[retlen];
+
+	wcinfo->conncount = 0;
+	wcinfo->root = NULL;
+	ret = memlink_do_cmd(m, MEMLINK_READER, data, len, retdata, retlen);
+	if (ret <= 0) {
+		DERROR("memlink_do_cmd error: %d\n", ret);
+		return ret;
+	}
+	//获取包的大小
+	memcpy(&psize, retdata, sizeof(int));
+	memcpy(&ret, retdata + sizeof(int), sizeof(short));
+	if (ret != MEMLINK_OK)
+		return ret;
+	char *rdata = retdata + CMD_REPLY_HEAD_LEN;
+
+	while (count < psize - sizeof(short)) {
+		MemLinkWcItem *item = zz_malloc(sizeof(MemLinkWcItem));
+		memset(item, 0x0, sizeof(MemLinkWcItem));
+		memcpy(&item->fd, rdata + count, sizeof(int));
+		count += sizeof(int);
+		unsigned char clen;
+		memcpy(&clen, rdata + count, sizeof(char));
+		count += sizeof(char);
+		memcpy(item->client_ip, rdata + count, clen);
+		count += clen;
+		memcpy(&item->port, rdata + count, sizeof(int));
+		count += sizeof(int);
+		memcpy(&item->conn_time, rdata + count, sizeof(int));
+		count += sizeof(int);
+		memcpy(&item->cmd_count, rdata + count, sizeof(int));
+		count += sizeof(int);
+		item->next = wcinfo->root;
+		wcinfo->root = item;
+		wcinfo->conncount++;
+	}
+	return MEMLINK_OK;
+}
+
+int memlink_cmd_sync_conn_info(MemLink *m, MemLinkScInfo *scinfo)
+{
+	char data[1024];
+	int len;
+	int psize;
+	int count = 0;
+	short ret;
+
+	len = cmd_sync_conn_info_pack(data);
+	int retlen = 1000 * sizeof(MemLinkScItem);
+	char retdata[retlen];
+
+	scinfo->conncount = 0;
+	scinfo->root = NULL;
+	ret = memlink_do_cmd(m, MEMLINK_READER, data, len, retdata, retlen);
+	if (ret <= 0) {
+		DERROR("memlink_do_cmd error: %d\n", ret);
+		return ret;
+	}
+	memcpy(&psize, retdata, sizeof(int));
+	memcpy(&ret, retdata + sizeof(int), sizeof(short));
+	if (ret != MEMLINK_OK)
+		return ret;
+	char *sdata = retdata + CMD_REPLY_HEAD_LEN;
+
+	while (count < psize - sizeof(short)) {
+		MemLinkScItem *item = zz_malloc(sizeof(MemLinkScItem));
+		memset(item, 0x0, sizeof(MemLinkScItem));
+		memcpy(&item->fd, sdata + count, sizeof(int));
+		count += sizeof(int);
+		unsigned char clen;
+		memcpy(&clen, sdata + count, sizeof(char));
+		count += sizeof(char);
+		memcpy(item->client_ip, sdata + count, clen);
+		count += clen;
+		memcpy(&item->port , sdata + count, sizeof(int));
+		count += sizeof(int);
+		memcpy(&item->conn_time, sdata + count, sizeof(int));
+		count += sizeof(int);
+		memcpy(&item->cmd_count, sdata + count, sizeof(int));
+		count += sizeof(int);
+		memcpy(&item->logver, sdata + count, sizeof(int));
+		count += sizeof(int);
+		memcpy(&item->logline, sdata + count, sizeof(int));
+		count += sizeof(int);
+		memcpy(&item->delay, sdata + count, sizeof(int));
+		count += sizeof(int);
+		item->next = scinfo->root;
+		scinfo->root = item;
+		scinfo->conncount++;
+
+	}
+	return MEMLINK_OK;
+}
+
+int
+memlink_rcinfo_free(MemLinkRcInfo *info)
+{
+	MemLinkRcItem *tmp;
+	
+	if (info == NULL)
+		return -1;
+	while (info->root) {
+		tmp = info->root;
+		info->root = tmp->next;
+		zz_free(tmp);
+	}
+	return 1;
+}
+
+int
+memlink_wcinfo_free(MemLinkWcInfo *info)
+{
+	MemLinkWcItem *tmp;
+	
+	if (info == NULL)
+		return -1;
+	while (info->root) {
+		tmp = info->root;
+		info->root = tmp->next;
+		zz_free(tmp);
+	}
+	return 1;
+}
+
+int
+memlink_scinfo_free(MemLinkScInfo *info)
+{
+	MemLinkScItem *tmp;
+	
+	if (info == NULL)
+		return -1;
+	while(info->root ) {
+		tmp = info->root;
+		info->root = tmp->next;
+		zz_free(tmp);
+	}
+	return 1;
 }

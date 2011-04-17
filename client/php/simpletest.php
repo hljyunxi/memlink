@@ -11,7 +11,7 @@ foreach ($methods as $method) {
 $m = new MemLinkClient("127.0.0.1", 11001, 11002, 10);
 $key = "haha";
 
-$ret = $m->create($key, 12, "4:3:1");
+$ret = $m->create_list($key, 12, "4:3:1");
 if ($ret != MEMLINK_OK) {
 	echo "create error: $key\n";
 	exit(-1);
@@ -47,7 +47,7 @@ while ($item) {
 	$item = $item->next;
 }
 
-for ($i = 0; $i < 100; $i++) {
+for ($i = 0; $i < 10; $i++) {
 	$val = sprintf("%012d", $i);
 	$ret = $m->delete($key, $val, strlen($val));
 	if ($ret != MEMLINK_OK) {
@@ -59,6 +59,20 @@ for ($i = 0; $i < 100; $i++) {
 $count =$m->count($key, '');
 if ($count) {
     echo "count: $count->visible_count $count->tagdel_count \n";
+}
+
+/*
+$info = new MemLinkStatSys();
+$ret = $m->stat_sys2($info);
+if ($ret == MEMLINK_OK) {
+    echo "keys:$info->keys\nvalues:$info->values\n";
+}else{
+    echo "stat sys error! $ret\n";
+}*/
+
+$info = $m->stat_sys();
+if ($info != NULL) {
+    echo "keys:$info->keys\nvalues:$info->values\n";
 }
 
 $m->destroy();

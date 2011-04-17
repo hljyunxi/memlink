@@ -4,6 +4,7 @@
 #include "conn.h"
 #include <limits.h>
 #include "synclog.h"
+#include "info.h"
 
 #define NOT_SEND        0
 #define SEND_LOG        1
@@ -12,10 +13,12 @@
 
 typedef struct _sthread
 {
-	int sock;
+	int    sock;
 	struct event_base *base;
 	struct event event;
-
+	int    conn_sync;
+	unsigned short conns;
+	SyncConnInfo *sync_conn_info;
 }SThread;
 
 typedef struct __syncconn

@@ -1,18 +1,22 @@
-import glob
+import glob, sys
 
 #cflags   = ['-Wall', '-ggdb', '-fprofile-arcs', '-ftest-coverage']
 #lflags   = [ '-fprofile-arcs', '-ftest-coverage']
-defs     = ['DEBUG', "__USE_FILE_OFFSET64", "__USE_LARGEFILE64", "_LARGEFILE_SOURCE", "_LARGEFILE64_SOURCE", "_FILE_OFFSET_BITS=64"]
+defs     = ['DEBUG', "__USE_FILE_OFFSET64", "__USE_LARGEFILE64", "_LARGEFILE_SOURCE", "_LARGEFILE64_SOURCE", "_FILE_OFFSET_BITS=64", "DEBUGMEM"]
 cflags   = ['-Wall', '-ggdb']
-lflags   = ['-Wl,-R../client/c']
+if sys.platform.startswith('linux'):
+    lflags   = ['-Wl,-R../client/c']
+else:
+    lflags   = []
+
 #cflags   = ['-Wall', '-ggdb']
-includes = ['/usr/local/include', '../', '/Developer/usr/include', '../client/c']
-libpath  = ['/usr/local/lib', '/Developer/usr/lib', '../client/c']
-libs	 = ['event', 'm', 'memlink']
+includes = ['/usr/local/include', '../', '../client/c']
+libpath  = ['/usr/local/lib', '../client/c']
+libs	 = ['event', 'm']
 files	 = ['../hashtable.c', '../serial.c', '../logfile.c', '../datablock.c',
 	        '../mem.c', '../zzmalloc.c', '../myconfig.c', '../synclog.c', 
 	        '../wthread.c', '../dumpfile.c', '../utils.c', '../rthread.c',
-            '../network.c', '../conn.c', '../server.c', '../queue.c',
+            '../network.c', '../conn.c', '../server.c', '../queue.c', '../info.c',
             '../sslave.c', '../sthread.c', '../client/c/memlink_client.c']
 env = Environment(CCFLAGS=cflags, CPPDEFINES=defs, LINKFLAGS = lflags, CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
 

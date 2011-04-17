@@ -25,7 +25,7 @@ def insert(*args):
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
    
-    ret = m.create_list(key, 12, "1")
+    ret = m.create_list(key, 12, "32:32:2")
     if ret != MEMLINK_OK:
         print 'create haha error!', ret
         #return
@@ -36,7 +36,8 @@ def insert(*args):
         else:
             val2 = val
         print 'insert:', val2
-        ret = m.insert(key, val2, "1", 0)
+        mstr = '%d:%d:1' % (i, i)
+        ret = m.insert(key, val2, mstr, i)
         if ret != MEMLINK_OK:
             print 'insert error:', ret, i
             return
@@ -107,7 +108,7 @@ def range(*args):
     print recs.count
     items = recs.root
     while items:
-        print items.value
+        print items.value, repr(items.mask)
         items = items.next
 
     m.destroy()
@@ -267,6 +268,41 @@ def rpop(*args):
     while item:
         print item.value, item.mask
         item = item.next
+
+    m.destroy()
+
+def sortlistinsert(*args):
+    try:
+        start = int(args[0])
+        num   = int(args[1])
+    except:
+        start = 0
+        num   = 1000
+
+    try:
+        val = '%012d' % int(args[2])
+    except:
+        val = None
+
+    print 'insert:', start, num, val
+
+    m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
+   
+    ret = m.create_sortlist(key, 12, "1", MEMLINK_VALUE_STRING)
+    if ret != MEMLINK_OK:
+        print 'create haha error!', ret
+        #return
+
+    for i in xrange(start, start + num):
+        if not val:
+            val2 = '%012d' % i
+        else:
+            val2 = val
+        print 'insert:', val2
+        ret = m.sortlist_insert(key, val2, "1")
+        if ret != MEMLINK_OK:
+            print 'insert error:', ret, i
+            return
 
     m.destroy()
 

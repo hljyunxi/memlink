@@ -175,11 +175,15 @@ data_reply_direct(Conn *conn)
 int
 is_clean_cond(HashNode *node)
 {
-	DINFO("check clean cond, used:%d, all:%d, blocks:%d\n", node->used, node->all, node->all / g_cf->block_data_count);
+	DINFO("check clean cond, used:%d, all:%d, blocks:\n", node->used, node->all);
 	// not do clean, when blocks is small than 3
-	if (node->all / g_cf->block_data_count < g_cf->block_clean_start) {
+    //Fixme: must get block count in node
+	/*if (node->all / g_cf->block_data_count < g_cf->block_clean_start) {
 		return 0;
-	}
+	}*/
+    if (node->all == 0) {
+        return 0;
+    }
 
 	double rate = 1.0 - (double)node->used / node->all;
 	DINFO("check clean rate: %f\n", rate);
@@ -289,6 +293,18 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
     int				pos;
     int             vnum;
     int             num = 0;
+	int             i;
+	WThread         *wt;
+	RwConnInfo      *conninfo = NULL;
+	
+	if (conn) {	
+		wt = (WThread *)conn->thread;
+		for (i = 0; i <= g_cf->max_conn; i++) {
+			conninfo = &(wt->rw_conn_info[i]);
+			if (conninfo->fd == conn->sock)
+				break;
+		}
+	}
 
     //memcpy(&cmd, data + sizeof(short), sizeof(char));
 	memcpy(&cmd, data + sizeof(int), sizeof(char));
@@ -407,14 +423,13 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
 				DINFO("insert pos < 0, %d", pos);
                 goto wdata_apply_over;
 			}
-
             ret = hashtable_add_mask(g_runtime->ht, key, value, maskarray, masknum, pos);
             DINFO("hashtable_add_mask: %d\n", ret);
 
             //hashtable_print(g_runtime->ht, key);
             break;
         }
-        case CMD_INSERT_MVALUE: {
+        /*case CMD_INSERT_MVALUE: {
             MemLinkInsertVal    *values = NULL;
             int                 vnum;
 
@@ -453,7 +468,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
 
             zz_free(values);
             break;
-        }
+        }*/
         case CMD_MOVE:
             DINFO("<<< cmd MOVE >>>\n");
             ret = cmd_move_unpack(data, key, value, &valuelen, &pos);
@@ -540,6 +555,18 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
 			DINFO("unpack key: %s, masknum: %d, maskarray: %d,%d,%d\n", key, masknum, maskarray[0], maskarray[1],maskarray[2]);
 			ret = hashtable_del_by_mask(g_runtime->ht, key, maskarray, masknum);
 			DINFO("hashtable_del_by_mask ret: %d\n", ret);
+            if (conn && ret >= 0 && writelog) {
+                ret = data_reply(conn, ret, NULL, 0);
+            }
+            DINFO("data_reply return: %d\n", ret);
+            if (ret >= 0) {
+                if (conn) {
+                    ret = MEMLINK_REPLIED;
+                }else{
+                    ret = MEMLINK_OK;
+                }
+            }
+
 			break;
         case CMD_LPUSH:
             DINFO("<<< cmd LPUSH >>>\n");
@@ -719,6 +746,8 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
     // write binlog
     if (writelog && (ret >= 0 || ret == MEMLINK_REPLIED)) {
         int sret = synclog_write(g_runtime->synclog, data, datalen);
+		if (conn && conninfo)
+			conninfo->cmd_count++;
         if (sret < 0) {
             DERROR("synclog_write error: %d\n", sret);
             MEMLINK_EXIT;
@@ -789,6 +818,22 @@ wthread_read(int fd, short event, void *arg)
         conn->port  = g_cf->write_port;
 		conn->base  = wt->base;
 		conn->ready = wdata_ready;
+		//连接统计信息
+		int i;
+		RwConnInfo *conninfo = wt->rw_conn_info;
+
+		wt->conns++;
+		for (i = 0; i < g_cf->max_conn; i++) {
+			conninfo = &(wt->rw_conn_info[i]);
+			if (conninfo->fd == 0) {
+				conninfo->fd = conn->sock;
+				strcpy(conninfo->client_ip, conn->client_ip);
+				conninfo->port = conn->client_port;
+				memcpy(&conninfo->start, &conn->ctime, sizeof(struct timeval));
+				break;
+			}	
+		}
+		conn->thread = wt;
 
         DINFO("new conn: %d\n", conn->sock);
 		DINFO("change event to read.\n");
@@ -933,6 +978,14 @@ wthread_create()
         MEMLINK_EXIT;
     }
     memset(wt, 0, sizeof(WThread));
+	
+	//写连接统计信息	
+	wt->rw_conn_info = (RwConnInfo *)zz_malloc(sizeof(RwConnInfo) * g_cf->max_conn); 
+	if (wt->rw_conn_info == NULL) {
+		DERROR("wthread connect info malloc error.\n");
+		MEMLINK_EXIT;
+	}
+	memset(wt->rw_conn_info, 0x0, sizeof(RwConnInfo) * g_cf->max_conn);
 
     wt->sock = tcp_socket_server(g_cf->write_port); 
     if (wt->sock == -1) {
@@ -998,6 +1051,7 @@ wthread_loop(void *arg)
 void
 wthread_destroy(WThread *wt)
 {
+	zz_free(wt->rw_conn_info);
     zz_free(wt);
 }
 

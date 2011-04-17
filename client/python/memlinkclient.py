@@ -1,5 +1,5 @@
 #coding: utf-8
-import os, sys
+import os, sys, types
 from memlink import *
 
 class MemLinkClietException (Exception):
@@ -116,8 +116,50 @@ class MemLinkClient:
         if ret != MEMLINK_OK:
             result = None
         return ret, result
+    
+    def read_conn_info(self):
+        info = MemLinkRcInfo()
+        ret = memlink_cmd_read_conn_info(self.client, info)
+        if ret != MEMLINK_OK:
+            result = None
+        return ret, info
 
+    def write_conn_info(self):
+        info = MemLinkWcInfo()
+        ret = memlink_cmd_write_conn_info(self.client, info)
+        if ret != MEMLINK_OK:
+            result = None
+        return ret, info
 
+    def sync_conn_info(self):
+        info = MemLinkScInfo()
+        ret = memlink_cmd_sync_conn_info(self.client, info)
+        if ret != MEMLINK_OK:
+            result = None
+        return ret, info
+
+    def insert_mkv(self, imkv):
+        mkvobj = memlink_imkv_create()
+        if imkv == []:
+            return MEMLINK_ERR_PARAM, mkvobj
+        for tup in imkv:
+            if type(tup) != types.TupleType:
+                return MEMLINK_ERR_PARAM, mkvobj
+            if len(tup) != 4:
+                return MEMLINK_ERR_PARAM, mkvobj 
+            keyobj = memlink_ikey_create(tup[0], len(tup[0]))
+            valobj = memlink_ival_create(str(tup[1]), len(tup[1]), str(tup[2]), int(tup[3]))
+            ret = memlink_ikey_add_value(keyobj, valobj)
+            ret = memlink_mkv_add_key(mkvobj, keyobj)
+
+        ret = memlink_cmd_insert_mkv(self.client, mkvobj)
+        return ret, mkvobj
+
+def memlinkmkv_free(self):
+    memlink_mkv_destroy(self)
+
+MemLinkInsertMkv.close   = memlinkmkv_free
+MemLinkInsertMkv.__del__ = memlinkmkv_free
 
 
 def memlinkresult_free(self):
@@ -136,6 +178,55 @@ MemLinkResult.close   = memlinkresult_free
 MemLinkResult.__del__ = memlinkresult_free
 MemLinkResult.__str__ = memlinkresult_print
 
+def memlinkrcinfo_free(self):
+    memlink_rcinfo_free(self)
+
+def memlinkrcinfo_print(slef):
+    s = 'connect count: %d' % (self.conncount)
+    item = self.root
+    while item:
+        s += 'fd:%s client_ip: %s port: %s cmd_count: %s conn_time: %s\n' % \
+                (item.fd, item.client_ip, item.port, item.cmd_count, item.conn_time)
+        item = item.next
+    return s
+
+MemLinkRcInfo.close   = memlinkrcinfo_free
+MemLinkRcInfo.__del__ = memlinkrcinfo_free
+MemLinkRcInfo.__str__ = memlinkrcinfo_print
+
+def memlinkwcinfo_free(self):
+    memlink_wcinfo_free(self)
+
+def memlinkwcinfo_print(self):
+    s = 'connect count: %d' % (self.conncount)
+    item = self.root
+    while item:
+        s += 'fd: %s client_ip: %s port: %s cmd_count: %s conn_time: %s\n' % \
+                (item.fd, item.client_ip, item.port, item.cmd_count, item.conn_time)
+        item = item.next
+    return s
+
+MemLinkWcInfo.close   = memlinkwcinfo_free
+MemLinkWcInfo.__del__ = memlinkwcinfo_free
+MemLinkWcInfo.__str__ = memlinkwcinfo_print
+
+def memlinkscinfo_free(self):
+    memlink_scinfo_free(self)
+
+def memlinkscinfo_print(self):
+    s = 'connect count: %d' % (self.conncount)
+    item = self.root
+    while item:
+        s += 'fd: %s client_ip: %s port: %s cmd_count: %s conn_time: %s logver: %s logline: %s delay: %s\n' % \
+                (item.fd, item.client_ip, item.port, item.cmd_count, item.conn_time, item.logver, item.logline, item.delay)
+        item = item.next
+    return s
+
+MemLinkScInfo.close   = memlinkscinfo_free
+MemLinkScInfo.__del__ = memlinkscinfo_free
+MemLinkScInfo.__str__ = memlinkscinfo_print
+
+
 def memlinkstat_print(self):
     s = 'valuesize:%d\nmasksize:%d\nblocks:%d\ndata:%d\ndata_used:%d\nmem:%d\n' % \
         (self.valuesize, self.masksize, self.blocks, self.data, self.data_used, self.mem)
@@ -151,9 +242,4 @@ def memlinkstatsys_print(self):
     return s
 
 MemLinkStatSys.__str__ = memlinkstatsys_print
-
-
-
-
-
 

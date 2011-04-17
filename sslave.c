@@ -452,7 +452,8 @@ sslave_do_getdump(SSlave *ss)
     char recvbuf[1024];
 
 	// do getdump
-    DINFO("try getdump, dumpver:%d, dumpsize:%lld, filesize:%lld\n", dumpver, dumpsize, tmpsize);
+    //DINFO("try getdump, dumpver:%d, dumpsize:%lld, filesize:%lld\n", dumpver, dumpsize, tmpsize);
+    DNOTE("try getdump, dumpver:%d, dumpsize:%lld, filesize:%lld\n", dumpver, dumpsize, tmpsize);
     sndlen = cmd_getdump_pack(sndbuf, dumpver, tmpsize); 
     ret = sslave_do_cmd(ss, sndbuf, sndlen, recvbuf, 1024); 
     if (ret < 0) {
@@ -465,7 +466,7 @@ sslave_do_getdump(SSlave *ss)
     memcpy(&retcode, recvbuf + sizeof(int), sizeof(short));
     memcpy(&dumpver, recvbuf + CMD_REPLY_HEAD_LEN, sizeof(int));
     memcpy(&size, recvbuf + CMD_REPLY_HEAD_LEN + sizeof(int), sizeof(long long));
-    DINFO("recvlen:%d, retcode:%d, dumpver:%d, dump size: %lld\n", ret, retcode, dumpver, size);
+    DNOTE("retcode:%d, dumpver:%d, dump size: %lld\n", retcode, dumpver, size);
 
     char    dumpbuf[8192];
     int     buflen = 0;
@@ -614,6 +615,9 @@ sslave_conn_init(SSlave *ss)
 				return -1;
 				//MEMLINK_EXIT;
 			}
+		} else {
+			DERROR("The data on master may be change!\n");
+			MEMLINK_EXIT;
 		}
 	} 
 

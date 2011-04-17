@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include "conn.h"
+#include "info.h"
 
 typedef struct _wthread
 {
@@ -11,6 +12,9 @@ typedef struct _wthread
     struct event        event; // listen socket event
     struct event        dumpevt; // dump event
     volatile int        indump; // is dumping now
+	unsigned short      conns;
+	RwConnInfo          *rw_conn_info;
+	int                 conn_write;
 }WThread;
 
 WThread*    wthread_create();
