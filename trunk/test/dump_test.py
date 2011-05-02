@@ -9,8 +9,8 @@ from memlinkclient import *
 
 home = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-READ_PORT  = 11011
-WRITE_PORT = 11012
+READ_PORT  = 21011
+WRITE_PORT = 21012
 
 def test_result():
     global home
@@ -27,7 +27,7 @@ def test_result():
         print 'test_result stat error:', stat, ret
         return -3
 
-    ret, result = m.range(key, MEMLINK_VALUE_VISIBLE, "", 0, 1000)
+    ret, result = m.range(key, MEMLINK_VALUE_VISIBLE, 0, 1000)
     if not result or result.count != 250:
         print 'range error!', result, ret
         return -4
@@ -66,7 +66,7 @@ def test():
     for i in xrange(0, num):
         val = '%010d' % i
         maskstr = "8:1:1"
-        ret = m.insert(key, val, maskstr, 0)
+        ret = m.insert(key, val, 0, maskstr)
         if ret != MEMLINK_OK:
             print 'insert error!', key, val, maskstr, ret
             return -2
@@ -78,7 +78,7 @@ def test():
     for i in range(200, num):
         val = '%010d' % i
         maskstr = "8:1:1"
-        ret = m.insert(key, val, maskstr, i)
+        ret = m.insert(key, val, i, maskstr)
         if ret != MEMLINK_OK:
             print 'insert error!', key, val, maskstr, ret
             return -2
@@ -143,7 +143,6 @@ def test():
 
     #print 'value count:', vnum, 'stat count:', stat.data_used 
     m.destroy()
-
     cmd = "killall memlink"
     print cmd
     os.system(cmd)
@@ -157,7 +156,6 @@ def test():
     time.sleep(3)
     ret = test_result()
     x.kill()
-
     return ret
 
 if __name__ == '__main__':

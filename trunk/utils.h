@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <sys/time.h>
+#include <pthread.h>
 
 int		timeout_wait(int fd, int timeout, int writing);
 int		timeout_wait_read(int fd, int timeout);
@@ -28,6 +29,24 @@ int			compare_int ( const void *a , const void *b );
 
 size_t		ffwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
 size_t		ffread(void *ptr, size_t size, size_t nmemb, FILE *stream);
+
+int			change_group_user(char *user);
+int         check_thread_alive(pthread_t id);
+int         wait_thread_exit(pthread_t id);
+
+static inline void		
+atom_inc(unsigned int *v)
+{
+	asm volatile ("lock; incl %0"
+			: "+m" (*v));
+}
+
+static inline void		
+atom_dec(unsigned int *v)
+{
+	asm volatile ("lock; decl %0"
+			: "+m" (*v));
+}
 
 
 #endif

@@ -73,7 +73,7 @@ myconfig_create(char *filename)
         }
 		lineno ++;
         //DINFO("buffer: %s\n", buffer);
-        if (buffer[0] == '#') { // skip comment
+        if (buffer[0] == '#' || buffer[0] == '\r' || buffer[0] == '\n') { // skip comment
             continue;
         }
         char *sp = strchr(buffer, '=');
@@ -164,20 +164,53 @@ myconfig_create(char *filename)
         }else if (strcmp(buffer, "thread_num") == 0) {
             int tn = atoi(start);
             mcf->thread_num = tn > MEMLINK_MAX_THREADS ? MEMLINK_MAX_THREADS : tn;
+        }else if (strcmp(buffer, "write_binlog") == 0) {
+            if (strcmp(start, "yes") == 0) {
+                mcf->write_binlog = 1;
+            }else if (strcmp(start, "no") == 0){
+                mcf->write_binlog = 0;
+            }else{
+                DERROR("write_binlog must set to yes/no !\n");
+                MEMLINK_EXIT;
+            }
         }else if (strcmp(buffer, "max_conn") == 0) {
             mcf->max_conn = atoi(start);
+        }else if (strcmp(buffer, "max_read_conn") == 0) {
+            mcf->max_read_conn = atoi(start);
+        }else if (strcmp(buffer, "max_write_conn") == 0) {
+            mcf->max_write_conn = atoi(start);
+        }else if (strcmp(buffer, "max_sync_conn") == 0) {
+            mcf->max_sync_conn = atoi(start);
         }else if (strcmp(buffer, "max_core") == 0) {
             mcf->max_core = atoi(start);
         }else if (strcmp(buffer, "is_daemon") == 0) {
-            mcf->is_daemon = atoi(start);
+            if (strcmp(start, "yes") == 0) {
+                mcf->is_daemon = 1;
+            }else if (strcmp(start, "no") == 0){
+                mcf->is_daemon = 0;
+            }else{
+                DERROR("is_daemon must set to yes/no !\n");
+                MEMLINK_EXIT;
+            }
         }else if (strcmp(buffer, "role") == 0) {
-            mcf->role = atoi(start);
+            if (strcmp(start, "master") == 0) {
+                mcf->role = ROLE_MASTER;
+            }else if (strcmp(start, "backup") == 0) {
+                mcf->role = ROLE_BACKUP;
+            }else if (strcmp(start, "slave") == 0) {
+                mcf->role = ROLE_SLAVE;
+            }else{
+                DERROR("role must set to master/backup/slave!\n");
+                MEMLINK_EXIT;
+            }
         }else if (strcmp(buffer, "master_sync_host") == 0) {
             snprintf(mcf->master_sync_host, IP_ADDR_MAX_LEN, "%s", start);
 		}else if (strcmp(buffer, "master_sync_port") == 0) {
 			mcf->master_sync_port = atoi(start);
         }else if (strcmp(buffer, "sync_interval") == 0) {
             mcf->sync_interval = atoi(start);
+        }else if (strcmp(buffer, "user") == 0) {
+            snprintf(mcf->user, 128, "%s", start);
         }
     }
 
@@ -189,6 +222,118 @@ myconfig_create(char *filename)
     return mcf;
 }
 
+int
+myconfig_change()
+{
+    char *conffile = g_runtime->conffile;
+    char conffile_tmp[PATH_MAX];
+
+    DINFO("change config file...\n");
+
+    snprintf(conffile_tmp, PATH_MAX, "%s.tmp", conffile);
+
+    FILE *fp = fopen64(conffile_tmp, "wb");
+    char line[512] = {0};
+
+    snprintf(line, 512, "block_data_count = %d,%d,%d,%d\n", g_cf->block_data_count[0],
+        g_cf->block_data_count[1], g_cf->block_data_count[2], g_cf->block_data_count[3]);
+    ffwrite(line, strlen(line), 1, fp);
+
+    snprintf(line, 512, "block_data_reduce = %0.1f\n", g_cf->block_data_reduce);
+    ffwrite(line, strlen(line), 1, fp);
+
+    snprintf(line, 512, "dump_interval = %d\n", g_cf->dump_interval);
+    ffwrite(line, strlen(line), 1, fp);
+
+    snprintf(line, 512, "block_clean_cond = %0.1f\n", g_cf->block_clean_cond);
+    ffwrite(line, strlen(line), 1, fp);
+
+    snprintf(line, 512, "block_clean_start = %d\n", g_cf->block_clean_start);
+    ffwrite(line, strlen(line), 1, fp);
+
+    snprintf(line, 512, "block_clean_num = %d\n", g_cf->block_clean_num);
+    ffwrite(line, strlen(line), 1, fp);
+
+    snprintf(line, 512, "read_port = %d\n", g_cf->read_port);
+    ffwrite(line, strlen(line), 1, fp);
+
+    snprintf(line, 512, "write_port = %d\n", g_cf->write_port);
+    ffwrite(line, strlen(line), 1, fp);
+
+    snprintf(line, 512, "sync_port = %d\n", g_cf->sync_port);
+    ffwrite(line, strlen(line), 1, fp);
+
+    snprintf(line, 512, "data_dir = %s\n", g_cf->datadir);
+    ffwrite(line, strlen(line), 1, fp);
+
+    snprintf(line, 512, "log_level = %d\n", g_cf->log_level);
+    ffwrite(line, strlen(line), 1, fp);
+
+    snprintf(line, 512, "log_name = %s\n", g_cf->log_name);
+    ffwrite(line, strlen(line), 1, fp);
+
+    snprintf(line, 512, "timeout = %d\n", g_cf->timeout);
+    ffwrite(line, strlen(line), 1, fp);
+    
+    snprintf(line, 512, "thread_num = %d\n", g_cf->thread_num);
+    ffwrite(line, strlen(line), 1, fp);
+    
+    if (g_cf->write_binlog == 1)
+        snprintf(line, 512, "write_binlog = %s\n", "yes");
+    else
+        snprintf(line, 512, "write_binlog = %s\n", "no");
+    ffwrite(line, strlen(line), 1, fp);
+
+    snprintf(line, 512, "max_conn = %d\n", g_cf->max_conn);
+    ffwrite(line, strlen(line), 1, fp);
+
+    snprintf(line, 512, "max_read_conn = %d\n", g_cf->max_read_conn);
+    ffwrite(line, strlen(line), 1, fp);
+
+    snprintf(line, 512, "max_write_conn = %d\n", g_cf->max_write_conn);
+    ffwrite(line, strlen(line), 1, fp);
+
+    snprintf(line, 512, "max_core = %d\n", g_cf->max_core);
+    ffwrite(line, strlen(line), 1, fp);
+
+    if (g_cf->is_daemon == 1)
+        snprintf(line, 512, "is_daemon = %s\n", "yes");
+    else
+        snprintf(line, 512, "is_daemon = %s\n", "no");
+    ffwrite(line, strlen(line), 1, fp);
+    
+    snprintf(line, 512, "%s\n", "# master/backup/slave");
+    ffwrite(line, strlen(line), 1, fp);
+
+    if (g_cf->role == ROLE_MASTER)
+        snprintf(line, 512, "role = %s\n", "master");
+    else if (g_cf->role == ROLE_BACKUP)
+        snprintf(line, 512, "role = %s\n", "backup");
+    else if (g_cf->role == ROLE_SLAVE)
+        snprintf(line, 512, "role = %s\n", "slave");
+    ffwrite(line, strlen(line), 1, fp);
+
+    snprintf(line, 512, "master_sync_host = %s\n", g_cf->master_sync_host);
+    ffwrite(line, strlen(line), 1, fp);
+
+    snprintf(line, 512, "master_sync_port = %d\n", g_cf->master_sync_port);
+    ffwrite(line, strlen(line), 1, fp);
+
+    snprintf(line, 512, "sync_interval = %d\n", g_cf->sync_interval);
+    ffwrite(line, strlen(line), 1, fp);
+
+    snprintf(line, 512, "user = %s\n", g_cf->user);
+    ffwrite(line, strlen(line), 1, fp);
+    
+    int ret;
+    ret = rename(conffile_tmp, conffile);
+
+    if (ret < 0) {
+        DERROR("conffile rename error %s\n", strerror(errno));
+    }
+    fclose(fp);
+    return 1;
+}
 /**
  * Apply log records to hash table.
  *
@@ -236,8 +381,8 @@ load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
 				data = addr + indxdata[dumplogpos - 1];
 				have_key = 1;
 			}else{
-				g_runtime->slave->logver  = dumplogver;
-				g_runtime->slave->logline = dumplogpos;
+				//g_runtime->slave->logver  = dumplogver;
+				//g_runtime->slave->logline = dumplogpos;
 				munmap(addr, len);
 
 				close(ffd);
@@ -278,7 +423,7 @@ load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
 
 		data += SYNCPOS_LEN + blen + sizeof(int); 
 	}
-
+    /*
 	if (g_cf->role == ROLE_SLAVE) {
 		g_runtime->slave->logver  = logver;
 		g_runtime->slave->logline = logline;
@@ -288,6 +433,7 @@ load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
 			g_runtime->slave->binlog_index = count;
 		}
 	}
+    */
 
 	munmap(addr, len);
 
@@ -424,12 +570,13 @@ load_data_slave()
 				MEMLINK_EXIT;
 				return -1;
 			}
-			SSlave	*slave = g_runtime->slave;
-
-            dumpfile_logver(master_filename, &slave->logver, &slave->logline);
+			//SSlave	*slave = g_runtime->slave;
+            
+            unsigned int logver, logline;
+            dumpfile_logver(master_filename, &logver, &logline);
 			load_master_dump = 1;
 			//如果要加载dump.master.dat，清空本地binlog
-			synclog_clean(slave->logver, slave->logline);
+			synclog_clean(logver, logline);
 		}
 	}else{
 		// have dumpfile, load
@@ -487,29 +634,34 @@ load_data_slave()
 			snprintf(logname, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, logids[i]);
 			DINFO("load synclog: %s\n", logname);
 			ret = load_synclog(logname, g_runtime->dumplogver, g_runtime->dumplogpos);
+            /*
 			if (ret > 0 && g_cf->role == ROLE_SLAVE) {
 				g_runtime->slave->binlog_ver = logids[i];
 			}
+            */
             count += ret;
 		}
 		snprintf(logname, PATH_MAX, "%s/bin.log", g_cf->datadir);
 		DINFO("load synclog: %s\n", logname);
 		ret = load_synclog(logname, g_runtime->dumplogver, g_runtime->dumplogpos);
+        /*
 		if (ret > 0 && g_cf->role == ROLE_SLAVE) {
 			g_runtime->slave->binlog_ver = g_runtime->synclog->version;
 		}
+        */
         count += ret;
 	}
 
     if (havedump == 0) {
         dumpfile(g_runtime->ht);
     }
-
+    /*
     if (load_master_dump == 1) {
         g_runtime->slave->binlog_ver = g_runtime->logver;
     }
+    */
 
-	DINFO("======== slave binlog_ver:%d, binlog_index:%d, logver:%d, logline:%d, dump_logver:%d, dumpsize:%lld, dumpfile_size:%lld\n", g_runtime->slave->binlog_ver, g_runtime->slave->binlog_index, g_runtime->slave->logver, g_runtime->slave->logline, g_runtime->slave->dump_logver, g_runtime->slave->dumpsize, g_runtime->slave->dumpfile_size);
+	//DINFO("======== slave binlog_ver:%d, binlog_index:%d, logver:%d, logline:%d, dump_logver:%d, dumpsize:%lld, dumpfile_size:%lld\n", g_runtime->slave->binlog_ver, g_runtime->slave->binlog_index, g_runtime->slave->logver, g_runtime->slave->logline, g_runtime->slave->dump_logver, g_runtime->slave->dumpsize, g_runtime->slave->dumpfile_size);
 
     DNOTE("load binlog %u ok!\n", count);
 
@@ -559,6 +711,14 @@ runtime_create_common(char *pgname)
     }
     DINFO("mutex init ok!\n");
 
+    ret = pthread_mutex_init(&rt->mutex_mem, NULL);
+    if (ret != 0) {
+        DERROR("pthread_mutex_init error: %s\n", strerror(errno));
+        MEMLINK_EXIT;
+        return NULL;
+    }
+    DINFO("mutex_mem init ok!\n");
+
     rt->mpool = mempool_create();
     if (NULL == rt->mpool) {
         DERROR("mempool create error!\n");
@@ -596,7 +756,7 @@ runtime_create_common(char *pgname)
 }
 
 Runtime* 
-runtime_create_slave(char *pgname) 
+runtime_create_slave(char *pgname, char *conffile) 
 {
     Runtime *rt;
 
@@ -604,13 +764,22 @@ runtime_create_slave(char *pgname)
     if (NULL == rt) {
         return rt;
     }
-    
+    snprintf(rt->conffile, PATH_MAX, "%s", conffile); 
     rt->slave = sslave_create();
     if (NULL == rt->slave) {
         DERROR("sslave_create error!\n");
         MEMLINK_EXIT;
     }
     DINFO("sslave thread create ok!\n");
+    
+    rt->sthread = sthread_create();
+    if (NULL == rt->sthread) {
+     DERROR("sthread_create error!\n");
+     MEMLINK_EXIT;
+     return NULL;
+    }
+    DINFO("sync thread create ok!\n");
+
 
 	int ret = load_data_slave();
     if (ret < 0) {
@@ -635,7 +804,7 @@ runtime_create_slave(char *pgname)
 }
 
 Runtime*
-runtime_create_master(char *pgname)
+runtime_create_master(char *pgname, char *conffile)
 {
     Runtime* rt;// = runtime_init(pgname);
 
@@ -643,7 +812,7 @@ runtime_create_master(char *pgname)
     if (NULL == rt) {
         return rt;
     }
-
+    snprintf(rt->conffile, PATH_MAX, "%s", conffile);
 	int ret = load_data();
     if (ret < 0) {
         DERROR("load_data error: %d\n", ret);
@@ -684,6 +853,26 @@ runtime_destroy(Runtime *rt)
     pthread_mutex_destroy(&rt->mutex);
     zz_free(rt);
 }
+
+int	
+mem_used_inc(long long size)
+{
+    pthread_mutex_lock(&g_runtime->mutex_mem);
+    g_runtime->mem_used += size;
+    pthread_mutex_unlock(&g_runtime->mutex_mem);
+    return 0;
+}
+
+int	
+mem_used_dec(long long size)
+{
+    pthread_mutex_lock(&g_runtime->mutex_mem);
+    g_runtime->mem_used -= size;
+    pthread_mutex_unlock(&g_runtime->mutex_mem);
+    return 0;
+}
+
+
 
 /**
  * @}

@@ -2,7 +2,8 @@ import glob, sys
 
 #cflags   = ['-Wall', '-ggdb', '-fprofile-arcs', '-ftest-coverage']
 #lflags   = [ '-fprofile-arcs', '-ftest-coverage']
-defs     = ['DEBUG', "__USE_FILE_OFFSET64", "__USE_LARGEFILE64", "_LARGEFILE_SOURCE", "_LARGEFILE64_SOURCE", "_FILE_OFFSET_BITS=64", "DEBUGMEM"]
+#defs     = ['DEBUG', "__USE_FILE_OFFSET64", "__USE_LARGEFILE64", "_LARGEFILE_SOURCE", "_LARGEFILE64_SOURCE", "_FILE_OFFSET_BITS=64", "DEBUGMEM"]
+defs     = ['DEBUG', "__USE_FILE_OFFSET64", "__USE_LARGEFILE64", "_LARGEFILE_SOURCE", "_LARGEFILE64_SOURCE", "_FILE_OFFSET_BITS=64"]
 cflags   = ['-Wall', '-ggdb']
 if sys.platform.startswith('linux'):
     lflags   = ['-Wl,-R../client/c']

@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <string.h>
 #include "common.h"
+#include "myconfig.h"
 
 #define MEMLINK_READER  1
 #define MEMLINK_WRITER  2
@@ -109,6 +110,7 @@ void		memlink_close(MemLink *m);
 int         memlink_cmd_ping(MemLink *m);
 int         memlink_cmd_dump(MemLink *m);
 int			memlink_cmd_clean(MemLink *m, char *key);
+int         memlink_cmd_clean_all(MemLink *m);
 int			memlink_cmd_stat(MemLink *m, char *key, MemLinkStat *stat);
 int			memlink_cmd_stat_sys(MemLink *m, MemLinkStatSys *stat);
 int			memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr, 
@@ -166,6 +168,8 @@ int memlink_cmd_sync_conn_info(MemLink *m, MemLinkScInfo *scinfo);
 int memlink_rcinfo_free(MemLinkRcInfo *info);
 int memlink_wcinfo_free(MemLinkWcInfo *info);
 int memlink_scinfo_free(MemLinkScInfo *info);
+int memlink_cmd_get_config_info(MemLink *m, MyConfig *config);
+int memlink_cmd_set_config_info(MemLink *m, char *key, char *value);
 #endif
 
 

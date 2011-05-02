@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <event.h>
+#include <evutil.h>
 #include <sys/time.h>
 #include "myconfig.h"
 #include "logfile.h"

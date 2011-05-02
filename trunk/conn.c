@@ -55,7 +55,6 @@ conn_create(int svrfd, int connsize)
         DERROR("conn malloc error.\n");
         MEMLINK_EXIT;
     }
-    zz_check(conn);
 	
     memset(conn, 0, connsize); 
 	conn->rbuf = (char *)zz_malloc(CONN_MAX_READ_LEN);
@@ -66,7 +65,7 @@ conn_create(int svrfd, int connsize)
 	inet_ntop(AF_INET, &(clientaddr.sin_addr), conn->client_ip, slen);	
 	conn->client_port = ntohs((short)clientaddr.sin_port);
     gettimeofday(&conn->ctime, NULL);
-    g_runtime->conn_num++;
+    atom_inc(&g_runtime->conn_num);
     DINFO("accept newfd: %d, %s:%d\n", newfd, conn->client_ip, conn->client_port);
 	
     zz_check(conn);
@@ -80,9 +79,8 @@ conn_destroy(Conn *conn)
 	int i;
 	ThreadServer *ts;
 	WThread *wt;
-	//SThread *st;
-	RwConnInfo *conninfo = NULL;
-	//SyncConnInfo *sconninfo;
+	SThread *st;
+	ConnInfo *conninfo = NULL; //SyncConnInfo *sconninfo;
 
     zz_check(conn);
 
@@ -94,20 +92,28 @@ conn_destroy(Conn *conn)
 	}
 	event_del(&conn->evt);
 	
-    g_runtime->conn_num--;
-	
+    atom_dec(&g_runtime->conn_num);
+
+    int maxconn = 0;
 	if (conn->port == g_cf->read_port) {
 		ts = (ThreadServer *)conn->thread;
-		conninfo = ts->rw_conn_info;
+		conninfo = (ConnInfo *)ts->rw_conn_info;
 		ts->conns--;
+        maxconn = g_cf->max_read_conn;
 	} else if (conn->port == g_cf->write_port) {
 		wt = (WThread *)conn->thread;
-		conninfo = wt->rw_conn_info;
+		conninfo = (ConnInfo *)wt->rw_conn_info;
 		wt->conns--;
-	} 
+        maxconn = g_cf->max_write_conn;
+	} else if (conn->port == g_cf->sync_port) {
+        st = (SThread *)conn->thread;
+		conninfo = (ConnInfo *)st->sync_conn_info;
+		st->conns--;
+        maxconn = g_cf->max_sync_conn;
+    }
 
-	if (conninfo && (conn->port == g_cf->read_port || conn->port == g_cf->write_port)) {
-		for (i = 0; i < g_cf->max_conn; i++) {
+	if (conninfo) {
+		for (i = 0; i < maxconn; i++) {
 			if (conn->sock == conninfo[i].fd) {
 				conninfo[i].fd = 0;
 				break;
@@ -220,6 +226,33 @@ conn_write(Conn *conn)
         break;
     } 
 }
+
+int
+conn_check_max(Conn *conn)
+{
+    if (conn->port == g_cf->read_port) {
+        int conum = 0;
+        int i;
+        for (i = 0; i < g_cf->thread_num; i++) {
+            conum += g_runtime->server->threads[i].conns;
+        }
+
+        if (conum >= g_cf->max_read_conn) {
+            return MEMLINK_ERR_CONN_TOO_MANY;
+        }
+    }else if (conn->port == g_cf->write_port) {
+        if (g_runtime->wthread->conns >= g_cf->max_write_conn) {
+            return MEMLINK_ERR_CONN_TOO_MANY;
+        }
+    }else if (conn->port == g_cf->sync_port) {
+        if (g_runtime->sthread->conns >= g_cf->max_sync_conn) {
+            return MEMLINK_ERR_CONN_TOO_MANY;
+        }
+    }
+
+    return MEMLINK_OK;
+}
+
 
 /**
  * @}

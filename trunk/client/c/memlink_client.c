@@ -16,6 +16,7 @@
 #include "logfile.h"
 #include "zzmalloc.h"
 #include "utils.h"
+#include "serial.h"
 
 #define RECV_PKG_SIZE_LEN	sizeof(int)
 
@@ -264,7 +265,7 @@ memlink_do_cmd(MemLink *m, int fdtype, char *data, int len, char *retdata, int r
 #endif*/
 
         memcpy(&retcode, retdata + RECV_PKG_SIZE_LEN, sizeof(short));
-        //DINFO("retcode: %d\n", retcode);
+        DINFO("retcode: %d\n", retcode);
 		
 		if (retcode != 0) {
 			return retcode;
@@ -334,6 +335,24 @@ memlink_cmd_clean(MemLink *m, char *key)
 	if (ret < 0) 
 		return ret;
 	return MEMLINK_OK;
+}
+
+int
+memlink_cmd_clean_all(MemLink *m)
+{
+    if (m == NULL) {
+        return MEMLINK_ERR_PARAM;
+    }
+    char data[1024] = {0};
+    int len;
+
+    len = cmd_clean_all_pack(data);
+
+    char retdata[1024] = {0};
+    int ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
+    if (ret < 0)
+        return ret;
+    return MEMLINK_OK;
 }
 
 int 
@@ -461,11 +480,11 @@ memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen)
     len = cmd_del_pack(data, key, value, valuelen);
     //DINFO("pack del len: %d\n", len);
     
-    unsigned short pkglen;
+    /*unsigned short pkglen;
     unsigned char  cmd;
 
     memcpy(&pkglen, data, sizeof(short));
-    memcpy(&cmd, data + sizeof(short), sizeof(char));
+    memcpy(&cmd, data + sizeof(short), sizeof(char));*/
 
     //DINFO("pkglen: %d, cmd: %d\n", pkglen, cmd);
     char retdata[1024] = {0};
@@ -488,20 +507,18 @@ memlink_cmd_sortlist_del(MemLink *m, char *key, char *valmin, unsigned char vmin
     len = cmd_sortlist_del_pack(data, key, valmin, vminlen, valmax, vmaxlen);
     //DINFO("pack sortlist_del len: %d\n", len);
     
-    unsigned short pkglen;
+    /*unsigned short pkglen;
     unsigned char  cmd;
 
     memcpy(&pkglen, data, sizeof(short));
     memcpy(&cmd, data + sizeof(short), sizeof(char));
-
+    */
     //DINFO("pkglen: %d, cmd: %d\n", pkglen, cmd);
     char retdata[1024] = {0};
     int ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
-    return ret;
-    /*
-	if (ret < 0) 
-		return ret;
-	return MEMLINK_OK;*/
+    if (ret < 0)
+        return ret;
+    return MEMLINK_OK;
 }
 
 
@@ -1505,3 +1522,67 @@ memlink_scinfo_free(MemLinkScInfo *info)
 	}
 	return 1;
 }
+
+int
+memlink_cmd_get_config_info(MemLink *m, MyConfig *config)
+{
+    char data[1024];
+    int len;
+    int psize;
+    int count = 0;
+    short ret;
+
+    len = cmd_config_info_pack(data);
+    int n = sizeof(MyConfig) / 4096;
+    int y = sizeof(MyConfig) % 4096;
+
+    int retlen = n * 4096 + (y > 1 ? 1: 0) * 4096;
+    char retdata[retlen];
+    
+    ret = memlink_do_cmd(m, MEMLINK_READER, data, len, retdata, retlen);
+    if (ret < 0) {
+        DERROR("memlink_do_cmd error: %d\n", ret);
+        return ret;
+    }
+    memcpy(&psize, retdata, sizeof(int));
+    memcpy(&ret, retdata + sizeof(int), sizeof(short));
+    if (ret != MEMLINK_OK)
+        return ret;
+
+    char *rdata = retdata + CMD_REPLY_HEAD_LEN;
+    count = unpack_config_struct(rdata, config);
+    if (count + sizeof(short) != psize) {
+        return MEMLINK_ERR_PACKAGE_SIZE;
+    }
+    return MEMLINK_OK;
+}
+
+int
+memlink_cmd_set_config_info(MemLink *m, char *key, char *value)
+{
+    char data [1024];
+    int  len;
+    short ret;
+
+    if (key == NULL || value == NULL) {
+        return MEMLINK_ERR_PARAM;
+    }
+    if (strcmp(key, "block_data_reduce") == 0 || strcmp(key, "block_clean_cond") == 0 ||
+        strcmp(key, "block_clean_start") == 0 || strcmp(key, "sync_interval") == 0 ||
+        strcmp(key, "block_clean_num") == 0 || strcmp(key, "timeout") == 0 || 
+        strcmp(key, "log_level") == 0 || strcmp(key, "master_sync_host") == 0 || 
+        strcmp(key, "master_sync_port") == 0 || strcmp(key, "role") == 0){
+        len = cmd_set_config_dynamic_pack(data, key, value);
+    } else {
+        return MEMLINK_ERR_PARAM;
+    }
+    char retdata[1024] = {0};
+    
+    ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
+    
+    if (ret < 0)
+        return ret;
+
+    return MEMLINK_OK;
+}
+

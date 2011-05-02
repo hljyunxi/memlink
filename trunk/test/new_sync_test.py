@@ -27,7 +27,7 @@ def test_result():
         print 'stat error:', stat, ret
         return -3
 
-    ret, result = m.range(key, "", 0, 1000)
+    ret, result = m.range(key, MEMLINK_VALUE_ALL, 0, 1000)
     if not result or result.count != 250:
         print 'range error!', result, ret
         return -4

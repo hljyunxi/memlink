@@ -7,11 +7,11 @@ import time
 import subprocess
 from memlinkclient import *
 
-MASTER_READ_PORT  = 11011
-MASTER_WRITE_PORT = 11012
+MASTER_READ_PORT  = 21011
+MASTER_WRITE_PORT = 21012
 
-SLAVE_READ_PORT  = 11021
-SLAVE_WRITE_PORT = 11022
+SLAVE_READ_PORT  = 21021
+SLAVE_WRITE_PORT = 21022
 
 memlink_master_start = ''
 memlink_slave_start  = ''
@@ -20,7 +20,7 @@ def stat_check(client2master, client2slave):
     ret1, stat1 = client2master.stat_sys()
     ret2, stat2 = client2slave.stat_sys()
     if stat1 and stat2:
-        if stat1.keys != stat2.keys or stat1.values != stat2.values or stat1.data_used != stat2.data_used:
+        if stat1.keys != stat2.keys or stat1.values != stat2.values :
             print 'stat error!'
             print 'ret1: %d, ret2: %d' % (ret1, ret2)
             print 'master stat', stat1
@@ -36,11 +36,11 @@ def stat_check(client2master, client2slave):
 def result_check(client2master, client2slave, key):
     ret, st1 = client2master.stat(key)
     num1 = st1.data_used
-    ret1, rs1 = client2master.range(key, MEMLINK_VALUE_VISIBLE, '', 0, num1)
+    ret1, rs1 = client2master.range(key, MEMLINK_VALUE_VISIBLE, 0, num1)
 
     ret, st2 = client2master.stat(key)
     num2 = st2.data_used
-    ret2, rs2 = client2master.range(key, MEMLINK_VALUE_VISIBLE, '', 0, num2)
+    ret2, rs2 = client2master.range(key, MEMLINK_VALUE_VISIBLE, 0, num2)
 
     if rs1 and rs2:
         pass

@@ -68,6 +68,10 @@
 #define MEMLINK_ERR_PACKAGE_SIZE	-38
 // 连接已断开
 #define MEMLINK_ERR_CONN_LOST		-39
+// value在list的所有node中都不存在
+#define MEMLINK_ERR_NOVAL_ALL		-40
+// 连接太多
+#define MEMLINK_ERR_CONN_TOO_MANY	-41
 // 其他错误
 #define MEMLINK_ERR                 -1
 // 操作失败
@@ -88,7 +92,8 @@
 #define MEMLINK_REPLIED             -10000
 
 #define ROLE_MASTER		1
-#define ROLE_SLAVE		0
+#define ROLE_BACKUP		2
+#define ROLE_SLAVE		3
 
 // 命令执行返回信息头部长度
 // datalen(4B) + retcode(2B)
@@ -155,7 +160,7 @@
 #define MEMLINK_VALUE_ULONG         4
 #define MEMLINK_VALUE_UINT8         4
 #define MEMLINK_VALUE_FLOAT         5 
-#define MEMLINK_VALUE_FLOAT4         5 
+#define MEMLINK_VALUE_FLOAT4        5 
 #define MEMLINK_VALUE_DOUBLE        6 
 #define MEMLINK_VALUE_FLOAT8        6 
 #define MEMLINK_VALUE_STRING        7 
@@ -170,9 +175,9 @@
 #define MEMLINK_NO_LOG      0
 
 // 从前往后查找
-#define MEMLINK_FIND_NEXT   1
+#define MEMLINK_FIND_ASC	1
 // 从后往前查找
-#define MEMLINK_FIND_PREV   2
+#define MEMLINK_FIND_DESC   2
 
 #define MEMLINK_CMP_RANGE   1
 #define MEMLINK_CMP_EQUAL   2
