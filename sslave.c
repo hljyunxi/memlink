@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <signal.h>
 
 #include "logfile.h"
 #include "zzmalloc.h"
@@ -68,15 +69,6 @@ sslave_recv_package_log(SSlave *ss)
 			ss->sock = -1;
 			return -1;
 		}
-		/*
-		memcpy(&package_len, recvbuf, sizeof(int));
-		if (ret < package_len) {
-			DERROR("read sync command set too short: %d, close\n", ret);
-			close(ss->sock);
-			ss->sock = -1;
-			return -1;
-		}
-		*/
 		DINFO("package_len: %d\n", package_len);
 		int count = 0;//统计读出命令的字节数
 		ptr = recvbuf;
@@ -86,25 +78,13 @@ sslave_recv_package_log(SSlave *ss)
 			memcpy(&rlen, ptr + SYNCPOS_LEN, sizeof(int));
 			DINFO("logver: %d, logline: %d\n, rlen: %d", logver, logline, rlen);
 			
-			DINFO("ss->logver: %d, ss->logline: %d, index_pos: %d\n", ss->logver, ss->logline, g_runtime->synclog->index_pos);			
+			DINFO("ss->logver: %d, ss->logline: %d\n", g_runtime->synclog->version, g_runtime->synclog->index_pos);			
 			//只需校验第一次接收到的命令
 			if (first_check == 0) {
-				if (logver == ss->logver && logline == ss->logline && g_runtime->synclog->index_pos != 0) {
+				if (logver == g_runtime->synclog->version && logline == g_runtime->synclog->index_pos && g_runtime->synclog->index_pos != 0) {
 					//int pos = g_runtime->synclog->index_pos;
 					int *indxdata = (int *)(g_runtime->synclog->index + SYNCLOG_HEAD_LEN);
 					DINFO("indxdata[logline]=%d\n", indxdata[logline]);		
-					/*
-					if (g_runtime->synclog->index_pos == SYNCLOG_INDEXNUM) {
-						first_check = 1;
-						count += SYNCPOS_LEN + sizeof(int) + rlen; 
-						continue;
-					}
-					if (indxdata[pos] == 0 && indxdata[pos - 1] != 0) {
-						first_check = 1;
-						count += SYNCPOS_LEN + sizeof(int) + rlen;
-						continue;
-					}
-					*/
 					if (indxdata[logline] != 0) {
 						first_check = 1;
 						count += SYNCPOS_LEN + sizeof(int) + rlen;
@@ -128,9 +108,6 @@ sslave_recv_package_log(SSlave *ss)
 			}
 			pthread_mutex_unlock(&g_runtime->mutex);
 
-			ss->logver = logver;
-			ss->logline = logline;
-			
 			ptr += SYNCPOS_LEN + sizeof(int) + rlen;
 			count += SYNCPOS_LEN + sizeof(int) + rlen;
 		}
@@ -174,7 +151,7 @@ sslave_recv_log(SSlave *ss)
         memcpy(&logline, recvbuf + sizeof(int), sizeof(int));
         DINFO("logver:%d, logline:%d\n", logver, logline);
         // after getdump, must not skip first one
-        if (logver == ss->logver && logline == ss->logline && g_runtime->synclog->index_pos != 0) {
+        if (logver == g_runtime->synclog->version && logline == g_runtime->synclog->index_pos && g_runtime->synclog->index_pos != 0) {
             //skip first one
             //continue;
             //int pos = g_runtime->synclog->index_pos;
@@ -203,8 +180,6 @@ sslave_recv_log(SSlave *ss)
         DNOTE("cmd:%d %d %u us\n", cmd, ret, timediff(&start, &end));
         pthread_mutex_unlock(&g_runtime->mutex);
 
-        ss->logver  = logver;
-        ss->logline = logline;
     }
 
     return 0;
@@ -217,19 +192,16 @@ sslave_recv_log(SSlave *ss)
 int
 sslave_load_master_dump_info(SSlave *ss, char *dumpfile, long long *filesize, long long *dumpsize, unsigned int *dumpver, unsigned int *logver)
 {
-	//char dumpfile[PATH_MAX];	
 	int  ret;
 	long long fsize;
 	long long dsize;
 	unsigned int mylogver;
-	//snprintf(dumpfile, PATH_MAX, "%s/dump.master.dat", g_cf->datadir);
 	
 	if (!isfile(dumpfile)) {
 		return -1;
 	}
 
 	FILE	*dumpf;	
-	//dumpf = fopen(dumpfile, "r");
 	dumpf = (FILE*)fopen64(dumpfile, "r");
 	if (dumpf == NULL) {
 		DERROR("open file %s error! %s\n", dumpfile, strerror(errno));
@@ -536,84 +508,51 @@ sslave_conn_init(SSlave *ss)
     char sndbuf[1024];
     int  sndlen;
     char recvbuf[1024];
-    //int  recvlen;
     int  ret;
-    //unsigned int  local_logver_start;
-    //unsigned int  local_logpos_start;
     unsigned int  dumpver;
-    //long long     dumpsize;
 	char    mdumpfile[PATH_MAX];
-	//char    mdumpfile_tmp[PATH_MAX];
 
     snprintf(mdumpfile, PATH_MAX, "%s/dump.master.dat", g_cf->datadir);
-    //snprintf(mdumpfile_tmp, PATH_MAX, "%s/dump.master.dat.tmp", g_cf->datadir);
 
     DINFO("slave init ...\n");
-    DINFO("ss->dumpsize:%lld, ss->dumpfile_size:%lld, ss->dump_logver:%d\n", ss->dumpsize, ss->dumpfile_size, ss->dump_logver);
 
-	//if (ss->dump_logver == 0) {
-	//	sslave_load_master_dump_info(ss, mdumpfile, &ss->dumpfile_size, &ss->dumpsize, &ss->dump_logver);
-	//}
-
-
-	//local_logver_start = ss->binlog_ver;
-	//local_logpos_start = ss->binlog_index;
-
-	// send sync command 
-	int is_getdump = 0;
 	while (1) {
-		//logver  = ss->logver;
-		//logline = ss->logline;
-		DINFO("binlog ver:%d, binlog index:%d\n", ss->binlog_ver, ss->binlog_index);
-		DINFO("dump logver:%d, dumpsize:%lld, dumpfilesize:%lld\n", 
-			ss->dump_logver, ss->dumpsize, ss->dumpfile_size);
-		DINFO("sync pack logver: %u, logline: %u\n", ss->logver, ss->logline);
+        DINFO("sync pack logver: %u, logline: %u\n", g_runtime->synclog->version, g_runtime->synclog->index_pos);
 
-		sndlen = cmd_sync_pack(sndbuf, ss->logver, ss->logline); 
+        sndlen = cmd_sync_pack(sndbuf, g_runtime->synclog->version, g_runtime->synclog->index_pos);
 		ret = sslave_do_cmd(ss, sndbuf, sndlen, recvbuf, 1024);
 		if (ret < 0) {
 			DINFO("cmd sync error: %d\n", ret);
 			return -1;
 		}
-		//DINFO("sync cmd return len:%d\n", ret);
 		char syncret; 
 		int  i = sizeof(int);
 
 		syncret = recvbuf[i];
 		DINFO("sync return code:%d\n", syncret);
 		if (syncret == CMD_SYNC_OK) { // ok, recv synclog
-			DINFO("sync ok, logver:%d, logline:%d\n", ss->binlog_ver, ss->binlog_index);
-			//if ((ss->binlog_ver < local_logver_start || ss->binlog_index < local_logpos_start) && is_getdump != 1) {
-			//synclog_resize(ss->binlog_ver, ss->binlog_index);
-			//}
 			DINFO("sync ok! try recv push message.\n");
 			return 0;
 		}
-		if (syncret == CMD_SYNC_FAILED && (ss->logver == 0 && ss->logline == 0)) {
+		if (syncret == CMD_SYNC_FAILED && (g_runtime->synclog->version == 1 && g_runtime->synclog->index_pos == 0)) {
 			if (sslave_do_getdump(ss) == 0) {
 				DINFO("load dump ...\n");
 				hashtable_clear_all(g_runtime->ht);
 
 				dumpfile_load(g_runtime->ht, mdumpfile, 1);
 				g_runtime->synclog->index_pos = g_runtime->dumplogpos;
-
-				sslave_load_master_dump_info(ss, mdumpfile, NULL, NULL, &dumpver, &ss->logver);
-				//add by lanwenhong
-				g_runtime->synclog->version = ss->logver;
-				g_runtime->logver = ss->logver;
+                
+                unsigned int logver;
+				sslave_load_master_dump_info(ss, mdumpfile, NULL, NULL, &dumpver, &logver);
+				synclog_clean(logver, g_runtime->dumplogpos);
 
 				dumpfile(g_runtime->ht);
-				DINFO("ss->logver: %d, dumplogpos: %d\n", ss->logver, g_runtime->dumplogpos);
-				memcpy((g_runtime->synclog->index + sizeof(short)), &(ss->logver), sizeof(int));
+				DINFO("logver: %d, dumplogpos: %d\n", logver, g_runtime->dumplogpos);
+				memcpy((g_runtime->synclog->index + sizeof(short)), &logver, sizeof(int));
 
-				//ss->logline = 0;
-				ss->logline = g_runtime->dumplogpos;
-				is_getdump = 1;
-				synclog_clean(ss->logver, g_runtime->dumplogpos);
 			}else{
 				DERROR("The slave data may be error!\n");
 				return -1;
-				//MEMLINK_EXIT;
 			}
 		} else {
 			DERROR("The data on master may be change!\n");
@@ -624,6 +563,18 @@ sslave_conn_init(SSlave *ss)
 	return 0;
 }
 
+void sig_slaver_handler()
+{
+    //DINFO("slaver pid: %d\n", (int)pthread_self());
+    DINFO("============slave thread will exit\n");
+    if (g_runtime->slave->sock) {
+        close(g_runtime->slave->sock);
+        g_runtime->slave->sock = -1;
+    }
+    pthread_exit(NULL);
+    return;
+
+}
 /**
  * slave sync thread
  * 1.find local sync logver/logline 
@@ -635,6 +586,13 @@ sslave_run(void *args)
 {
 	SSlave	*ss = (SSlave*)args;
 	int		ret;
+    struct  sigaction sigact;
+
+    sigemptyset(&sigact.sa_mask);
+    sigact.sa_flags = 0;
+
+    sigact.sa_handler = sig_slaver_handler;
+    sigaction(SIGUSR1, &sigact, NULL);
 
     // do not start immediately, wait for some initialize
 	while (ss->isrunning == 0) {
@@ -674,19 +632,12 @@ sslave_run(void *args)
 	return NULL;
 }
 
-SSlave*
-sslave_create() 
+void
+sslave_thread(SSlave *slave)
 {
-    SSlave *ss;
+    memset(slave, 0, sizeof(SSlave));
 
-    ss = (SSlave*)zz_malloc(sizeof(SSlave));
-    if (ss == NULL) {
-        DERROR("sslave malloc error.\n");
-        MEMLINK_EXIT;
-    }
-    memset(ss, 0, sizeof(SSlave));
-
-	ss->timeout = g_cf->timeout;
+    slave->timeout = g_cf->timeout;
 
     pthread_t threadid;
     pthread_attr_t attr;
@@ -698,12 +649,12 @@ sslave_create()
         MEMLINK_EXIT;
     }
 
-    ret = pthread_create(&threadid, &attr, sslave_run, ss);
+    ret = pthread_create(&threadid, &attr, sslave_run, slave);
     if (ret != 0) {
         DERROR("pthread_create error: %s\n", strerror(errno));
         MEMLINK_EXIT;
     }
-    
+    slave->threadid = threadid;
     ret = pthread_detach(threadid);
     if (ret != 0) {
         DERROR("pthread_detach error; %s\n", strerror(errno));
@@ -711,7 +662,19 @@ sslave_create()
     }
 
     DINFO("create sync slave thread ok!\n");
+}
 
+SSlave*
+sslave_create() 
+{
+    SSlave *ss;
+
+    ss = (SSlave*)zz_malloc(sizeof(SSlave));
+    if (ss == NULL) {
+        DERROR("sslave malloc error.\n");
+        MEMLINK_EXIT;
+    }
+    sslave_thread(ss);
     return ss;
 }
 
@@ -729,8 +692,6 @@ sslave_close(SSlave *ss)
         ss->sock = -1;
     }
     
-    ss->logver  = 0;
-    ss->logline = 0;
 }
 
 void 

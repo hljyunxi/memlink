@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "common.h"
 #include "info.h"
+#include "myconfig.h"
 
 #define CMD_DUMP		    1
 #define CMD_CLEAN		    2
@@ -39,6 +40,11 @@
 #define CMD_READ_CONN_INFO  27
 #define CMD_WRITE_CONN_INFO 28
 #define CMD_SYNC_CONN_INFO  29
+#define CMD_CONFIG_INFO     30
+
+#define CMD_SET_CONFIG_DYNAMIC      31
+
+#define CMD_CLEAN_ALL       32
 
 #define CMD_SYNC            100
 #define CMD_GETDUMP		    101
@@ -161,5 +167,14 @@ int cmd_write_conn_info_pack(char *data);
 int cmd_write_conn_info_unpack(char *data);
 int cmd_sync_conn_info_pack(char *data);
 int cmd_sync_conn_info_unpack(char *data);
+
+int cmd_config_info_pack(char *data);
+int cmd_config_info_unpack(char *data);
+int pack_config_struct(char *data, MyConfig *config);
+int unpack_config_struct(char *data, MyConfig *config);
+int cmd_set_config_dynamic_pack(char *data, char *key, char *value);
+int cmd_set_config_dynamic_unpack(char *data, char *key, char *value);
+int cmd_clean_all_pack(char *data);
+int cmd_clean_all_unpack(char *data);
 
 #endif

@@ -21,7 +21,7 @@ def test():
     
     #start a new slave
     x2 = start_a_new_slave()   
-    time.sleep(1)
+    time.sleep(10)
 
     key = 'haha'
     maskstr = "8:1:1"
@@ -42,7 +42,7 @@ def test():
     print 'insert %d val' % num
 
     #2 kill slave
-    time.sleep(2)
+    time.sleep(10)
     print 'kill slave'
     x2.kill()
 
@@ -73,11 +73,11 @@ def test():
     cmd = 'rm data/bin.log.1 data/bin.log.2 data/bin.log.3'
     print cmd
     os.system(cmd)
-    time.sleep(1)
+    time.sleep(10)
 
     #5 restart slave
     x2 = restart_slave()
-    time.sleep(3)
+    time.sleep(10)
     
     if 0 != stat_check(client2master, client2slave):
         print 'test e error!'

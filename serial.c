@@ -12,6 +12,7 @@
 #include "serial.h"
 #include "utils.h"
 #include "zzmalloc.h"
+#include "myconfig.h"
 /**
  * 把字符串形式的mask转换为数组形式
  */
@@ -306,7 +307,6 @@ unpack_string(char *s, char *v, unsigned char *vlen)
     if (vlen) {
         *vlen = len;
     }
-
     return len + sizeof(char);
 }
 
@@ -493,7 +493,7 @@ int
 cmd_sortlist_count_pack(char *data, char *key, unsigned char masknum, unsigned int *maskarray,
                         void *valmin, unsigned char vminlen, void *valmax, unsigned char vmaxlen)
 {
-    unsigned char  cmd = CMD_COUNT;
+    unsigned char  cmd = CMD_SL_COUNT;
     unsigned int  len;
     int count = CMD_REQ_SIZE_LEN;
     int ret;
@@ -677,7 +677,7 @@ int
 cmd_sortlist_del_pack(char *data, char *key, char *valmin, unsigned char vminlen, 
             char *valmax, unsigned char vmaxlen)
 {
-    unsigned char cmd = CMD_DEL;
+    unsigned char cmd = CMD_SL_DEL;
     unsigned int len;
     int count = CMD_REQ_SIZE_LEN;
 
@@ -903,7 +903,7 @@ cmd_sortlist_range_pack(char *data, char *key, unsigned char kind,
                 unsigned char masknum, unsigned int *maskarray, 
                 void *valmin, unsigned char vminlen, void *valmax, unsigned char vmaxlen)
 {
-    unsigned char cmd = CMD_RANGE;
+    unsigned char cmd = CMD_SL_RANGE;
     unsigned int len;
     int count = CMD_REQ_SIZE_LEN;
 
@@ -1320,7 +1320,7 @@ cmd_read_conn_info_pack(char *data)
 	return count;
 }
 int
-conn_read_conn_info_unpack(char *data)
+cmd_read_conn_info_unpack(char *data)
 {
 	return 0;
 }
@@ -1367,6 +1367,258 @@ cmd_sync_conn_info_unpack(char *data)
 	return 0;
 }
 
+int 
+pack_config_struct(char *data, MyConfig *config)
+{
+    unsigned int count = 0;
+    int i;
+    int item_count = 0;
+    int ret;
+    
+    //pack bloc_data_count array
+    count += sizeof(int);
+    for (i = 0; i < BLOCK_DATA_COUNT_MAX; i++) {
+        if (config->block_data_count[i] > 0) {
+            memcpy(data + count, &(config->block_data_count[i]), sizeof(int));
+            item_count++;
+            count += sizeof(int);
+        }
+    }
+    memcpy(data, &item_count, sizeof(int)); 
+
+    memcpy(data + count, &config->block_data_count_items, sizeof(int));
+    count += sizeof(int);
+
+    memcpy(data + count, &config->block_data_reduce, sizeof(float));
+    count += sizeof(float);
+
+    memcpy(data + count, &config->dump_interval, sizeof(int));
+    count += sizeof(int);
+
+    memcpy(data + count, &config->block_clean_cond, sizeof(float));
+    count += sizeof(float);
+
+    memcpy(data + count, &config->block_clean_start, sizeof(int));
+    count += sizeof(int);
+
+    memcpy(data + count, &config->block_clean_num, sizeof(int));
+    count += sizeof(int);
+
+    memcpy(data + count, &config->read_port, sizeof(int));
+    count += sizeof(int);
+
+    memcpy(data + count, &config->write_port, sizeof(int));
+    count += sizeof(int);
+
+    memcpy(data + count, &config->sync_port, sizeof(int));
+    count += sizeof(int);
+    
+    ret = pack_string(data + count, config->datadir, 0);
+    count += ret;
+
+    memcpy(data + count, &config->log_level, sizeof(int));
+    count += sizeof(int);
+
+    ret = pack_string(data + count, config->log_name, 0);
+    count += ret;
+
+    memcpy(data + count, &config->write_binlog, sizeof(int));
+    count += sizeof(int);
+
+    memcpy(data + count, &config->timeout, sizeof(int));
+    count += sizeof(int);
+
+    memcpy(data + count, &config->thread_num, sizeof(int));
+    count += sizeof(int);
+
+    memcpy(data + count, &config->max_conn, sizeof(int));
+    count += sizeof(int);
+
+    memcpy(data + count, &config->max_core, sizeof(int));
+    count += sizeof(int);
+
+    memcpy(data + count, &config->is_daemon, sizeof(int));
+    count += sizeof(int);
+    
+    memcpy(data + count, &config->role, sizeof(char));
+    count += sizeof(char);
+
+    ret = pack_string(data + count, config->master_sync_host, 0);
+    count += ret;
+
+    memcpy(data + count, &config->master_sync_port, sizeof(int));
+    count += sizeof(int);
+
+    memcpy(data + count, &config->sync_interval, sizeof(int));
+    count += sizeof(int);
+    
+    return count;
+}
+
+int 
+unpack_config_struct(char *data, MyConfig *config)
+{
+    unsigned int count = 0;
+    unsigned int item_count = 0;
+    unsigned char len;
+
+    memcpy(&item_count, data + count, sizeof(int));
+    count += sizeof(int);
+
+    int i;
+    for (i = 0; i < item_count; i++) {
+        memcpy(&config->block_data_count[i], data + count, sizeof(int));
+        count += sizeof(int);
+    }
+
+    memcpy(&config->block_data_count_items, data + count, sizeof(int)); 
+    count += sizeof(int);
+
+    memcpy(&config->block_data_reduce, data + count, sizeof(float));
+    count += sizeof(float);
+
+    memcpy(&config->dump_interval, data + count, sizeof(int));
+    count += sizeof(int);
+
+    memcpy(&config->block_clean_cond, data + count, sizeof(float));
+    count += sizeof(float);
+
+    memcpy(&config->block_clean_start, data + count, sizeof(int));
+    count += sizeof(int);
+
+    memcpy(&config->block_clean_num, data + count, sizeof(int));
+    count += sizeof(int);
+
+    memcpy(&config->read_port, data + count, sizeof(int));
+    count += sizeof(int);
+
+    memcpy(&config->write_port, data + count, sizeof(int));
+    count += sizeof(int);
+
+    memcpy(&config->sync_port, data + count, sizeof(int));
+    count += sizeof(int);
+
+    len = unpack_string(data + count, config->datadir, NULL);
+    count += len;
+    
+    memcpy(&config->log_level, data + count, sizeof(int));
+    count += sizeof(int);
+
+    len = unpack_string(data + count, config->log_name, NULL);
+    count += len;
+
+    memcpy(&config->write_binlog, data + count, sizeof(int));
+    count += sizeof(int);
+
+    memcpy(&config->timeout, data + count, sizeof(int));
+    count += sizeof(int);
+    
+    memcpy(&config->thread_num, data + count,  sizeof(int));
+    count += sizeof(int);
+
+    memcpy(&config->max_conn, data + count, sizeof(int));
+    count += sizeof(int);
+
+    memcpy(&config->max_core, data + count, sizeof(int));
+    count += sizeof(int);
+    
+    memcpy(&config->is_daemon, data + count,  sizeof(int));
+    count += sizeof(int);
+
+    memcpy(&config->role, data + count, sizeof(char));
+    count += sizeof(char);
+
+    len = unpack_string(data + count, config->master_sync_host, NULL);
+    count += len;
+
+    memcpy(&config->master_sync_port, data + count, sizeof(int));
+    count += sizeof(int);
+
+    memcpy(&config->sync_interval, data + count, sizeof(int));
+    count += sizeof(int);
+    
+    return count;
+}
+
+int
+cmd_config_info_pack(char *data)
+{
+    unsigned char cmd = CMD_CONFIG_INFO;
+    int count = CMD_REQ_SIZE_LEN;
+
+    memcpy(data + count, &cmd, sizeof(char));
+    count += sizeof(char);
+
+    int len = count - CMD_REQ_SIZE_LEN;
+
+    memcpy(data, &len, CMD_REQ_SIZE_LEN);
+    return count;
+}
+
+int
+cmd_config_info_unpack(char *data)
+{
+    return 0;
+}
+
+int
+cmd_set_config_dynamic_pack(char *data, char *key, char *value)
+{
+    unsigned char cmd = CMD_SET_CONFIG_DYNAMIC;
+    int count = CMD_REQ_SIZE_LEN;
+    int ret;
+    
+    memcpy(data + count, &cmd, sizeof(char));
+    count += sizeof(char);
+
+    ret = pack_string(data + count, key, 0); 
+    count += ret;
+    
+    ret = pack_string(data + count, value, 0);
+    count += ret;
+
+    int len = count - CMD_REQ_SIZE_LEN;
+
+    memcpy(data, &len, sizeof(int));
+
+    return count;
+
+}
+
+int
+cmd_set_config_dynamic_unpack(char *data, char *key, char *value)
+{
+    unsigned int count = CMD_REQ_HEAD_LEN;
+    unsigned char len;
+    
+    len = unpack_string(data + count, key, NULL);
+    count += len;
+    
+    len = unpack_string(data + count, value, NULL);
+    count += len;
+
+    return 0;
+}
+
+int
+cmd_clean_all_pack(char *data)
+{
+    unsigned char cmd = CMD_CLEAN_ALL;
+    int count = CMD_REQ_SIZE_LEN;
+
+    memcpy(data + count, &cmd, sizeof(char));
+    count += sizeof(char);
+    int len = count - CMD_REQ_SIZE_LEN;
+
+    memcpy(data, &len, sizeof(int));
+    return count;
+}
+
+int
+cmd_clean_all_unpack(char *data)
+{
+    return 0;
+}
 /**
  * @}
  */

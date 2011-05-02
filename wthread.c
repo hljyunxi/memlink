@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <netdb.h>
+#include <signal.h>
 #include "wthread.h"
 #include "serial.h"
 #include "network.h"
@@ -30,6 +31,7 @@
 #include "zzmalloc.h"
 #include "utils.h"
 #include "common.h"
+#include "sslave.h"
 
 /**
  *
@@ -110,7 +112,7 @@ data_set_reply(Conn *conn, short retcode, char *retdata, int retlen)
 
     // package length + retcode + retdata
     datalen = CMD_REPLY_HEAD_LEN + retlen;
-    DINFO("datalen: %d, retcode: %d, conn->wsize: %d\n", datalen, retcode, conn->wsize); 
+    DNOTE("datalen: %d, retcode: %d, conn->wsize: %d\n", datalen, retcode, conn->wsize); 
    
     wdata = conn_write_buffer(conn, datalen);
 
@@ -122,14 +124,14 @@ data_set_reply(Conn *conn, short retcode, char *retdata, int retlen)
     memcpy(wdata + count, &retcode, sizeof(short));
     count += sizeof(short);
   
-    DINFO("retlen: %d, retdata:%p, count:%d\n", retlen, retdata, count);
+    DNOTE("retlen: %d, retdata:%p, count:%d, conn->wbuf:%p, conn->wsize:%d\n", 
+                retlen, retdata, count, conn->wbuf, conn->wsize);
     if (retlen > 0) {
         memcpy(wdata + count, retdata, retlen);
         count += retlen;
     }
     conn->wlen = datalen;
 	
-
 #ifdef DEBUG
     char buf[10240] = {0};
     DINFO("reply %s\n", formath(conn->wbuf, conn->wlen, buf, 10240));
@@ -147,7 +149,7 @@ data_reply(Conn *conn, short retcode, char *retdata, int retlen)
 	if (ret < 0)
 		return ret;
 
-	DINFO("change event to write.\n");
+	//DINFO("change event to write.\n");
 	ret = change_event(conn, EV_WRITE|EV_PERSIST, g_cf->timeout, 0);
 	if (ret < 0) {
 		DERROR("change_event error: %d, close conn.\n", ret);
@@ -299,7 +301,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
 	
 	if (conn) {	
 		wt = (WThread *)conn->thread;
-		for (i = 0; i <= g_cf->max_conn; i++) {
+		for (i = 0; i <= g_cf->max_write_conn; i++) {
 			conninfo = &(wt->rw_conn_info[i]);
 			if (conninfo->fd == conn->sock)
 				break;
@@ -334,6 +336,13 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             ret = hashtable_clean(g_runtime->ht, key); 
             DINFO("clean return:%d\n", ret); 
             //hashtable_print(g_runtime->ht, key);
+            goto wdata_apply_over;
+            break;
+        case CMD_CLEAN_ALL:
+            DINFO("<<< cmd CLEAN ALL >>>\n");
+
+            ret = hashtable_clean_all(g_runtime->ht);
+            DINFO("clean all return: %d\n", ret);
             goto wdata_apply_over;
             break;
         case CMD_CREATE:
@@ -390,7 +399,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
                 goto wdata_apply_over;
 			}
 
-            DINFO("unpack del, key: %s, value: %s, valuelen: %d\n", key, value, valuelen);
+            DINFO("unpack del, key: %s, valmin:%s, valmax:%s\n", key, valmin, valmax);
 			if (key[0] == 0) {
 				ret = MEMLINK_ERR_PARAM;
                 goto wdata_apply_over;
@@ -409,8 +418,8 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
                 goto wdata_apply_over;
 			}
 
-            DINFO("unpack key:%s, value:%s, pos:%d, mask: %d, array:%d,%d,%d\n", 
-					key, value, pos, masknum, maskarray[0], maskarray[1], maskarray[2]);
+            //DINFO("unpack key:%s, value:%d, pos:%d, mask: %d, array:%d,%d,%d\n", 
+		    //	key, *(int*)value, pos, masknum, maskarray[0], maskarray[1], maskarray[2]);
 			if (key[0] == 0 || valuelen <= 0) {
 				ret = MEMLINK_ERR_PARAM;
                 goto wdata_apply_over;
@@ -737,6 +746,86 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
 				}
 			}
 			break;
+        case CMD_SET_CONFIG_DYNAMIC:
+        {
+            char key[512] = {0};
+            char value[512] = {0};
+            int  ret;
+            unsigned char need_kill = 0;
+            int  setrole;
+
+            ret = cmd_set_config_dynamic_unpack(data, key, value);
+            
+            DINFO("<<< CMD SET CONFIG >>>\n"); 
+            //char master_sync_host[20] = {0};
+            //int  master_sync_port = 0;
+
+            DINFO("key: %s\n", key);
+            if (strcmp(key, "block_data_reduce") == 0) {
+                g_cf->block_data_reduce = atof(value);
+            } else if (strcmp(key, "block_clean_cond") == 0) {
+                g_cf->block_clean_cond = atof(value);
+            } else if (strcmp(key, "block_clean_start") == 0) {
+                g_cf->block_clean_start = atoi(value);
+            } else if (strcmp(key, "sync_interval") == 0) {
+                g_cf->sync_interval = atoi(value);
+            } else if (strcmp(key, "block_clean_num") == 0) {
+                g_cf->block_clean_num = atoi(value);
+            } else if (strcmp(key, "timeout") == 0) {
+                g_cf->timeout = atoi(value);
+            } else if (strcmp(key, "log_level") == 0) {
+                g_cf->log_level = atoi(value);
+            } else if (strcmp(key, "master_sync_host") == 0) {
+                if (strcmp(g_cf->master_sync_host, value) != 0) {
+                    strcpy(g_cf->master_sync_host, value);
+                    need_kill = 1;
+                }
+            } else if (strcmp(key, "master_sync_port") == 0) {
+                int port = atoi(value);
+                if (g_cf->master_sync_port != port) {
+                    g_cf->master_sync_port = port;
+                    need_kill = 1;
+                }
+            } else if (strcmp(key, "role") == 0) {
+                if (strcmp(value, "master") == 0)
+                    setrole = ROLE_MASTER;
+                else if (strcmp(value, "slave") == 0)
+                    setrole = ROLE_SLAVE;
+                else if (strcmp(value, "backup") == 0)
+                    setrole = ROLE_BACKUP;
+            } else {
+                ret = MEMLINK_ERR_PARAM;
+            }
+
+            if (g_cf->role == ROLE_SLAVE) {
+                if (setrole == ROLE_MASTER) {
+                    wait_thread_exit(g_runtime->slave->threadid);
+                    g_cf->role = ROLE_MASTER;
+                    DINFO("=========slave to master\n");
+                } else if (need_kill) {
+                    wait_thread_exit(g_runtime->slave->threadid);
+                    if (g_runtime->slave) {
+                        sslave_thread(g_runtime->slave);
+                    } else {
+                        g_runtime->slave = sslave_create();
+                    }
+                    sslave_go(g_runtime->slave);
+                }
+            } else if (g_cf->role == ROLE_MASTER) {
+                if (g_runtime->slave) {
+                    sslave_thread(g_runtime->slave);
+                } else {
+                    g_runtime->slave = sslave_create();
+                }
+                g_cf->role = ROLE_SLAVE;
+                sslave_go(g_runtime->slave);
+                DINFO("=============master to slave\n");
+            }
+            ret = MEMLINK_OK;
+            
+            //myconfig_change();
+            goto wdata_apply_over;
+        }
         default:
             ret = MEMLINK_ERR_CLIENT_CMD;
             goto wdata_apply_over;
@@ -775,7 +864,8 @@ wdata_ready(Conn *conn, char *data, int datalen)
 
 	//memcpy(&cmd, data + sizeof(short), sizeof(char));
 	memcpy(&cmd, data + sizeof(int), sizeof(char));
-	if (g_cf->role == ROLE_SLAVE && cmd != CMD_DUMP && cmd != CMD_CLEAN) {
+	if (g_cf->role == ROLE_SLAVE && cmd != CMD_DUMP && 
+        cmd != CMD_CLEAN && cmd != CMD_SET_CONFIG_DYNAMIC) {
 		ret = MEMLINK_ERR_CLIENT_CMD;
 		goto wdata_ready_over;
 	}
@@ -821,9 +911,15 @@ wthread_read(int fd, short event, void *arg)
 		//连接统计信息
 		int i;
 		RwConnInfo *conninfo = wt->rw_conn_info;
-
 		wt->conns++;
-		for (i = 0; i < g_cf->max_conn; i++) {
+        
+        if (conn_check_max((Conn*)conn) != MEMLINK_OK) {
+            DNOTE("too many write conn.\n");
+            conn->destroy((Conn*)conn);
+            return;
+        }
+
+		for (i = 0; i < g_cf->max_write_conn; i++) {
 			conninfo = &(wt->rw_conn_info[i]);
 			if (conninfo->fd == 0) {
 				conninfo->fd = conn->sock;
@@ -980,12 +1076,12 @@ wthread_create()
     memset(wt, 0, sizeof(WThread));
 	
 	//写连接统计信息	
-	wt->rw_conn_info = (RwConnInfo *)zz_malloc(sizeof(RwConnInfo) * g_cf->max_conn); 
+	wt->rw_conn_info = (RwConnInfo *)zz_malloc(sizeof(RwConnInfo) * g_cf->max_write_conn); 
 	if (wt->rw_conn_info == NULL) {
 		DERROR("wthread connect info malloc error.\n");
 		MEMLINK_EXIT;
 	}
-	memset(wt->rw_conn_info, 0x0, sizeof(RwConnInfo) * g_cf->max_conn);
+	memset(wt->rw_conn_info, 0x0, sizeof(RwConnInfo) * g_cf->max_write_conn);
 
     wt->sock = tcp_socket_server(g_cf->write_port); 
     if (wt->sock == -1) {
@@ -1038,13 +1134,25 @@ wthread_create()
     return wt;
 }
 
+void
+sig_wthread_handler()
+{
+    DINFO("---------------this is wthread\n");
+}
+
 void*
 wthread_loop(void *arg)
 {
+    struct sigaction sigact;
     WThread *wt = (WThread*)arg;
     DINFO("wthread_loop ...\n");
     event_base_loop(wt->base, 0);
+    
+    sigemptyset(&sigact.sa_mask);
+    sigact.sa_flags = 0;
 
+    sigact.sa_handler = sig_wthread_handler;
+    sigaction(SIGUSR1, &sigact, NULL);
     return NULL;
 }
 

@@ -17,6 +17,8 @@
 void*
 zz_malloc(size_t size)
 {
+    DNOTE("malloc size:%u\n", (unsigned int)size);
+
     void *ptr;
 #ifdef DEBUGMEM
 	ptr = malloc(size + 12);
@@ -50,6 +52,12 @@ zz_malloc(size_t size)
 #endif
 
 #endif
+}
+
+void*  
+zz_malloc_check_max(size_t size, long long maxsize)
+{
+    return zz_malloc(size);
 }
 
 #ifndef DEBUGMEM

@@ -58,9 +58,9 @@ def test():
             return -2;
     print 'insert %d val' % (num2 - num)
 
-    time.sleep(1)
+    time.sleep(10)
     x2 = restart_slave()
-    time.sleep(2)
+    time.sleep(10)
     
     if 0 != stat_check(client2master, client2slave):
         print 'test c error!'

@@ -12,7 +12,11 @@
 #include <sys/select.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <pthread.h>
 #include <sys/stat.h>
+#include <pthread.h>
+#include <signal.h>
+#include <pwd.h>
 #include "utils.h"
 #include "logfile.h"
 #include "common.h"
@@ -359,6 +363,63 @@ ffread(void *ptr, size_t size, size_t nmemb, FILE *stream)
 	return ret;
 }
 
+int
+change_group_user(char *user)
+{
+    if (user == NULL || user[0] == 0) {
+        DNOTE("not set user/group.\n");
+        return 0;
+    }
+    
+    struct passwd *pw;
+
+    pw = getpwnam(user);
+    if (pw == NULL) {
+        DERROR("can't find user %s to switch.\n", user);
+        return -1;
+    }
+    int ret;
+    ret = setgid(pw->pw_gid);
+    if (ret < 0) {
+        DERROR("failed to set group: %d, %s\n", pw->pw_gid, strerror(errno));
+        return -1;
+    }
+    ret = setuid(pw->pw_uid);
+    if (ret < 0) {
+        DERROR("failed to set user %s, %s\n", user, strerror(errno));
+        return -1;
+    }
+    
+    return 0;
+}
+
+int
+check_thread_alive(pthread_t id)
+{
+    int err;
+
+    err = pthread_kill(id, 0);
+    if (err == ESRCH)
+        return 0;
+
+    else
+        return 1;
+}
+
+int
+wait_thread_exit(pthread_t id)
+{
+    int err;
+
+    pthread_kill(id, SIGUSR1);
+    
+    err = pthread_kill(id, 0);
+
+    while (err != ESRCH) {
+        err = pthread_kill(id, 0);
+    }
+    return 1;
+}
 
 /**
  * @}

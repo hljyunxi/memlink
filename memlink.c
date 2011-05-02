@@ -16,6 +16,7 @@
 #include "logfile.h"
 #include "server.h"
 #include "daemon.h"
+#include "utils.h"
 #include "common.h"
 
 char *VERSION = "memlink-0.3.0";
@@ -29,13 +30,129 @@ sig_handler(const int sig) {
 static void 
 sig_handler_segv(const int sig) {
     DFATALERR("====== SIGSEGV handled ======\n");
-	abort();
+    abort();
 }
 
 static void 
-sig_handler_hup(const int sig) {
+sig_handler_hup(const int sig) 
+{
     DNOTE("====== SIGHUP handled ======\n");
-	g_log->loglevel = 4;
+    //int  master_sync_port = 0;
+    //int  role;
+    int  need_kill = 0;
+
+    FILE *fp;
+    int  lineno = 0;
+    int  confrole = 0;
+
+    fp = fopen(g_runtime->conffile, "r");
+    if (NULL == fp) {
+        DERROR("open config file error: %s\n", g_runtime->conffile);
+    }
+    char buffer[2048];
+    while (1) {
+        if (fgets(buffer, 2048, fp) == NULL) {
+            //DINFO("config file read complete!\n");
+            break;
+        }
+        lineno ++;
+        //DINFO("buffer: %s\n", buffer);
+        if (buffer[0] == '#') { // skip comment
+            continue;
+        }
+        char *sp = strchr(buffer, '=');
+        if (sp == NULL) {
+            DERROR("config file error at line %d: %s\n", lineno, buffer);
+            MEMLINK_EXIT;
+        }
+
+        char *end = sp - 1;
+        while (end > buffer && isblank(*end)) {
+            end--;
+        }
+        *(end + 1) = 0;
+
+        char *start = sp + 1;
+        while (isblank(*start)) {
+            start++;
+        }
+
+        end = start;
+        while (*end != 0) {
+            if (*end == '\r' || *end == '\n') {
+                end -= 1;
+                while (end > start && isblank(*end)) {
+                    end--;
+                }
+                *(end + 1) = 0;
+                break;
+            }
+            end += 1;
+        }
+        if (strcmp(buffer, "block_data_reduce") == 0) {
+            g_cf->block_data_reduce = atof(start);
+        } else if (strcmp(buffer, "block_clean_cond") == 0) {
+            g_cf->block_clean_cond = atof(start);
+        } else if (strcmp(buffer, "block_clean_start") == 0) {
+            g_cf->block_clean_start = atoi(start);
+        } else if (strcmp(buffer, "block_clean_num") == 0) {
+            g_cf->block_clean_num = atoi(start);
+        } else if (strcmp(buffer, "log_level") == 0) {
+            g_cf->log_level = atoi(start);
+        } else if (strcmp(buffer, "timeout") == 0) {
+            g_cf->timeout = atoi(start);
+        } else if (strcmp(buffer, "sync_interval") == 0) {
+            g_cf->sync_interval = atoi(start);
+        } else if (strcmp(buffer, "role") == 0) {
+            if (strcmp(start, "master") == 0) 
+                confrole = ROLE_MASTER;
+            else if (strcmp(start, "slave") == 0)
+                confrole = ROLE_SLAVE;
+            else if (strcmp(start, "backup") == 0)
+                confrole = ROLE_BACKUP;
+        } else if(strcmp(buffer, "master_sync_host") == 0) {
+            if (strcmp(g_cf->master_sync_host, start) != 0) {
+                snprintf(g_cf->master_sync_host, IP_ADDR_MAX_LEN, "%s", start);
+                need_kill = 1;
+            }
+        } else if (strcmp(buffer, "master_sync_port") == 0) {
+            if (g_cf->master_sync_port != atoi(start)) {
+                g_cf-> master_sync_port = atoi(start);
+                need_kill = 1;
+            }
+        }
+    }
+    DINFO("role: %d, need_kill: %d\n", confrole, need_kill);
+
+    if (g_cf->role == ROLE_SLAVE ) { //如果memlink作为从服务器
+        if (confrole == ROLE_MASTER) {//需要切换成主,杀掉从线程
+            wait_thread_exit(g_runtime->slave->threadid);
+            g_cf->role = ROLE_MASTER;
+            DINFO("========slave to master\n");
+        } else if (check_thread_alive(g_runtime->slave->threadid) == 1 && need_kill == 1) {
+            //不需要切换，查看master_sync_host和master_sync_port是否改变
+            //从新启动从线程
+            wait_thread_exit(g_runtime->slave->threadid);
+            if (g_runtime->slave) {
+                sslave_thread(g_runtime->slave);
+                sslave_go(g_runtime->slave);
+            } else {
+                g_runtime->slave = sslave_create();
+            }
+            DINFO("=========restart slave thread\n");
+        }
+    } else if (g_cf->role == ROLE_MASTER) {
+        //主切换成从， 只需启动从线程
+        if (g_runtime->slave) {
+            sslave_thread(g_runtime->slave);
+            sslave_go(g_runtime->slave);
+        } else {
+            g_runtime->slave = sslave_create();
+        }
+        g_cf->role = ROLE_SLAVE;
+        DINFO("===========master to slave\n");
+    }
+    fclose(fp);
 }
 
 int 
@@ -62,21 +179,21 @@ signal_install()
 }
 
 void 
-master(char *pgname) 
+master(char *pgname, char *conffile) 
 {
     logfile_create(g_cf->log_name, g_cf->log_level);
     DINFO("logfile ok!\n");
-    runtime_create_master(pgname);
+    runtime_create_master(pgname, conffile);
     DINFO("master runtime ok!\n");
 
     mainserver_loop(g_runtime->server);
 }
 
 void 
-slave(char *pgname) 
+slave(char *pgname, char *conffile) 
 {
     logfile_create(g_cf->log_name, g_cf->log_level);
-    runtime_create_slave(pgname);
+    runtime_create_slave(pgname, conffile);
     DINFO("slave runtime ok!\n");
 
     mainserver_loop(g_runtime->server);
@@ -121,6 +238,7 @@ int main(int argc, char *argv[])
         }
     }
 
+    /*
     if (getrlimit(RLIMIT_NOFILE, &rlim) != 0) { 
         DFATALERR("failed to getrlimit number of files\n");
         MEMLINK_EXIT;
@@ -134,8 +252,12 @@ int main(int argc, char *argv[])
             DFATALERR("failed to set rlimit for open files. Try running as root or requesting smaller maxconns value.\n");
             MEMLINK_EXIT;
         }    
+    }*/
+    
+    if (change_group_user(g_cf->user) < 0) { 
+        DERROR("change group user error!\n");
+        MEMLINK_EXIT;
     }
-
     signal_install();
 
     if (g_cf->is_daemon) {
@@ -147,9 +269,9 @@ int main(int argc, char *argv[])
     }
 
     if (g_cf->role == ROLE_MASTER) {
-        master(argv[0]);
+        master(argv[0], conffile);
     }else{
-        slave(argv[0]);
+        slave(argv[0], conffile);
     }
 
     return 0;

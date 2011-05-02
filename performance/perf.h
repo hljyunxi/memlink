@@ -7,6 +7,10 @@
 
 typedef struct
 {
+    char    host[255];
+    int     rport;
+    int     wport;
+    int     timeout;
     char    key[255];
     char    value[255];
     int     valuelen;

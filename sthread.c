@@ -14,6 +14,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include "sthread.h"
 #include "wthread.h"
@@ -23,6 +24,7 @@
 #include "utils.h"
 #include "common.h"
 #include "synclog.h"
+#include "serial.h"
 
 #define CMD_HEAD_LEN        sizeof(int) * 2 + sizeof(int)
 
@@ -146,7 +148,7 @@ get_synclog_record(SyncConn *conn)
 	int *indxdata = (int *)(synclog->index + SYNCLOG_HEAD_LEN);
 	SThread *st;
 	SyncConnInfo *conninfo = NULL;
-	
+    
 	if ( i == SYNCLOG_INDEXNUM) {
 		return 0;
 	}
@@ -156,12 +158,13 @@ get_synclog_record(SyncConn *conn)
 		
 	st = (SThread *)conn->thread;
 	int j;
-	for (j = 0; j <= g_cf->max_conn; j++) {
+	for (j = 0; j <= g_cf->max_sync_conn; j++) {
 		conninfo = &(st->sync_conn_info[j]);
 		if (conninfo->fd == conn->sock)
 			break;
 	}
 		
+    DINFO("----------------------------i: %d\n", i);
 	char *ptr = buffer + sizeof(int);
 	while(i < SYNCLOG_INDEXNUM && indxdata[i] != 0) {
 		char per_buf[1024] = {0};
@@ -488,7 +491,7 @@ sdata_ready(Conn *c, char *data, int datalen)
 	st = (SThread *)conn->thread;
 	
 	int i;
-	for (i = 0; i <= g_cf->max_conn; i++) {
+	for (i = 0; i <= g_cf->max_sync_conn; i++) {
 		conninfo = &(st->sync_conn_info[i]);
 		if (conninfo->fd == conn->sock)
 			break;
@@ -529,16 +532,13 @@ sdata_ready(Conn *c, char *data, int datalen)
 void
 sync_conn_destroy(Conn *c)
 {
-	SyncConnInfo *sconninfo;
-	SThread *st;
-
 	DINFO("destroy sync connection\n");
 	SyncConn *conn = (SyncConn*) c;
 	event_del(&conn->sync_interval_evt);
 	event_del(&conn->sync_write_evt);
 	event_del(&conn->sync_read_evt);
-	event_del(&conn->evt);
-	close(conn->sock);
+	//event_del(&conn->evt);
+	//close(conn->sock);
 	if (conn->dump_fd > 0) {
 		close(conn->dump_fd);
 	}
@@ -546,18 +546,20 @@ sync_conn_destroy(Conn *c)
 		synclog_destroy(conn->synclog);
 		conn->synclog = NULL;
 	}
-	st = (SThread *)conn->thread;
+	/*st = (SThread *)conn->thread;
 	sconninfo = st->sync_conn_info;
 	st->conns--;
 	int i;
-	for (i = 0; i < g_cf->max_conn; i++) {
+	for (i = 0; i < g_cf->max_sync_conn; i++) {
 		if (conn->sock == sconninfo[i].fd) {
 			sconninfo[i].fd = 0;
 			break;
 		}
-	}
+	}*/
 
-	zz_free(conn);
+	//zz_free(conn);
+
+    conn_destroy((Conn*)conn);
 }
 
 
@@ -576,13 +578,19 @@ sthread_read(int fd, short event, void *arg)
 		conn->ready = sdata_ready;
 		conn->destroy = sync_conn_destroy;
 		conn->wrote = sync_conn_wrote;
+
+        if (conn_check_max((Conn*)conn) == MEMLINK_ERR_CONN_TOO_MANY) {
+            DNOTE("too many sync conn.\n");
+            conn->destroy((Conn*)conn);
+            return;
+        }
 		
 		int i;
 		SyncConnInfo *sconninfo = st->sync_conn_info;
 
 		st->conns++;
 		
-		for (i = 0; i < g_cf->max_conn; i++) {
+		for (i = 0; i < g_cf->max_sync_conn; i++) {
 			sconninfo = &(st->sync_conn_info[i]);
 			if (sconninfo->fd == 0) {
 				sconninfo->fd = conn->sock;
@@ -604,10 +612,23 @@ sthread_read(int fd, short event, void *arg)
 	return ;
 }
 
+void
+sig_master_handler()
+{
+    DINFO("this is master\n");
+}
 
 void *
 sthread_run(void *arg)
 {
+    struct sigaction sigact;
+
+    sigemptyset(&sigact.sa_mask);
+    sigact.sa_flags = 0;
+
+    sigact.sa_handler = sig_master_handler;
+    sigaction(SIGUSR1, &sigact, NULL);
+
 	SThread *st = (SThread *)arg;
 	DINFO("sthread_loop...\n");
 	event_base_loop(st->base, 0);
@@ -625,12 +646,12 @@ sthread_create()
 	}
 	memset(st, 0x0, sizeof(SThread));
 
-	st->sync_conn_info = (SyncConnInfo *)zz_malloc(sizeof(SyncConnInfo) * g_cf->max_conn);
+	st->sync_conn_info = (SyncConnInfo *)zz_malloc(sizeof(SyncConnInfo) * g_cf->max_sync_conn);
 	if (st->sync_conn_info == NULL) {
 		DERROR("memlink malloc stread connect info error. \n");
 		MEMLINK_EXIT;
 	}
-	memset(st->sync_conn_info, 0x0, sizeof(SyncConnInfo) * g_cf->max_conn);
+	memset(st->sync_conn_info, 0x0, sizeof(SyncConnInfo) * g_cf->max_sync_conn);
 
 	st->sock = tcp_socket_server(g_cf->sync_port);
 	if (st->sock == -1)

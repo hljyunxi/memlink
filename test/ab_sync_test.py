@@ -19,7 +19,7 @@ def test():
     print '=============================== test a ============================'
     #start a new master
     x1 = start_a_new_master()
-    time.sleep(1)
+    time.sleep(5)
    
     key = 'haha'
     maskstr = "8:1:1"
@@ -41,7 +41,7 @@ def test():
 
     #start a new slave
     x2 = start_a_new_slave()
-    time.sleep(1)
+    time.sleep(10)
     
     print 'dump.....'
     client2master.dump();
@@ -56,14 +56,14 @@ def test():
         	return -1
     print 'delete val %d' % num2
 
-    time.sleep(1)
+    time.sleep(10)
 
     if 0 != stat_check(client2master, client2slave):
         print 'testa error!'
         return -1
 
-    x1.kill()
-    x2.kill()
+    #x1.kill()
+    #x2.kill()
     client2master.close()
     client2slave.close()
     print 'test a ok'
@@ -72,7 +72,7 @@ def test():
     print '============================= test b =============================='
     #start a new master
     x1 = start_a_new_master()
-    time.sleep(1)
+    time.sleep(5)
    
     ret = client2master.create_list(key , 12, "4:3:1")
     if ret != MEMLINK_OK:
@@ -105,7 +105,7 @@ def test():
     
     #start a new slave
     x2 = start_a_new_slave()
-    time.sleep(1)
+    time.sleep(10)
     
     #delete val 1000
     num2 = 1000
@@ -117,7 +117,7 @@ def test():
         	return -1
     print 'delete val %d' % num2
 
-    time.sleep(1)
+    time.sleep(10)
     
     if 0 != stat_check(client2master, client2slave):
         print 'testb error!'
@@ -125,8 +125,8 @@ def test():
 
     print 'test b ok'
         
-    x1.kill()
-    x2.kill()
+    #x1.kill()
+    #x2.kill()
     
     client2master.destroy()
     client2slave.destroy()

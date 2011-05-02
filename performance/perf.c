@@ -11,9 +11,51 @@
 #include "memlink_client.h"
 
 #define MEMLINK_HOST        "127.0.0.1"
-#define MEMLINK_PORT_READ   11001
-#define MEMLINK_PORT_WRITE  11002
+#define MEMLINK_PORT_READ   11011
+#define MEMLINK_PORT_WRITE  11012
 #define MEMLINK_TIMEOUT     30
+
+int test_ping(TestArgs *args)
+{
+    MemLink *m;
+    int ret, i;
+    
+    DINFO("====== ping ======\n");
+    if (args->longconn) {
+        m = memlink_create(args->host, args->rport, args->wport, args->timeout);
+        if (NULL == m) {
+            DERROR("memlink_create error!\n");
+            exit(-1);
+            return -1;
+        }
+        for (i = 0; i < args->testcount; i++) {
+            ret = memlink_cmd_ping(m);        
+            if (ret != MEMLINK_OK) {
+                DERROR("ping error: %d\n", ret);
+                return -2;
+            }
+        }
+        memlink_destroy(m);
+    }else{
+        for (i = 0; i < args->testcount; i++) {
+            m = memlink_create(args->host, args->rport, args->wport, args->timeout);
+            if (NULL == m) {
+                DERROR("memlink_create error!\n");
+                exit(-1);
+                return -1;
+            }
+            ret = memlink_cmd_ping(m);        
+            if (ret != MEMLINK_OK) {
+                DERROR("ping error: %d\n", ret);
+                return -2;
+            }
+            memlink_destroy(m);
+        }
+    }
+
+    return 0;
+}
+
 
 int test_create(TestArgs *args)
 {
@@ -24,7 +66,7 @@ int test_create(TestArgs *args)
     DINFO("====== create ======\n");
 
     if (args->longconn) {
-        m = memlink_create(MEMLINK_HOST, MEMLINK_PORT_READ, MEMLINK_PORT_WRITE, MEMLINK_TIMEOUT);
+        m = memlink_create(args->host, args->rport, args->wport, args->timeout);
         if (NULL == m) {
             DERROR("memlink_create error!\n");
             exit(-1);
@@ -41,7 +83,7 @@ int test_create(TestArgs *args)
         memlink_destroy(m); 
     }else{
         for (i = 0; i < args->testcount; i++) {
-            m = memlink_create(MEMLINK_HOST, MEMLINK_PORT_READ, MEMLINK_PORT_WRITE, MEMLINK_TIMEOUT);
+            m = memlink_create(args->host, args->rport, args->wport, args->timeout);
             if (NULL == m) {
                 DERROR("memlink_create error!\n");
                 exit(-1);
@@ -78,7 +120,7 @@ int test_insert(TestArgs *args)
 
     sprintf(format, "%%0%dd", args->valuesize);
     if (args->longconn) {
-        m = memlink_create(MEMLINK_HOST, MEMLINK_PORT_READ, MEMLINK_PORT_WRITE, MEMLINK_TIMEOUT);
+        m = memlink_create(args->host, args->rport, args->wport, args->timeout);
         if (NULL == m) {
             DERROR("memlink_create error!\n");
             exit(-1);
@@ -100,7 +142,7 @@ int test_insert(TestArgs *args)
         memlink_destroy(m); 
     }else{
         for (i = 0; i < args->testcount; i++) {
-            m = memlink_create(MEMLINK_HOST, MEMLINK_PORT_READ, MEMLINK_PORT_WRITE, MEMLINK_TIMEOUT);
+            m = memlink_create(args->host, args->rport, args->wport, args->timeout);
             if (NULL == m) {
                 DERROR("memlink_create error!\n");
                 exit(-1);
@@ -129,7 +171,7 @@ int test_range(TestArgs *args)
 
     DINFO("====== range ======\n");
     if (args->longconn) {
-        m = memlink_create(MEMLINK_HOST, MEMLINK_PORT_READ, MEMLINK_PORT_WRITE, MEMLINK_TIMEOUT);
+        m = memlink_create(args->host, args->rport, args->wport, args->timeout);
         if (NULL == m) {
             DERROR("memlink_create error!\n");
             exit(-1);
@@ -151,7 +193,7 @@ int test_range(TestArgs *args)
         memlink_destroy(m); 
     }else{
         for (i = 0; i < args->testcount; i++) {
-            m = memlink_create(MEMLINK_HOST, MEMLINK_PORT_READ, MEMLINK_PORT_WRITE, MEMLINK_TIMEOUT);
+            m = memlink_create(args->host, args->rport, args->wport, args->timeout);
             if (NULL == m) {
                 DERROR("memlink_create error!\n");
                 exit(-1);
@@ -187,7 +229,7 @@ int test_move(TestArgs *args)
     sprintf(format, "%%0%dd", args->valuesize);
 
     if (args->longconn) {
-        m = memlink_create(MEMLINK_HOST, MEMLINK_PORT_READ, MEMLINK_PORT_WRITE, MEMLINK_TIMEOUT);
+        m = memlink_create(args->host, args->rport, args->wport, args->timeout);
         if (NULL == m) {
             DERROR("memlink_create error!\n");
             exit(-1);
@@ -205,7 +247,7 @@ int test_move(TestArgs *args)
         memlink_destroy(m); 
     }else{
         for (i = 0; i < args->testcount; i++) {
-            m = memlink_create(MEMLINK_HOST, MEMLINK_PORT_READ, MEMLINK_PORT_WRITE, MEMLINK_TIMEOUT);
+            m = memlink_create(args->host, args->rport, args->wport, args->timeout);
             if (NULL == m) {
                 DERROR("memlink_create error!\n");
                 exit(-1);
@@ -231,7 +273,7 @@ int test_del(TestArgs *args)
     
     DINFO("====== del ======\n");
     if (args->longconn) {
-        m = memlink_create(MEMLINK_HOST, MEMLINK_PORT_READ, MEMLINK_PORT_WRITE, MEMLINK_TIMEOUT);
+        m = memlink_create(args->host, args->rport, args->wport, args->timeout);
         if (NULL == m) {
             DERROR("memlink_create error!\n");
             exit(-1);
@@ -247,7 +289,7 @@ int test_del(TestArgs *args)
         memlink_destroy(m); 
     }else{
         for (i = 0; i < args->testcount; i++) {
-            m = memlink_create(MEMLINK_HOST, MEMLINK_PORT_READ, MEMLINK_PORT_WRITE, MEMLINK_TIMEOUT);
+            m = memlink_create(args->host, args->rport, args->wport, args->timeout);
             if (NULL == m) {
                 DERROR("memlink_create error!\n");
                 exit(-1);
@@ -271,7 +313,7 @@ int test_mask(TestArgs *args)
     
     DINFO("====== mask ======\n");
     if (args->longconn) {
-        m = memlink_create(MEMLINK_HOST, MEMLINK_PORT_READ, MEMLINK_PORT_WRITE, MEMLINK_TIMEOUT);
+        m = memlink_create(args->host, args->rport, args->wport, args->timeout);
         if (NULL == m) {
             DERROR("memlink_create error!\n");
             exit(-1);
@@ -287,7 +329,7 @@ int test_mask(TestArgs *args)
         memlink_destroy(m); 
     }else{
         for (i = 0; i < args->testcount; i++) {
-            m = memlink_create(MEMLINK_HOST, MEMLINK_PORT_READ, MEMLINK_PORT_WRITE, MEMLINK_TIMEOUT);
+            m = memlink_create(args->host, args->rport, args->wport, args->timeout);
             if (NULL == m) {
                 DERROR("memlink_create error!\n");
                 exit(-1);
@@ -311,7 +353,7 @@ int test_tag(TestArgs *args)
     
     DINFO("====== tag ======\n");
     if (args->longconn) {
-        m = memlink_create(MEMLINK_HOST, MEMLINK_PORT_READ, MEMLINK_PORT_WRITE, MEMLINK_TIMEOUT);
+        m = memlink_create(args->host, args->rport, args->wport, args->timeout);
         if (NULL == m) {
             DERROR("memlink_create error!\n");
             exit(-1);
@@ -327,7 +369,7 @@ int test_tag(TestArgs *args)
         memlink_destroy(m); 
     }else{
         for (i = 0; i < args->testcount; i++) {
-            m = memlink_create(MEMLINK_HOST, MEMLINK_PORT_READ, MEMLINK_PORT_WRITE, MEMLINK_TIMEOUT);
+            m = memlink_create(args->host, args->rport, args->wport, args->timeout);
             if (NULL == m) {
                 DERROR("memlink_create error!\n");
                 exit(-1);
@@ -351,7 +393,7 @@ int test_count(TestArgs *args)
     
     DINFO("====== count ======\n");
     if (args->longconn) {
-        m = memlink_create(MEMLINK_HOST, MEMLINK_PORT_READ, MEMLINK_PORT_WRITE, MEMLINK_TIMEOUT);
+        m = memlink_create(args->host, args->rport, args->wport, args->timeout);
         if (NULL == m) {
             DERROR("memlink_create error!\n");
             exit(-1);
@@ -368,7 +410,7 @@ int test_count(TestArgs *args)
         memlink_destroy(m); 
     }else{
         for (i = 0; i < args->testcount; i++) {
-            m = memlink_create(MEMLINK_HOST, MEMLINK_PORT_READ, MEMLINK_PORT_WRITE, MEMLINK_TIMEOUT);
+            m = memlink_create(args->host, args->rport, args->wport, args->timeout);
             if (NULL == m) {
                 DERROR("memlink_create error!\n");
                 exit(-1);
@@ -385,6 +427,233 @@ int test_count(TestArgs *args)
     }
     return 0;
 }
+
+int test_lpush(TestArgs *args)
+{
+    MemLink *m;
+    int ret, i;
+	int pos;
+    char value[512] = {0};
+    char format[64] = {0};
+	char maskstr[64] = {0};
+    
+    DINFO("====== lpush ======\n");
+    if (args->key[0] == 0 || args->valuesize == 0) {
+        DERROR("key and valuesize must not null!\n");
+        return -1;
+    }
+	pos = args->pos;
+
+    sprintf(format, "%%0%dd", args->valuesize);
+    if (args->longconn) {
+        m = memlink_create(args->host, args->rport, args->wport, args->timeout);
+        if (NULL == m) {
+            DERROR("memlink_create error!\n");
+            exit(-1);
+            return -1;
+        }
+        for (i = 0; i < args->testcount; i++) {
+            sprintf(value, format, i);
+			if (pos < -1) {
+				pos = random();
+			}
+			//sprintf(maskstr, "%d:%d", args->tid * args->testcount + i, 1);
+            ret = memlink_cmd_lpush(m, args->key, value, args->valuesize, args->maskstr);
+            if (ret != MEMLINK_OK) {
+                DERROR("lpush error! ret:%d, key:%s,value:%s,mask:%s,pos:%d\n", 
+                        ret, args->key, value, args->maskstr, args->pos);
+                return -2;
+            }
+        }
+        memlink_destroy(m); 
+    }else{
+        for (i = 0; i < args->testcount; i++) {
+            m = memlink_create(args->host, args->rport, args->wport, args->timeout);
+            if (NULL == m) {
+                DERROR("memlink_create error!\n");
+                exit(-1);
+                return -1;
+            }
+            sprintf(value, format, i);
+			//sprintf(maskstr, "%d:%d", args->tid * args->testcount + i, 1);
+            ret = memlink_cmd_lpush(m, args->key, value, args->valuesize, args->maskstr);
+            //ret = memlink_cmd_insert(m, args->key, value, args->valuesize, maskstr, args->pos);
+            if (ret != MEMLINK_OK) {
+                DERROR("lpush error! ret:%d, key:%s,value:%s,mask:%s,pos:%d\n", 
+                        ret, args->key, value, args->maskstr, args->pos);
+                return -2;
+            }
+            memlink_destroy(m); 
+        }
+    }
+
+    return 0;
+}
+
+int test_rpush(TestArgs *args)
+{
+    MemLink *m;
+    int ret, i;
+	int pos;
+    char value[512] = {0};
+    char format[64] = {0};
+	char maskstr[64] = {0};
+    
+    DINFO("====== rpush ======\n");
+    if (args->key[0] == 0 || args->valuesize == 0) {
+        DERROR("key and valuesize must not null!\n");
+        return -1;
+    }
+	pos = args->pos;
+
+    sprintf(format, "%%0%dd", args->valuesize);
+    if (args->longconn) {
+        m = memlink_create(args->host, args->rport, args->wport, args->timeout);
+        if (NULL == m) {
+            DERROR("memlink_create error!\n");
+            exit(-1);
+            return -1;
+        }
+        for (i = 0; i < args->testcount; i++) {
+            sprintf(value, format, i);
+			if (pos < -1) {
+				pos = random();
+			}
+			//sprintf(maskstr, "%d:%d", args->tid * args->testcount + i, 1);
+            ret = memlink_cmd_rpush(m, args->key, value, args->valuesize, args->maskstr);
+            if (ret != MEMLINK_OK) {
+                DERROR("rpush error! ret:%d, key:%s,value:%s,mask:%s,pos:%d\n", 
+                        ret, args->key, value, args->maskstr, args->pos);
+                return -2;
+            }
+        }
+        memlink_destroy(m); 
+    }else{
+        for (i = 0; i < args->testcount; i++) {
+            m = memlink_create(args->host, args->rport, args->wport, args->timeout);
+            if (NULL == m) {
+                DERROR("memlink_create error!\n");
+                exit(-1);
+                return -1;
+            }
+            sprintf(value, format, i);
+			//sprintf(maskstr, "%d:%d", args->tid * args->testcount + i, 1);
+            ret = memlink_cmd_rpush(m, args->key, value, args->valuesize, args->maskstr);
+            //ret = memlink_cmd_insert(m, args->key, value, args->valuesize, maskstr, args->pos);
+            if (ret != MEMLINK_OK) {
+                DERROR("rpush error! ret:%d, key:%s,value:%s,mask:%s,pos:%d\n", 
+                        ret, args->key, value, args->maskstr, args->pos);
+                return -2;
+            }
+            memlink_destroy(m); 
+        }
+    }
+
+    return 0;
+}
+
+int test_lpop(TestArgs *args)
+{
+    MemLink *m;
+    int ret, i;
+
+    DINFO("====== lpop ======\n");
+    if (args->longconn) {
+        m = memlink_create(args->host, args->rport, args->wport, args->timeout);
+        if (NULL == m) {
+            DERROR("memlink_create error!\n");
+            exit(-1);
+            return -1;
+        }
+        for (i = 0; i < args->testcount; i++) {
+            MemLinkResult   result;
+            ret = memlink_cmd_lpop(m, args->key, args->len, &result);
+            if (ret != MEMLINK_OK) {
+                DERROR("lpop error! ret:%d\n", ret);
+                return -2;
+            }
+            if (result.count != args->len) {
+                DERROR("lpop result count error: %d, len:%d\n", result.count, args->len);
+            }
+            memlink_result_free(&result);
+        }
+        memlink_destroy(m); 
+    }else{
+        for (i = 0; i < args->testcount; i++) {
+            m = memlink_create(args->host, args->rport, args->wport, args->timeout);
+            if (NULL == m) {
+                DERROR("memlink_create error!\n");
+                exit(-1);
+                return -1;
+            }
+            MemLinkResult result;
+            ret = memlink_cmd_lpop(m, args->key, args->len, &result);
+            if (ret != MEMLINK_OK) {
+                DERROR("lpop error! ret:%d\n", ret);
+                return -2;
+            }
+            if (result.count != args->len) {
+                DERROR("lpop result count error: %d, len:%d\n", result.count, args->len);
+            }
+            memlink_result_free(&result);
+            memlink_destroy(m); 
+        }
+    }
+
+    return 0;
+}
+
+int test_rpop(TestArgs *args)
+{
+    MemLink *m;
+    int ret, i;
+
+    DINFO("====== rpop ======\n");
+    if (args->longconn) {
+        m = memlink_create(args->host, args->rport, args->wport, args->timeout);
+        if (NULL == m) {
+            DERROR("memlink_create error!\n");
+            exit(-1);
+            return -1;
+        }
+        for (i = 0; i < args->testcount; i++) {
+            MemLinkResult   result;
+            ret = memlink_cmd_rpop(m, args->key, args->len, &result);
+            if (ret != MEMLINK_OK) {
+                DERROR("range error! ret:%d\n", ret);
+                return -2;
+            }
+            if (result.count != args->len) {
+                DERROR("rpop result count error: %d, len:%d\n", result.count, args->len);
+            }
+            memlink_result_free(&result);
+        }
+        memlink_destroy(m); 
+    }else{
+        for (i = 0; i < args->testcount; i++) {
+            m = memlink_create(args->host, args->rport, args->wport, args->timeout);
+            if (NULL == m) {
+                DERROR("memlink_create error!\n");
+                exit(-1);
+                return -1;
+            }
+            MemLinkResult result;
+            ret = memlink_cmd_rpop(m, args->key, args->len, &result);
+            if (ret != MEMLINK_OK) {
+                DERROR("rpop error! ret:%d\n", ret);
+                return -2;
+            }
+            if (result.count != args->len) {
+                DERROR("rpop result count error: %d, len:%d\n", result.count, args->len);
+            }
+            memlink_result_free(&result);
+            memlink_destroy(m); 
+        }
+    }
+
+    return 0;
+}
+
 
 volatile int    thread_create_count = 0;
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
@@ -403,7 +672,7 @@ void* thread_start(void *args)
     pthread_mutex_unlock(&lock);
 
     gettimeofday(&start, NULL);
-    ta->func(ta->args);
+    int ret = ta->func(ta->args);
     gettimeofday(&end, NULL);
 
     unsigned int tmd = timediff(&start, &end);
@@ -411,15 +680,18 @@ void* thread_start(void *args)
 	double onetime = 1000 / speed;
     DINFO("thread test use time:%u, speed:%.2f, time:%.2f\n", tmd, speed, onetime);
 	long mytime = (int)ceil(onetime);
+    if (ret < 0) {
+        mytime = mytime  * -1;
+    }
     return (void*)mytime;
 }
 
 int single_start(ThreadArgs *ta)
 {
     struct timeval start, end;  
-	
+
 	gettimeofday(&start, NULL);
-    ta->func(ta->args);
+    int ret = ta->func(ta->args);
     gettimeofday(&end, NULL);
 
     unsigned int tmd = timediff(&start, &end);
@@ -428,7 +700,8 @@ int single_start(ThreadArgs *ta)
 	
 	free(ta->args);
 	free(ta);
-	return 0;
+
+	return ret;
 }
 
 int test_start(TestConfig *cf)
@@ -468,19 +741,26 @@ int test_start(TestConfig *cf)
     }
     gettimeofday(&end, NULL);
 
+    ret = 0;
 	int sum = 0;
 	for (i = 0; i < cf->threads; i++) {
-		sum += reqtime[i];
+        if (reqtime[i] > 0) {
+		    sum += reqtime[i];
+        }else{
+		    sum += reqtime[i] * -1;
+            ret = -1;
+        }
 	}
 
     unsigned int tmd = timediff(&start, &end);
     double speed = (((double)cf->args.testcount * cf->threads)/ tmd) * 1000000;
     DINFO("thread all test use time:%u, speed:%.2f, onetime:%.2f\n", tmd, speed, (float)sum/cf->threads);
 
-    return 0;
+    return ret;
 }
 
-TestFuncLink gfuncs[] = {{"create", test_create}, 
+TestFuncLink gfuncs[] = {{"ping", test_ping},
+                         {"create", test_create}, 
                          {"insert", test_insert},
                          {"range", test_range},
                          {"move", test_move},
@@ -488,6 +768,10 @@ TestFuncLink gfuncs[] = {{"create", test_create},
                          {"mask", test_mask},
                          {"tag", test_tag},
                          {"count", test_count},
+                         {"lpush", test_lpush},
+                         {"rpush", test_rpush},
+                         {"lpop", test_lpop},
+                         {"rpop", test_rpop},
                          {NULL, NULL}};
 
 TestFunc funclink_find(char *name)
@@ -512,12 +796,14 @@ int show_help()
 {
 	printf("usage:\n\tperf [options]\n");
     printf("options:\n");
-    printf("\t--help,-h\tshow help information\n");
+    printf("\t--host,-h\tmemlink server ip\n");
+    printf("\t--readport,-r\tserver read port. default 11001\n");
+    printf("\t--writeport,-w\tserver write port. default 11002\n");
     printf("\t--thread,-t\tthread count for test\n");
     printf("\t--count,-n\tinsert number\n");
     printf("\t--from,-f\trange from position\n");
     printf("\t--len,-l\trange length\n");
-    printf("\t--do,-d\t\tcreate/insert/range/move/del/mask/tag/count\n");
+    printf("\t--do,-d\t\tping/create/insert/range/move/del/mask/tag/count/lpush/rpush/lpop/rpop\n");
     printf("\t--key,-k\tkey\n");
     printf("\t--value,-v\tvalue\n");
     printf("\t--valuesize,-s\tvaluesize for create\n");
@@ -537,8 +823,10 @@ int main(int argc, char *argv[])
 
 	int     optret;
     int     optidx = 0;
-    char    *optstr = "ht:n:f:l:k:v:s:p:o:i:a:m:d:c:";
-    struct option myoptions[] = {{"help", 0, NULL, 'h'},
+    char    *optstr = "h:t:n:f:l:k:v:s:p:o:i:a:m:d:c:r:w:";
+    struct option myoptions[] = {{"host", 0, NULL, 'h'},
+                                 {"readport", 0, NULL, 'r'},
+                                 {"writeport", 0, NULL, 'w'},
                                  {"thread", 0, NULL, 't'},
                                  {"count", 0, NULL, 'n'},
                                  {"frompos", 0, NULL, 'f'},
@@ -558,11 +846,16 @@ int main(int argc, char *argv[])
 
     if (argc < 2) {
         show_help();
-        return 0;
+        return -1;
     }
 	
 	TestConfig tcf;
     memset(&tcf, 0, sizeof(TestConfig));
+
+    sprintf(tcf.args.host, "%s", MEMLINK_HOST);
+    tcf.args.rport = MEMLINK_PORT_READ;
+    tcf.args.wport = MEMLINK_PORT_WRITE;
+    tcf.args.timeout = MEMLINK_TIMEOUT;
 
     while(optret = getopt_long(argc, argv, optstr, myoptions, &optidx)) {
         if (0 > optret) {
@@ -635,7 +928,13 @@ int main(int argc, char *argv[])
 			snprintf(tcf.args.maskstr, 255, "%s", optarg);
             break;
         case 'h':
-            show_help();
+            sprintf(tcf.args.host, "%s", optarg);
+            break;
+        case 'r':
+            tcf.args.rport = atoi(optarg);
+            break;
+        case 'w':
+            tcf.args.wport = atoi(optarg);
             break;
         default:
 			printf("error option: %c\n", optret);
@@ -643,16 +942,18 @@ int main(int argc, char *argv[])
             break;
         }
     }
-	
+
+    DINFO("memlink %s r:%d w:%d\n", tcf.args.host, tcf.args.rport, tcf.args.wport);	
+
 	if (tcf.threads > 0) {
-		test_start(&tcf);
+		return test_start(&tcf);
 	}else{
 		ThreadArgs  ta;// = (ThreadArgs*)malloc(sizeof(ThreadArgs));
 		ta.func = tcf.func;
 		ta.args = &tcf.args;
 		ta.threads = tcf.threads;
         
-		single_start(&ta);
+		return single_start(&ta);
 	}
 
 	return 0;

@@ -55,8 +55,10 @@ def test():
     files = glob.glob("*_test")
     files.sort()
     print files
+    #pyfiles = glob.glob("*_test.py")
+    pyfiles = ['dump_test.py', 'push_pop_test.py']
+    files += pyfiles
 
-    files.append('dump_test.py')
     result = {}
     print 'do all test ...'
 
@@ -65,12 +67,15 @@ def test():
         if ret != 0:
             result[fn] = 0
         else:
-            result[fn] = 1
+            result[fn] = -1
     return result
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
-        testone(sys.argv[1])
+        sys.exit(testone(sys.argv[1]))
     else:
-        test()
+        ret = test()
+        for row in ret:
+            if row < 0:
+                sys.exit(row)
 

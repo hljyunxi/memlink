@@ -99,7 +99,7 @@ def test():
 
     #del 1000
     num = 1000
-    ret, result = client2master.range(key, MEMLINK_VALUE_VISIBLE, "", 0, num)
+    ret, result = client2master.range(key, MEMLINK_VALUE_VISIBLE, 0, num)
     #print 'count:', result.count
     item = result.root;
     while item:

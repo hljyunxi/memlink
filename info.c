@@ -146,7 +146,8 @@ pack_unpack_check(char *data, int len)
 	return 1;	
 
 }
-int read_conn_info(Conn *conn)
+int 
+info_read_conn(Conn *conn)
 {
 	int wlen;
 	char *wbuf;
@@ -195,7 +196,8 @@ int read_conn_info(Conn *conn)
 	return 1;
 }
 
-int write_conn_info(Conn *conn)
+int 
+info_write_conn(Conn *conn)
 {
 	int wlen;
 	char *wbuf;
@@ -244,7 +246,8 @@ int write_conn_info(Conn *conn)
 	return 1;
 }
 
-int sync_conn_info(Conn *conn)
+int 
+info_sync_conn(Conn *conn)
 {
 	int wlen;
 	char *wbuf;
@@ -297,6 +300,33 @@ int sync_conn_info(Conn *conn)
 	conn_write_buffer_head(conn, ret, count);
 
 	return 1;
+}
+
+int
+info_sys_config(Conn *conn)
+{
+    int  wlen;
+    char *wbuf;
+    //int  count = 0;
+    MyConfig *cf;
+
+    cf = g_cf;
+
+    int n = (CMD_REPLY_HEAD_LEN + sizeof(MyConfig)) / 4096;
+    int y = (CMD_REPLY_HEAD_LEN + sizeof(MyConfig)) % 4096;
+
+    wlen = n * 4096 + (y > 1 ? 1: 0) * 4096;
+    wbuf = conn_write_buffer(conn, wlen);
+
+    char *data = wbuf + CMD_REPLY_HEAD_LEN;
+    int  count = pack_config_struct(data, cf); 
+    int  ret;
+
+    count += CMD_REPLY_HEAD_LEN;
+    ret = MEMLINK_OK; 
+    conn_write_buffer_head(conn, ret, count);
+
+    return 1;
 }
 
 /**

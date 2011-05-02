@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include "mem.h"
-#include "serial.h"
+//#include "serial.h"
 #include "common.h"
 #include "conn.h"
 
@@ -86,5 +86,6 @@ int             hashtable_sortlist_range(HashTable *ht, char *key, unsigned char
                                         void *valmax, Conn *conn);
 int				hashtable_sortlist_add_mask_bin(HashTable *ht, char *key, void *value, void *mask);
 int				hashtable_sortlist_add_mask(HashTable *ht, char *key, void *value, unsigned int *maskarray, char masknum);
+int             hashtable_clean_all(HashTable *ht);
 
 #endif

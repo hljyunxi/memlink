@@ -91,6 +91,9 @@ rdata_ready(Conn *conn, char *data, int datalen)
             DINFO("data_reply return: %d\n", ret);
             if (conninfo)
                 conninfo->cmd_count++;
+
+            hashtable_print(g_runtime->ht, key);
+
             break;
         }
         case CMD_SL_RANGE: {
@@ -100,9 +103,10 @@ rdata_ready(Conn *conn, char *data, int datalen)
             char valmax[512] = {0};
             unsigned char vminlen = 0, vmaxlen = 0;
 
-            ret = cmd_sortlist_range_unpack(data, key, &kind, &masknum, maskarray, valmin, &vminlen, valmax, &vmaxlen);
-            DINFO("unpack range return:%d, key:%s, masknum:%d, vminlen:%d, vmaxlen:%d, len:%d\n", 
-                            ret, key, masknum, vminlen, vmaxlen, len);
+            ret = cmd_sortlist_range_unpack(data, key, &kind, &masknum, maskarray, 
+                                            valmin, &vminlen, valmax, &vmaxlen);
+            DINFO("unpack range return:%d, key:%s, masknum:%d, vmin:%s,%d, vmax:%s,%d, len:%d\n", 
+                            ret, key, masknum, valmin, vminlen, valmax, vmaxlen, len);
 
             /*
 			if (frompos < 0 || len <= 0) {
@@ -118,7 +122,11 @@ rdata_ready(Conn *conn, char *data, int datalen)
             // len(4B) + retcode(2B) + valuesize(1B) + masksize(1B) + masknum(1B) + maskformat(masknum B) + value.mask * len
             //int wlen = sizeof(int) + sizeof(short) + sizeof(char) + sizeof(char) + sizeof(char) + 
 			//		   masknum * sizeof(int) + (HASHTABLE_VALUE_MAX + (HASHTABLE_MASK_MAX_BIT/8 + 2) * masknum) * len;
-            ret = hashtable_sortlist_range(g_runtime->ht, key, kind, maskarray, masknum, valmin, valmax, conn); 
+
+            //hashtable_print(g_runtime->ht, key);
+
+            ret = hashtable_sortlist_range(g_runtime->ht, key, kind, maskarray, masknum, 
+                                            valmin, valmax, conn); 
             DINFO("hashtable_range return: %d\n", ret);
             //ret = data_reply(conn, ret, retrec, retlen);
             ret = data_reply_direct(conn);
@@ -199,11 +207,42 @@ rdata_ready(Conn *conn, char *data, int datalen)
                 conninfo->cmd_count++;
             break;
         }
+        case CMD_SL_COUNT: {
+            DINFO("<<< cmd SL_COUNT >>>\n");
+            char valmin[512] = {0};
+            char valmax[512] = {0};
+            unsigned char vminlen = 0, vmaxlen = 0;
+
+            ret = cmd_sortlist_count_unpack(data, key, &masknum, maskarray, 
+                                            valmin, &vminlen, valmax, &vmaxlen);
+            DINFO("unpack range return:%d, key:%s, masknum:%d, vmin:%s,%d, vmax:%s,%d, len:%d\n", 
+                            ret, key, masknum, valmin, vminlen, valmax, vmaxlen, len);
+
+			if (key[0] == 0) {
+				ret = MEMLINK_ERR_PARAM;
+				goto rdata_ready_error;
+			}
+            int vcount = 0, mcount = 0;
+            retlen = sizeof(int) * 2;
+            char retrec[retlen];
+
+            ret = hashtable_sortlist_count(g_runtime->ht, key, maskarray, masknum, 
+                                            valmin, valmax, &vcount, &mcount); 
+            DINFO("hashtable sortlist count, ret:%d, visible_count:%d, tagdel_count:%d\n", ret, vcount, mcount);
+            memcpy(retrec, &vcount, sizeof(int));
+            memcpy(retrec + sizeof(int), &mcount, sizeof(int));
+            //retlen = sizeof(int) + sizeof(int);
+            ret = data_reply(conn, ret, retrec, retlen);
+            DINFO("data_reply return: %d\n", ret);
+            if (conninfo)
+                conninfo->cmd_count++;
+            break;
+        }
 		case CMD_READ_CONN_INFO: {
 			DINFO("<<< cmd READ_CONN_INFO >>>\n");
             if (conninfo)
                 conninfo->cmd_count++;
-            ret = read_conn_info(conn);
+            ret = info_read_conn(conn);
 			ret = data_reply_direct(conn);
 			DINFO("data_reply return: %d\n", ret);
 			break;
@@ -213,7 +252,7 @@ rdata_ready(Conn *conn, char *data, int datalen)
 			DINFO("<<< cmd WRITE_CONN_INFO >>>\n");
             if (conninfo)
                 conninfo->cmd_count++;
-            ret = write_conn_info(conn);
+            ret = info_write_conn(conn);
 			DINFO("write_conn_info return: %d\n", ret);
 			ret = data_reply_direct(conn);
 			DINFO("data_reply return: %d\n", ret);
@@ -223,12 +262,19 @@ rdata_ready(Conn *conn, char *data, int datalen)
 			DINFO("<<< cmd SYNC_CONN_INFO >>>\n");
             if (conninfo)
                 conninfo->cmd_count++;
-            ret = sync_conn_info(conn);
+            ret = info_sync_conn(conn);
 			DINFO("sync_conn_info return: %d\n", ret);
 			ret = data_reply_direct(conn);
 			DINFO("data_reply return: %d\n", ret);
 			break;
 		}
+        case CMD_CONFIG_INFO: {
+            DINFO("<<< cmd CMD_CONFIG_INFO >>>\n");
+            ret = info_sys_config(conn);
+            ret = data_reply_direct(conn);
+            DINFO("data_reply return: %d\n", ret);
+            break;
+        }
         default: {
             ret = MEMLINK_ERR_CLIENT_CMD;
 

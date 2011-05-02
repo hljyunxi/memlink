@@ -6,7 +6,7 @@ includes = ['.', '../../']
 libpath  = ['.']
 libs	 = ['m']
 comfiles = ['../../zzmalloc.c', '../../serial.c', '../../logfile.c', '../../utils.c']
-prgfiles = comfiles + ['memlink_client.c', 'test.c']
+prgfiles = comfiles + ['memlink_client.c', 'sortlisttest.c']
 simfiles = comfiles + ['memlink_client.c', 'pingtest.c']
 libfiles = comfiles + ['memlink_client.c']
 

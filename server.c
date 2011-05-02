@@ -11,7 +11,7 @@
 #include <errno.h>
 #include <time.h>
 #include <string.h>
-
+#include <event.h>
 #include "logfile.h"
 #include "myconfig.h"
 #include "server.h"
@@ -84,6 +84,12 @@ mainserver_read(int fd, short event, void *arg)
     }
     conn->port  = g_cf->read_port;
 	conn->ready = rdata_ready;
+
+    if (conn_check_max(conn) != MEMLINK_OK) {
+        DNOTE("too many read conn.\n");
+        conn->destroy(conn);
+        return;
+    }
 
     int             n   = ms->lastth;
     ThreadServer    *ts = &ms->threads[n];

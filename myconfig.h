@@ -37,18 +37,23 @@ typedef struct _myconfig
     int          timeout;
     int          thread_num;
     int          max_conn;                            // max connection
+    int          max_read_conn;
+    int          max_write_conn;
+	int		     max_sync_conn;
     int          max_core;                            // maximize core file limit
     int          is_daemon;                           // is run with daemon
     char         role;                                // 1 means master; 0 means slave
     char         master_sync_host[IP_ADDR_MAX_LEN];
     int          master_sync_port;
     unsigned int sync_interval;                       // in seconds
+	char		 user[128];
 }MyConfig;
 
 
 typedef struct _runtime
 {
     char            home[PATH_MAX]; // programe home dir
+    char            conffile[PATH_MAX];
     pthread_mutex_t mutex; // write lock
     unsigned int    dumpver; // dump file version
     unsigned int    dumplogver; // log version in dump file
@@ -66,14 +71,21 @@ typedef struct _runtime
     unsigned int    conn_num; // current conn count
 	time_t          last_dump;
 	unsigned int    memlink_start;
+
+	pthread_mutex_t	mutex_mem;
+	long long		mem_used;
 }Runtime;
 
 extern MyConfig *g_cf;
 extern Runtime  *g_runtime;
 
 MyConfig*   myconfig_create(char *filename);
-Runtime*    runtime_create_master(char *pgname);
-Runtime*    runtime_create_slave(char *pgname);
+Runtime*    runtime_create_master(char *pgname, char *conffile);
+Runtime*    runtime_create_slave(char *pgname, char *conffile);
 void        runtime_destroy(Runtime *rt);
+int         myconfig_change();
+
+int			mem_used_inc(long long size);	
+int			mem_used_dec(long long size);
 
 #endif
