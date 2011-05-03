@@ -54,7 +54,7 @@
   * 需要jdk版本1.5以上
   * 依赖swig http://sourceforge.net/projects/swig/files/ 版本 swig-1.3.40，注意不是 swigwin-1.3.40。
   首先要设置java sdk路径。打开 client/java/SConstruct，修改里面的java_home为jdk路径（和JAVA_HOME一样的）。另外scons还要求jdk的javac、jar命令在/usr/bin下。如果不在可以做一个符号链接。
-   编译直接在client/java目录下执行scons即可。会生成memlink.jar以及libmemlink.so
+  编译直接在client/java目录下执行scons即可。会生成memlink.jar以及libmemlink.so
 
 == memlink安装 ==
   memlink安装需要执行 "scons 安装路径" 这个命令。其中的安装路径在SConstruct文件中有配置，必须和里面的install_dir一致。这里默认是/opt/memlink，可以根据情况修改。
