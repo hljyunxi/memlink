@@ -194,23 +194,27 @@ mask_binary2string(unsigned char *maskformat, int masknum, char *mask, int maskl
 	unsigned int val;
 	int i;
 	int widx = 0;
-
+   
 	for (i = 0; i < masknum; i++) {
 		int fs = maskformat[i];
 		int offset = (fs + n) % 8;
 		int yu = offset > 0 ? 1: 0;
 		int cs = (fs + n) / 8 + yu;
-	    
+
+        //DINFO("i:%d, fs:%d, cs:%d, offset:%d, n:%d, widx:%d\n", i, fs, cs, offset, n, widx);
 		val = 0;
         if (cs <= 4) {
+            //DINFO("copy:%d\n", cs);
             memcpy(&val, &mask[idx], cs);
             val <<= 32 - fs - n;
             val >>= 32 - fs;
         }else{
+            //DINFO("copy:%d\n", sizeof(int));
             memcpy(&val, &mask[idx], sizeof(int));
             val >>= n;
             unsigned int val2 = 0;
             
+            //DINFO("copy:%d\n", cs - sizeof(int));
             memcpy(&val2, &mask[idx + sizeof(int)], cs - sizeof(int));
             val2 <<= 32 - n;
             val = val | val2;
@@ -255,7 +259,7 @@ mask_array2flag(unsigned char *maskformat, unsigned int *maskarray, char masknum
         mf = maskformat[i];
         m  = maskarray[i];
         
-        //DINFO("i:%d, idx:%d, format:%d, array:%d\n", i, idx, mf, m);
+        //DINFO("i:%d, b:%d, idx:%d, format:%d, array:%d, xlen:%d\n", i, b, idx, mf, m, (b + mf) / 8 + ((b + mf) % 8 > 0 ? 1:0));
         if (m == UINT_MAX) { // set to 1
             xlen = (b + mf) / 8 + ((b + mf) % 8 > 0 ? 1:0);
             v = 0xffffffff >> (32 - mf);
@@ -273,8 +277,9 @@ mask_array2flag(unsigned char *maskformat, unsigned int *maskarray, char masknum
 				unsigned char v2 = 0xff >> (8 - (mf + b) - 32);
 				mask[idx + j] |= v2;
 			}
-            idx += xlen - 1;
-            b = (b + mf) % 8;
+            //idx += xlen - 1;
+            idx += (b + mf) / 8;
+            b   = (b + mf) % 8;
         }else{ // set to 0
             b += mf;
             while (b >= 8) {
@@ -287,7 +292,8 @@ mask_array2flag(unsigned char *maskformat, unsigned int *maskarray, char masknum
     if (b > 0) {
         mask[idx] = mask[idx] & (char)(UCHAR_MAX >> (8 - b));
     }
-
+    
+    DINFO("return:%d\n", idx+1);
     return idx + 1;
 }
 
@@ -674,8 +680,8 @@ cmd_del_unpack(char *data, char *key, char *value, unsigned char *valuelen)
 }
 
 int 
-cmd_sortlist_del_pack(char *data, char *key, char *valmin, unsigned char vminlen, 
-            char *valmax, unsigned char vmaxlen)
+cmd_sortlist_del_pack(char *data, char *key, unsigned char kind, char *valmin, unsigned char vminlen, 
+            char *valmax, unsigned char vmaxlen, unsigned char masknum, unsigned int *maskarray)
 {
     unsigned char cmd = CMD_SL_DEL;
     unsigned int len;
@@ -683,10 +689,14 @@ cmd_sortlist_del_pack(char *data, char *key, char *valmin, unsigned char vminlen
 
     memcpy(data + count, &cmd, sizeof(char));
     count += sizeof(char);
-
+    
+    memcpy(data + count, &kind, sizeof(char));
+    count += sizeof(char);
+    
     count += pack_string(data + count, key, 0);
     count += pack_string(data + count, valmin, vminlen);
     count += pack_string(data + count, valmax, vmaxlen);
+    count += pack_mask(data + count, maskarray, masknum);
 
     len = count - CMD_REQ_SIZE_LEN;
     memcpy(data, &len, CMD_REQ_SIZE_LEN);
@@ -695,15 +705,18 @@ cmd_sortlist_del_pack(char *data, char *key, char *valmin, unsigned char vminlen
 }
 
 int 
-cmd_sortlist_del_unpack(char *data, char *key, char *valmin, unsigned char *vminlen,
-                        char *valmax, unsigned char *vmaxlen)
+cmd_sortlist_del_unpack(char *data, char *key, unsigned char *kind, char *valmin, unsigned char *vminlen,
+                        char *valmax, unsigned char *vmaxlen, unsigned char *masknum, unsigned int *maskarray)
 {
     int count = CMD_REQ_HEAD_LEN;
     unsigned char len;
-    
+   
+    memcpy(kind, data + count, sizeof(char));
+    count += sizeof(char);
     count += unpack_string(data + count, key, &len);
     count += unpack_string(data + count, valmin, vminlen);
-    unpack_string(data + count, valmax, vmaxlen);
+    count += unpack_string(data + count, valmax, vmaxlen);
+    unpack_mask(data + count, maskarray, masknum);
     
     return 0;
 }
@@ -1564,7 +1577,7 @@ cmd_config_info_unpack(char *data)
 int
 cmd_set_config_dynamic_pack(char *data, char *key, char *value)
 {
-    unsigned char cmd = CMD_SET_CONFIG_DYNAMIC;
+    unsigned char cmd = CMD_SET_CONFIG;
     int count = CMD_REQ_SIZE_LEN;
     int ret;
     

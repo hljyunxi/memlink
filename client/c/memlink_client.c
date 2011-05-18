@@ -51,7 +51,7 @@ memlink_connect(MemLink *m, int fdtype)
     int ret;
     int sock;
     
-    DINFO("memlink connect ...\n");
+    //DINFO("memlink connect ...\n");
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (-1 == sock) {
         DERROR("socket create error: %s\n", strerror(errno));
@@ -139,7 +139,7 @@ memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
     ret = readn(fd, rbuf, RECV_PKG_SIZE_LEN, m->timeout);
     //DINFO("read head: %d\n", ret);
     if (ret != RECV_PKG_SIZE_LEN) {
-        DERROR("read head error! ret:%d, %ld\n", ret, RECV_PKG_SIZE_LEN);
+        DERROR("read head error! ret:%d, %u\n", ret, RECV_PKG_SIZE_LEN);
         close(fd);
 
         if (fd == m->readfd) {
@@ -265,8 +265,7 @@ memlink_do_cmd(MemLink *m, int fdtype, char *data, int len, char *retdata, int r
 #endif*/
 
         memcpy(&retcode, retdata + RECV_PKG_SIZE_LEN, sizeof(short));
-        DINFO("retcode: %d\n", retcode);
-		
+        //DINFO("retcode: %d\n", retcode);
 		if (retcode != 0) {
 			return retcode;
 		}
@@ -495,16 +494,30 @@ memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen)
 }
 
 int
-memlink_cmd_sortlist_del(MemLink *m, char *key, char *valmin, unsigned char vminlen, 
-                        char *valmax, unsigned char vmaxlen)
+memlink_cmd_sortlist_del(MemLink *m, char *key, int kind, char *maskstr, 
+                        char *valmin, int vminlen, 
+                        char *valmax, int vmaxlen)
 {
 	if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
 		return MEMLINK_ERR_PARAM;
+    
+    if (MEMLINK_VALUE_ALL != kind && MEMLINK_VALUE_VISIBLE != kind && MEMLINK_VALUE_TAGDEL != kind)
+		return MEMLINK_ERR_PARAM;
+	
+
+    unsigned int maskarray[HASHTABLE_MASK_MAX_ITEM] = {0};
+    int maskn = 0;
+
+    maskn = mask_string2array(maskstr, maskarray);
+    //DINFO("range mask len: %d\n", maskn);
+	if (maskn < 0 || maskn > HASHTABLE_MASK_MAX_ITEM)
+		return MEMLINK_ERR_PARAM;
+    
 
     char data[1024] = {0};
     int  len;
 
-    len = cmd_sortlist_del_pack(data, key, valmin, vminlen, valmax, vmaxlen);
+    len = cmd_sortlist_del_pack(data, key, kind, valmin, vminlen, valmax, vmaxlen, maskn, maskarray);
     //DINFO("pack sortlist_del len: %d\n", len);
     
     /*unsigned short pkglen;
@@ -685,8 +698,8 @@ memlink_cmd_count(MemLink *m, char *key, char *maskstr, MemLinkCount *count)
 }
 
 int 
-memlink_cmd_sortlist_count(MemLink *m, char *key, char *maskstr, char *valmin, unsigned char vminlen, 
-                char *valmax, unsigned char vmaxlen, MemLinkCount *count)
+memlink_cmd_sortlist_count(MemLink *m, char *key, char *maskstr, char *valmin, int vminlen, 
+                char *valmax, int vmaxlen, MemLinkCount *count)
 {
 	if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
 		return MEMLINK_ERR_PARAM;
@@ -736,23 +749,23 @@ memlink_result_parse(char *retdata, MemLinkResult *result)
     memcpy(maskformat, retdata + pos, masknum);
     pos += masknum;
 
-    //DINFO("valuesize: %d, masksize: %d, pos:%d\n", valuesize, masksize, pos);
+    //DINFO("valuesize: %d, masksize: %d, masknum:%d, pos:%d\n", valuesize, masksize, masknum, pos);
     char *vdata   = retdata + pos;
     char *enddata = retdata + dlen + sizeof(int);
-#ifdef DEBUG
+/*#ifdef DEBUG
     int  datalen  = valuesize + masksize;
     DINFO("vdata: %p, enddata: %p, datalen: %d\n", vdata, enddata, datalen);
-    //char buf1[128], buf2[128];
-#endif
+    char buf1[128], buf2[128];
+#endif*/
     //MemLinkResult   *mret;
     MemLinkItem     *root = NULL, *cur = NULL;
 
     int count = 0;
 
     while (vdata < enddata) {
-        /*DINFO("value:%s, mask:%s\n", formath(vdata, valuesize, buf1, 128), 
-                            formath(vdata + valuesize, masksize, buf2, 128));
-        */
+        //DINFO("value:%s, mask:%s\n", formath(vdata, valuesize, buf1, 128), 
+        //                    formath(vdata + valuesize, masksize, buf2, 128));
+        
         MemLinkItem     *item;
         item = (MemLinkItem*)zz_malloc(sizeof(MemLinkItem));
         if (NULL == item) {
@@ -854,8 +867,8 @@ memlink_cmd_range(MemLink *m, char *key, int kind,  char *maskstr,
 
 int 
 memlink_cmd_sortlist_range(MemLink *m, char *key, int kind,  char *maskstr, 
-                  char *valmin, unsigned char vminlen, 
-                  char *valmax, unsigned char vmaxlen, MemLinkResult *result)
+                  char *valmin, int vminlen, 
+                  char *valmax, int vmaxlen, MemLinkResult *result)
 {
     if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
 		return MEMLINK_ERR_PARAM;
@@ -883,17 +896,23 @@ memlink_cmd_sortlist_range(MemLink *m, char *key, int kind,  char *maskstr,
 	if (retlen > 1024000) {
 		return MEMLINK_ERR_PACKAGE_SIZE;
 	}
-    char retdata[retlen];
+    
+    int y = retlen / 4096;
+    int n = retlen % 4096; 
+    char *retdata = (char *)zz_malloc(y * 4096 + (n > 0 ? 1: 0) * 4096);
+    //char retdata[retlen];
 
     int ret = memlink_do_cmd(m, MEMLINK_READER, data, plen, retdata, retlen);
     //DINFO("memlink_do_cmd: %d\n", ret);
     if (ret <= 0) {
         DERROR("memlink_do_cmd error: %d\n", ret);
+        zz_free(retdata);
         return ret;
     }
 
     memlink_result_parse(retdata, result);
 
+    zz_free(retdata);
     return MEMLINK_OK;
 }
 
@@ -1214,7 +1233,7 @@ memlink_ival_create(char *value, unsigned int valuelen, char *maskstr, int pos)
 }
 
 int
-memlink_mkv_destroy(MemLinkInsertMkv *mkv)
+memlink_imkv_destroy(MemLinkInsertMkv *mkv)
 {
 	MemLinkInsertKey *keyitem;
 	MemLinkInsertVal *valitem;
@@ -1237,7 +1256,7 @@ memlink_mkv_destroy(MemLinkInsertMkv *mkv)
 }
 
 int
-memlink_mkv_add_key(MemLinkInsertMkv *mkv, MemLinkInsertKey *keyobj)
+memlink_imkv_add_key(MemLinkInsertMkv *mkv, MemLinkInsertKey *keyobj)
 {
 	unsigned int key_size = 0;
 
@@ -1490,7 +1509,7 @@ memlink_rcinfo_free(MemLinkRcInfo *info)
 		info->root = tmp->next;
 		zz_free(tmp);
 	}
-	return 1;
+	return 0;
 }
 
 int
@@ -1505,7 +1524,7 @@ memlink_wcinfo_free(MemLinkWcInfo *info)
 		info->root = tmp->next;
 		zz_free(tmp);
 	}
-	return 1;
+	return 0;
 }
 
 int
@@ -1520,7 +1539,7 @@ memlink_scinfo_free(MemLinkScInfo *info)
 		info->root = tmp->next;
 		zz_free(tmp);
 	}
-	return 1;
+	return 0;
 }
 
 int

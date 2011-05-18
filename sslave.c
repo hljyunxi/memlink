@@ -27,6 +27,7 @@
 #include "common.h"
 #include "dumpfile.h"
 #include "sslave.h"
+#include "runtime.h"
 
 #define MAX_SYNC_PREV   100
 #define SYNCPOS_LEN   (sizeof(int)+sizeof(int))

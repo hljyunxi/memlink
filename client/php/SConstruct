@@ -13,9 +13,15 @@ includes = ['.', '../../', '../c/', '/Developer/usr/include'] + php_includes
 libpath  = ['.']
 libs	 = ['m']
 files    = ['../../zzmalloc.c', '../../serial.c', '../../logfile.c', '../../utils.c', 
-			'../c/memlink_client.c', 'memlink_client_php.c']
+			'../c/memlink_client.c']
 
 env = Environment(CCFLAGS=cflags, CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
-env.SharedLibrary("memlink", files)
+shared_files = []
+for fn in files:
+    name = os.path.basename(fn)[:-2]
+    shared_files.append(env.SharedObject('client-' + name, fn))
+shared_files.append('memlink_client_php.c')
+
+env.SharedLibrary("memlink", shared_files)
 
 Command('memlink.so', 'libmemlink.so', [Move('$TARGET', '$SOURCE'), Copy('memlink.php', 'memlink_php.php')])

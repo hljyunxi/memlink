@@ -654,6 +654,98 @@ int test_rpop(TestArgs *args)
     return 0;
 }
 
+int test_sl_insert(TestArgs *args)
+{
+    MemLink *m;
+    int ret, i;
+
+    DINFO("====== sl_insert ======\n");
+    if (args->longconn) {
+        m = memlink_create(args->host, args->rport, args->wport, args->timeout);
+        if (NULL == m) {
+            DERROR("memlink_create error!\n");
+            exit(-1);
+            return -1;
+        }
+        for (i = 0; i < args->testcount; i++) {
+            MemLinkResult   result;
+            ret = memlink_cmd_rpop(m, args->key, args->len, &result);
+            if (ret != MEMLINK_OK) {
+                DERROR("range error! ret:%d\n", ret);
+                return -2;
+            }
+            if (result.count != args->len) {
+                DERROR("rpop result count error: %d, len:%d\n", result.count, args->len);
+            }
+            memlink_result_free(&result);
+        }
+        memlink_destroy(m); 
+
+    }else{
+    }
+ 
+    return 0;
+}
+int test_sl_range(TestArgs *args)
+{
+    MemLink *m;
+    int ret, i;
+
+    DINFO("====== sl_range ======\n");
+    if (args->longconn) {
+        m = memlink_create(args->host, args->rport, args->wport, args->timeout);
+        if (NULL == m) {
+            DERROR("memlink_create error!\n");
+            exit(-1);
+            return -1;
+        }
+        for (i = 0; i < args->testcount; i++) {
+            MemLinkResult   result;
+            ret = memlink_cmd_rpop(m, args->key, args->len, &result);
+            if (ret != MEMLINK_OK) {
+                DERROR("range error! ret:%d\n", ret);
+                return -2;
+            }
+            if (result.count != args->len) {
+                DERROR("rpop result count error: %d, len:%d\n", result.count, args->len);
+            }
+            memlink_result_free(&result);
+        }
+        memlink_destroy(m); 
+
+
+    }else{
+    }
+ 
+    return 0;
+}
+int test_sl_count(TestArgs *args)
+{
+    MemLink *m;
+    int ret, i;
+
+    DINFO("====== sl_count ======\n");
+    if (args->longconn) {
+    }else{
+    }
+ 
+    return 0;
+}
+
+int test_sl_del(TestArgs *args)
+{
+    MemLink *m;
+    int ret, i;
+
+    DINFO("====== sl_del ======\n");
+    if (args->longconn) {
+    }else{
+    }
+ 
+    return 0;
+}
+
+
 
 volatile int    thread_create_count = 0;
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
@@ -772,6 +864,10 @@ TestFuncLink gfuncs[] = {{"ping", test_ping},
                          {"rpush", test_rpush},
                          {"lpop", test_lpop},
                          {"rpop", test_rpop},
+                         {"slinsert", test_sl_insert},
+                         {"slrange", test_sl_range},
+                         {"slcount", test_sl_count},
+                         {"sldel", test_sl_del},
                          {NULL, NULL}};
 
 TestFunc funclink_find(char *name)

@@ -6,7 +6,6 @@ import java.util.*;
 public class MemLinkClient
 {
 	private MemLink client = null;
-
 	
 	static {
 		try{
@@ -48,19 +47,19 @@ public class MemLinkClient
 		return memlink.memlink_cmd_create(client, key, valuesize, maskstr, listtype, valuetype);
 	}
     
-    public int create_list(String key, int valuesize, String maskstr)
+    public int createList(String key, int valuesize, String maskstr)
 	{
 		return memlink.memlink_cmd_create_list(client, key, valuesize, maskstr);
 	}
 
-    public int create_queue(String key, int valuesize, String maskstr)
+    public int createQueue(String key, int valuesize, String maskstr)
 	{
 		return memlink.memlink_cmd_create_queue(client, key, valuesize, maskstr);
 	}
 
-    public int create_sortlist(String key, int valuesize, String maskstr, short valuetype)
+    public int createSortList(String key, int valuesize, String maskstr, int valuetype)
 	{
-		return memlink.memlink_cmd_create_sortlist(client, key, valuesize, maskstr, valuetype);
+		return memlink.memlink_cmd_create_sortlist(client, key, valuesize, maskstr, (short)valuetype);
 	}
 
 	public int dump()
@@ -73,15 +72,9 @@ public class MemLinkClient
 		return memlink.memlink_cmd_clean(client, key);
 	}
 
-	public MemLinkStat stat(String key)
+	public int stat(String key, MemLinkStat ms)
 	{
-		MemLinkStat ms = new MemLinkStat();
-		int ret = memlink.memlink_cmd_stat(client, key, ms);
-		if (ret == memlink.MEMLINK_OK) {
-			return ms;
-		}
-
-		return null;
+		return memlink.memlink_cmd_stat(client, key, ms);
 	}
 
 	public int delete(String key, String value)
@@ -109,31 +102,32 @@ public class MemLinkClient
 		return memlink.memlink_cmd_tag(client, key, value, value.length(), tag);
 	}
 
-	public MemLinkResult range(String key, int kind, String maskstr, int frompos, int len)
+	public int range(String key, int kind, String maskstr, int frompos, int len, MemLinkResult result)
 	{
-		MemLinkResult result = new MemLinkResult();
-        
+		/*MemLinkResult result = new MemLinkResult();
 		int ret = memlink.memlink_cmd_range(client, key, kind, maskstr, frompos, len, result);
 		if (ret == memlink.MEMLINK_OK) {
 			return result;
 		}
-		return null;
+		return null;*/
+
+		return memlink.memlink_cmd_range(client, key, kind, maskstr, frompos, len, result);
 	}
 
 
-	public MemLinkResult range_visible(String key, String maskstr, int frompos, int len)
+	public int rangeVisible(String key, String maskstr, int frompos, int len, MemLinkResult result)
     {
-        return range(key, memlink.MEMLINK_VALUE_VISIBLE, maskstr, frompos, len);
+        return range(key, memlink.MEMLINK_VALUE_VISIBLE, maskstr, frompos, len, result);
     }
 	
-    public MemLinkResult range_tagdel(String key, String maskstr, int frompos, int len)
+    public int rangeTagdel(String key, String maskstr, int frompos, int len, MemLinkResult result)
     {
-        return range(key, memlink.MEMLINK_VALUE_TAGDEL, maskstr, frompos, len);
+        return range(key, memlink.MEMLINK_VALUE_TAGDEL, maskstr, frompos, len, result);
     }
 
-	public MemLinkResult range_all(String key, String maskstr, int frompos, int len)
+	public int rangeAll(String key, String maskstr, int frompos, int len, MemLinkResult result)
     {
-        return range(key, memlink.MEMLINK_VALUE_ALL, maskstr, frompos, len);
+        return range(key, memlink.MEMLINK_VALUE_ALL, maskstr, frompos, len, result);
     }
 
 	public int rmkey(String key)
@@ -141,78 +135,84 @@ public class MemLinkClient
 		return memlink.memlink_cmd_rmkey(client, key);
 	}
 
-	public MemLinkCount count(String key, String maskstr) 
+	public int count(String key, String maskstr, MemLinkCount count) 
 	{
-		MemLinkCount count = new MemLinkCount();
-
-		int ret = memlink.memlink_cmd_count(client, key, maskstr, count);
-		if (ret == memlink.MEMLINK_OK) {
-			return count;
-		}
-		return null;
+		return memlink.memlink_cmd_count(client, key, maskstr, count);
 	}	
-    public MemLinkRcInfo read_conn_info()
-    {
-        MemLinkRcInfo rcinfo = new MemLinkRcInfo();
-        
-        int ret = memlink.memlink_cmd_read_conn_info(client, rcinfo);
-        if (ret == memlink.MEMLINK_OK) {
-            return rcinfo;
-        }
-        return null;
-    }
-    public MemLinkWcInfo write_conn_info()
-    {
-        MemLinkWcInfo wcinfo = new MemLinkWcInfo();
 
-        int ret = memlink.memlink_cmd_write_conn_info(client, wcinfo);
-        if (ret == memlink.MEMLINK_OK) {
-            return wcinfo;
-        }
-        return null;
-    }
-    public MemLinkScInfo sync_conn_info()
+    public int lpush(String key, String value, String maskstr) 
     {
-        MemLinkScInfo scinfo = new MemLinkScInfo();
+        return memlink.memlink_cmd_lpush(client, key, value, value.length(), maskstr);
+    }
 
-        int ret = memlink.memlink_cmd_sync_conn_info(client, scinfo);
-        if (ret == memlink.MEMLINK_OK) {
-            return scinfo;
-        }
-        return null;
-    }
-    public MemLinkInsertMkv create_mkv()
+    public int rpush(String key, String value, String maskstr) 
     {
-        return memlink.memlink_imkv_create();
+        return memlink.memlink_cmd_rpush(client, key, value, value.length(), maskstr);
     }
-    public MemLinkInsertKey create_key(String key)
+
+    public int lpop(String key, int num, MemLinkResult result)
     {
-        return memlink.memlink_ikey_create(key, key.length());
+        return memlink.memlink_cmd_lpop(client, key, num, result);
     }
-    public MemLinkInsertVal create_value(String val, String mask, int pos)
+
+    public int rpop(String key, int num, MemLinkResult result)
     {
-        return memlink.memlink_ival_create(val, val.length(), mask, pos);
+        return memlink.memlink_cmd_rpop(client, key, num, result);
     }
-    public int mkv_add_key(MemLinkInsertMkv mkv, MemLinkInsertKey keyobj)
+    
+    public int sortListInsert(String key, String value, String maskstr)
     {
-        return memlink.memlink_mkv_add_key(mkv, keyobj);
+        return memlink.memlink_cmd_sortlist_insert(client, key, value, value.length(), maskstr);
     }
-    public int key_add_value(MemLinkInsertKey keyobj, MemLinkInsertVal valobj)
+
+    public int sortListRange(String key, int kind, String vmin, String vmax, String maskstr, MemLinkResult result)
     {
-        return memlink.memlink_ikey_add_value(keyobj, valobj);
+        return memlink.memlink_cmd_sortlist_range(client, key, kind, maskstr, vmin, vmin.length(), vmax, vmax.length(), result);
     }
-    public int insert_mkv(MemLinkInsertMkv mkv)
+
+    public int sortListRangeAll(String key, String vmin, String vmax, String maskstr, MemLinkResult result)
     {
-        int ret = memlink.memlink_cmd_insert_mkv(client, mkv);
-        
-        return ret;
+        return sortListRange(key, memlink.MEMLINK_VALUE_ALL, vmin, vmax, maskstr, result);
     }
-    public int mkv_destroy(MemLinkInsertMkv mkv)
+
+    public int sortListRangeVisible(String key, String vmin, String vmax, String maskstr, MemLinkResult result)
     {
-        return memlink.memlink_mkv_destroy(mkv);
+        return sortListRange(key, memlink.MEMLINK_VALUE_VISIBLE, vmin, vmax, maskstr, result);
     }
-    public void range_result_destroy(MemLinkResult result)
+
+    public int sortListRangeTagdel(String key, String vmin, String vmax, String maskstr, MemLinkResult result)
     {
-        memlink.memlink_result_free(result);
+        return sortListRange(key, memlink.MEMLINK_VALUE_TAGDEL, vmin, vmax, maskstr, result);
+    }
+
+
+    public int sortListDelete(String key, int kind, String vmin, String vmax, String maskstr)
+    {
+        return memlink.memlink_cmd_sortlist_del(client, key, kind, maskstr, vmin, vmin.length(), vmax, vmax.length());
+    }
+
+    public int sortListCount(String key, String vmin, String vmax, String maskstr, MemLinkCount count)
+    {
+        return memlink.memlink_cmd_sortlist_count(client, key, maskstr, vmin, vmin.length(), vmax, vmax.length(), count);
+    }
+
+    public int readConnInfo(MemLinkRcInfo info)
+    {
+        return memlink.memlink_cmd_read_conn_info(client, info);
+    }
+
+    public int writeConnInfo(MemLinkWcInfo info)
+    {
+        return memlink.memlink_cmd_write_conn_info(client, info);
+    }
+
+    public int syncConnInfo(MemLinkScInfo info)
+    {
+        return memlink.memlink_cmd_sync_conn_info(client, info);
+    }
+
+    public int insertMKV(MemLinkInsertMkv mkv)
+    {
+        return memlink.memlink_cmd_insert_mkv(client, mkv);
     }
 }

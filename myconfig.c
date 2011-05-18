@@ -10,7 +10,6 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <fcntl.h>
-#include <sys/mman.h>
 #include <dirent.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -25,6 +24,7 @@
 #include "common.h"
 #include "utils.h"
 #include "sslave.h"
+#include "runtime.h"
 
 MyConfig *g_cf;
 
@@ -39,8 +39,14 @@ myconfig_create(char *filename)
         return NULL;
     }
     memset(mcf, 0, sizeof(MyConfig));
-    mcf->block_data_count[0]    = 100;
-    mcf->block_data_count_items = 1;
+
+    // set default value
+    mcf->block_data_count[0]    = 50;
+    mcf->block_data_count[1]    = 20;
+    mcf->block_data_count[2]    = 10;
+    mcf->block_data_count[3]    = 5;
+    mcf->block_data_count[4]    = 1;
+    mcf->block_data_count_items = 5;
     mcf->block_clean_cond  = 0.5;
     mcf->block_clean_start = 3;
     mcf->block_clean_num   = 100;
@@ -50,6 +56,7 @@ myconfig_create(char *filename)
     mcf->sync_port  = 11003;
     mcf->log_level  = 3; 
     mcf->timeout    = 30;
+    mcf->max_conn   = 1000;
 
     snprintf(mcf->datadir, PATH_MAX, "data");
 
@@ -175,12 +182,28 @@ myconfig_create(char *filename)
             }
         }else if (strcmp(buffer, "max_conn") == 0) {
             mcf->max_conn = atoi(start);
+            if (mcf->max_conn < 0) {
+                DERROR("max_conn must not smaller than 0.\n");
+                MEMLINK_EXIT;
+            }
         }else if (strcmp(buffer, "max_read_conn") == 0) {
             mcf->max_read_conn = atoi(start);
+            if (mcf->max_read_conn < 0) {
+                DERROR("max_read_conn must >= 0 and <= max_conn\n");
+                MEMLINK_EXIT;
+            }
         }else if (strcmp(buffer, "max_write_conn") == 0) {
             mcf->max_write_conn = atoi(start);
+            if (mcf->max_write_conn < 0) {
+                DERROR("max_write_conn must >= 0 and <= max_conn\n");
+                MEMLINK_EXIT;
+            }
         }else if (strcmp(buffer, "max_sync_conn") == 0) {
             mcf->max_sync_conn = atoi(start);
+            if (mcf->max_sync_conn < 0) {
+                DERROR("max_sync_conn must >= 0 and <= max_conn\n");
+                MEMLINK_EXIT;
+            }
         }else if (strcmp(buffer, "max_core") == 0) {
             mcf->max_core = atoi(start);
         }else if (strcmp(buffer, "is_daemon") == 0) {
@@ -215,6 +238,24 @@ myconfig_create(char *filename)
     }
 
     fclose(fp);
+
+    // check config 
+    if (mcf->max_conn <= 0 || mcf->max_conn < mcf->max_read_conn || 
+        mcf->max_conn < mcf->max_write_conn || mcf->max_conn < mcf->max_sync_conn) {
+        DERROR("config max_conn must >= 0 and >= max_read_conn, >= max_write_conn, >= max_sync_conn.\n");
+        MEMLINK_EXIT;
+    }
+
+    if (mcf->max_read_conn == 0) {
+        mcf->max_read_conn = mcf->max_conn;
+    }
+    if (mcf->max_write_conn == 0) {
+        mcf->max_write_conn = mcf->max_conn;
+    }
+    if (mcf->max_sync_conn == 0) {
+        mcf->max_sync_conn = mcf->max_conn;
+    }
+
 
     g_cf = mcf;
     //DINFO("create MyConfig ok!\n");
@@ -334,340 +375,8 @@ myconfig_change()
     fclose(fp);
     return 1;
 }
-/**
- * Apply log records to hash table.
- *
- * @param logname sync log file pathname
- */
-static int 
-load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
-{
-    int ret;
-	unsigned int binlogver;
-	int have_key = 0;
-	
-    int ffd = open(logname, O_RDONLY);
-    if (-1 == ffd) {
-        DERROR("open file %s error! %s\n", logname, strerror(errno));
-        MEMLINK_EXIT;
-    }
-    int len = lseek(ffd, 0, SEEK_END);
 
-    char *addr = mmap(NULL, len, PROT_READ, MAP_SHARED, ffd, 0);
-    if (addr == MAP_FAILED) {
-        DERROR("synclog mmap error: %s\n", strerror(errno));
-        MEMLINK_EXIT;
-    }   
-
-	unsigned int indexlen = *(unsigned int*)(addr + SYNCLOG_HEAD_LEN - sizeof(int));
-	char *data    = addr + SYNCLOG_HEAD_LEN + indexlen * sizeof(int);
-	char *enddata = addr + len;
-
-	binlogver = *(unsigned int *)(addr + sizeof(short));
-	DINFO("binlogver: %d, dumplogver: %d\n", binlogver, dumplogver);
-	if (binlogver == dumplogver) {
-		int *indxdata = (int *)(addr + SYNCLOG_HEAD_LEN);
-		int pos;
-
-		if (dumplogpos < SYNCLOG_INDEXNUM) {
-			pos = indxdata[dumplogpos];
-		} else {
-			pos = 0;
-		}
-		DINFO("dumplogpos: %d, pos: %d\n", dumplogpos, pos);
-		if (pos == 0 && dumplogpos != 0) {
-			DINFO("indxdata[dumplogpos - 1]=%d\n", indxdata[dumplogpos - 1]);
-			if (indxdata[dumplogpos - 1] != 0) {
-				data = addr + indxdata[dumplogpos - 1];
-				have_key = 1;
-			}else{
-				//g_runtime->slave->logver  = dumplogver;
-				//g_runtime->slave->logline = dumplogpos;
-				munmap(addr, len);
-
-				close(ffd);
-				return dumplogpos;
-			}
-		}else{
-			if (pos != 0) {
-				data = addr + pos;
-			}
-		}
-	}
-
-	unsigned int blen; 
-	unsigned int logver = 0, logline = 0, count = 0;
-	while (data < enddata) {
-		//blen = *(unsigned short*)(data + SYNCPOS_LEN);
-		blen = *(unsigned int*)(data + SYNCPOS_LEN);
-			
-
-		memcpy(&logver, data, sizeof(int));
-		memcpy(&logline, data + sizeof(int), sizeof(int));
-		
-		DINFO("logver: %d, logline: %d\n", logver, logline);
-		if (enddata < data + SYNCPOS_LEN + blen + sizeof(int)) {
-			DERROR("synclog end error: %s, skip\n", logname);
-			//MEMLINK_EXIT;
-			break;
-		}
-		DINFO("command, len:%d\n", blen);
-		if (have_key == 0) {
-			ret = wdata_apply(data + SYNCPOS_LEN, blen + sizeof(int), MEMLINK_NO_LOG, NULL);
-			if (ret != 0) {
-				DERROR("wdata_apply log error: %d\n", ret);
-				MEMLINK_EXIT;
-			}
-			count ++;
-		}
-
-		data += SYNCPOS_LEN + blen + sizeof(int); 
-	}
-    /*
-	if (g_cf->role == ROLE_SLAVE) {
-		g_runtime->slave->logver  = logver;
-		g_runtime->slave->logline = logline;
-		if (dumplogver == binlogver) {
-			g_runtime->slave->binlog_index = count + dumplogpos;
-		}else{
-			g_runtime->slave->binlog_index = count;
-		}
-	}
-    */
-
-	munmap(addr, len);
-
-	close(ffd);
-
-	return count;
-}
-
-static int
-load_data()
-{
-    int    ret;
-    int    havedump = 0;
-    char   filename[PATH_MAX];
-	char   dumpfileok[PATH_MAX];
-	struct timeval start, end;
-
-    snprintf(filename, PATH_MAX, "%s/dump.dat", g_cf->datadir);
-    // check dumpfile exist
-	/*
-    ret = stat(filename, &stbuf);
-    if (ret == -1 && errno == ENOENT) {
-        DINFO("not found dumpfile: %s\n", filename);
-    }*/
- 	ret = isfile(filename);
-	if (ret == 0) {
-		DINFO("node fount dumpfile: %s\n", filename);
-		snprintf(dumpfileok, PATH_MAX, "%s/dump.dat.ok", g_cf->datadir);
-		if (!isfile(dumpfileok)) {
-			ret = 0;
-		} else {
-			rename(dumpfileok, filename);
-			ret = 1;
-		}
-	}	
-  
-    // have dumpfile, load
-    if (ret == 1) {
-        havedump = 1;
-    
-        DINFO("try load dumpfile ...\n");
-        ret = dumpfile_load(g_runtime->ht, filename, 1);
-        if (ret < 0) {
-            DERROR("dumpfile_load error: %d\n", ret);
-            MEMLINK_EXIT;
-            return -1;
-        }
-    }
-
-    int n;
-	int i;
-    char logname[PATH_MAX];
-    int  logids[10000] = {0};
-		
-	DINFO("havedump: %d\n", havedump);
-	n = synclog_scan_binlog(logids, 10000);
-	if (n < 0) {
-		DERROR("get binlog error! %d\n", n);
-		return -1;
-	}
-	DINFO("dumplogver: %d, n: %d\n", g_runtime->dumplogver, n);
-	//没有dump.dat也没有dump.dat.ok,且本地binlog不是从1开始记录的
-	if (havedump == 0) {
-		/*
-		if (logids[0] == 0 && g_runtime->logver != 1) {//本地只有bin.log，且bin.log的logver不为1
-			DERROR("no dump.dat, binlog version must start from 1. logver: %d\n", g_runtime->logver);
-			MEMLINK_EXIT;
-		} else {
-			if (logids[0] != 1 ) {//本地有一系列的bin.log.xxx，但是logver不是从1开始的
-				DERROR("no dump.dat, binlog version must start from 1. binlog version start: %d\n", logids[0]);
-				MEMLINK_EXIT;
-			}
-		}	
-		*/
-		if (!(logids[0] == 1 || g_runtime->logver == 1)) {
-			DERROR("no dump.dat, binlog version must start from 1. binlog version start: %d\n", logids[0]);
-			MEMLINK_EXIT;
-		}
-	}
-
-    unsigned int count = 0;
-	gettimeofday(&start, NULL);
-    for (i = 0; i < n; i++) {
-		if (logids[i] < g_runtime->dumplogver) {
-			continue;
-		}
-        //snprintf(logname, PATH_MAX, "%s/data/bin.log.%d", g_runtime->home, logids[i]);
-        snprintf(logname, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, logids[i]);
-        DINFO("load synclog: %s\n", logname);
-        count += load_synclog(logname, g_runtime->dumplogver, g_runtime->dumplogpos);
-    }
-
-    //snprintf(logname, PATH_MAX, "%s/data/bin.log", g_runtime->home);
-    snprintf(logname, PATH_MAX, "%s/bin.log", g_cf->datadir);
-    DINFO("load synclog: %s\n", logname);
-    count += load_synclog(logname, g_runtime->dumplogver, g_runtime->dumplogpos);
-	
-	gettimeofday(&end, NULL);
-	DNOTE("load bin.log time: %u us\n", timediff(&start, &end));
-    if (havedump == 0) {
-        dumpfile(g_runtime->ht);
-    }
-    DNOTE("load binlog %u ok!\n", count);
-    return 0;
-}
-
-static int
-load_data_slave()
-{
-    int    ret;
-    //struct stat stbuf;
-    int    havedump = 0;
-	int    load_master_dump = 0;
-    char   dump_filename[PATH_MAX];
-	char   master_filename[PATH_MAX];
-	char   dumpfileok[PATH_MAX];
-
-    snprintf(dump_filename, PATH_MAX, "%s/dump.dat", g_cf->datadir);
-    snprintf(master_filename, PATH_MAX, "%s/dump.master.dat", g_cf->datadir);
-	if (!isfile(dump_filename)) {
-		snprintf(dumpfileok, PATH_MAX, "%s/dump.dat.ok", g_cf->datadir);
-		if(isfile(dumpfileok)) {
-			rename(dumpfileok, dump_filename);
-		}
-	}
-    // check dumpfile exist
-	if (isfile(dump_filename) == 0) {
-		if (isfile(master_filename)) {
-			// load dump.master.dat
-			DINFO("try load master dumpfile ...\n");
-			ret = dumpfile_load(g_runtime->ht, master_filename, 0);
-			if (ret < 0) {
-				DERROR("dumpfile_load error: %d\n", ret);
-				MEMLINK_EXIT;
-				return -1;
-			}
-			//SSlave	*slave = g_runtime->slave;
-            
-            unsigned int logver, logline;
-            dumpfile_logver(master_filename, &logver, &logline);
-			load_master_dump = 1;
-			//如果要加载dump.master.dat，清空本地binlog
-			synclog_clean(logver, logline);
-		}
-	}else{
-		// have dumpfile, load
-        havedump = 1;
-    
-        DINFO("try load dumpfile ...\n");
-        ret = dumpfile_load(g_runtime->ht, dump_filename, 1);
-        if (ret < 0) {
-            DERROR("dumpfile_load error: %d\n", ret);
-            MEMLINK_EXIT;
-            return -1;
-        }
-
-    }
-
-
-    int n;
-    char logname[PATH_MAX];
-    int  logids[10000] = {0};
-    unsigned int count = 0;
-		
-	n = synclog_scan_binlog(logids, 10000);
-	if (n < 0) {
-		DERROR("get binlog error! %d\n", n);
-		return -1;
-	}
-    DINFO("dumplogver: %d, n: %d\n", g_runtime->dumplogver, n);
-
-	if (load_master_dump == 0) {
-		//没有dump.dat也没有dump.dat.ok,且本地binlog不是从1开始记录的
-		if (havedump == 0) {
-			/*
-			if (logids[0] == 0 && g_runtime->logver != 1) {//本地只有bin.log，且bin.log的logver不为1
-				DERROR("no dump.dat, binlog version must start from 1. logver: %d\n", g_runtime->logver);
-				MEMLINK_EXIT;
-			} else {
-				if (logids[0] != 1 ) {//本地有一系列的bin.log.xxx，但是logver不是从1开始的
-					DERROR("no dump.dat, binlog version must start from 1. binlog version start: %d\n", logids[0]);
-					MEMLINK_EXIT;
-				}
-			}	
-			*/
-			if (!(logids[0] == 1 || g_runtime->logver == 1)) {
-				DERROR("no dump.dat, binlog version must start from 1. binlog version start: %d\n", logids[0]);
-				MEMLINK_EXIT;
-			}
-
-		}
-		int i;
-		DINFO("load binlog ...\n");
-		for (i = 0; i < n; i++) {
-			if (logids[i] < g_runtime->dumplogver) {
-				continue;
-			}
-			snprintf(logname, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, logids[i]);
-			DINFO("load synclog: %s\n", logname);
-			ret = load_synclog(logname, g_runtime->dumplogver, g_runtime->dumplogpos);
-            /*
-			if (ret > 0 && g_cf->role == ROLE_SLAVE) {
-				g_runtime->slave->binlog_ver = logids[i];
-			}
-            */
-            count += ret;
-		}
-		snprintf(logname, PATH_MAX, "%s/bin.log", g_cf->datadir);
-		DINFO("load synclog: %s\n", logname);
-		ret = load_synclog(logname, g_runtime->dumplogver, g_runtime->dumplogpos);
-        /*
-		if (ret > 0 && g_cf->role == ROLE_SLAVE) {
-			g_runtime->slave->binlog_ver = g_runtime->synclog->version;
-		}
-        */
-        count += ret;
-	}
-
-    if (havedump == 0) {
-        dumpfile(g_runtime->ht);
-    }
-    /*
-    if (load_master_dump == 1) {
-        g_runtime->slave->binlog_ver = g_runtime->logver;
-    }
-    */
-
-	//DINFO("======== slave binlog_ver:%d, binlog_index:%d, logver:%d, logline:%d, dump_logver:%d, dumpsize:%lld, dumpfile_size:%lld\n", g_runtime->slave->binlog_ver, g_runtime->slave->binlog_index, g_runtime->slave->logver, g_runtime->slave->logline, g_runtime->slave->dump_logver, g_runtime->slave->dumpsize, g_runtime->slave->dumpfile_size);
-
-    DNOTE("load binlog %u ok!\n", count);
-
-    return 0;
-}
-
+/*
 Runtime *g_runtime;
 
 Runtime*
@@ -852,7 +561,7 @@ runtime_destroy(Runtime *rt)
 
     pthread_mutex_destroy(&rt->mutex);
     zz_free(rt);
-}
+}*/
 
 int	
 mem_used_inc(long long size)

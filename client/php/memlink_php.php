@@ -87,6 +87,10 @@ abstract class memlink {
 
 	const MEMLINK_ERR_CONN_LOST = MEMLINK_ERR_CONN_LOST;
 
+	const MEMLINK_ERR_NOVAL_ALL = MEMLINK_ERR_NOVAL_ALL;
+
+	const MEMLINK_ERR_CONN_TOO_MANY = MEMLINK_ERR_CONN_TOO_MANY;
+
 	const MEMLINK_ERR = MEMLINK_ERR;
 
 	const MEMLINK_FAILED = MEMLINK_FAILED;
@@ -104,6 +108,8 @@ abstract class memlink {
 	const MEMLINK_REPLIED = MEMLINK_REPLIED;
 
 	const ROLE_MASTER = ROLE_MASTER;
+
+	const ROLE_BACKUP = ROLE_BACKUP;
 
 	const ROLE_SLAVE = ROLE_SLAVE;
 
@@ -191,9 +197,9 @@ abstract class memlink {
 
 	const MEMLINK_NO_LOG = MEMLINK_NO_LOG;
 
-	const MEMLINK_FIND_NEXT = MEMLINK_FIND_NEXT;
+	const MEMLINK_FIND_ASC = MEMLINK_FIND_ASC;
 
-	const MEMLINK_FIND_PREV = MEMLINK_FIND_PREV;
+	const MEMLINK_FIND_DESC = MEMLINK_FIND_DESC;
 
 	const MEMLINK_CMP_RANGE = MEMLINK_CMP_RANGE;
 
@@ -245,6 +251,10 @@ abstract class memlink {
 
 	static function memlink_cmd_clean($m,$key) {
 		return memlink_cmd_clean($m,$key);
+	}
+
+	static function memlink_cmd_clean_all($m) {
+		return memlink_cmd_clean_all($m);
 	}
 
 	static function memlink_cmd_stat($m,$key,$stat) {
@@ -331,8 +341,8 @@ abstract class memlink {
 		return memlink_cmd_sortlist_range($m,$key,$kind,$maskstr,$valmin,$vminlen,$valmax,$vmaxlen,$result);
 	}
 
-	static function memlink_cmd_sortlist_del($m,$key,$valmin,$vminlen,$valmax,$vmaxlen) {
-		return memlink_cmd_sortlist_del($m,$key,$valmin,$vminlen,$valmax,$vmaxlen);
+	static function memlink_cmd_sortlist_del($m,$key,$kind,$maskstr,$valmin,$vminlen,$valmax,$vmaxlen) {
+		return memlink_cmd_sortlist_del($m,$key,$kind,$maskstr,$valmin,$vminlen,$valmax,$vmaxlen);
 	}
 
 	static function memlink_cmd_sortlist_count($m,$key,$maskstr,$valmin,$vminlen,$valmax,$vmaxlen,$count) {
@@ -343,12 +353,12 @@ abstract class memlink {
 		return memlink_cmd_insert_mkv($m,$mkv);
 	}
 
-	static function memlink_mkv_destroy($mkv) {
-		return memlink_mkv_destroy($mkv);
+	static function memlink_imkv_destroy($mkv) {
+		return memlink_imkv_destroy($mkv);
 	}
 
-	static function memlink_mkv_add_key($mkv,$keyobj) {
-		return memlink_mkv_add_key($mkv,$keyobj);
+	static function memlink_imkv_add_key($mkv,$keyobj) {
+		return memlink_imkv_add_key($mkv,$keyobj);
 	}
 
 	static function memlink_ikey_add_value($keyobj,$valobj) {
@@ -414,7 +424,16 @@ abstract class memlink {
 	static function memlink_scinfo_free($info) {
 		return memlink_scinfo_free($info);
 	}
-}*/
+
+	static function memlink_cmd_get_config_info($m,$config) {
+		return memlink_cmd_get_config_info($m,$config);
+	}
+
+	static function memlink_cmd_set_config_info($m,$key,$value) {
+		return memlink_cmd_set_config_info($m,$key,$value);
+	}
+}
+*/
 
 /* PHP Proxy Classes */
 class MemLinkInsertVal {
@@ -529,10 +548,10 @@ class MemLinkInsertMkv {
 		}
 		$this->_cPtr=new_MemLinkInsertMkv();
 	}
-    
     function __destruct() {
         memlink_mkv_destroy($this->cPtr);
     }
+
 }
 
 class MemLinkStat {
@@ -764,9 +783,10 @@ class MemLinkResult {
     function __destruct() {
         memlink_result_free($this->cPtr);
     }
+
 }
 
-class MemLink_Rconn_Item {
+class MemLink_Rc_Item {
 	public $_cPtr=null;
 	protected $_pData=array();
 
@@ -804,7 +824,7 @@ class MemLink_Rconn_Item {
 	}
 }
 
-class MemLink_Wconn_Item {
+class MemLink_Wc_Item {
 	public $_cPtr=null;
 	protected $_pData=array();
 
@@ -842,7 +862,7 @@ class MemLink_Wconn_Item {
 	}
 }
 
-class MemLinkScItem {
+class MemLink_Sc_Item {
 	public $_cPtr=null;
 	protected $_pData=array();
 
@@ -919,6 +939,7 @@ class MemLinkRcInfo {
     function __destruct() {
         memlink_rcinfo_free($this->_cPtr);
     }
+
 }
 
 class MemLinkWcInfo {
@@ -957,10 +978,10 @@ class MemLinkWcInfo {
 		}
 		$this->_cPtr=new_MemLinkWcInfo();
 	}
-
     function __destruct() {
         memlink_wcinfo_free($this->cPtr);
     }
+
 }
 
 class MemLinkScInfo {
@@ -999,10 +1020,10 @@ class MemLinkScInfo {
 		}
 		$this->_cPtr=new_MemLinkScInfo();
 	}
-
     function __destruct() {
         memlink_scinfo_free($this->cPtr);
     }
+
 }
 
 

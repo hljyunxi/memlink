@@ -94,14 +94,16 @@ mainserver_read(int fd, short event, void *arg)
     int             n   = ms->lastth;
     ThreadServer    *ts = &ms->threads[n];
     ms->lastth = (ms->lastth + 1) % g_cf->thread_num;
+    
+    zz_check(ts->cq);
 
     queue_append(ts->cq, conn); 
     DINFO("send socket %d to notify ...\n", conn->sock);
     if (write(ts->notify_send_fd, "", 1) == -1) {
-        DERROR("Writing to thread %d notify pipe error: %s\n", n, strerror(errno));
+        DERROR("Writing to thread %d notify pipe error: %s\n", 
+                    n, strerror(errno));
         //conn->destroy(conn);
     }
-
 }
 
 void
@@ -126,20 +128,24 @@ thserver_notify(int fd, short event, void *arg)
 	QueueItem		*item = itemhead;
 	Conn            *conn;
 	int				ret;
+    int             conn_limit = g_cf->max_read_conn;
 
 	DINFO("thserver_notify: %d\n", fd);
 
+    /*if (conn_limit <= 0) {
+        conn_limit = g_cf->max_conn;
+    }*/
+
 	char buf;
-	int i;
+	int  i;
 	RwConnInfo *coninfo = ts->rw_conn_info;
 
 	ret = read(ts->notify_recv_fd, &buf, 1);
-
 	while (item) {
 		conn = item->conn; 
 		DINFO("notify fd: %d\n", conn->sock);
 		ts->conns++;
-		for (i = 0; i < g_cf->max_conn; i++) {
+		for (i = 0; i < conn_limit; i++) {
 			coninfo = &(ts->rw_conn_info[i]);
 			if (coninfo->fd == 0) {
 				coninfo->fd = conn->sock;
@@ -151,7 +157,7 @@ thserver_notify(int fd, short event, void *arg)
 			}
 		}
 		conn->thread = ts;
-		conn->base = ts->base;
+		conn->base   = ts->base;
 		ret = change_event(conn, EV_READ|EV_PERSIST, g_cf->timeout, 1);
 		if (ret < 0) {
 			DERROR("change event error: %d, close conn\n", ret);
@@ -161,6 +167,11 @@ thserver_notify(int fd, short event, void *arg)
 	}
 
 	if (itemhead) {
+        /*QueueItem *qh = itemhead;
+        while (qh) {
+            DINFO("try free: %p\n", qh);
+            qh = qh->next;
+        }*/
 		queue_free(ts->cq, itemhead); 
 	}
 }
@@ -179,13 +190,14 @@ int
 thserver_init(ThreadServer *ts)
 {
     ts->base = event_base_new();
-	
-	ts->rw_conn_info = (RwConnInfo *)zz_malloc(sizeof(RwConnInfo) * g_cf->max_conn);
+
+    int conn_limit = g_cf->max_read_conn > 0 ? g_cf->max_read_conn : g_cf->max_conn;
+	ts->rw_conn_info = (RwConnInfo *)zz_malloc(sizeof(RwConnInfo) * conn_limit);
 	if (ts->rw_conn_info == NULL) {
 		DERROR("memlink malloc read connect info error.\n");
 		MEMLINK_EXIT;
 	}
-	memset(ts->rw_conn_info, 0, sizeof(RwConnInfo) * g_cf->max_conn);
+	memset(ts->rw_conn_info, 0, sizeof(RwConnInfo) * conn_limit);
 
     ts->cq = queue_create();
     if (NULL == ts->cq) {
@@ -203,7 +215,8 @@ thserver_init(ThreadServer *ts)
     ts->notify_recv_fd = fds[0];
     ts->notify_send_fd = fds[1];
 
-    event_set(&ts->notify_event, ts->notify_recv_fd, EV_READ|EV_PERSIST, thserver_notify, ts);
+    event_set(&ts->notify_event, ts->notify_recv_fd, EV_READ|EV_PERSIST, 
+                thserver_notify, ts);
     event_base_set(ts->base, &ts->notify_event);
     event_add(&ts->notify_event, 0);
 

@@ -20,14 +20,21 @@ includes = ['.', '../../', '../c/'] + python_includes
 #ldflags  = python_ldflags
 ldflags  = ''
 libpath  = ['.']
-libs	 = python_libs + ['c', 'm']
+libs	 = python_libs + ['c', 'm', 'pthread']
 files    = ['../../zzmalloc.c', '../../serial.c', '../../logfile.c', '../../utils.c', 
-			'../c/memlink_client.c', 'memlink_client_python.c']
+			'../c/memlink_client.c']
 
 env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
-env.SharedLibrary("memlink", files)
+shared_files = []
+for fn in files:
+    name = os.path.basename(fn)[:-2]
+    shared_files.append(env.SharedObject('client-' + name, fn))
+shared_files.append('memlink_client_python.c')
+
+env.SharedLibrary("memlink", shared_files)
 
 if sys.platform.startswith('darwin'):
     Command('_memlink.so', 'libmemlink.dylib', [Move('$TARGET', '$SOURCE')])
 else:
     Command('_memlink.so', 'libmemlink.so', [Move('$TARGET', '$SOURCE')])
+

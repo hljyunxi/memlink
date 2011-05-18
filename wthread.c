@@ -32,6 +32,7 @@
 #include "utils.h"
 #include "common.h"
 #include "sslave.h"
+#include "runtime.h"
 
 /**
  *
@@ -112,7 +113,7 @@ data_set_reply(Conn *conn, short retcode, char *retdata, int retlen)
 
     // package length + retcode + retdata
     datalen = CMD_REPLY_HEAD_LEN + retlen;
-    DNOTE("datalen: %d, retcode: %d, conn->wsize: %d\n", datalen, retcode, conn->wsize); 
+    //DNOTE("datalen: %d, retcode: %d, conn->wsize: %d\n", datalen, retcode, conn->wsize); 
    
     wdata = conn_write_buffer(conn, datalen);
 
@@ -124,14 +125,17 @@ data_set_reply(Conn *conn, short retcode, char *retdata, int retlen)
     memcpy(wdata + count, &retcode, sizeof(short));
     count += sizeof(short);
   
-    DNOTE("retlen: %d, retdata:%p, count:%d, conn->wbuf:%p, conn->wsize:%d\n", 
-                retlen, retdata, count, conn->wbuf, conn->wsize);
+    //DNOTE("retlen: %d, retdata:%p, count:%d, conn->wbuf:%p, conn->wsize:%d\n", 
+    //            retlen, retdata, count, conn->wbuf, conn->wsize);
     if (retlen > 0) {
         memcpy(wdata + count, retdata, retlen);
         count += retlen;
     }
     conn->wlen = datalen;
-	
+
+    zz_check(conn);
+    zz_check(conn->wbuf);
+
 #ifdef DEBUG
     char buf[10240] = {0};
     DINFO("reply %s\n", formath(conn->wbuf, conn->wlen, buf, 10240));
@@ -149,7 +153,7 @@ data_reply(Conn *conn, short retcode, char *retdata, int retlen)
 	if (ret < 0)
 		return ret;
 
-	//DINFO("change event to write.\n");
+	DINFO("change event to write.\n");
 	ret = change_event(conn, EV_WRITE|EV_PERSIST, g_cf->timeout, 0);
 	if (ret < 0) {
 		DERROR("change_event error: %d, close conn.\n", ret);
@@ -162,6 +166,9 @@ data_reply(Conn *conn, short retcode, char *retdata, int retlen)
 int
 data_reply_direct(Conn *conn)
 {
+    zz_check(conn);
+    zz_check(conn->wbuf);
+
 	DINFO("change event to write.\n");
 	int ret = change_event(conn, EV_WRITE|EV_PERSIST, g_cf->timeout, 0);
 	if (ret < 0) {
@@ -391,9 +398,10 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             DINFO("<<< cmd SL_DEL >>>\n");
             char valmin[512] = {0};
             char valmax[512] = {0};
+            unsigned char kind;
             unsigned char vminlen = 0, vmaxlen = 0;
 
-            ret = cmd_sortlist_del_unpack(data, key, valmin, &vminlen, valmax, &vmaxlen);
+            ret = cmd_sortlist_del_unpack(data, key, &kind, valmin, &vminlen, valmax, &vmaxlen, &masknum, maskarray);
 			if (ret != 0) {
 				DINFO("unpack sortlist_del error! ret: %d\n", ret);
                 goto wdata_apply_over;
@@ -405,7 +413,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
                 goto wdata_apply_over;
 			}
 
-            ret = hashtable_sortlist_mdel(g_runtime->ht, key, valmin, valmax);
+            ret = hashtable_sortlist_mdel(g_runtime->ht, key, kind, valmin, valmax, maskarray, masknum);
             DINFO("hashtable_sortlist_del: %d\n", ret);
 
             break;
@@ -746,13 +754,13 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
 				}
 			}
 			break;
-        case CMD_SET_CONFIG_DYNAMIC:
+        case CMD_SET_CONFIG:
         {
             char key[512] = {0};
             char value[512] = {0};
             int  ret;
             unsigned char need_kill = 0;
-            int  setrole;
+            int  setrole = 0;
 
             ret = cmd_set_config_dynamic_unpack(data, key, value);
             
@@ -797,12 +805,16 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
                 ret = MEMLINK_ERR_PARAM;
             }
 
-            if (g_cf->role == ROLE_SLAVE) {
-                if (setrole == ROLE_MASTER) {
+            if (g_cf->role == ROLE_SLAVE) {//本身是从
+                if (setrole == ROLE_MASTER) {//需要切换成主
                     wait_thread_exit(g_runtime->slave->threadid);
                     g_cf->role = ROLE_MASTER;
                     DINFO("=========slave to master\n");
-                } else if (need_kill) {
+                } else if (setrole == ROLE_BACKUP) {//需要切换成backup状态
+                    wait_thread_exit(g_runtime->slave->threadid);
+                    g_cf->role = ROLE_BACKUP;
+                    DINFO("=========slave to backup\n");
+                } else if (need_kill && (setrole == ROLE_SLAVE || setrole == 0)) {//更改了ip或者port
                     wait_thread_exit(g_runtime->slave->threadid);
                     if (g_runtime->slave) {
                         sslave_thread(g_runtime->slave);
@@ -811,7 +823,8 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
                     }
                     sslave_go(g_runtime->slave);
                 }
-            } else if (g_cf->role == ROLE_MASTER) {
+            } else if ((g_cf->role == ROLE_BACKUP || g_cf->role == ROLE_MASTER) && setrole == ROLE_SLAVE) {
+                //本身能时master或者backup,需要切换成从
                 if (g_runtime->slave) {
                     sslave_thread(g_runtime->slave);
                 } else {
@@ -862,10 +875,11 @@ wdata_ready(Conn *conn, char *data, int datalen)
 	char cmd;
 	int ret;
 
+    zz_check(data);
 	//memcpy(&cmd, data + sizeof(short), sizeof(char));
 	memcpy(&cmd, data + sizeof(int), sizeof(char));
 	if (g_cf->role == ROLE_SLAVE && cmd != CMD_DUMP && 
-        cmd != CMD_CLEAN && cmd != CMD_SET_CONFIG_DYNAMIC) {
+        cmd != CMD_CLEAN && cmd != CMD_SET_CONFIG) {
 		ret = MEMLINK_ERR_CLIENT_CMD;
 		goto wdata_ready_over;
 	}
@@ -913,12 +927,6 @@ wthread_read(int fd, short event, void *arg)
 		RwConnInfo *conninfo = wt->rw_conn_info;
 		wt->conns++;
         
-        if (conn_check_max((Conn*)conn) != MEMLINK_OK) {
-            DNOTE("too many write conn.\n");
-            conn->destroy((Conn*)conn);
-            return;
-        }
-
 		for (i = 0; i < g_cf->max_write_conn; i++) {
 			conninfo = &(wt->rw_conn_info[i]);
 			if (conninfo->fd == 0) {
@@ -930,6 +938,13 @@ wthread_read(int fd, short event, void *arg)
 			}	
 		}
 		conn->thread = wt;
+
+        // check connection limit
+        if (conn_check_max((Conn*)conn) != MEMLINK_OK) {
+            DNOTE("too many write conn.\n");
+            conn->destroy((Conn*)conn);
+            return;
+        }
 
         DINFO("new conn: %d\n", conn->sock);
 		DINFO("change event to read.\n");
@@ -1031,6 +1046,8 @@ client_read(int fd, short event, void *arg)
 			conn->ready(conn, conn->rbuf, mlen);
             memmove(conn->rbuf, conn->rbuf + mlen, conn->rlen - mlen);
             conn->rlen -= mlen;
+
+            zz_check(conn->rbuf);
         }else{
             break;
         }
@@ -1056,6 +1073,7 @@ client_write(int fd, short event, void *arg)
 	}
 
     if (conn->wpos == conn->wlen) {
+        DINFO("client write ok!\n");
         conn->wlen = conn->wpos = 0;
 		conn->wrote(conn);
         return;

@@ -237,8 +237,7 @@ class MemLinkClient
 
 	function rmkey($key)
 	{
-    	if( False == is_string($key) )
-    	{
+    	if( False == is_string($key) ) {
     		return -1;
     	}
 	
@@ -247,8 +246,7 @@ class MemLinkClient
 
 	function count($key, $maskstr)
 	{
-    	if( False == is_string($key) or False == is_string($maskstr) )
-    	{
+    	if( False == is_string($key) or False == is_string($maskstr) ) {
     		return NULL;
     	}
 	
@@ -262,13 +260,102 @@ class MemLinkClient
 
 	function count2($key, $maskstr, $count)
 	{
-    	if( False == is_string($key) or False == is_string($maskstr) )
-    	{
+    	if( False == is_string($key) or False == is_string($maskstr) ) {
     		return -1;
     	}
 	
 		return memlink_cmd_count($this->client, $key, $maskstr, $count);
 	}
+
+    function lpush($key, $value, $valuelen, $maskstr="")
+    {
+    	if( False == is_string($key) or False == is_string($maskstr) ) {
+    		return -1;
+    	}
+	
+        return memlink_cmd_lpush($this->client, $key, $value, $valuelen, $maskstr);
+    }
+
+    function rpush($key, $value, $valuelen, $maskstr="")
+    {
+    	if( False == is_string($key) or False == is_string($maskstr) ) {
+    		return -1;
+    	}
+	
+        return memlink_cmd_rpush($this->client, $key, $value, $valuelen, $maskstr);
+    }
+
+    function lpop($key, $num=1)
+    {
+        $result = new MemLinkResult();
+        $ret = memlink_cmd_lpop($this->client, $key, $num, $result);
+		if ($ret == MEMLINK_OK) {
+			return $result;
+		}
+		return NULL;
+    }
+
+    function lpop2($key, $num, $result)
+    {
+        return memlink_cmd_lpop($this->client, $key, $num, $result);
+    }
+
+
+    function rpop($key, $num=1)
+    {
+        $result = new MemLinkResult();
+        $ret = memlink_cmd_lpop($this->client, $key, $num, $result);
+		if ($ret == MEMLINK_OK) {
+			return $result;
+		}
+		return NULL;
+    }
+    
+    function rpop2($key, $num, $result)
+    {
+        return memlink_cmd_rpop($this->client, $key, $num, $result);
+    }
+    
+    function sortlist_insert($key, $value, $valuelen, $maskstr="")
+    {
+        return memlink_cmd_sortlist_insert($this->client, $key, $value, $valuelen, $maskstr);
+    }
+
+    function sortlist_range($key, $kind, $vmin, $vminlen, $vmax, $vmaxlen, $maskstr='')
+    {
+        $result = new MemLinkResult();
+        $ret = memlink_cmd_sortlist_range($this->client, $key, $kind, $maskstr, $vmin, $vminlen, $vmax, $vmaxlen, $result);
+		if ($ret == MEMLINK_OK) {
+			return $result;
+		}
+		return NULL;
+    }
+
+    function sortlist_range2($key, $kind, $vmin, $vminlen, $vmax, $vmaxlen, $maskstr, $result)
+    {
+        return memlink_cmd_sortlist_range($this->client, $key, $kind, $maskstr, $vmin, $vminlen, $vmax, $vmaxlen, $result);
+    }
+
+    function sortlist_del($key, $kind, $vmin, $vminlen, $vmax, $vmaxlen, $maskstr='')
+    {
+        return memlink_cmd_sortlist_del($this->client, $key, $kind, $maskstr, $vmin, $vminlen, $vmax, $vmaxlen);
+    }
+
+    function sortlist_count($key, $vmin, $vminlen, $vmax, $vmaxlen, $maskstr='')
+    {
+        $result = new MemLinkCount();
+        $ret = memlink_cmd_sortlist_count($this->client, $key, $maskstr, $vmin, $vminlen, $vmax, $vmaxlen, $result);
+        if ($ret == MEMLINK_OK) {
+            return $result;
+        }
+        return NULL;
+    }
+
+    function sortlist_count2($key, $vmin, $vminlen, $vmax, $vmaxlen, $maskstr, $result)
+    {
+        return memlink_cmd_sortlist_count($this->client, $key, $maskstr, $vmin, $vminlen, $vmax, $vmaxlen, $result);
+    }
+
     function read_conn_info()
     {
         $rcinfo = new MemLinkRcInfo();
@@ -345,7 +432,7 @@ class MemLinkClient
                 if ($ret != MEMLINK_OK) {
                     return $mkv;
                 }
-                $ret = memlink_mkv_add_key($mkv, $keyobj);
+                $ret = memlink_imkv_add_key($mkv, $keyobj);
                 if ($ret != MEMLINK_OK) {
                     return $mkv;
                 }
@@ -368,7 +455,7 @@ class MemLinkClient
     }
 
     function mkv_destroy($mkv) {
-        return memlink_mkv_destroy($mkv);
+        return memlink_imkv_destroy($mkv);
     }
 }
 

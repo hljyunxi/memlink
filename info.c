@@ -13,6 +13,7 @@
 #include "info.h"
 #include "serial.h"
 #include "utils.h"
+#include "runtime.h"
 
 int
 info_sys_stat(MemLinkStatSys *stat)

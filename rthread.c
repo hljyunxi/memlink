@@ -18,6 +18,7 @@
 #include "utils.h"
 #include "common.h"
 #include "info.h"
+#include "runtime.h"
 
 /**
  * Execute the read command and send response.
@@ -92,7 +93,7 @@ rdata_ready(Conn *conn, char *data, int datalen)
             if (conninfo)
                 conninfo->cmd_count++;
 
-            hashtable_print(g_runtime->ht, key);
+            //hashtable_print(g_runtime->ht, key);
 
             break;
         }

@@ -14,7 +14,6 @@
 #include <sys/types.h>
 #include <pthread.h>
 #include <sys/stat.h>
-#include <pthread.h>
 #include <signal.h>
 #include <pwd.h>
 #include "utils.h"
@@ -401,7 +400,6 @@ check_thread_alive(pthread_t id)
     err = pthread_kill(id, 0);
     if (err == ESRCH)
         return 0;
-
     else
         return 1;
 }
@@ -417,6 +415,7 @@ wait_thread_exit(pthread_t id)
 
     while (err != ESRCH) {
         err = pthread_kill(id, 0);
+        usleep(10);
     }
     return 1;
 }

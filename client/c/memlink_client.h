@@ -13,8 +13,6 @@
 #define MEMLINK_ALL     3
 
 #define MAX_PACKAGE_LEN 1024000
-//#define MEMLINK_TAG_DEL     1
-//#define MEMLINK_TAG_RESTORE 0
 
 typedef struct _memlink_client
 {
@@ -35,48 +33,48 @@ typedef struct _memlink_count
 typedef struct _memlink_item
 {
     struct _memlink_item    *next;
-    char                    value[256];
-    char                    mask[256];
+    char    value[256];
+    char    mask[256];
 }MemLinkItem;
 
 typedef struct _memlink_result
 {
-    int             count;
-    int             valuesize;
-    int             masksize;
-    MemLinkItem     *root;
+    int         count;
+    int         valuesize;
+    int         masksize;
+    MemLinkItem *root;
 }MemLinkResult;
 
 typedef struct _memlink_rconn_item
 {
-	int                        fd;
-	char                       client_ip[16];
-	int                        port;
-	int               		   conn_time;
-	int                        cmd_count;
+	int     fd;
+	char    client_ip[16];
+	int     port;
+	int     conn_time;
+	int     cmd_count;
 	struct _memlink_rconn_item *next;
 }MemLinkRcItem;
 
 typedef struct _memlink_wconn_item
 {
-	int                        fd;
-	char                       client_ip[16];
-	int                        port;
-	int                        cmd_count;
-	unsigned int               conn_time;
+	int     fd;
+	char    client_ip[16];
+	int     port;
+	int     cmd_count;
+	unsigned int    conn_time;
 	struct _memlink_wconn_item *next;
 }MemLinkWcItem;
 
 typedef struct _memlink_sconn_item
 {
-	int                        fd;
-	char                       client_ip[16];
-	int                        port;
-	int                        cmd_count;
-	unsigned int               conn_time;
-	int                        logver;
-	int                        logline;
-	int                        delay;
+	int     fd;
+	char	client_ip[16];
+	int     port;
+	int     cmd_count;
+	unsigned int    conn_time;
+	int     logver;
+	int     logline;
+	int     delay;
 	struct _memlink_sconn_item *next;
 }MemLinkScItem;
 
@@ -143,19 +141,20 @@ int         memlink_cmd_del_by_mask(MemLink *m, char *key, char *maskstr);
 
 int			memlink_cmd_sortlist_insert(MemLink *m, char *key, char *value, int valuelen, char *maskstr);
 int			memlink_cmd_sortlist_range(MemLink *m, char *key, int kind, char *maskstr, 
-                              char *valmin, unsigned char vminlen, 
-                              char *valmax, unsigned char vmaxlen, MemLinkResult *result);
+                              char *valmin, int vminlen, 
+                              char *valmax, int vmaxlen, MemLinkResult *result);
 
-int			memlink_cmd_sortlist_del(MemLink *m, char *key, char *valmin, unsigned char vminlen, 
-                            char *valmax, unsigned char vmaxlen);
+int			memlink_cmd_sortlist_del(MemLink *m, char *key, int kind, char *maskstr, 
+                            char *valmin, int vminlen, 
+                            char *valmax, int vmaxlen);
 int         memlink_cmd_sortlist_count(MemLink *m, char *key, char *maskstr, 
-                            char *valmin, unsigned char vminlen, 
-                            char *valmax, unsigned char vmaxlen, MemLinkCount *count);
+                            char *valmin, int vminlen, 
+                            char *valmax, int vmaxlen, MemLinkCount *count);
 
 
 int         memlink_cmd_insert_mkv(MemLink *m, MemLinkInsertMkv *mkv);
-int         memlink_mkv_destroy(MemLinkInsertMkv *mkv);
-int         memlink_mkv_add_key(MemLinkInsertMkv *mkv, MemLinkInsertKey *keyobj);
+int         memlink_imkv_destroy(MemLinkInsertMkv *mkv);
+int         memlink_imkv_add_key(MemLinkInsertMkv *mkv, MemLinkInsertKey *keyobj);
 int         memlink_ikey_add_value(MemLinkInsertKey *keyobj, MemLinkInsertVal *valobj);
 MemLinkInsertMkv*         memlink_imkv_create(); 
 MemLinkInsertKey*         memlink_ikey_create(char *key, unsigned int keylen);

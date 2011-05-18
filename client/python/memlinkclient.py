@@ -75,8 +75,8 @@ class MemLinkClient:
             result = None
         return ret, result
     
-    def sortlist_del(self, key, valmin, valmax):
-        return memlink_cmd_sortlist_del(self.client, key, valmin, len(valmin), valmax, len(valmax))
+    def sortlist_del(self, key, kind, valmin, valmax, maskstr=''):
+        return memlink_cmd_sortlist_del(self.client, key, kind, maskstr, valmin, len(valmin), valmax, len(valmax))
 
     def sortlist_count(self, key, valmin, valmax, maskstr=''):
         result = MemLinkCount()
@@ -105,7 +105,7 @@ class MemLinkClient:
     def rmkey(self, key):
         return memlink_cmd_rmkey(self.client, key)
 
-    def count(self, key, maskstr):
+    def count(self, key, maskstr=''):
         result = MemLinkCount()
         ret = memlink_cmd_count(self.client, key, maskstr, result)
         if ret != MEMLINK_OK:
@@ -165,17 +165,24 @@ class MemLinkClient:
             keyobj = memlink_ikey_create(tup[0], len(tup[0]))
             valobj = memlink_ival_create(str(tup[1]), len(tup[1]), str(tup[2]), int(tup[3]))
             ret = memlink_ikey_add_value(keyobj, valobj)
-            ret = memlink_mkv_add_key(mkvobj, keyobj)
+            ret = memlink_imkv_add_key(mkvobj, keyobj)
 
         ret = memlink_cmd_insert_mkv(self.client, mkvobj)
         return ret, mkvobj
 
 def memlinkmkv_free(self):
-    memlink_mkv_destroy(self)
+    memlink_imkv_destroy(self)
 
 MemLinkInsertMkv.close   = memlinkmkv_free
 MemLinkInsertMkv.__del__ = memlinkmkv_free
 
+def memlinkresult_list(self):
+    v = []
+    item = self.root
+    while item:
+        v.append((item.value, item.mask))
+        item = item.next
+    return v
 
 def memlinkresult_free(self):
     memlink_result_free(self)
@@ -188,7 +195,7 @@ def memlinkresult_print(self):
         item = item.next
     return s
 
-
+MemLinkResult.list    = memlinkresult_list
 MemLinkResult.close   = memlinkresult_free
 MemLinkResult.__del__ = memlinkresult_free
 MemLinkResult.__str__ = memlinkresult_print

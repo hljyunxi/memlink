@@ -22,6 +22,7 @@
 #include "zzmalloc.h"
 #include "common.h"
 #include "utils.h"
+#include "runtime.h"
 
 static int
 truncate_file(int fd, int len)
