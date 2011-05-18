@@ -1,4 +1,5 @@
 #include "hashtest.h"
+#include "datablock.h"
 #include "utils.h"
 #include <stdio.h>
 #include <assert.h>

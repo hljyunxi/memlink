@@ -105,6 +105,8 @@ mempool_put(MemPool *mp, DataBlock *dbk, int blocksize)
 {
     int i;
 
+	zz_check(dbk);
+
 	dbk->data_count = 0;
     dbk->prev = NULL;
     for (i = 0; i < mp->used; i++) {
@@ -129,9 +131,9 @@ mempool_put(MemPool *mp, DataBlock *dbk, int blocksize)
         mp->freemem[mp->used].data = dbk;
 
         mp->used += 1;
+	
+        zz_check(dbk);
     }
-
-	zz_check(dbk);
 
 	mp->blocks++;
 	mp->freemem[i].block_count += 1;

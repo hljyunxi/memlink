@@ -20,6 +20,8 @@
 #include "dumpfile.h"
 #include "utils.h"
 #include "common.h"
+#include "datablock.h"
+#include "runtime.h"
 
 /**
  * Creates a dump file from the hash table. The old dump file is replaced by 
@@ -264,17 +266,17 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
         ret = ffread(&sortfield, sizeof(char), 1, fp);
         ret = ffread(&valuetype, sizeof(char), 1, fp);
         ret = ffread(&keylen, sizeof(unsigned char), 1, fp);
-        DINFO("keylen: %d\n", keylen);
+        //DINFO("keylen: %d\n", keylen);
         ret = ffread(key, keylen, 1, fp);
         key[keylen] = 0;
-        DINFO("key: %s\n", key);
+        //DINFO("key: %s\n", key);
         
         ret = ffread(&valuelen, sizeof(unsigned char), 1, fp);
-		DINFO("valuelen: %d\n", valuelen);
+		//DINFO("valuelen: %d\n", valuelen);
         ret = ffread(&masklen, sizeof(unsigned char), 1, fp);
-		DINFO("masklen: %d\n", masklen);
+		//DINFO("masklen: %d\n", masklen);
         ret = ffread(&masknum, sizeof(char), 1, fp);
-		DINFO("masknum: %d\n", masknum);
+		//DINFO("masknum: %d\n", masknum);
 		if (masknum > 0) {
 			ret = ffread(maskformat, sizeof(char) * masknum, 1, fp);
 		}
@@ -284,13 +286,13 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
         }*/
         ret = ffread(&itemnum, sizeof(unsigned int), 1, fp);
         datalen = valuelen + masklen;
-		DINFO("itemnum: %d, datalen: %d\n", itemnum, datalen);
+		//DINFO("itemnum: %d, datalen: %d\n", itemnum, datalen);
 
         unsigned int maskarray[HASHTABLE_MASK_MAX_ITEM] = {0};
         for (i = 0; i < masknum; i++) {
             maskarray[i] = maskformat[i];
         }
-        DINFO("create info, key:%s, valuelen:%d, masknum:%d\n", key, valuelen, masknum);
+        //DINFO("create info, key:%s, valuelen:%d, masknum:%d\n", key, valuelen, masknum);
         ret = hashtable_key_create_mask(ht, key, valuelen, maskarray, masknum, type, valuetype);
         if (ret != MEMLINK_OK) {
             DERROR("hashtable_key_create_mask error, ret:%d\n", ret);
@@ -304,7 +306,7 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
         for (i = 0; i < itemnum; i++) {
             //DINFO("i: %d\n", i);
             if (i % block_data_count_max == 0) {
-                DINFO("create new datablock ...\n");
+                //DINFO("create new datablock ...\n");
                 /*
 				if (itemnum == 1) {
 					newdbk = mempool_get(g_runtime->mpool, sizeof(DataBlock) + datalen); 

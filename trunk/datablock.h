@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "hashtable.h"
 
+int         dataitem_check_kind(int ret, int kind);
 int         dataitem_have_data(HashNode *node, char *itemdata, unsigned char kind);
 int         dataitem_check(char *itemdata, int valuesize);
 int         dataitem_check_data(HashNode *node, char *itemdata);
@@ -35,7 +36,7 @@ int         datablock_free_inverse(DataBlock *startbk, DataBlock *endbk, int dat
 int			datablock_resize(HashNode *node, DataBlock *dbk);
 
 int         mask_array2_binary_flag(unsigned char *maskformat, unsigned int *maskarray, 
-                    int masknum, int masksize, char *maskval, char *maskflag);
+                                    int masknum, int masksize, char *maskval, char *maskflag);
 
 int         sortlist_valuecmp(unsigned char type, void *v1, void *v2, int size);
 int         sortlist_lookup(HashNode *node, int step, void *value, int kind, DataBlock **dbk);

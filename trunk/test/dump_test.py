@@ -6,11 +6,11 @@ sys.path.append(os.path.join(home, "client/python"))
 import time
 import subprocess
 from memlinkclient import *
+import testbase
 
 home = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-READ_PORT  = 21011
-WRITE_PORT = 21012
+READ_PORT, WRITE_PORT = testbase.memlink_addr()
 
 def test_result():
     global home

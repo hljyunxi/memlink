@@ -428,8 +428,20 @@ int mask_array2flag_test()
     item->mask[8]   = 0;
     item->msize     = 9;
 
+    item = &testitems[9];
+    item->num       = 3;
+    item->format[0] = 4;
+    item->format[1] = 2;
+    item->format[2] = 1;
+    item->array[0]  = 7;
+    item->array[1]  = UINT_MAX;
+    item->array[2]  = UINT_MAX;
+    item->mask[0]   = 0x3f;
+    item->mask[1]   = 0;
+    item->msize     = 2;
+
     int i;
-    for (i = 0; i < 9; i++) {
+    for (i = 0; i < 10; i++) {
         item = &testitems[i];
         int ret = array2flag_test_one(item->format, item->array, item->num, 
                 item->mask, item->msize);

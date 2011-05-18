@@ -76,7 +76,6 @@ queue_append(Queue *q, Conn *conn)
 {
     int ret = 0;
 
-
     QueueItem *item = (QueueItem*)zz_malloc(sizeof(QueueItem));
     if (NULL == item) {
         DERROR("malloc QueueItem error!\n");
@@ -97,6 +96,7 @@ queue_append(Queue *q, Conn *conn)
     }
 //queue_append_over:
     pthread_mutex_unlock(&q->lock);
+
     return ret;
 }
 
@@ -145,7 +145,7 @@ void
 queue_free(Queue *q, QueueItem *item)
 {
     QueueItem   *tmp;
-
+    //DINFO("queue free head:%p\n", item);
     while (item) {
         tmp = item;
         item = item->next;

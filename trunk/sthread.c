@@ -25,6 +25,7 @@
 #include "common.h"
 #include "synclog.h"
 #include "serial.h"
+#include "runtime.h"
 
 #define CMD_HEAD_LEN        sizeof(int) * 2 + sizeof(int)
 

@@ -42,7 +42,7 @@
 #define CMD_SYNC_CONN_INFO  29
 #define CMD_CONFIG_INFO     30
 
-#define CMD_SET_CONFIG_DYNAMIC      31
+#define CMD_SET_CONFIG      31
 
 #define CMD_CLEAN_ALL       32
 
@@ -145,10 +145,10 @@ int cmd_sortlist_count_pack(char *data, char *key, unsigned char masknum, unsign
                         void *valmin, unsigned char vminlen, void *valmax, unsigned char vmaxlen);
 int cmd_sortlist_count_unpack(char *data, char *key, unsigned char *masknum, unsigned int *maskarray,
                         void *valmin, unsigned char *vminlen, void *valmax, unsigned char *vmaxlen);
-int cmd_sortlist_del_pack(char *data, char *key, char *valmin, unsigned char vminlen, 
-                        char *valmax, unsigned char vmaxlen);
-int cmd_sortlist_del_unpack(char *data, char *key, char *valmin, unsigned char *vminlen,
-                        char *valmax, unsigned char *vmaxlen);
+int cmd_sortlist_del_pack(char *data, char *key, unsigned char kind, char *valmin, unsigned char vminlen, 
+                        char *valmax, unsigned char vmaxlen, unsigned char masknum, unsigned int *maskarray);
+int cmd_sortlist_del_unpack(char *data, char *key, unsigned char *kind, char *valmin, unsigned char *vminlen,
+                        char *valmax, unsigned char *vmaxlen, unsigned char *masknum, unsigned int *maskarray);
 
 int cmd_sortlist_range_pack(char *data, char *key, unsigned char kind, 
                         unsigned char masknum, unsigned int *maskarray, 

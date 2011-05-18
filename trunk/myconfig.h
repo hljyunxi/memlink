@@ -7,7 +7,6 @@
 #include <ctype.h>
 #include <pthread.h>
 #include "synclog.h"
-#include "hashtable.h"
 #include "mem.h"
 #include "wthread.h"
 #include "server.h"
@@ -50,7 +49,7 @@ typedef struct _myconfig
 }MyConfig;
 
 
-typedef struct _runtime
+/*typedef struct _runtime
 {
     char            home[PATH_MAX]; // programe home dir
     char            conffile[PATH_MAX];
@@ -75,14 +74,14 @@ typedef struct _runtime
 	pthread_mutex_t	mutex_mem;
 	long long		mem_used;
 }Runtime;
-
+*/
 extern MyConfig *g_cf;
-extern Runtime  *g_runtime;
+//extern Runtime  *g_runtime;
 
 MyConfig*   myconfig_create(char *filename);
-Runtime*    runtime_create_master(char *pgname, char *conffile);
+/*Runtime*    runtime_create_master(char *pgname, char *conffile);
 Runtime*    runtime_create_slave(char *pgname, char *conffile);
-void        runtime_destroy(Runtime *rt);
+void        runtime_destroy(Runtime *rt);*/
 int         myconfig_change();
 
 int			mem_used_inc(long long size);	

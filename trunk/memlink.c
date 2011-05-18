@@ -18,8 +18,9 @@
 #include "daemon.h"
 #include "utils.h"
 #include "common.h"
+#include "runtime.h"
 
-char *VERSION = "memlink-0.3.0";
+#define MEMLINK_VERSION "memlink-0.3.4"
 
 static void 
 sig_handler(const int sig) {
@@ -129,26 +130,30 @@ sig_handler_hup(const int sig)
             wait_thread_exit(g_runtime->slave->threadid);
             g_cf->role = ROLE_MASTER;
             DINFO("========slave to master\n");
-        } else if (check_thread_alive(g_runtime->slave->threadid) == 1 && need_kill == 1) {
+        } else if (confrole == ROLE_BACKUP) {
+            wait_thread_exit(g_runtime->slave->threadid);
+            g_cf->role = ROLE_BACKUP;
+            DINFO("========slave to backup\n");
+        } else if ((confrole == ROLE_SLAVE) && need_kill == 1) {
             //不需要切换，查看master_sync_host和master_sync_port是否改变
             //从新启动从线程
             wait_thread_exit(g_runtime->slave->threadid);
             if (g_runtime->slave) {
                 sslave_thread(g_runtime->slave);
-                sslave_go(g_runtime->slave);
             } else {
                 g_runtime->slave = sslave_create();
             }
+            sslave_go(g_runtime->slave);
             DINFO("=========restart slave thread\n");
         }
-    } else if (g_cf->role == ROLE_MASTER) {
+    } else if ((g_cf->role == ROLE_MASTER || g_cf->role == ROLE_BACKUP) && confrole == ROLE_SLAVE) {
         //主切换成从， 只需启动从线程
         if (g_runtime->slave) {
             sslave_thread(g_runtime->slave);
-            sslave_go(g_runtime->slave);
         } else {
             g_runtime->slave = sslave_create();
         }
+        sslave_go(g_runtime->slave);
         g_cf->role = ROLE_SLAVE;
         DINFO("===========master to slave\n");
     }
@@ -202,7 +207,7 @@ slave(char *pgname, char *conffile)
 void 
 usage()
 {
-	fprintf(stderr, "usage: memlink [config file path]\n");
+	fprintf(stderr, "%s\nusage: memlink [config file path]\n", MEMLINK_VERSION);
 }
 
 int main(int argc, char *argv[])
@@ -218,9 +223,13 @@ int main(int argc, char *argv[])
 		usage();
 		return 0;
 	}
-	
+
+    DINFO("%s\n", MEMLINK_VERSION);
 	DINFO("config file: %s\n", conffile);
     myconfig_create(conffile);
+    DNOTE("====== %s ======\n", MEMLINK_VERSION);
+	DNOTE("config file: %s\n", conffile);
+	DNOTE("data dir: %s\n", g_cf->datadir);
     
     if (g_cf->max_core) {
         struct rlimit rlim_new;
@@ -238,7 +247,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    /*
+    
     if (getrlimit(RLIMIT_NOFILE, &rlim) != 0) { 
         DFATALERR("failed to getrlimit number of files\n");
         MEMLINK_EXIT;
@@ -252,7 +261,7 @@ int main(int argc, char *argv[])
             DFATALERR("failed to set rlimit for open files. Try running as root or requesting smaller maxconns value.\n");
             MEMLINK_EXIT;
         }    
-    }*/
+    }
     
     if (change_group_user(g_cf->user) < 0) { 
         DERROR("change group user error!\n");

@@ -8,6 +8,7 @@
 #include "mem.h"
 #include "myconfig.h"
 #include "common.h"
+#include "runtime.h"
 
 #define MY_PRINT(format,args...)  \
 {\

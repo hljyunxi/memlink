@@ -4,15 +4,12 @@ import glob
 cflags   = '-ggdb -DDEBUG'
 #cflags   = '-ggdb'
 includes = ['../client/c', '../']
-#ldflags  = ['../client/c/libmemlink.a']
 ldflags  = []
 libpath  = ['../client/c']
-libs	 = ['m']
-#libs	 = ['memlink']
+libs	 = ['m', 'pthread']
 
 env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
 
-#files = Glob("*.c")
 files = glob.glob("*.c")
 files.remove('testutil.c')
 for fn in files:

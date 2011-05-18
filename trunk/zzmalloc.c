@@ -17,8 +17,7 @@
 void*
 zz_malloc(size_t size)
 {
-    DNOTE("malloc size:%u\n", (unsigned int)size);
-
+    //DNOTE("malloc size:%u\n", (unsigned int)size);
     void *ptr;
 #ifdef DEBUGMEM
 	ptr = malloc(size + 12);

@@ -5,8 +5,10 @@ import subprocess
 import time
 
 def testone(fn, wait=2):
-    home   = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    print 'home:', home
+    home = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    cwd  = os.getcwd()
+
+    print 'home:', home, 'cwd:', cwd
     fpath = os.path.join(home, 'test', fn)
 
     memlinkfile = os.path.join(home, 'memlink')
@@ -18,7 +20,7 @@ def testone(fn, wait=2):
     cmd = "killall -9 memlink"
     os.system(cmd)
 
-    logfile = os.path.join(home, 'memlink.log')
+    logfile = os.path.join('memlink.log')
     if os.path.isfile(logfile):
         print 'remove log:', logfile
         os.remove(logfile)
@@ -52,22 +54,30 @@ def testone(fn, wait=2):
     return ret
 
 def test():
+    if os.path.isfile('dotest.log'):
+        os.remove('dotest.log')
+
     files = glob.glob("*_test")
     files.sort()
     print files
     #pyfiles = glob.glob("*_test.py")
-    pyfiles = ['dump_test.py', 'push_pop_test.py']
+    pyfiles = ['dump_test.py', 'push_pop_test.py', 'sortlist_test.py']
     files += pyfiles
 
     result = {}
     print 'do all test ...'
-
+    
+    f = open('dotest.log', 'w')
     for fn in files:
         ret = testone(fn)
-        if ret != 0:
-            result[fn] = 0
-        else:
+        if ret != 0: # failed
             result[fn] = -1
+            f.write('%s\t0\n' % fn)
+        else: # success
+            result[fn] = 0
+            f.write('%s\t1\n' % fn)
+    f.close()
+
     return result
 
 if __name__ == '__main__':

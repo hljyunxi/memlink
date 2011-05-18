@@ -13,6 +13,26 @@
 #include "utils.h"
 #include "zzmalloc.h"
 #include "serial.h"
+#include "runtime.h"
+
+/**
+ * 检查dataitem_check的返回值是否符合kind
+ * @param ret  dataitem_check返回值
+ * @param kind 预期的kind
+ * @return 正确返回MEMLINK_TRUE，否则返回MEMLINK_FALSE
+ */
+inline int
+dataitem_check_kind(int ret, int kind)
+{
+    if (ret == kind)
+        return MEMLINK_TRUE;
+
+    if (kind == MEMLINK_VALUE_ALL && ret != MEMLINK_VALUE_REMOVED) 
+        return MEMLINK_TRUE;
+    
+    return MEMLINK_FALSE;
+}
+
 
 /**
  * 检查数据项中是否有数据
@@ -1232,19 +1252,19 @@ mask_array2_binary_flag(unsigned char *maskformat, unsigned int *maskarray, int 
         maskval[0] = maskval[0] & 0xfc;
 
         //char buf[128];
-        //DINFO("2binary: %s\n", formatb(maskval, masklen, buf, 128));
+        //DINFO("len:%d 2binary: %s\n", masklen, formatb(maskval, masklen, buf, 128));
         masklen = mask_array2flag(maskformat, maskarray, masknum, maskflag);
         if (masklen <= 0) {
             DINFO("mask_array2flag error\n");
             return -2;
         }
-        //DINFO("2flag: %s\n", formatb(maskflag, masklen, buf, 128));
+        //DINFO("len:%d 2flag: %s\n", masklen, formatb(maskflag, masklen, buf, 128));
         for (j = 0; j < masksize; j++) {
             maskflag[j] = ~maskflag[j];
         }
         maskflag[0] = maskflag[0] & 0xfc;
 
-        //DINFO("^2flag: %s\n", formatb(maskflag, masklen, buf, 128));
+        //DINFO("len:%d ^2flag: %s\n", masklen, formatb(maskflag, masklen, buf, 128));
     }else{
         masknum = 0;
     }

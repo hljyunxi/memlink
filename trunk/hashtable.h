@@ -7,12 +7,12 @@
 #include "common.h"
 #include "conn.h"
 
-typedef struct _hashnode
+typedef struct _memlink_hashnode
 {
     char              *key;
     DataBlock         *data; // DataBlock link
     DataBlock         *data_tail; // DataBlock link tail
-    struct _hashnode  *next;
+    struct _memlink_hashnode  *next;
     unsigned char     *maskformat; // mask format:  3:4:5 => [3, 4, 5]
     unsigned char     type:4; // key type: list/queue
     unsigned char     sortfield:4; // which sort? 0:value, 1-255:mask[0-xx]
@@ -25,7 +25,7 @@ typedef struct _hashnode
 }HashNode;
 
 
-typedef struct _hashtable
+typedef struct _memlink_hashtable
 {
     HashNode    *bunks[HASHTABLE_BUNKNUM]; 
     
@@ -73,12 +73,10 @@ int             hashtable_print(HashTable *ht, char *key);
 int             hashtable_check(HashTable *ht, char *key);
 int             hashnode_check(HashNode *node);
 
-int				dataitem_have_data(HashNode *node, char *itemdata, unsigned char kind);
-int				dataitem_check_data(HashNode *node, char *itemdata);
-
 int             hashtable_del_by_mask(HashTable *ht, char *key, unsigned int *maskarray, int masknum);
 
-int             hashtable_sortlist_mdel(HashTable *ht, char *key, void *valmin, void *valmax);
+int             hashtable_sortlist_mdel(HashTable *ht, char *key, unsigned char kind, void *valmin, void *valmax, 
+                                        unsigned int *maskarray, unsigned char masknum);
 int             hashtable_sortlist_count(HashTable *ht, char *key, unsigned int *maskarray, int masknum, 
                                         void* valmin, void *valmax, int *visible_count, int *tagdel_count);
 int             hashtable_sortlist_range(HashTable *ht, char *key, unsigned char kind, 
