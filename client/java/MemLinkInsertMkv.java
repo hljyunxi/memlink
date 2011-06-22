@@ -27,67 +27,67 @@ public class MemLinkInsertMkv {
 
   public synchronized void delete() {
     if (swigCPtr != 0) {
-	  memlink.memlink_imkv_destroy(this);
+	  cmemlink.memlink_imkv_destroy(this);
       if (swigCMemOwn) {
         swigCMemOwn = false;
-        memlinkJNI.delete_MemLinkInsertMkv(swigCPtr);
+        cmemlinkJNI.delete_MemLinkInsertMkv(swigCPtr);
       }
       swigCPtr = 0;
     }
   }
 
   public void setSum_size(long value) {
-    memlinkJNI.MemLinkInsertMkv_sum_size_set(swigCPtr, this, value);
+    cmemlinkJNI.MemLinkInsertMkv_sum_size_set(swigCPtr, this, value);
   }
 
   public long getSum_size() {
-    return memlinkJNI.MemLinkInsertMkv_sum_size_get(swigCPtr, this);
+    return cmemlinkJNI.MemLinkInsertMkv_sum_size_get(swigCPtr, this);
   }
 
   public void setKeynum(long value) {
-    memlinkJNI.MemLinkInsertMkv_keynum_set(swigCPtr, this, value);
+    cmemlinkJNI.MemLinkInsertMkv_keynum_set(swigCPtr, this, value);
   }
 
   public long getKeynum() {
-    return memlinkJNI.MemLinkInsertMkv_keynum_get(swigCPtr, this);
+    return cmemlinkJNI.MemLinkInsertMkv_keynum_get(swigCPtr, this);
   }
 
   public void setKindex(int value) {
-    memlinkJNI.MemLinkInsertMkv_kindex_set(swigCPtr, this, value);
+    cmemlinkJNI.MemLinkInsertMkv_kindex_set(swigCPtr, this, value);
   }
 
   public int getKindex() {
-    return memlinkJNI.MemLinkInsertMkv_kindex_get(swigCPtr, this);
+    return cmemlinkJNI.MemLinkInsertMkv_kindex_get(swigCPtr, this);
   }
 
   public void setVindex(int value) {
-    memlinkJNI.MemLinkInsertMkv_vindex_set(swigCPtr, this, value);
+    cmemlinkJNI.MemLinkInsertMkv_vindex_set(swigCPtr, this, value);
   }
 
   public int getVindex() {
-    return memlinkJNI.MemLinkInsertMkv_vindex_get(swigCPtr, this);
+    return cmemlinkJNI.MemLinkInsertMkv_vindex_get(swigCPtr, this);
   }
 
   public void setKeylist(MemLinkInsertKey value) {
-    memlinkJNI.MemLinkInsertMkv_keylist_set(swigCPtr, this, MemLinkInsertKey.getCPtr(value), value);
+    cmemlinkJNI.MemLinkInsertMkv_keylist_set(swigCPtr, this, MemLinkInsertKey.getCPtr(value), value);
   }
 
   public MemLinkInsertKey getKeylist() {
-    long cPtr = memlinkJNI.MemLinkInsertMkv_keylist_get(swigCPtr, this);
+    long cPtr = cmemlinkJNI.MemLinkInsertMkv_keylist_get(swigCPtr, this);
     return (cPtr == 0) ? null : new MemLinkInsertKey(cPtr, false);
   }
 
   public void setTail(MemLinkInsertKey value) {
-    memlinkJNI.MemLinkInsertMkv_tail_set(swigCPtr, this, MemLinkInsertKey.getCPtr(value), value);
+    cmemlinkJNI.MemLinkInsertMkv_tail_set(swigCPtr, this, MemLinkInsertKey.getCPtr(value), value);
   }
 
   public MemLinkInsertKey getTail() {
-    long cPtr = memlinkJNI.MemLinkInsertMkv_tail_get(swigCPtr, this);
+    long cPtr = cmemlinkJNI.MemLinkInsertMkv_tail_get(swigCPtr, this);
     return (cPtr == 0) ? null : new MemLinkInsertKey(cPtr, false);
   }
 
   public MemLinkInsertMkv() {
-    this(memlinkJNI.new_MemLinkInsertMkv(), true);
+    this(cmemlinkJNI.new_MemLinkInsertMkv(), true);
   }
 
 }

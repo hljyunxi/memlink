@@ -43,7 +43,7 @@ mainserver_create()
         }
 
     }
-    ms->sock = tcp_socket_server(g_cf->read_port);  
+    ms->sock = tcp_socket_server(g_cf->ip,g_cf->read_port);  
     if (ms->sock < 0) {
         DERROR("tcp_socket_server at port %d error: %d\n", g_cf->read_port, ms->sock);
         MEMLINK_EXIT;

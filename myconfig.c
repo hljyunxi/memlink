@@ -154,6 +154,8 @@ myconfig_create(char *filename)
             mcf->block_clean_start = atoi(start);
         }else if (strcmp(buffer, "block_clean_num") == 0) {
             mcf->block_clean_num = atoi(start);
+        }else if (strcmp(buffer, "ip") == 0) {
+            snprintf(mcf->ip, IP_ADDR_MAX_LEN, "%s", start);
         }else if (strcmp(buffer, "read_port") == 0) {
             mcf->read_port = atoi(start);
         }else if (strcmp(buffer, "write_port") == 0) {

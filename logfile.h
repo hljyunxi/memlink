@@ -20,7 +20,7 @@ void        logfile_write(LogFile *log, char *level, char *file, int line, char 
 extern LogFile *g_log;
 
 #define MEMLINK_EXIT \
-    abort()
+    exit(0)
 
 #ifdef DEBUG
 

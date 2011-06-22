@@ -71,9 +71,13 @@ class MemLinkClient:
         result = MemLinkResult()
         ret = memlink_cmd_sortlist_range(self.client, key, kind, maskstr, 
                                 valmin, len(valmin), valmax, len(valmax), result)
-        if ret != MEMLINK_OK:
-            result = None
-        return ret, result
+        result_ = []
+        if ret == MEMLINK_OK:
+            items = result.root
+            while items:
+                result_.append( (items.value[:result.valuesize],items.mask[:result.masksize]) )
+                items = items.next
+        return ret, result_
     
     def sortlist_del(self, key, kind, valmin, valmax, maskstr=''):
         return memlink_cmd_sortlist_del(self.client, key, kind, maskstr, valmin, len(valmin), valmax, len(valmax))
@@ -98,9 +102,13 @@ class MemLinkClient:
     def range(self, key, kind, frompos, rlen, maskstr=''):
         result = MemLinkResult()
         ret = memlink_cmd_range(self.client, key, kind, maskstr, frompos, rlen, result)
-        if ret != MEMLINK_OK:
-            result = None
-        return ret, result
+        result_ = []
+        if ret == MEMLINK_OK:
+            items = result.root
+            while items:
+                result_.append( (items.value[:result.valuesize],items.mask[:result.masksize]) )
+                items = items.next
+        return ret, result_
 
     def rmkey(self, key):
         return memlink_cmd_rmkey(self.client, key)

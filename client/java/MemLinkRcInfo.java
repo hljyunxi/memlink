@@ -27,34 +27,34 @@ public class MemLinkRcInfo {
 
   public synchronized void delete() {
     if (swigCPtr != 0) {
-      memlink.memlink_rcinfo_free(this);
+      cmemlink.memlink_rcinfo_free(this);
       if (swigCMemOwn) {
         swigCMemOwn = false;
-        memlinkJNI.delete_MemLinkRcInfo(swigCPtr);
+        cmemlinkJNI.delete_MemLinkRcInfo(swigCPtr);
       }
       swigCPtr = 0;
     }
   }
 
   public void setConncount(int value) {
-    memlinkJNI.MemLinkRcInfo_conncount_set(swigCPtr, this, value);
+    cmemlinkJNI.MemLinkRcInfo_conncount_set(swigCPtr, this, value);
   }
 
   public int getConncount() {
-    return memlinkJNI.MemLinkRcInfo_conncount_get(swigCPtr, this);
+    return cmemlinkJNI.MemLinkRcInfo_conncount_get(swigCPtr, this);
   }
 
   public void setRoot(MemLinkRcItem value) {
-    memlinkJNI.MemLinkRcInfo_root_set(swigCPtr, this, MemLinkRcItem.getCPtr(value), value);
+    cmemlinkJNI.MemLinkRcInfo_root_set(swigCPtr, this, MemLinkRcItem.getCPtr(value), value);
   }
 
   public MemLinkRcItem getRoot() {
-    long cPtr = memlinkJNI.MemLinkRcInfo_root_get(swigCPtr, this);
+    long cPtr = cmemlinkJNI.MemLinkRcInfo_root_get(swigCPtr, this);
     return (cPtr == 0) ? null : new MemLinkRcItem(cPtr, false);
   }
 
   public MemLinkRcInfo() {
-    this(memlinkJNI.new_MemLinkRcInfo(), true);
+    this(cmemlinkJNI.new_MemLinkRcInfo(), true);
   }
 
 }

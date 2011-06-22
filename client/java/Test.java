@@ -26,7 +26,7 @@ public class Test
         int ret;
 
         ret = m.createQueue(key, 10, "4:3:1");
-        if (ret != memlink.MEMLINK_OK) {
+        if (ret != cmemlink.MEMLINK_OK) {
             System.out.println("create queue error!" + ret);
             return;
         }
@@ -34,7 +34,7 @@ public class Test
         for (i = 0; i < 100; i++) {
             String value = String.format("%010d", i);
             ret = m.lpush(key, value, "8:1:1");
-            if (ret != memlink.MEMLINK_OK) {
+            if (ret != cmemlink.MEMLINK_OK) {
                 System.out.println("lpush error:" + ret);
                 return;
             }
@@ -42,7 +42,7 @@ public class Test
         for (i = 100; i < 200; i++) {
             String value = String.format("%010d", i);
             ret = m.rpush(key, value, "8:1:0");
-            if (ret != memlink.MEMLINK_OK) {
+            if (ret != cmemlink.MEMLINK_OK) {
                 System.out.println("rpush error:" + ret);
                 return;
             }
@@ -50,7 +50,7 @@ public class Test
         
         MemLinkCount count = new MemLinkCount();
         ret = m.count(key, "", count);
-        if (ret == memlink.MEMLINK_OK) {
+        if (ret == cmemlink.MEMLINK_OK) {
             System.out.println("count:" + count.getVisible_count());
             if (count.getVisible_count() + count.getTagdel_count() != 200) {
                 System.out.println("count error!");
@@ -60,7 +60,7 @@ public class Test
         for (i = 0; i < 20; i++) {
             MemLinkResult result = new MemLinkResult();
             ret = m.lpop(key, 2, result);
-            if (ret != memlink.MEMLINK_OK) {
+            if (ret != cmemlink.MEMLINK_OK) {
                 System.out.println("lpop error:" + ret);
                 return;
             }
@@ -68,7 +68,7 @@ public class Test
         for (i = 0; i < 20; i++) {
             MemLinkResult result = new MemLinkResult();
             ret = m.rpop(key, 2, result);
-            if (ret != memlink.MEMLINK_OK) {
+            if (ret != cmemlink.MEMLINK_OK) {
                 System.out.println("rpop error:" + ret);
                 return;
             }
@@ -76,7 +76,7 @@ public class Test
 
         MemLinkCount count2 = new MemLinkCount();
         ret = m.count(key, "", count2);
-        if (ret == memlink.MEMLINK_OK) {
+        if (ret == cmemlink.MEMLINK_OK) {
             System.out.println("count:" + count2.getVisible_count());
             if (count2.getVisible_count() + count2.getTagdel_count() != 120) {
                 System.out.println("count error!");
@@ -95,8 +95,8 @@ public class Test
 
         int ret;
 
-        ret = m.createSortList(key, 10, "4:3:1", memlink.MEMLINK_VALUE_STRING);
-        if (ret != memlink.MEMLINK_OK) {
+        ret = m.createSortList(key, 10, "4:3:1", cmemlink.MEMLINK_VALUE_STRING);
+        if (ret != cmemlink.MEMLINK_OK) {
             System.out.println("create queue error!" + ret);
             return;
         }
@@ -116,7 +116,7 @@ public class Test
 
         for (i = 0; i < 100; i++) {
             ret = m.sortListInsert(key, values.get(i), "7:2:1");
-            if (ret != memlink.MEMLINK_OK) {
+            if (ret != cmemlink.MEMLINK_OK) {
                 System.out.println("insert error: " + ret);
                 return;
             }
@@ -130,7 +130,7 @@ public class Test
 
         MemLinkCount count = new MemLinkCount();
         ret = m.sortListCount(key, first, last, "", count);
-        if (ret != memlink.MEMLINK_OK) {
+        if (ret != cmemlink.MEMLINK_OK) {
             System.out.println("count error: " + ret);
             return; 
         }
@@ -138,7 +138,7 @@ public class Test
 
 
         ret = m.sortListCount(key, start, end, "", count);
-        if (ret != memlink.MEMLINK_OK) {
+        if (ret != cmemlink.MEMLINK_OK) {
             System.out.println("count error: " + ret);
             return; 
         }
@@ -147,14 +147,14 @@ public class Test
             return;
         }
 
-        ret = m.sortListDelete(key, memlink.MEMLINK_VALUE_ALL, start, end, "");
-        if (ret != memlink.MEMLINK_OK) {
+        ret = m.sortListDelete(key,cmemlink.MEMLINK_VALUE_ALL, start, end, "");
+        if (ret != cmemlink.MEMLINK_OK) {
             System.out.println("delete error: " + ret);
             return; 
         }
 
         ret = m.sortListCount(key, first, last, "", count);
-        if (ret != memlink.MEMLINK_OK) {
+        if (ret != cmemlink.MEMLINK_OK) {
             System.out.println("count error: " + ret);
             return; 
         }
@@ -176,7 +176,7 @@ public class Test
 		String key = "haha";
 
 	    ret = m.createList(key, valuelen, maskformat);
-        if (memlink.MEMLINK_OK != ret) {
+        if (cmemlink.MEMLINK_OK != ret) {
             System.out.println("create error:" + ret);
             return;
         }else{
@@ -188,7 +188,7 @@ public class Test
         for (i = 0; i < num; i++) {
             String value = String.format("%010d", i);
             ret = m.insert(key, value, "8:3:1", 0);
-            if (memlink.MEMLINK_OK != ret) {
+            if (cmemlink.MEMLINK_OK != ret) {
                 System.out.println("insert error!");
                 return;
             }
@@ -198,7 +198,7 @@ public class Test
         
         MemLinkStat stat = new MemLinkStat();
         ret = m.stat(key, stat);
-        if (memlink.MEMLINK_OK != ret) {
+        if (cmemlink.MEMLINK_OK != ret) {
             System.out.println("stat error!");
             return;
         }
@@ -211,8 +211,8 @@ public class Test
         stat.delete();
         
         MemLinkResult rs = new MemLinkResult();
-        ret = m.range(key, memlink.MEMLINK_VALUE_VISIBLE, "", 0, 100, rs);
-        if (memlink.MEMLINK_OK != ret) {
+        ret = m.range(key,cmemlink.MEMLINK_VALUE_VISIBLE, "", 0, 100, rs);
+        if (cmemlink.MEMLINK_OK != ret) {
             System.out.println("range error!");
             return;
         }
@@ -236,7 +236,7 @@ public class Test
 
         MemLinkCount count = new MemLinkCount();
         ret = m.count(key, "8:3:1", count);
-        if (memlink.MEMLINK_OK != ret) {
+        if (cmemlink.MEMLINK_OK != ret) {
             System.out.println("count error!");
             return;
         }

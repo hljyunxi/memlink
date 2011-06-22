@@ -654,7 +654,7 @@ sthread_create()
 	}
 	memset(st->sync_conn_info, 0x0, sizeof(SyncConnInfo) * g_cf->max_sync_conn);
 
-	st->sock = tcp_socket_server(g_cf->sync_port);
+	st->sock = tcp_socket_server(g_cf->ip,g_cf->sync_port);
 	if (st->sock == -1)
 		MEMLINK_EXIT;
 	DINFO("sync thread socket creation ok!\n");

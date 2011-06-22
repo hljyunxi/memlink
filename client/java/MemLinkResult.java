@@ -27,50 +27,50 @@ public class MemLinkResult {
 
   public synchronized void delete() {
     if (swigCPtr != 0) {
-      memlink.memlink_result_free(this);
+      cmemlink.memlink_result_free(this);
       if (swigCMemOwn) {
         swigCMemOwn = false;
-        memlinkJNI.delete_MemLinkResult(swigCPtr);
+        cmemlinkJNI.delete_MemLinkResult(swigCPtr);
       }
       swigCPtr = 0;
     }
   }
 
   public void setCount(int value) {
-    memlinkJNI.MemLinkResult_count_set(swigCPtr, this, value);
+    cmemlinkJNI.MemLinkResult_count_set(swigCPtr, this, value);
   }
 
   public int getCount() {
-    return memlinkJNI.MemLinkResult_count_get(swigCPtr, this);
+    return cmemlinkJNI.MemLinkResult_count_get(swigCPtr, this);
   }
 
   public void setValuesize(int value) {
-    memlinkJNI.MemLinkResult_valuesize_set(swigCPtr, this, value);
+    cmemlinkJNI.MemLinkResult_valuesize_set(swigCPtr, this, value);
   }
 
   public int getValuesize() {
-    return memlinkJNI.MemLinkResult_valuesize_get(swigCPtr, this);
+    return cmemlinkJNI.MemLinkResult_valuesize_get(swigCPtr, this);
   }
 
   public void setMasksize(int value) {
-    memlinkJNI.MemLinkResult_masksize_set(swigCPtr, this, value);
+    cmemlinkJNI.MemLinkResult_masksize_set(swigCPtr, this, value);
   }
 
   public int getMasksize() {
-    return memlinkJNI.MemLinkResult_masksize_get(swigCPtr, this);
+    return cmemlinkJNI.MemLinkResult_masksize_get(swigCPtr, this);
   }
 
   public void setRoot(MemLinkItem value) {
-    memlinkJNI.MemLinkResult_root_set(swigCPtr, this, MemLinkItem.getCPtr(value), value);
+    cmemlinkJNI.MemLinkResult_root_set(swigCPtr, this, MemLinkItem.getCPtr(value), value);
   }
 
   public MemLinkItem getRoot() {
-    long cPtr = memlinkJNI.MemLinkResult_root_get(swigCPtr, this);
+    long cPtr = cmemlinkJNI.MemLinkResult_root_get(swigCPtr, this);
     return (cPtr == 0) ? null : new MemLinkItem(cPtr, false);
   }
 
   public MemLinkResult() {
-    this(memlinkJNI.new_MemLinkResult(), true);
+    this(cmemlinkJNI.new_MemLinkResult(), true);
   }
 
 }

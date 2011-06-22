@@ -1101,7 +1101,7 @@ wthread_create()
 	}
 	memset(wt->rw_conn_info, 0x0, sizeof(RwConnInfo) * g_cf->max_write_conn);
 
-    wt->sock = tcp_socket_server(g_cf->write_port); 
+    wt->sock = tcp_socket_server(g_cf->ip,g_cf->write_port); 
     if (wt->sock == -1) {
         MEMLINK_EXIT;
     }

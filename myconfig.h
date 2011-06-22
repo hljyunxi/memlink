@@ -26,6 +26,7 @@ typedef struct _myconfig
     float        block_clean_cond;
     int          block_clean_start;
     int          block_clean_num;
+    char         ip[IP_ADDR_MAX_LEN];  //bind ip,if empty bind any
     int          read_port;
     int          write_port;
     int          sync_port;

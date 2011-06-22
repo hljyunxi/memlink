@@ -22,7 +22,7 @@
 
 
 int 
-tcp_socket_server(int port)
+tcp_socket_server(char * host,int port)
 {
     int fd;
     int ret;
@@ -39,9 +39,13 @@ tcp_socket_server(int port)
 
     sin.sin_family = AF_INET;
     sin.sin_port = htons((short)port);
-    sin.sin_addr.s_addr = htonl(INADDR_ANY);
+    if(NULL == host){
+        sin.sin_addr.s_addr = htonl(INADDR_ANY);
+    }else{
+        sin.sin_addr.s_addr = inet_addr(host);
+    }
 
-	DINFO("bind to: %d\n", port);
+	DINFO("bind %s:%d\n", host,port);
     ret = bind(fd, (struct sockaddr*)&sin, sizeof(sin));
     if (ret == -1) {
         DERROR("bind error: %s\n", strerror(errno));
