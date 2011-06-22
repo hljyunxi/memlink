@@ -1,0 +1,34 @@
+import glob, sys, os
+
+#cflags   = ['-Wall', '-ggdb', '-fprofile-arcs', '-ftest-coverage']
+#lflags   = [ '-fprofile-arcs', '-ftest-coverage']
+#defs     = ['DEBUG', "__USE_FILE_OFFSET64", "__USE_LARGEFILE64", "_LARGEFILE_SOURCE", "_LARGEFILE64_SOURCE", "_FILE_OFFSET_BITS=64", "DEBUGMEM"]
+defs     = ['DEBUG', "__USE_FILE_OFFSET64", "__USE_LARGEFILE64", "_LARGEFILE_SOURCE", "_LARGEFILE64_SOURCE", "_FILE_OFFSET_BITS=64"]
+cflags   = ['-Wall', '-ggdb']
+if sys.platform.startswith('linux'):
+    lflags   = ['-Wl,-R../client/c']
+else:
+    lflags   = []
+
+#cflags   = ['-Wall', '-ggdb']
+includes = ['/usr/local/include', '../', '../client/c']
+libpath  = ['/usr/local/lib', '../client/c']
+libs	 = ['event', 'm']
+files	 = ['../hashtable.c', '../serial.c', '../logfile.c', '../datablock.c',
+	        '../mem.c', '../zzmalloc.c', '../myconfig.c', '../synclog.c', '../runtime.c',
+	        '../wthread.c', '../dumpfile.c', '../utils.c', '../rthread.c',
+            '../network.c', '../conn.c', '../server.c', '../queue.c', '../info.c',
+            '../sslave.c', '../sthread.c', '../client/c/memlink_client.c']
+env = Environment(CCFLAGS=cflags, CPPDEFINES=defs, LINKFLAGS = lflags, CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
+
+localfiles = glob.glob("*.c")
+
+objfiles = []
+for fn in files:
+    name = os.path.basename(fn)[:-2]
+    objfiles.append(env.Object('unittest-' + name, fn))
+
+for fn in localfiles:
+	cmfiles = [fn] + objfiles
+	env.Program(fn[:-2], cmfiles)
+
