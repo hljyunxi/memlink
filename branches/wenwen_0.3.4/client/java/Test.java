@@ -15,6 +15,26 @@ public class Test
 		System.out.println("load ok!");
     }
 
+    public static byte[] int2byte(int i)
+    {
+        byte[] result = new byte[4];
+        result[0] = ((i>>24)&0xFF);
+        result[1] = ((i>>16)&0xFF);
+        result[2] = ((i>>8)&0xFF);
+        result[3] = (i&0xFF);
+        return result;
+    }
+    public static int byte2int(byte[] b)
+    {
+        int temp = 0;
+        int n = 0;
+        for(int i=0;i<4;i++){
+            n<<=8;
+            temp=b[i]&0xFF;
+            n |= temp;
+        }
+        return n;
+    }
     public static void testQueue()
     {
 		MemLinkClient m = new MemLinkClient("127.0.0.1", 11001, 11002, 10);
@@ -95,17 +115,16 @@ public class Test
 
         int ret;
 
-        ret = m.createSortList(key, 10, "4:3:1", cmemlink.MEMLINK_VALUE_STRING);
+        ret = m.createSortList(key, 10, "4:3:1", cmemlink.MEMLINK_VALUE_INT);
         if (ret != cmemlink.MEMLINK_OK) {
             System.out.println("create queue error!" + ret);
             return;
         }
        
-        List<String> values = new ArrayList<String>();
+        List<Integer> values = new ArrayList<Integer>();
 
         for (i = 0; i < 100; i++) {
-            String value = String.format("%010d", i);
-            values.add(value);
+            values.add(i);
         }
 
         Collections.shuffle(values);
@@ -115,21 +134,21 @@ public class Test
         }
 
         for (i = 0; i < 100; i++) {
-            ret = m.sortListInsert(key, values.get(i), "7:2:1");
+            ret = m.sortListInsert(key, int2byte(values.get(i)), "7:2:1");
             if (ret != cmemlink.MEMLINK_OK) {
                 System.out.println("insert error: " + ret);
                 return;
             }
         }
         
-        String first = String.format("%010d", 0);
-        String last = String.format("%010d", 100);
+        int first = 0;
+        int last = 100;
 
-        String start = String.format("%010d", 15);
-        String end   = String.format("%010d", 33);
+        int start = 15;
+        int end   = 33;
 
         MemLinkCount count = new MemLinkCount();
-        ret = m.sortListCount(key, first, last, "", count);
+        ret = m.sortListCount(key, int2byte(first), int2byte(last), "", count);
         if (ret != cmemlink.MEMLINK_OK) {
             System.out.println("count error: " + ret);
             return; 
@@ -137,7 +156,7 @@ public class Test
         System.out.println(count.getVisible_count());
 
 
-        ret = m.sortListCount(key, start, end, "", count);
+        ret = m.sortListCount(key, int2byte(start), int2byte(end), "", count);
         if (ret != cmemlink.MEMLINK_OK) {
             System.out.println("count error: " + ret);
             return; 
@@ -147,13 +166,13 @@ public class Test
             return;
         }
 
-        ret = m.sortListDelete(key,cmemlink.MEMLINK_VALUE_ALL, start, end, "");
+        ret = m.sortListDelete(key,cmemlink.MEMLINK_VALUE_ALL, int2byte(start), int2byte(end), "");
         if (ret != cmemlink.MEMLINK_OK) {
             System.out.println("delete error: " + ret);
             return; 
         }
 
-        ret = m.sortListCount(key, first, last, "", count);
+        ret = m.sortListCount(key, int2byte(first), int2byte(last), "", count);
         if (ret != cmemlink.MEMLINK_OK) {
             System.out.println("count error: " + ret);
             return; 
