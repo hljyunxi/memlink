@@ -165,35 +165,35 @@ public class MemLinkClient
         return cmemlink.memlink_cmd_sortlist_insert(client, key, value, maskstr);
     }
 
-    public int sortListRange(String key, int kind, String vmin, String vmax, String maskstr, MemLinkResult result)
+    public int sortListRange(String key, int kind, byte[] vmin, byte[] vmax, String maskstr, MemLinkResult result)
     {
-        return cmemlink.memlink_cmd_sortlist_range(client, key, kind, maskstr, vmin, vmin.length(), vmax, vmax.length(), result);
+        return cmemlink.memlink_cmd_sortlist_range(client, key, kind, maskstr, vmin, vmax, result);
     }
 
-    public int sortListRangeAll(String key, String vmin, String vmax, String maskstr, MemLinkResult result)
+    public int sortListRangeAll(String key, byte[] vmin, byte[] vmax, String maskstr, MemLinkResult result)
     {
         return sortListRange(key,cmemlink.MEMLINK_VALUE_ALL, vmin, vmax, maskstr, result);
     }
 
-    public int sortListRangeVisible(String key, String vmin, String vmax, String maskstr, MemLinkResult result)
+    public int sortListRangeVisible(String key, byte[] vmin, byte[] vmax, String maskstr, MemLinkResult result)
     {
         return sortListRange(key,cmemlink.MEMLINK_VALUE_VISIBLE, vmin, vmax, maskstr, result);
     }
 
-    public int sortListRangeTagdel(String key, String vmin, String vmax, String maskstr, MemLinkResult result)
+    public int sortListRangeTagdel(String key, byte[] vmin, byte[] vmax, String maskstr, MemLinkResult result)
     {
         return sortListRange(key,cmemlink.MEMLINK_VALUE_TAGDEL, vmin, vmax, maskstr, result);
     }
 
 
-    public int sortListDelete(String key, int kind, String vmin, String vmax, String maskstr)
+    public int sortListDelete(String key, int kind, byte[] vmin, byte[] vmax, String maskstr)
     {
-        return cmemlink.memlink_cmd_sortlist_del(client, key, kind, maskstr, vmin, vmin.length(), vmax, vmax.length());
+        return cmemlink.memlink_cmd_sortlist_del(client, key, kind, maskstr, vmin, vmax);
     }
 
-    public int sortListCount(String key, String vmin, String vmax, String maskstr, MemLinkCount count)
+    public int sortListCount(String key, byte[] vmin, byte[] vmax, String maskstr, MemLinkCount count)
     {
-        return cmemlink.memlink_cmd_sortlist_count(client, key, maskstr, vmin, vmin.length(), vmax, vmax.length(), count);
+        return cmemlink.memlink_cmd_sortlist_count(client, key, maskstr, vmin, vmax, count);
     }
 
     public int readConnInfo(MemLinkRcInfo info)

@@ -18,10 +18,10 @@ public class Test
     public static byte[] int2byte(int i)
     {
         byte[] result = new byte[4];
-        result[0] = ((i>>24)&0xFF);
-        result[1] = ((i>>16)&0xFF);
-        result[2] = ((i>>8)&0xFF);
-        result[3] = (i&0xFF);
+        result[0] = (byte)((i>>24)&0xFF);
+        result[1] = (byte)((i>>16)&0xFF);
+        result[2] = (byte)((i>>8)&0xFF);
+        result[3] = (byte)(i&0xFF);
         return result;
     }
     public static int byte2int(byte[] b)
@@ -37,7 +37,7 @@ public class Test
     }
     public static void testQueue()
     {
-		MemLinkClient m = new MemLinkClient("127.0.0.1", 11001, 11002, 10);
+		MemLinkClient m = new MemLinkClient("127.0.0.1", 11001, 11002, 30);
         int i;
         String key = "haha";
         
@@ -52,7 +52,8 @@ public class Test
         }
         
         for (i = 0; i < 100; i++) {
-            String value = String.format("%010d", i);
+            byte[] value = int2byte(i);
+            //String value = String.format("%010d", i);
             ret = m.lpush(key, value, "8:1:1");
             if (ret != cmemlink.MEMLINK_OK) {
                 System.out.println("lpush error:" + ret);
@@ -60,7 +61,8 @@ public class Test
             }
         }
         for (i = 100; i < 200; i++) {
-            String value = String.format("%010d", i);
+            byte[] value = int2byte(i);
+            //String value = String.format("%010d", i);
             ret = m.rpush(key, value, "8:1:0");
             if (ret != cmemlink.MEMLINK_OK) {
                 System.out.println("rpush error:" + ret);
@@ -107,7 +109,7 @@ public class Test
     }
     public static void testSortList()
     {
-        MemLinkClient m = new MemLinkClient("127.0.0.1", 11001, 11002, 10);
+        MemLinkClient m = new MemLinkClient("127.0.0.1", 11001, 11002, 30);
         int i;
         String key = "haha";
         
@@ -115,9 +117,9 @@ public class Test
 
         int ret;
 
-        ret = m.createSortList(key, 10, "4:3:1", cmemlink.MEMLINK_VALUE_INT);
+        ret = m.createSortList(key,4, "4:3:1", cmemlink.MEMLINK_VALUE_INT);
         if (ret != cmemlink.MEMLINK_OK) {
-            System.out.println("create queue error!" + ret);
+            System.out.println("create sortlist error!" + ret);
             return;
         }
        
@@ -205,7 +207,8 @@ public class Test
         int i = 0;
         //String value = "012345678912";
         for (i = 0; i < num; i++) {
-            String value = String.format("%010d", i);
+            byte[] value = int2byte(i);
+            //String value = String.format("%010d", i);
             ret = m.insert(key, value, "8:3:1", 0);
             if (cmemlink.MEMLINK_OK != ret) {
                 System.out.println("insert error!");

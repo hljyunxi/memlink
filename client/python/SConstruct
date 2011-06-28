@@ -12,7 +12,7 @@ python_libs = x.stdout.read().strip().split()
 x = subprocess.Popen(python_config + ' --ldflags', stdout=subprocess.PIPE, shell=True)
 python_ldflags = x.stdout.read()
 
-#os.system('swig -python -o memlink_client_python.c ../c/memlink_client.i')
+os.system('swig -python -o memlink_client_python.c ../c/memlink_client.i')
 
 #cflags   = '-ggdb -DRANGE_MASK_STR'
 cflags   = '-ggdb -O2'
