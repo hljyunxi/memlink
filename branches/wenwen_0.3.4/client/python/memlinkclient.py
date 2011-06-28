@@ -1,6 +1,6 @@
 #coding: utf-8
 import os, sys, types
-from memlink import *
+from cmemlink import *
 
 class MemLinkClietException (Exception):
     pass

@@ -7,12 +7,13 @@ java_home		= '/Library/Java/Home'
 java_includes	= [os.path.join(java_home, 'include'), os.path.join(java_home, 'include/linux')]
 #java_libs		= os.path.join(java_home, 'lib')
 
-os.system('swig -java -package com.googlecode.memlink -o memlink_client_java.c -outdir com/googlecode/memlink memlink_client.i')
-os.system('cp MemLinkResult.java com/googlecode/memlink/')
-os.system('cp MemLinkRcInfo.java com/googlecode/memlink/')
-os.system('cp MemLinkWcInfo.java com/googlecode/memlink/')
-os.system('cp MemLinkScInfo.java com/googlecode/memlink/')
-os.system('cp MemLinkInsertMkv.java com/googlecode/memlink/')
+os.system('swig -java -package com.googlecode.memlink -o memlink_client_java.c -outdir com/googlecode/memlink ../c/memlink_client.i')
+os.system('cp MemLinkClient.java com/googlecode/memlink/')
+#os.system('cp MemLinkResult.java com/googlecode/memlink/')
+#os.system('cp MemLinkRcInfo.java com/googlecode/memlink/')
+#os.system('cp MemLinkWcInfo.java com/googlecode/memlink/')
+#os.system('cp MemLinkScInfo.java com/googlecode/memlink/')
+#os.system('cp MemLinkInsertMkv.java com/googlecode/memlink/')
 
 cflags   = '-ggdb -fpic'
 includes = ['.', '../../', '../c/'] + java_includes
