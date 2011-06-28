@@ -95,7 +95,7 @@ memlink_connect(MemLink *m, int fdtype)
     } while (ret == -1 && errno == EINTR);  
 
     DINFO("connect ret: %d\n", ret);
-    if (ret > 0) {
+    if (ret >= 0) {
         if (fdtype == MEMLINK_READER) {
             m->readfd = sock;
         }else{
