@@ -186,21 +186,14 @@ signal_install()
 void 
 master(char *pgname, char *conffile) 
 {
-    logfile_create(g_cf->log_name, g_cf->log_level);
-    DINFO("logfile ok!\n");
     runtime_create_master(pgname, conffile);
-    DINFO("master runtime ok!\n");
-
     mainserver_loop(g_runtime->server);
 }
 
 void 
 slave(char *pgname, char *conffile) 
 {
-    logfile_create(g_cf->log_name, g_cf->log_level);
     runtime_create_slave(pgname, conffile);
-    DINFO("slave runtime ok!\n");
-
     mainserver_loop(g_runtime->server);
 }
 
@@ -230,6 +223,8 @@ int main(int argc, char *argv[])
     DNOTE("====== %s ======\n", MEMLINK_VERSION);
 	DNOTE("config file: %s\n", conffile);
 	DNOTE("data dir: %s\n", g_cf->datadir);
+    logfile_create(g_cf->log_name, g_cf->log_level);
+    DINFO("logfile ok!\n");
     
     if (g_cf->max_core) {
         struct rlimit rlim_new;

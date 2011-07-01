@@ -5,6 +5,7 @@
 #include <sys/time.h>
 #include <pthread.h>
 
+int     checksock(int s);
 int		timeout_wait(int fd, int timeout, int writing);
 int		timeout_wait_read(int fd, int timeout);
 int		timeout_wait_write(int fd, int timeout);

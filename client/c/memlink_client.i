@@ -31,12 +31,10 @@
 %apply(char BYTE[256]){(char mask[256])};
 
 #elif defined(SWIGPYTHON)
+
 %typemap(out) char BYTE[256]{
     resultobj = SWIG_FromCharPtrAndSize($1,256);
 }
-
-%apply(char BYTE[256]){(char value[256])};
-%apply(char BYTE[256]){(char mask[256])};
 
 #elif defined(SWIGPHP)
 #else

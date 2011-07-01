@@ -896,7 +896,7 @@ wdata_ready_over:
         data_reply(conn, ret, NULL, 0);
     }
     gettimeofday(&end, NULL);
-	DNOTE("%s:%d cmd:%d %d %u us\n", conn->client_ip, conn->client_port, cmd, ret, timediff(&start, &end));
+	DNOTE("%s:%d cmd:%d ret:%d %u us\n", conn->client_ip, conn->client_port, cmd, ret, timediff(&start, &end));
     DINFO("data_reply return: %d\n", ret);
 
     return 0;
@@ -1102,7 +1102,7 @@ wthread_create()
 	memset(wt->rw_conn_info, 0x0, sizeof(RwConnInfo) * g_cf->max_write_conn);
 
     wt->sock = tcp_socket_server(g_cf->ip,g_cf->write_port); 
-    if (wt->sock == -1) {
+    if (wt->sock < 0) {
         MEMLINK_EXIT;
     }
     

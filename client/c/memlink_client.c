@@ -242,7 +242,16 @@ static int
 memlink_do_cmd(MemLink *m, int fdtype, char *data, int len, char *retdata, int retlen)
 {
     int ret;
-	//DINFO("======= write to server ...\n");
+    //check socket valid every loop	
+    if (fdtype == MEMLINK_READER) {
+        if(m->readfd>0 && checksock(m->readfd)<0)
+            m->readfd=-1;
+    }else if (fdtype == MEMLINK_WRITER) {
+        if(m->writefd>0 && checksock(m->writefd)<0)
+            m->writefd=-1;
+    }
+
+    //DINFO("======= write to server ...\n");
     ret = memlink_write(m, fdtype, data, len);
     //DINFO("memlink_write ret: %d, len: %d\n", ret, len);
     

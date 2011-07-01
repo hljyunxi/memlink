@@ -487,7 +487,7 @@ runtime_create_slave(char *pgname, char *conffile)
  
 	sslave_go(rt->slave);
 	
-	DNOTE("create slave runtime ok!\n");
+	DNOTE("====== Create Slave Runtime ok! ======\n");
     return rt;
 }
 
@@ -503,7 +503,7 @@ runtime_create_master(char *pgname, char *conffile)
     snprintf(rt->conffile, PATH_MAX, "%s", conffile);
 	int ret = load_data();
     if (ret < 0) {
-        DERROR("load_data error: %d\n", ret);
+        DFATALERR("load_data error: %d\n", ret);
         MEMLINK_EXIT;
         return NULL;
     }
@@ -512,7 +512,7 @@ runtime_create_master(char *pgname, char *conffile)
 
     rt->wthread = wthread_create();
     if (NULL == rt->wthread) {
-        DERROR("wthread_create error!\n");
+        DFATALERR("wthread_create error!\n");
         MEMLINK_EXIT;
         return NULL;
     }
@@ -521,14 +521,13 @@ runtime_create_master(char *pgname, char *conffile)
 	
     rt->sthread = sthread_create();
     if (NULL == rt->sthread) {
-     DERROR("sthread_create error!\n");
+     DFATALERR("sthread_create error!\n");
      MEMLINK_EXIT;
      return NULL;
     }
     DINFO("sync thread create ok!\n");
-	
 
-    DNOTE("create master Runtime ok!\n");
+    DNOTE("====== Create Master Runtime ok! ======\n");
     return rt;
 }
 

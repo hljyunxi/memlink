@@ -286,15 +286,14 @@ rdata_ready(Conn *conn, char *data, int datalen)
     }
 
     gettimeofday(&end, NULL);
-    DNOTE("%s:%d cmd:%d use %u us\n", conn->client_ip, conn->client_port, cmd, timediff(&start, &end));
+    DNOTE("%s:%d cmd:%d sendret:%d use %u us\n", conn->client_ip, conn->client_port, cmd,ret,timediff(&start, &end));
 
     return 0;
 
 rdata_ready_error:
 	ret = data_reply(conn, ret, NULL, 0);
     gettimeofday(&end, NULL);
-    DNOTE("%s:%d cmd:%d use %u us\n", conn->client_ip, conn->client_port, cmd, timediff(&start, &end));
-	DINFO("data_reply return: %d\n", ret);
+    DNOTE("%s:%d cmd:%d sendret:%d use %u us\n", conn->client_ip, conn->client_port, cmd,ret,timediff(&start, &end));
 
     return 0;
 }

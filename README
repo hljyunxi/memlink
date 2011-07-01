@@ -1,4 +1,13 @@
+Introduction
+============
+
 memlink is a opensource key-list system
 
 http://code.google.com/p/memlink
 
+Update
+======
+wenwen_0.3.4 updated by brightman 2011.7.1
+1.Fix Issue 10.client api support binary value insert,fix swig bug.
+2.server bind ip 
+3.Update network lib such as send/recv with timeout,check socket is valid
