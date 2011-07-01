@@ -10,6 +10,7 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/select.h>
+#include <sys/socket.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <pthread.h>
@@ -20,6 +21,38 @@
 #include "logfile.h"
 #include "common.h"
 
+/* check whethersocket is connected
+ * return 0 socket is valid
+ * return -1 socket is invalid casused by peer close the connection
+ *
+ */ 
+int checksock(int s)
+{
+    if(s<=0)
+        return -1;
+    fd_set   fds;
+    //char buf[2];
+    //int nbread;
+    struct timeval tv;
+    tv.tv_sec=0;
+    tv.tv_usec=0;
+    FD_ZERO(&fds);
+    FD_SET(s,&fds);
+    if ( select(s+1, &fds, (fd_set *)0, (fd_set *)0,&tv) == -1 ) {
+        return -1;
+    }
+    if (FD_ISSET(s,&fds)) {
+        return -1;
+    }
+    return 0;
+    /* read one byte from socket */
+    //nbread = recv(s, buf, 1, MSG_PEEK);
+    //if (nbread <= 0){
+    //    printf("checksock MSG_PEEK! %d\n",nbread);
+    //    return -1;
+    //}
+    //return 0;
+}
 
 int 
 timeout_wait(int fd, int timeout, int writing)

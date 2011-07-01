@@ -649,14 +649,16 @@ sthread_create()
 
 	st->sync_conn_info = (SyncConnInfo *)zz_malloc(sizeof(SyncConnInfo) * g_cf->max_sync_conn);
 	if (st->sync_conn_info == NULL) {
-		DERROR("memlink malloc stread connect info error. \n");
+		DFATALERR("memlink malloc sthread connect info error. \n");
 		MEMLINK_EXIT;
 	}
 	memset(st->sync_conn_info, 0x0, sizeof(SyncConnInfo) * g_cf->max_sync_conn);
 
 	st->sock = tcp_socket_server(g_cf->ip,g_cf->sync_port);
-	if (st->sock == -1)
+	if (st->sock < 0){
+		DFATALERR("sthread create tcp server failed \n");
 		MEMLINK_EXIT;
+    }
 	DINFO("sync thread socket creation ok!\n");
 
 	st->base = event_base_new();
@@ -676,7 +678,7 @@ sthread_create()
 	}
 	ret = pthread_create(&threadid, &attr, sthread_run, st);
 	if (ret != 0) {
-		DERROR("pthread_create error: %s\n", strerror(errno));
+		DFATALERR("pthread_create error: %s\n", strerror(errno));
 		MEMLINK_EXIT;
 	}
 	DINFO("create sync thread ok\n");

@@ -34,7 +34,7 @@ shared_files.append('memlink_client_python.c')
 env.SharedLibrary("memlink", shared_files)
 
 if sys.platform.startswith('darwin'):
-    Command('_memlink.so', 'libmemlink.dylib', [Move('$TARGET', '$SOURCE')])
+    Command('_cmemlink.so', 'libmemlink.dylib', [Move('$TARGET', '$SOURCE')])
 else:
-    Command('_memlink.so', 'libmemlink.so', [Move('$TARGET', '$SOURCE')])
+    Command('_cmemlink.so', 'libmemlink.so', [Move('$TARGET', '$SOURCE')])
 

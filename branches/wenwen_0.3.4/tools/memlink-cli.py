@@ -8,8 +8,8 @@ from memlinkclient import *
 import string
 #print dir(memlink)
 
-READ_PORT  = 11011
-WRITE_PORT = 11012
+READ_PORT  = 11001
+WRITE_PORT = 11002
 
 class ShortInputException (Exception):
     def __init__(self, length, atleast):
@@ -159,7 +159,7 @@ class MemLinkTest:
             if n < 0:
                 n = 0
             myvalue += '0'*n + sstr
-            ret = self.m.insert(key, myvalue, maskstr, pos)
+            ret = self.m.insert(key, myvalue,pos,maskstr=maskstr)
             print 'insert (%s, %s, %s, %d) ' % (key, myvalue, maskstr, pos),
             if ret == MEMLINK_OK:
                 print 'OK!'
@@ -229,7 +229,7 @@ Options:
             print 'bad input! expected at least %d' % x.atleast
             return -1
 
-        ret, recs = self.m.range(key, optype, maskstr, frompos, llen)
+        ret, recs = self.m.range(key, optype, frompos, llen,maskstr)
         print 'range (%s, "%s", %d, %d) ' % (key, maskstr, frompos, llen),
         if ret == MEMLINK_OK:
             print 'OK!'
@@ -239,13 +239,10 @@ Options:
             print 'ERROR: ', ret
             return ret
             
-        print 'range count:', recs.count
-        items = recs.root
-        while items:
-            #print items.value, repr(items.value), items.mask
-            print items.value, items.mask            
-            items = items.next
-            
+        print 'range count:', len(recs)
+        for item in recs:
+            print item[0], item[1]          
+
         return 0
 
     def delete(self, args):
@@ -536,8 +533,8 @@ def test_main():
 
     all_cmd_str = 'commands:\n\t%s' % ' '.join(all_the_cmd)
     mtest = MemLinkTest(opts.get('-h', '127.0.0.1'),
-                        opts.get('-r', '11011'),
-                        opts.get('-w', '11012'),
+                        opts.get('-r', '11001'),
+                        opts.get('-w', '11002'),
                         opts.get('-t', '30'))
     print 'command:'
     print '\thelp -- type "help / help command" for some help. for instance: help insert.'

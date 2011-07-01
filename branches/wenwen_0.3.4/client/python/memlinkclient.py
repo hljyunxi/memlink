@@ -62,7 +62,7 @@ class MemLinkClient:
         return memlink_cmd_del_by_mask(self.client, key, mask)
 
     def insert(self, key, value, pos, maskstr=''):
-        return memlink_cmd_insert(self.client, key, value, len(value), maskstr, pos)
+        return memlink_cmd_insert(self.client, key, value,len(value),maskstr, pos)
 
     def sortlist_insert(self, key, value, maskstr=''):
         return memlink_cmd_sortlist_insert(self.client, key, value, len(value), maskstr)
@@ -129,16 +129,24 @@ class MemLinkClient:
     def lpop(self, key, num=1):
         result = MemLinkResult()
         ret = memlink_cmd_lpop(self.client, key, num, result)
-        if ret != MEMLINK_OK:
-            result = None
-        return ret, result
+        result_ = []
+        if ret == MEMLINK_OK:
+            items = result.root
+            while items:
+                result_.append( (items.value[:result.valuesize],items.mask[:result.masksize]) )
+                items = items.next
+        return ret, result_
 
     def rpop(self, key, num=1):
         result = MemLinkResult()
         ret = memlink_cmd_rpop(self.client, key, num, result)
-        if ret != MEMLINK_OK:
-            result = None
-        return ret, result
+        result_ = []
+        if ret == MEMLINK_OK:
+            items = result.root
+            while items:
+                result_.append( (items.value[:result.valuesize],items.mask[:result.masksize]) )
+                items = items.next
+        return ret, result_
     
     def read_conn_info(self):
         info = MemLinkRcInfo()

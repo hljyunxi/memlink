@@ -29,7 +29,7 @@ tcp_socket_server(char * host,int port)
 
     fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1) {
-        DERROR("create socket error: %s\n", strerror(errno));
+        DFATALERR("create socket error: %s\n", strerror(errno));
         return -1;
     }
 
@@ -41,21 +41,23 @@ tcp_socket_server(char * host,int port)
     sin.sin_port = htons((short)port);
     if(NULL == host){
         sin.sin_addr.s_addr = htonl(INADDR_ANY);
+        memset(&(sin.sin_zero), 0, sizeof(sin.sin_zero));
     }else{
         sin.sin_addr.s_addr = inet_addr(host);
+        memset(&(sin.sin_zero), 0, sizeof(sin.sin_zero));	
     }
 
-	DINFO("bind %s:%d\n", host,port);
+    DINFO("bind %s:%d\n", host,port);
     ret = bind(fd, (struct sockaddr*)&sin, sizeof(sin));
     if (ret == -1) {
-        DERROR("bind error: %s\n", strerror(errno));
+        DFATALERR("fd %d bind error:%d %s\n", fd,errno,strerror(errno));
         close(fd);
         return -3;
     }
 
     ret = listen(fd, 128);
     if (ret == -1) {
-        DERROR("listen error: %s\n", strerror(errno));
+        DFATALERR("listen error: %s\n", strerror(errno));
         close(fd);
         return -4;
     }
