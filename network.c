@@ -39,13 +39,12 @@ tcp_socket_server(char * host,int port)
 
     sin.sin_family = AF_INET;
     sin.sin_port = htons((short)port);
-    if(NULL == host){
+    if (NULL == host || 0 == host[0]) {
         sin.sin_addr.s_addr = htonl(INADDR_ANY);
-        memset(&(sin.sin_zero), 0, sizeof(sin.sin_zero));
     }else{
         sin.sin_addr.s_addr = inet_addr(host);
-        memset(&(sin.sin_zero), 0, sizeof(sin.sin_zero));	
     }
+    memset(&(sin.sin_zero), 0, sizeof(sin.sin_zero));
 
     DINFO("bind %s:%d\n", host,port);
     ret = bind(fd, (struct sockaddr*)&sin, sizeof(sin));
@@ -102,11 +101,12 @@ tcp_socket_connect(char *host, int port, int timeout)
 
     sin.sin_family = AF_INET;
     sin.sin_port = htons((short)port);
-    if (NULL == host) {
+    if (NULL == host || 0 == host[0]) {
         sin.sin_addr.s_addr = htonl(INADDR_ANY);
     }else{
         sin.sin_addr.s_addr = inet_addr(host);
     }
+    memset(&(sin.sin_zero), 0, sizeof(sin.sin_zero));
 
 	DINFO("connect to %s:%d\n", host, port);
     ret = connect(fd, (struct sockaddr*)&sin, sizeof(sin));
