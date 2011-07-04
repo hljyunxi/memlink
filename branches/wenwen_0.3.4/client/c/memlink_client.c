@@ -17,6 +17,7 @@
 #include "zzmalloc.h"
 #include "utils.h"
 #include "serial.h"
+#include "util/net.h"
 
 #define RECV_PKG_SIZE_LEN	sizeof(int)
 
@@ -91,7 +92,7 @@ memlink_connect(MemLink *m, int fdtype)
     }    
 
     do { 
-        ret = connect(sock, (struct sockaddr*)&sin, sizeof(sin));
+        ret = connect_t(sock, (struct sockaddr*)&sin, sizeof(sin),100000);
     } while (ret == -1 && errno == EINTR);  
 
     DINFO("connect ret: %d\n", ret);
@@ -130,13 +131,13 @@ memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
     //DINFO("fd: %d\n", fd);
     
     if (fd <= 0) {
-        //DINFO("read fd connect ...\n");
+        DINFO("read fd connect ...\n");
         ret = memlink_connect(m, fdtype);
         if (ret < 0) {
             return ret;
         }
     }
-    ret = readn(fd, rbuf, RECV_PKG_SIZE_LEN, m->timeout);
+    ret = send_t(fd, rbuf, RECV_PKG_SIZE_LEN,0,m->timeout);
     //DINFO("read head: %d\n", ret);
     if (ret != RECV_PKG_SIZE_LEN) {
         DERROR("read head error! ret:%d, %u\n", ret, RECV_PKG_SIZE_LEN);
@@ -159,7 +160,7 @@ memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
         return MEMLINK_ERR_RECV_BUFFER;
     }
 
-    ret = readn(fd, rbuf + RECV_PKG_SIZE_LEN, datalen, m->timeout);
+    ret = send_t(fd, rbuf + RECV_PKG_SIZE_LEN, datalen,0, m->timeout);
     //DINFO("readn return: %d\n", ret);
     if (ret != datalen) {
         DERROR("read data error! ret:%d\n", ret);

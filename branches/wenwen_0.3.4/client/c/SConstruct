@@ -5,7 +5,7 @@ cflags   = '-ggdb -Wall'
 includes = ['.', '../../']
 libpath  = ['.']
 libs     = ['m', 'pthread']
-comfiles = ['../../zzmalloc.c', '../../serial.c', '../../logfile.c', '../../utils.c']
+comfiles = ['../../zzmalloc.c', '../../serial.c', '../../logfile.c', '../../utils.c','../../util/net.c']
 prgfiles = comfiles + ['memlink_client.c', 'test.c']
 simfiles = comfiles + ['memlink_client.c', 'pingtest.c']
 libfiles = comfiles + ['memlink_client.c'] 
@@ -30,7 +30,7 @@ if 'debug' in  BUILD_TARGETS:
     debug = env.StaticLibrary("memlink", static_libfiles)
     debug = env.SharedLibrary("memlink", shared_libfiles)
 else:
-    cflags += ' -O2'
+    cflags += ' -O'
     env = Environment(CCFLAGS=cflags, CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
 
     for fn in libfiles:

@@ -22,7 +22,7 @@ ldflags  = ''
 libpath  = ['.']
 libs	 = python_libs + ['c', 'm', 'pthread']
 files    = ['../../zzmalloc.c', '../../serial.c', '../../logfile.c', '../../utils.c', 
-			'../c/memlink_client.c']
+			'../../util/net.c','../c/memlink_client.c']
 
 env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
 shared_files = []

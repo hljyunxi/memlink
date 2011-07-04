@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+#include <sys/epoll.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <pthread.h>
@@ -26,7 +27,33 @@
  * return -1 socket is invalid casused by peer close the connection
  *
  */ 
-int checksock(int s)
+int checksock1(int socket)
+{
+    if(socket<=0)
+        return -1;
+    int epfd = epoll_create(1);
+    struct epoll_event ev;
+    ev.data.fd= socket;
+    ev.events = EPOLLIN;
+    epoll_ctl(epfd,EPOLL_CTL_ADD,socket,&ev);
+    struct epoll_event events[2];
+    int ret = epoll_wait(epfd,events,2,0);
+    if(ret==-1){
+        printf("epoll_wait=-1 socket is invalide!\n");
+        return -1;
+    }
+    if( (events[0].events&EPOLLIN) && events[0].data.fd==socket){
+        printf("EPOLLIN socket is invalide!\n");
+        return -1;
+        /* read one byte from socket */
+        //nbread = recv(s, buf, 1, MSG_PEEK);
+        //if (nbread <= 0)
+        //    return -1;
+    }
+    return 0;
+}
+
+int checksock2(int s)
 {
     if(s<=0)
         return -1;
