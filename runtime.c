@@ -102,7 +102,7 @@ load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
 			ret = wdata_apply(data + SYNCPOS_LEN, blen + sizeof(int), MEMLINK_NO_LOG, NULL);
 			if (ret != 0) {
 				DERROR("wdata_apply log error: %d\n", ret);
-				MEMLINK_EXIT;
+				//MEMLINK_EXIT;
 			}
 			count ++;
 		}

@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
 {
     MemLink *m;
     char buf[128];
-    logfile_create("stdout", 3);
+    logfile_create("stdout", 4);
 
     m = memlink_create("127.0.0.1", 11001, 11002, 0);
     if (NULL == m) {
@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
     for (i = 0; i < 2; i++) {
         sprintf(buf, "haha%d", i);
         ret = memlink_cmd_create_list(m, buf, 6, "4:3:1");
-        DINFO("memlink_cmd_xx: %d\n", ret);
+        printf("memlink_cmd_xx: %d\n", ret);
     }
 
     //ret = memlink_cmd_del(m, "haha", "gogo", 4);
