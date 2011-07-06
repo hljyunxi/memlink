@@ -511,7 +511,8 @@ sslave_conn_init(SSlave *ss)
     char recvbuf[1024];
     int  ret;
     unsigned int  dumpver;
-	char    mdumpfile[PATH_MAX];
+	char mdumpfile[PATH_MAX];
+    int  sndlogver = 0, sndlogline = 0;
 
     snprintf(mdumpfile, PATH_MAX, "%s/dump.master.dat", g_cf->datadir);
 
@@ -520,7 +521,21 @@ sslave_conn_init(SSlave *ss)
 	while (1) {
         DINFO("sync pack logver: %u, logline: %u\n", g_runtime->synclog->version, g_runtime->synclog->index_pos);
 
-        sndlen = cmd_sync_pack(sndbuf, g_runtime->synclog->version, g_runtime->synclog->index_pos);
+        if (g_runtime->synclog->version == 1 && g_runtime->synclog->index_pos == 0 && ss->is_getdump == 0) {
+            sndlogver = 0;
+            sndlogline = 0;
+        } else {
+            if (g_runtime->synclog->index_pos != 0) {
+                sndlogver = g_runtime->synclog->version;
+                sndlogline = g_runtime->synclog->index_pos - 1;
+            } else {
+                sndlogver = g_runtime->synclog->version;
+                sndlogline = g_runtime->synclog->index_pos;
+            }   
+        }   
+        DINFO("sndlogver: %d, sendlogline: %d\n", sndlogver, sndlogline);
+        sndlen = cmd_sync_pack(sndbuf, sndlogver, sndlogline);
+        //sndlen = cmd_sync_pack(sndbuf, g_runtime->synclog->version, g_runtime->synclog->index_pos);
 		ret = sslave_do_cmd(ss, sndbuf, sndlen, recvbuf, 1024);
 		if (ret < 0) {
 			DINFO("cmd sync error: %d\n", ret);
@@ -535,7 +550,7 @@ sslave_conn_init(SSlave *ss)
 			DINFO("sync ok! try recv push message.\n");
 			return 0;
 		}
-		if (syncret == CMD_SYNC_FAILED && (g_runtime->synclog->version == 1 && g_runtime->synclog->index_pos == 0)) {
+		if (syncret == CMD_SYNC_FAILED && (g_runtime->synclog->version == 1 && g_runtime->synclog->index_pos == 0) && ss->is_getdump == 0) {
 			if (sslave_do_getdump(ss) == 0) {
 				DINFO("load dump ...\n");
 				hashtable_clear_all(g_runtime->ht);
@@ -550,13 +565,13 @@ sslave_conn_init(SSlave *ss)
 				dumpfile(g_runtime->ht);
 				DINFO("logver: %d, dumplogpos: %d\n", logver, g_runtime->dumplogpos);
 				memcpy((g_runtime->synclog->index + sizeof(short)), &logver, sizeof(int));
-
+                ss->is_getdump = 1;
 			}else{
 				DERROR("The slave data may be error!\n");
 				return -1;
 			}
 		} else {
-			DERROR("The data on master may be change!\n");
+			DERROR("Not found logver,logline on master, data on master may be change!\n");
 			MEMLINK_EXIT;
 		}
 	} 
@@ -568,7 +583,7 @@ void sig_slaver_handler()
 {
     //DINFO("slaver pid: %d\n", (int)pthread_self());
     DINFO("============slave thread will exit\n");
-    if (g_runtime->slave->sock) {
+    if (g_runtime->slave->sock > 0) {
         close(g_runtime->slave->sock);
         g_runtime->slave->sock = -1;
     }
@@ -688,7 +703,7 @@ sslave_go(SSlave *ss)
 void
 sslave_close(SSlave *ss)
 {
-    if (ss->sock) {
+    if (ss->sock > 0) {
         close(ss->sock);
         ss->sock = -1;
     }
@@ -698,7 +713,7 @@ sslave_close(SSlave *ss)
 void 
 sslave_destroy(SSlave *ss) 
 {
-    if (ss->sock) {
+    if (ss->sock > 0) {
         close(ss->sock);
         ss->sock = -1;
     }

@@ -6,6 +6,7 @@
  * @{
  */
 
+#include <math.h>
 #include "datablock.h"
 #include "hashtable.h"
 #include "logfile.h"
@@ -59,7 +60,7 @@ dataitem_have_data(HashNode *node, char *itemdata, unsigned char kind)
 			return MEMLINK_TRUE;
 		}
 	}else if (kind == MEMLINK_VALUE_REMOVED) {
-		if ((*maskdata & (unsigned char)0x01) == 1) {
+		if ((*maskdata & (unsigned char)0x01) == 0) {
 			return MEMLINK_TRUE;
 		}
 	}
@@ -1126,6 +1127,7 @@ datablock_resize(HashNode *node, DataBlock *dbk)
     int  num = 0;
     int  newsize = datablock_suitable_size(dbksize);
 
+
     //DINFO("newsize:%d\n", newsize);
     if (prevsize > 0 && nextsize > 0 && prevsize + dbksize + nextsize < blockmax) {
         newsize = datablock_suitable_size(prevsize + dbksize + nextsize);
@@ -1149,7 +1151,17 @@ datablock_resize(HashNode *node, DataBlock *dbk)
         node->all = node->all - dbkdcnt - nextdcnt + newsize;
         DINFO("merge next: nextsize:%d, newsize:%d\n", nextsize, newsize);
     }else if (newsize < dbk->data_count) {
-        if (newsize - dbksize > g_cf->block_data_reduce * dbk->data_count) {
+        int rate = (int)ceil(g_cf->block_data_reduce * dbk->data_count);
+        int checksize = 1;
+        int i;
+
+        //checksize = datablock_suitable_size(dbkdcnt - 1);
+        for (i = 0; i < g_cf->block_data_count_items; i++) {
+            if (g_cf->block_data_count[i] < dbkdcnt)
+                checksize = g_cf->block_data_count[i];
+        }
+        DINFO("checksize: %d\n", checksize);
+        if (checksize - dbksize >= rate) {
             DINFO("block reduce to small, oldsize:%d, newsize:%d\n", dbk->data_count, newsize);
             start = dbk;
             end   = dbk;
