@@ -60,6 +60,8 @@ myconfig_create(char *filename)
 
     snprintf(mcf->datadir, PATH_MAX, "data");
 
+    qsort(mcf->block_data_count, mcf->block_data_count_items, sizeof(int), compare_int);
+
     FILE    *fp;
     //char    filepath[PATH_MAX];
     // FIXME: must absolute path

@@ -238,9 +238,6 @@ mask_binary2string(unsigned char *maskformat, int masknum, char *mask, int maskl
 	return widx;
 }
 
-/**
- * mask必须先初始化为0
- */
 int 
 mask_array2flag(unsigned char *maskformat, unsigned int *maskarray, char masknum, char *mask)
 {
@@ -296,7 +293,6 @@ mask_array2flag(unsigned char *maskformat, unsigned int *maskarray, char masknum
     DINFO("return:%d\n", idx+1);
     return idx + 1;
 }
-
 
 
 static int 

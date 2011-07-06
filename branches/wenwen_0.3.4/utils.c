@@ -11,13 +11,22 @@
 #include <errno.h>
 #include <sys/select.h>
 #include <sys/socket.h>
-#include <sys/epoll.h>
+//#include <sys/epoll.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <pthread.h>
+#include <poll.h>
 #include <sys/stat.h>
 #include <signal.h>
 #include <pwd.h>
+#ifdef __APPLE__
+#include <mach/mach_init.h>
+#include <mach/task.h>
+#include <mach/task_info.h>
+#include <sys/resource.h>
+#include <sys/time.h>
+#endif
+
 #include "utils.h"
 #include "logfile.h"
 #include "common.h"
@@ -27,7 +36,7 @@
  * return -1 socket is invalid casused by peer close the connection
  *
  */ 
-int checksock1(int socket)
+/*int checksock1(int socket)
 {
     if(socket<=0)
         return -1;
@@ -45,7 +54,6 @@ int checksock1(int socket)
     if( (events[0].events&EPOLLIN) && events[0].data.fd==socket){
         printf("EPOLLIN socket is invalide!\n");
         return -1;
-        /* read one byte from socket */
         //nbread = recv(s, buf, 1, MSG_PEEK);
         //if (nbread <= 0)
         //    return -1;
@@ -72,7 +80,6 @@ int checksock2(int s)
         return -1;
     }
     return 0;
-    /* read one byte from socket */
     //nbread = recv(s, buf, 1, MSG_PEEK);
     //if (nbread <= 0){
     //    printf("checksock MSG_PEEK! %d\n",nbread);
@@ -80,7 +87,9 @@ int checksock2(int s)
     //}
     //return 0;
 }
+*/
 
+/*
 int 
 timeout_wait(int fd, int timeout, int writing)
 {
@@ -123,6 +132,48 @@ timeout_wait(int fd, int timeout, int writing)
 
     return MEMLINK_TRUE; 
 }
+*/
+
+int
+timeout_wait(int fd, int timeout, int writing)
+{
+    if (timeout <= 0)
+        return MEMLINK_TRUE; // true
+
+    if (fd < 0) {
+        DERROR("fd error: %d\n", fd);
+        return -1; //error
+    }
+   
+    struct pollfd fds[1];
+    int ret;
+    
+    fds[0].fd = fd;
+    while (1) {
+        if (writing)
+            fds[0].events = POLLOUT;
+        else
+            fds[0].events = POLLIN;
+
+        ret = poll(fds, 1, timeout * 1000);
+        if (ret < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            DERROR("poll error: %d, %s\n", fds[0].fd, strerror(errno));
+            return -1;
+        }
+        break;
+    }
+    if ((fds[0].revents & POLLOUT) && writing)
+        return MEMLINK_TRUE;
+
+    if ((fds[0].revents & POLLIN) && !writing)
+        return MEMLINK_TRUE;
+
+    return MEMLINK_FALSE;
+}
+
 
 int
 timeout_wait_read(int fd, int timeout)
@@ -478,6 +529,66 @@ wait_thread_exit(pthread_t id)
         usleep(10);
     }
     return 1;
+}
+
+/**
+ * 获取进程占用内存
+ */
+long long
+get_process_mem(int pid)
+{
+#ifdef __linux
+    char buf[256];
+    snprintf(buf, 256, "/proc/%d/status", pid);
+
+    FILE *fp;
+    fp = (FILE *)fopen(buf, "r");
+    if (fp == NULL) {
+        DERROR("open file %s error! \n", buf);
+        return -1;
+    }
+
+    DINFO("get memlink mem size.\n");
+    char line[512];
+    char num[512] = {0};
+    while (fgets(line, 512, fp)) {
+        if (strncmp(line, "VmRSS", 5) == 0) {
+            DINFO("line: %s", line);
+            char *ptr = line;
+            char *ptrnum = num;
+
+            while (*ptr != '\0') {
+                if (*ptr >= '0' && *ptr <= '9')
+                    break;
+                ptr++;
+            }
+            while (*ptr >= '0' && *ptr <= '9')
+                *ptrnum++ = *ptr++;
+            break;
+        }
+    }
+    fclose(fp);
+    if (num[0] != '\0') {
+        return strtoll(num, NULL, 10) * 1024;
+    }
+#endif
+
+#ifdef __APPLE__
+    struct task_basic_info  info;
+    kern_return_t           rval = 0;
+    mach_port_t             task = mach_task_self();
+    mach_msg_type_number_t  tcnt = TASK_BASIC_INFO_COUNT;
+    task_info_t             tptr = (task_info_t) &info;
+    
+    memset(&info, 0, sizeof(info));
+    
+    rval = task_info(task, TASK_BASIC_INFO, tptr, &tcnt);
+    if (!(rval == KERN_SUCCESS)) return 0;
+   
+    return info.resident_size;
+#endif
+
+    return 0;
 }
 
 /**

@@ -33,6 +33,7 @@ size_t		ffread(void *ptr, size_t size, size_t nmemb, FILE *stream);
 int			change_group_user(char *user);
 int         check_thread_alive(pthread_t id);
 int         wait_thread_exit(pthread_t id);
+long long   get_process_mem(int pid);
 
 static inline void		
 atom_inc(unsigned int *v)

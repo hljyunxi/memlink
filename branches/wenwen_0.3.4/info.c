@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdio.h>
 #include "logfile.h"
 #include "mem.h"
 #include "info.h"
@@ -22,7 +23,6 @@ info_sys_stat(MemLinkStatSys *stat)
 	unsigned int bcount = 0;
 	unsigned int psize  = 0;
 	int pid;
-	char buf[256];
 	MemPool *mp = g_runtime->mpool;
 	HashTable *ht = g_runtime->ht;
 	
@@ -50,40 +50,9 @@ info_sys_stat(MemLinkStatSys *stat)
 	
 	DINFO("get pid.\n");	
 	pid = getpid();
-	sprintf(buf, "/proc/%d/status", pid);
-	
-	FILE *fp;
-	fp = (FILE *)fopen64(buf, "r");
-	if (fp == NULL) {
-		DERROR("open file %s error! \n", buf);
-		return -1;
-	}
-	
-	DINFO("get memlink mem size.\n");	
-	char line[512];
-	char num[512] = {0};
-	while (fgets(line, 512, fp)) {
-		if (strncmp(line, "VmRSS", 5) == 0) {
-			DINFO("line: %s", line);
-			char *ptr = line;
-			char *ptrnum = num;
 
-			while (*ptr != '\0') {
-				if (*ptr >= '0' && *ptr <= '9')
-					break;
-				ptr++;
-			}
-			while (*ptr >= '0' && *ptr <= '9')
-				*ptrnum++ = *ptr++;
-			break;
-		}
-	}
-	fclose(fp);
-	if (num[0] != '\0') {
-		stat->all_mem = atoi(num) * 1024;
-		DINFO("all mem: %d\n", stat->all_mem);
-	}
-	
+    stat->all_mem = get_process_mem(pid);
+
 	DINFO("get net info.\n");	
 	MainServer *ms = g_runtime->server;
 	WThread *wt = g_runtime->wthread;
@@ -167,13 +136,15 @@ info_read_conn(Conn *conn)
 	char *data = wbuf + CMD_REPLY_HEAD_LEN;
 	for (i = 0; i < g_cf->thread_num; i++) {
 		ts = &ms->threads[i];
-		for (j = 0; j < g_cf->max_conn; j++) {
+		for (j = 0; j < g_cf->max_read_conn; j++) {
 			conninfo = &ts->rw_conn_info[j];
 			if (conninfo->fd > 0) {
 				memcpy(data + count, &(conninfo->fd), sizeof(int));
 				count += sizeof(int);
+                DINFO("fd: %d\n", conninfo->fd);
 				unsigned char len = strlen(conninfo->client_ip);
 				memcpy(data + count, &len, sizeof(char));
+                DINFO("conninfo->client_ip: %s\n", conninfo->client_ip);
 				count += sizeof(char);
 				memcpy(data + count, conninfo->client_ip, strlen(conninfo->client_ip));
 				count += strlen(conninfo->client_ip);
@@ -215,7 +186,7 @@ info_write_conn(Conn *conn)
 
 	char *data = wbuf + CMD_REPLY_HEAD_LEN;
 
-	for (i = 0; i < g_cf->max_conn; i++) {
+	for (i = 0; i < g_cf->max_write_conn; i++) {
 		conninfo = &wt->rw_conn_info[i];	
 		if (conninfo->fd > 0) {
 			memcpy(data + count, &conninfo->fd, sizeof(int));
@@ -264,7 +235,7 @@ info_sync_conn(Conn *conn)
 	wbuf = conn_write_buffer(conn, wlen);
 
 	char *data = wbuf + CMD_REPLY_HEAD_LEN;
-	for (i = 0; i < g_cf->max_conn; i++) {
+	for (i = 0; i < g_cf->max_sync_conn; i++) {
 		conninfo = &st->sync_conn_info[i];
 		if (conninfo->fd > 0) {
 			memcpy(data + count, &conninfo->fd, sizeof(int));

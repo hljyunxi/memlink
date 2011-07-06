@@ -31,6 +31,7 @@ typedef struct _sslave
     //long long    dumpfile_size; // master dumpfile size
 
     //int			 trycount; // count of get last sync position
+	volatile int is_getdump;
 	volatile int isrunning;
 } SSlave;
 
