@@ -9,7 +9,7 @@ includes = ['.']
 libpath  = []
 
 # use gnu malloc
-libs     = ['event', 'm', 'pthread']
+libs     = ['m', 'pthread']
 # use tcmalloc
 #libs     = ['event', 'm', 'tcmalloc_minimal']
 
@@ -30,6 +30,7 @@ if 'debug' in  BUILD_TARGETS or 'memlink-debug' in BUILD_TARGETS:
 		print '====== use gnu malloc! ======'
 	defs.append('DEBUGMEM')
 
+	files.append('/usr/local/lib/libevent.a')
 	env = Environment(CFLAGS=cflags, CPPDEFINES=defs, CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
 	memlink = env.Program(bin, files)
 	#env.StaticLibrary(bin, files)
@@ -39,6 +40,7 @@ else:
 	bin    = "memlink"
 	cflags += " -O2"
 	files = glob.glob("*.c")
+	files.append('/usr/local/lib/libevent.a')
 	if os.path.isfile(libtcmalloc):
 		print '====== use google tcmalloc! ======'
 		files.append(libtcmalloc)
