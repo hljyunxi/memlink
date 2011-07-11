@@ -171,10 +171,10 @@ signal_install()
 
     sigaction(SIGINT, &sigact, NULL);
     
-	sigact.sa_handler = sig_handler_segv;
+    sigact.sa_handler = sig_handler_segv;
     sigaction(SIGSEGV, &sigact, NULL);
 
-	sigact.sa_handler = sig_handler_hup;
+    sigact.sa_handler = sig_handler_hup;
     sigaction(SIGHUP, &sigact, NULL);
 
     sigact.sa_handler = SIG_IGN;
@@ -207,29 +207,29 @@ slave(char *pgname, char *conffile)
 void 
 usage()
 {
-	fprintf(stderr, "%s\nusage: memlink [config file path]\n", MEMLINK_VERSION);
+    fprintf(stderr, "%s\nusage: memlink [config file path]\n", MEMLINK_VERSION);
 }
 
 int main(int argc, char *argv[])
 {
     int ret;
     struct rlimit rlim;
-	char *conffile;
+    char *conffile;
 
-	if (argc == 2) {
-		conffile = argv[1];
-	}else{
-		//conffile = "etc/memlink.conf";
-		usage();
-		return 0;
-	}
+    if (argc == 2) {
+        conffile = argv[1];
+    }else{
+        //conffile = "etc/memlink.conf";
+        usage();
+        return 0;
+    }
 
     DINFO("%s\n", MEMLINK_VERSION);
-	DINFO("config file: %s\n", conffile);
+    DINFO("config file: %s\n", conffile);
     myconfig_create(conffile);
     DNOTE("====== %s ======\n", MEMLINK_VERSION);
-	DNOTE("config file: %s\n", conffile);
-	DNOTE("data dir: %s\n", g_cf->datadir);
+    DNOTE("config file: %s\n", conffile);
+    DNOTE("data dir: %s\n", g_cf->datadir);
     
     if (g_cf->max_core) {
         struct rlimit rlim_new;
@@ -272,7 +272,9 @@ int main(int argc, char *argv[])
     if (g_cf->is_daemon) {
         ret = daemonize(g_cf->max_core, 0);
         if (ret == -1) {
-            DFATALERR("daemon error! %s\n", strerror(errno));
+            char errbuf[1024];
+            strerror_r(errno, errbuf, 1024);
+            DFATALERR("daemon error! %s\n",  errbuf);
             MEMLINK_EXIT;
         }
     }

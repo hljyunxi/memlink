@@ -65,7 +65,7 @@ myconfig_create(char *filename)
     // FIXME: must absolute path
     //snprintf(filepath, PATH_MAX, "etc/%s", filename);
 
-	int lineno = 0;
+    int lineno = 0;
     fp = fopen(filename, "r");
     if (NULL == fp) {
         DERROR("open config file error: %s\n", filename);
@@ -78,7 +78,7 @@ myconfig_create(char *filename)
             //DINFO("config file read complete!\n");
             break;
         }
-		lineno ++;
+        lineno ++;
         //DINFO("buffer: %s\n", buffer);
         if (buffer[0] == '#' || buffer[0] == '\r' || buffer[0] == '\n') { // skip comment
             continue;
@@ -230,8 +230,8 @@ myconfig_create(char *filename)
             }
         }else if (strcmp(buffer, "master_sync_host") == 0) {
             snprintf(mcf->master_sync_host, IP_ADDR_MAX_LEN, "%s", start);
-		}else if (strcmp(buffer, "master_sync_port") == 0) {
-			mcf->master_sync_port = atoi(start);
+        }else if (strcmp(buffer, "master_sync_port") == 0) {
+            mcf->master_sync_port = atoi(start);
         }else if (strcmp(buffer, "sync_interval") == 0) {
             mcf->sync_interval = atoi(start);
         }else if (strcmp(buffer, "user") == 0) {
@@ -372,7 +372,9 @@ myconfig_change()
     ret = rename(conffile_tmp, conffile);
 
     if (ret < 0) {
-        DERROR("conffile rename error %s\n", strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("conffile rename error %s\n",  errbuf);
     }
     fclose(fp);
     return 1;
@@ -392,12 +394,14 @@ runtime_create_common(char *pgname)
     }
     memset(rt, 0, sizeof(Runtime));
     g_runtime = rt;
-	
-	rt->memlink_start = time(NULL);
+    
+    rt->memlink_start = time(NULL);
     if (realpath(pgname, rt->home) == NULL) {
-		DERROR("realpath error: %s\n", strerror(errno));
-		MEMLINK_EXIT;
-	}
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+		DERROR("realpath error: %s\n",  errbuf);
+        MEMLINK_EXIT;
+    }
     char *last = strrchr(rt->home, '/');  
     if (last != NULL) {
         *last = 0;
@@ -405,18 +409,22 @@ runtime_create_common(char *pgname)
     DINFO("home: %s\n", rt->home);
 
     int ret;
-	// create data and log dir
-	if (!isdir(g_cf->datadir)) {
-		ret = mkdir(g_cf->datadir, 0744);
-		if (ret == -1) {
-			DERROR("create dir %s error! %s\n", g_cf->datadir, strerror(errno));
-			MEMLINK_EXIT;
-		}
-	}
+    // create data and log dir
+    if (!isdir(g_cf->datadir)) {
+        ret = mkdir(g_cf->datadir, 0744);
+        if (ret == -1) {
+            char errbuf[1024];
+            strerror_r(errno, errbuf, 1024);
+			DERROR("create dir %s error! %s\n", g_cf->datadir,  errbuf);
+            MEMLINK_EXIT;
+        }
+    }
 
     ret = pthread_mutex_init(&rt->mutex, NULL);
     if (ret != 0) {
-        DERROR("pthread_mutex_init error: %s\n", strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("pthread_mutex_init error: %s\n",  errbuf);
         MEMLINK_EXIT;
         return NULL;
     }
@@ -424,7 +432,9 @@ runtime_create_common(char *pgname)
 
     ret = pthread_mutex_init(&rt->mutex_mem, NULL);
     if (ret != 0) {
-        DERROR("pthread_mutex_init error: %s\n", strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("pthread_mutex_init error: %s\n",  errbuf);
         MEMLINK_EXIT;
         return NULL;
     }
@@ -461,7 +471,7 @@ runtime_create_common(char *pgname)
         return NULL;
     }
     DINFO("synclog open ok!\n");
-	DINFO("synclog index_pos:%d, pos:%d\n", g_runtime->synclog->index_pos, g_runtime->synclog->pos);
+    DINFO("synclog index_pos:%d, pos:%d\n", g_runtime->synclog->index_pos, g_runtime->synclog->pos);
 
     return rt;
 }
@@ -492,15 +502,15 @@ runtime_create_slave(char *pgname, char *conffile)
     DINFO("sync thread create ok!\n");
 
 
-	int ret = load_data_slave();
+    int ret = load_data_slave();
     if (ret < 0) {
         DERROR("load_data error: %d\n", ret);
         MEMLINK_EXIT;
         return NULL;
     }
     DINFO("load_data ok!\n");
-	
-	rt->wthread = wthread_create();
+    
+    rt->wthread = wthread_create();
     if (NULL == rt->wthread) {
         DERROR("wthread_create error!\n");
         MEMLINK_EXIT;
@@ -508,9 +518,9 @@ runtime_create_slave(char *pgname, char *conffile)
     }
     DINFO("write thread create ok!\n");
  
-	sslave_go(rt->slave);
-	
-	DNOTE("create slave runtime ok!\n");
+    sslave_go(rt->slave);
+    
+    DNOTE("create slave runtime ok!\n");
     return rt;
 }
 
@@ -524,7 +534,7 @@ runtime_create_master(char *pgname, char *conffile)
         return rt;
     }
     snprintf(rt->conffile, PATH_MAX, "%s", conffile);
-	int ret = load_data();
+    int ret = load_data();
     if (ret < 0) {
         DERROR("load_data error: %d\n", ret);
         MEMLINK_EXIT;
@@ -541,7 +551,7 @@ runtime_create_master(char *pgname, char *conffile)
     }
     DINFO("write thread create ok!\n");
    
-	
+    
     rt->sthread = sthread_create();
     if (NULL == rt->sthread) {
      DERROR("sthread_create error!\n");
@@ -549,7 +559,7 @@ runtime_create_master(char *pgname, char *conffile)
      return NULL;
     }
     DINFO("sync thread create ok!\n");
-	
+    
 
     DNOTE("create master Runtime ok!\n");
     return rt;
@@ -565,7 +575,7 @@ runtime_destroy(Runtime *rt)
     zz_free(rt);
 }*/
 
-int	
+int    
 mem_used_inc(long long size)
 {
     pthread_mutex_lock(&g_runtime->mutex_mem);
@@ -574,7 +584,7 @@ mem_used_inc(long long size)
     return 0;
 }
 
-int	
+int    
 mem_used_dec(long long size)
 {
     pthread_mutex_lock(&g_runtime->mutex_mem);

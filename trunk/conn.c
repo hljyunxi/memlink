@@ -43,7 +43,9 @@ conn_create(int svrfd, int connsize)
             if (errno == EINTR) {
                 continue;
             }else{
-                DERROR("accept error: %s\n", strerror(errno));
+                char errbuf[1024];
+                strerror_r(errno, errbuf, 1024);
+                DERROR("accept error: %s\n",  errbuf);
                 return NULL;
             }
         }
@@ -56,21 +58,21 @@ conn_create(int svrfd, int connsize)
         DERROR("conn malloc error.\n");
         MEMLINK_EXIT;
     }
-	
+    
     memset(conn, 0, connsize); 
-	conn->rbuf    = (char *)zz_malloc(CONN_MAX_READ_LEN);
-	conn->rsize   = CONN_MAX_READ_LEN;
+    conn->rbuf    = (char *)zz_malloc(CONN_MAX_READ_LEN);
+    conn->rsize   = CONN_MAX_READ_LEN;
     conn->sock    = newfd;
-	conn->destroy = conn_destroy;
-	conn->wrote   = conn_wrote;    
+    conn->destroy = conn_destroy;
+    conn->wrote   = conn_wrote;    
 
-	inet_ntop(AF_INET, &(clientaddr.sin_addr), conn->client_ip, slen);	
-	conn->client_port = ntohs((short)clientaddr.sin_port);
+    inet_ntop(AF_INET, &(clientaddr.sin_addr), conn->client_ip, slen);    
+    conn->client_port = ntohs((short)clientaddr.sin_port);
 
     gettimeofday(&conn->ctime, NULL);
     //atom_inc(&g_runtime->conn_num);
     DINFO("accept newfd: %d, %s:%d\n", newfd, conn->client_ip, conn->client_port);
-	
+    
     zz_check(conn);
 
     return conn;
@@ -79,54 +81,54 @@ conn_create(int svrfd, int connsize)
 void
 conn_destroy(Conn *conn)
 {
-	int i;
-	ThreadServer *ts;
-	WThread *wt;
-	SThread *st;
-	ConnInfo *conninfo = NULL; //SyncConnInfo *sconninfo;
+    int i;
+    ThreadServer *ts;
+    WThread *wt;
+    SThread *st;
+    ConnInfo *conninfo = NULL; //SyncConnInfo *sconninfo;
 
     zz_check(conn);
 
     if (conn->wbuf) {
         zz_free(conn->wbuf);
     }
-	if (conn->rbuf) {
-		zz_free(conn->rbuf);
-	}
-	event_del(&conn->evt);
-	
+    if (conn->rbuf) {
+        zz_free(conn->rbuf);
+    }
+    event_del(&conn->evt);
+    
     //atom_dec(&g_runtime->conn_num);
 
     int maxconn = 0;
-	if (conn->port == g_cf->read_port) {
-		ts = (ThreadServer *)conn->thread;
+    if (conn->port == g_cf->read_port) {
+        ts = (ThreadServer *)conn->thread;
         if (ts) {
             conninfo = (ConnInfo *)ts->rw_conn_info;
             ts->conns--;
             maxconn = g_cf->max_read_conn;
         }
-	} else if (conn->port == g_cf->write_port) {
-		wt = (WThread *)conn->thread;
-		conninfo = (ConnInfo *)wt->rw_conn_info;
-		wt->conns--;
+    } else if (conn->port == g_cf->write_port) {
+        wt = (WThread *)conn->thread;
+        conninfo = (ConnInfo *)wt->rw_conn_info;
+        wt->conns--;
         maxconn = g_cf->max_write_conn;
-	} else if (conn->port == g_cf->sync_port) {
+    } else if (conn->port == g_cf->sync_port) {
         st = (SThread *)conn->thread;
-		conninfo = (ConnInfo *)st->sync_conn_info;
-		st->conns--;
+        conninfo = (ConnInfo *)st->sync_conn_info;
+        st->conns--;
         maxconn = g_cf->max_sync_conn;
     }
 
-	if (conninfo) {
-		for (i = 0; i < maxconn; i++) {
-			if (conn->sock == conninfo[i].fd) {
-				conninfo[i].fd = 0;
-				break;
-			}
-		}
+    if (conninfo) {
+        for (i = 0; i < maxconn; i++) {
+            if (conn->sock == conninfo[i].fd) {
+                conninfo[i].fd = 0;
+                break;
+            }
+        }
 
-	}
- 	close(conn->sock);
+    }
+     close(conn->sock);
     zz_free(conn);
 }
 
@@ -193,13 +195,13 @@ conn_write_buffer_head(Conn *conn, int retcode, int len)
 int
 conn_wrote(Conn *conn)
 {
-	DINFO("write complete! change event to read.\n");
-	int ret = change_event(conn, EV_READ|EV_PERSIST, g_cf->timeout, 0);
-	if (ret < 0) {
-		DERROR("change event error:%d close socket\n", ret);
-		conn->destroy(conn);
-	}
-	return 0;
+    DINFO("write complete! change event to read.\n");
+    int ret = change_event(conn, EV_READ|EV_PERSIST, g_cf->timeout, 0);
+    if (ret < 0) {
+        DERROR("change event error:%d close socket\n", ret);
+        conn->destroy(conn);
+    }
+    return 0;
 }
 
 void 
@@ -216,7 +218,9 @@ conn_write(Conn *conn)
                 continue;
             }else if (errno != EAGAIN) {
                 // maybe close conn?
-                DERROR("write error! %s\n", strerror(errno)); 
+                char errbuf[1024];
+                strerror_r(errno, errbuf, 1024);
+                DERROR("write error! %s\n",  errbuf);
                 conn->destroy(conn);
                 break;
             }

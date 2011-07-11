@@ -57,18 +57,18 @@ queue_destroy(Queue *q)
 int
 queue_size(Queue *q)
 {
-	int count = 0;	
-	QueueItem	*item;
+    int count = 0;    
+    QueueItem    *item;
 
     pthread_mutex_lock(&q->lock);
-	item = q->head;	
-	while (item) {
-		count++;
-		item = item->next;
-	}
+    item = q->head;    
+    while (item) {
+        count++;
+        item = item->next;
+    }
     pthread_mutex_lock(&q->lock);
 
-	return count;
+    return count;
 }
 
 int         
@@ -103,28 +103,28 @@ queue_append(Queue *q, Conn *conn)
 int
 queue_remove_last(Queue *q, Conn *conn)
 {
-	QueueItem	*item, *prev = NULL, *last = NULL;
+    QueueItem    *item, *prev = NULL, *last = NULL;
 
     pthread_mutex_lock(&q->lock);
-	item = q->head;	
-	while (item) {
-		prev = last;
-		last = item;
-		item = item->next;
-	}
-	if (last && last->conn == conn) {
-		if (prev) {
-			prev->next = NULL;
-		}else{
-			q->head = NULL;
-		}
-		close(conn->sock);
-		zz_free(conn);
-		zz_free(last);
-	}
+    item = q->head;    
+    while (item) {
+        prev = last;
+        last = item;
+        item = item->next;
+    }
+    if (last && last->conn == conn) {
+        if (prev) {
+            prev->next = NULL;
+        }else{
+            q->head = NULL;
+        }
+        close(conn->sock);
+        zz_free(conn);
+        zz_free(last);
+    }
     pthread_mutex_unlock(&q->lock);
 
-	return 0;
+    return 0;
 }
 
 QueueItem*  

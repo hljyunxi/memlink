@@ -43,21 +43,21 @@ dumpfile(HashTable *ht)
 
     char        tmpfile[PATH_MAX];
     char        dumpfile[PATH_MAX];
-	char        dumpfileok[PATH_MAX];
-	char        dumpfiletime[PATH_MAX];
+    char        dumpfileok[PATH_MAX];
+    char        dumpfiletime[PATH_MAX];
     int         i;
-	long long   size = 0;
-	struct timeval start, end;
+    long long   size = 0;
+    struct timeval start, end;
     
     DINFO("dumpfile start ...\n");
 
     snprintf(dumpfile, PATH_MAX, "%s/%s", g_cf->datadir, DUMP_FILE_NAME);
     snprintf(tmpfile, PATH_MAX, "%s/%s.tmp", g_cf->datadir, DUMP_FILE_NAME);
-	snprintf(dumpfileok, PATH_MAX, "%s/%s.ok", g_cf->datadir, DUMP_FILE_NAME);
+    snprintf(dumpfileok, PATH_MAX, "%s/%s.ok", g_cf->datadir, DUMP_FILE_NAME);
 
     DINFO("dumpfile to tmp: %s\n", tmpfile);
    
-	gettimeofday(&start, NULL);
+    gettimeofday(&start, NULL);
     FILE    *fp = fopen64(tmpfile, "wb");
 
     unsigned short formatver = DUMP_FORMAT_VERSION;
@@ -72,9 +72,9 @@ dumpfile(HashTable *ht)
     ffwrite(&g_runtime->logver, sizeof(int), 1, fp);
     DINFO("write logfile version %d\n", g_runtime->logver);
 
-	ffwrite(&g_runtime->synclog->index_pos, sizeof(int), 1, fp);
-	DINFO("write logfile pos: %d\n", g_runtime->synclog->index_pos);
-	ffwrite(&size, sizeof(long long), 1, fp);
+    ffwrite(&g_runtime->synclog->index_pos, sizeof(int), 1, fp);
+    DINFO("write logfile pos: %d\n", g_runtime->synclog->index_pos);
+    ffwrite(&size, sizeof(long long), 1, fp);
 
     unsigned char keylen;
     int datalen;
@@ -85,29 +85,29 @@ dumpfile(HashTable *ht)
         node = bks[i];
         while (NULL != node) {
             DINFO("start dump key: %s\n", node->key);
-			unsigned char wchar; 
-			wchar = node->type;
+            unsigned char wchar; 
+            wchar = node->type;
             //ffwrite(&node->type, sizeof(char), 1, fp);
-			ffwrite(&wchar, sizeof(char), 1, fp);
-			wchar = node->sortfield;
+            ffwrite(&wchar, sizeof(char), 1, fp);
+            wchar = node->sortfield;
             //ffwrite(&node->sortfield, sizeof(char), 1, fp);
-			ffwrite(&wchar, sizeof(char), 1, fp);
-			wchar = node->valuetype;
+            ffwrite(&wchar, sizeof(char), 1, fp);
+            wchar = node->valuetype;
             //ffwrite(&node->valuetype, sizeof(char), 1, fp);
-			ffwrite(&wchar, sizeof(char), 1, fp);
+            ffwrite(&wchar, sizeof(char), 1, fp);
             keylen = strlen(node->key);
             ffwrite(&keylen, sizeof(char), 1, fp);
-			//DINFO("dump keylen: %d\n", keylen);
+            //DINFO("dump keylen: %d\n", keylen);
             ffwrite(node->key, keylen, 1, fp);
             ffwrite(&node->valuesize, sizeof(char), 1, fp);
             ffwrite(&node->masksize, sizeof(char), 1, fp);
-			wchar = node->masknum;
+            wchar = node->masknum;
             //ffwrite(&node->masknum, sizeof(char), 1, fp);
-			ffwrite(&wchar, sizeof(char), 1, fp);
+            ffwrite(&wchar, sizeof(char), 1, fp);
 
-			if (node->masknum > 0) {
-				ffwrite(node->maskformat, sizeof(char) * node->masknum, 1, fp);
-			}
+            if (node->masknum > 0) {
+                ffwrite(node->maskformat, sizeof(char) * node->masknum, 1, fp);
+            }
             /*for (k = 0; k < node->masknum; k++) {
                 DINFO("dump mask, k:%d, mask:%d\n", k, node->maskformat[k]);
             }*/
@@ -119,10 +119,10 @@ dumpfile(HashTable *ht)
             while (dbk) {
                 char *itemdata = dbk->data;
                 for (n = 0; n < dbk->data_count; n++) {
-					if (dataitem_have_data(node, itemdata, 0)) {	
+                    if (dataitem_have_data(node, itemdata, 0)) {    
                         ffwrite(itemdata, datalen, 1, fp);
                         dump_count += 1;
-					}
+                    }
                     itemdata += datalen;
                 }
                 dbk = dbk->next;
@@ -132,56 +132,62 @@ dumpfile(HashTable *ht)
     }
     
     DINFO("dump count: %d\n", dump_count);
-	
-	size = ftell(fp);
+    
+    size = ftell(fp);
 
-	fseek(fp,  DUMP_HEAD_LEN - sizeof(long long), SEEK_SET);
-	ffwrite(&size, sizeof(long long), 1, fp);
+    fseek(fp,  DUMP_HEAD_LEN - sizeof(long long), SEEK_SET);
+    ffwrite(&size, sizeof(long long), 1, fp);
 
     fclose(fp);
-	
-	//把dump.dat.tmp变成dump.dat.ok，以备后面使用
+    
+    //把dump.dat.tmp变成dump.dat.ok，以备后面使用
     int ret = rename(tmpfile, dumpfileok);
     DINFO("rename %s to %s return: %d\n", tmpfile, dumpfileok, ret);
     if (ret == -1) {
-        DERROR("dumpfile rename error: %s\n", strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("dumpfile rename error: %s\n",  errbuf);
     }
-	
-	if (isfile(dumpfile)) {
-		//保存当前的dump.dat，在后面加上时间以区分
-		time_t timep;
-		struct tm result, *p;
+    
+    if (isfile(dumpfile)) {
+        //保存当前的dump.dat，在后面加上时间以区分
+        time_t timep;
+        struct tm result, *p;
 
-		time(&timep);
-		memcpy(&g_runtime->last_dump, &timep, sizeof(time_t));
-		localtime_r(&timep, &result);
-		p = &result;
-		snprintf(dumpfiletime, PATH_MAX, "%s/%s.%d%02d%02d.%02d%02d%02d", g_cf->datadir, DUMP_FILE_NAME, 
-			p->tm_year + 1900, 1 + p->tm_mon, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec); 
-		//如果加了这个日期后缀的文件存在，再在文件后面加一个随机数
-		int i = 1;
-		while (isfile(dumpfiletime)) {
-			snprintf(dumpfiletime, PATH_MAX, "%s/%s.%d%02d%02d.%02d%02d%02d.%02d", g_cf->datadir, DUMP_FILE_NAME,
-				p->tm_year + 1900, 1 + p->tm_mon, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec, i);
-			i++;
-		}
+        time(&timep);
+        memcpy(&g_runtime->last_dump, &timep, sizeof(time_t));
+        localtime_r(&timep, &result);
+        p = &result;
+        snprintf(dumpfiletime, PATH_MAX, "%s/%s.%d%02d%02d.%02d%02d%02d", g_cf->datadir, DUMP_FILE_NAME, 
+            p->tm_year + 1900, 1 + p->tm_mon, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec); 
+        //如果加了这个日期后缀的文件存在，再在文件后面加一个随机数
+        int i = 1;
+        while (isfile(dumpfiletime)) {
+            snprintf(dumpfiletime, PATH_MAX, "%s/%s.%d%02d%02d.%02d%02d%02d.%02d", g_cf->datadir, DUMP_FILE_NAME,
+                p->tm_year + 1900, 1 + p->tm_mon, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec, i);
+            i++;
+        }
 
-		//如果dump.dat存在，则在后面加上日期后缀
-		ret = rename(dumpfile, dumpfiletime);
-		DINFO("rename %s to %s return: %d\n", dumpfile, dumpfiletime, ret);
-		if (ret == -1) {
-			DERROR("dumpfile rename error %s\n", strerror(errno));
-		}
-	}	
-	//把当前的dump.dat.ok，改名为dump.dat	
-	ret = rename (dumpfileok, dumpfile);
-	DINFO("rename %s to %s return: %d\n", dumpfileok, dumpfile, ret);
-	if (ret == -1) {
-		DERROR("dumpfile rename error %s\n", strerror(errno));
-	}
-   		
-	gettimeofday(&end, NULL);
-	DNOTE("dump time: %u us\n", timediff(&start, &end));
+        //如果dump.dat存在，则在后面加上日期后缀
+        ret = rename(dumpfile, dumpfiletime);
+        DINFO("rename %s to %s return: %d\n", dumpfile, dumpfiletime, ret);
+        if (ret == -1) {
+            char errbuf[1024];
+            strerror_r(errno, errbuf, 1024);
+			DERROR("dumpfile rename error %s\n",  errbuf);
+        }
+    }    
+    //把当前的dump.dat.ok，改名为dump.dat    
+    ret = rename (dumpfileok, dumpfile);
+    DINFO("rename %s to %s return: %d\n", dumpfileok, dumpfile, ret);
+    if (ret == -1) {
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+		DERROR("dumpfile rename error %s\n",  errbuf);
+    }
+           
+    gettimeofday(&end, NULL);
+    DNOTE("dump time: %u us\n", timediff(&start, &end));
     return ret;
 }
 
@@ -195,14 +201,16 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
 {
     FILE    *fp;
     int     filelen;
-	int		ret;
-	struct timeval start, end;
+    int        ret;
+    struct timeval start, end;
 
     DNOTE("dumpfile load: %s\n", filename);
-	gettimeofday(&start, NULL);
+    gettimeofday(&start, NULL);
     fp = fopen64(filename, "rb");
     if (NULL == fp) {
-        DERROR("open dumpfile %s error: %s\n", filename, strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("open dumpfile %s error: %s\n", filename,  errbuf);
         return -1;
     }
    
@@ -212,7 +220,7 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
     fseek(fp, 0, SEEK_SET);
     unsigned short dumpfver;
     ret = ffread(&dumpfver, sizeof(short), 1, fp);
-	DINFO("load format ver: %d\n", dumpfver);
+    DINFO("load format ver: %d\n", dumpfver);
 
     if (dumpfver != DUMP_FORMAT_VERSION) {
         DERROR("dumpfile format version error: %d, %d\n", dumpfver, DUMP_FORMAT_VERSION);
@@ -235,15 +243,15 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
     }
 
     unsigned int dumplogpos;
-	ret = ffread(&dumplogpos, sizeof(int), 1, fp);
+    ret = ffread(&dumplogpos, sizeof(int), 1, fp);
     DINFO("load dumpfile log pos: %u\n", dumplogpos);
     if (localdump) {
         g_runtime->dumplogpos = dumplogpos;
     }
 
 
-	long long size;
-	ret = ffread(&size, sizeof(long long), 1, fp);
+    long long size;
+    ret = ffread(&size, sizeof(long long), 1, fp);
 
     unsigned char keylen;
     unsigned char masklen;
@@ -272,21 +280,21 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
         //DINFO("key: %s\n", key);
         
         ret = ffread(&valuelen, sizeof(unsigned char), 1, fp);
-		//DINFO("valuelen: %d\n", valuelen);
+        //DINFO("valuelen: %d\n", valuelen);
         ret = ffread(&masklen, sizeof(unsigned char), 1, fp);
-		//DINFO("masklen: %d\n", masklen);
+        //DINFO("masklen: %d\n", masklen);
         ret = ffread(&masknum, sizeof(char), 1, fp);
-		//DINFO("masknum: %d\n", masknum);
-		if (masknum > 0) {
-			ret = ffread(maskformat, sizeof(char) * masknum, 1, fp);
-		}
-			
+        //DINFO("masknum: %d\n", masknum);
+        if (masknum > 0) {
+            ret = ffread(maskformat, sizeof(char) * masknum, 1, fp);
+        }
+            
         /*for (i = 0; i < masknum; i++) {
             DINFO("maskformat, i:%d, mask:%d\n", i, maskformat[i]);
         }*/
         ret = ffread(&itemnum, sizeof(unsigned int), 1, fp);
         datalen = valuelen + masklen;
-		//DINFO("itemnum: %d, datalen: %d\n", itemnum, datalen);
+        //DINFO("itemnum: %d, datalen: %d\n", itemnum, datalen);
 
         unsigned int maskarray[HASHTABLE_MASK_MAX_ITEM] = {0};
         for (i = 0; i < masknum; i++) {
@@ -308,13 +316,13 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
             if (i % block_data_count_max == 0) {
                 //DINFO("create new datablock ...\n");
                 /*
-				if (itemnum == 1) {
-					newdbk = mempool_get(g_runtime->mpool, sizeof(DataBlock) + datalen); 
-					newdbk->data_count = 1;
-				}else{
-					newdbk = mempool_get(g_runtime->mpool, sizeof(DataBlock) + g_cf->block_data_count *datalen); 
-					newdbk->data_count = g_cf->block_data_count;
-				}*/
+                if (itemnum == 1) {
+                    newdbk = mempool_get(g_runtime->mpool, sizeof(DataBlock) + datalen); 
+                    newdbk->data_count = 1;
+                }else{
+                    newdbk = mempool_get(g_runtime->mpool, sizeof(DataBlock) + g_cf->block_data_count *datalen); 
+                    newdbk->data_count = g_cf->block_data_count;
+                }*/
                 
                 if (itemnum - i > block_data_count_max) {
                     newdbk = mempool_get2(g_runtime->mpool, block_data_count_max, datalen); 
@@ -334,23 +342,23 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
                 }
                 newdbk->prev = dbk;
                 dbk = newdbk;
-				//node->all += newdbk->data_count;
+                //node->all += newdbk->data_count;
 
                 itemdata = dbk->data;
             }
             ret = ffread(itemdata, datalen, 1, fp);
-			ret = dataitem_check_data(node, itemdata);
-			if (ret == MEMLINK_VALUE_VISIBLE) {
-				dbk->visible_count++;
-			}else{
-				dbk->tagdel_count++;
-			}
-			node->used++;
+            ret = dataitem_check_data(node, itemdata);
+            if (ret == MEMLINK_VALUE_VISIBLE) {
+                dbk->visible_count++;
+            }else{
+                dbk->tagdel_count++;
+            }
+            node->used++;
 
             /*char buf[256] = {0};
             memcpy(buf, itemdata, node->valuesize);
             DINFO("load value: %s\n", buf);*/
-			
+            
             itemdata += datalen;
             load_count += 1;
         }
@@ -359,8 +367,8 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
     fclose(fp);
     //DINFO("load count: %d\n", load_count);
 
-	gettimeofday(&end, NULL);
-	DNOTE("load dump %d time: %u us\n", load_count, timediff(&start, &end));
+    gettimeofday(&end, NULL);
+    DNOTE("load dump %d time: %u us\n", load_count, timediff(&start, &end));
 
     return 0;
 }
@@ -374,7 +382,9 @@ dumpfile_logver(char *filename, unsigned int *logver, unsigned int *logpos)
     //dumpf = fopen(filename, "r");
     dumpf = fopen64(filename, "r");
     if (dumpf == NULL) {
-        DERROR("open file %s error! %s\n", filename, strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("open file %s error! %s\n", filename,  errbuf);
         return -1;
     }
 
@@ -383,13 +393,17 @@ dumpfile_logver(char *filename, unsigned int *logver, unsigned int *logpos)
 
     ret = fread(&logver, sizeof(int), 1, dumpf);
     if (ret != sizeof(int)) {
-        DERROR("fread error: %s\n", strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("fread error: %s\n",  errbuf);
         fclose(dumpf);
         return -1;
     }
     ret = fread(&logpos, sizeof(int), 1, dumpf);
     if (ret != sizeof(int)) {
-        DERROR("fread error: %s\n", strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("fread error: %s\n",  errbuf);
         fclose(dumpf);
         return -1;
     }
@@ -403,13 +417,13 @@ void
 dumpfile_call_loop(int fd, short event, void *arg)
 {
     dumpfile_call();
-	
-	struct timeval	tv;
-	struct event *timeout = arg;
+    
+    struct timeval    tv;
+    struct event *timeout = arg;
 
-	evutil_timerclear(&tv);
+    evutil_timerclear(&tv);
     tv.tv_sec = g_cf->dump_interval * 60; 
-	event_add(timeout, &tv);
+    event_add(timeout, &tv);
 }
 
 int

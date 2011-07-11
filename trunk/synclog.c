@@ -34,7 +34,9 @@ truncate_file(int fd, int len)
             if (errno == EINTR) {
                 continue;
             }else{
-                DERROR("ftruncate %d, %d error: %s\n", fd, len, strerror(errno));
+                char errbuf[1024];
+                strerror_r(errno, errbuf, 1024);
+                DERROR("ftruncate %d, %d error: %s\n", fd, len,  errbuf);
                 MEMLINK_EXIT;
             }
         }
@@ -65,9 +67,11 @@ synclog_create()
     //struct stat stbuf;
 
     // check file exist
-	/*
+    /*
     ret = stat(slog->filename, &stbuf);
-    //DINFO("stat: %d, err: %s\n", ret, strerror(errno));
+    char errbuf[1024];
+    strerror_r(errno, errbuf, 1024);
+    //DINFO("stat: %d, err: %s\n", ret,  errbuf);
     if (ret == -1 && errno == ENOENT) { // not found file, check last log id from disk filename
         DINFO("not found sync logfile, check version in disk.\n");
         unsigned int lastver = synclog_lastlog();
@@ -80,7 +84,9 @@ synclog_create()
     //slog->fd = open(slog->filename, O_RDWR|O_CREAT|O_APPEND, 0644);
     slog->fd = open(slog->filename, O_RDWR|O_CREAT, 0644);
     if (slog->fd == -1) {
-        DERROR("open synclog %s error: %s\n", slog->filename, strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("open synclog %s error: %s\n", slog->filename,  errbuf);
         zz_free(slog);
         MEMLINK_EXIT;
         return NULL;
@@ -116,7 +122,7 @@ synclog_create()
             DERROR("write synclog newver error: %d\n", newver);
             MEMLINK_EXIT;
         }
-		/*if (writen(slog->fd, &g_cf->role, sizeof(char), 0) < 0) {
+        /*if (writen(slog->fd, &g_cf->role, sizeof(char), 0) < 0) {
             DERROR("write synclog role error: %d\n", g_cf->role);
             MEMLINK_EXIT;
         }*/
@@ -136,7 +142,9 @@ synclog_create()
     DINFO("mmap file ... len:%d, fd:%d\n", slog->len, slog->fd);
     slog->index = mmap(NULL, slog->len, PROT_READ|PROT_WRITE, MAP_SHARED, slog->fd, 0);
     if (slog->index == MAP_FAILED) {
-        DERROR("synclog mmap error: %s\n", strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("synclog mmap error: %s\n",  errbuf);
         MEMLINK_EXIT;
     }
 
@@ -144,15 +152,15 @@ synclog_create()
         g_runtime->logver = *(unsigned int*)(slog->index + sizeof(short));
         slog->version = g_runtime->logver;
 
-		/*char role = *(slog->index + SYNCLOG_HEAD_LEN - sizeof(int));
-		if (role != g_cf->role) {
+        /*char role = *(slog->index + SYNCLOG_HEAD_LEN - sizeof(int));
+        if (role != g_cf->role) {
             synclog_rotate(slog);
-		}*/
-		
-		DINFO("validate synclog ...\n");
-		if ((ret = synclog_validate(slog)) < 0) {
-			DERROR("synclog_validate error: %d\n", ret);
-		}
+        }*/
+        
+        DINFO("validate synclog ...\n");
+        if ((ret = synclog_validate(slog)) < 0) {
+            DERROR("synclog_validate error: %d\n", ret);
+        }
     }
 
     DINFO("=== runtime logver: %u file logver: %u ===\n", g_runtime->logver, (unsigned int)*(slog->index + sizeof(short)));
@@ -165,29 +173,31 @@ synclog_create()
 SyncLog*
 synclog_open(char *filename)
 {
-	SyncLog	*slog = NULL;
+    SyncLog    *slog = NULL;
 
-	if (!isfile(filename)) {
-		return NULL;
-	}
-	
-	slog = (SyncLog*)zz_malloc(sizeof(SyncLog));
+    if (!isfile(filename)) {
+        return NULL;
+    }
+    
+    slog = (SyncLog*)zz_malloc(sizeof(SyncLog));
     if (NULL == slog) {
         DERROR("malloc SyncLog error!\n");
         MEMLINK_EXIT;
         return NULL;
     }
     memset(slog, 0, sizeof(SyncLog));
-	
-	if (strchr(filename, '/') == NULL) {
-		snprintf(slog->filename, PATH_MAX, "%s/%s", g_cf->datadir, filename);
-	}else{
-		snprintf(slog->filename, PATH_MAX, "%s", filename);
-	}
     
-	slog->fd = open(slog->filename, O_RDWR);
+    if (strchr(filename, '/') == NULL) {
+        snprintf(slog->filename, PATH_MAX, "%s/%s", g_cf->datadir, filename);
+    }else{
+        snprintf(slog->filename, PATH_MAX, "%s", filename);
+    }
+    
+    slog->fd = open(slog->filename, O_RDWR);
     if (slog->fd == -1) {
-        DERROR("open synclog %s error: %s\n", slog->filename, strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("open synclog %s error: %s\n", slog->filename,  errbuf);
         zz_free(slog);
         MEMLINK_EXIT;
         return NULL;
@@ -196,30 +206,32 @@ synclog_open(char *filename)
     int len = SYNCLOG_HEAD_LEN + SYNCLOG_INDEXNUM * sizeof(int);
     slog->len = len;
 
-	slog->index = mmap(NULL, slog->len, PROT_READ|PROT_WRITE, MAP_SHARED, slog->fd, 0);
+    slog->index = mmap(NULL, slog->len, PROT_READ|PROT_WRITE, MAP_SHARED, slog->fd, 0);
     if (slog->index == MAP_FAILED) {
-        DERROR("synclog mmap error: %s\n", strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("synclog mmap error: %s\n",  errbuf);
         MEMLINK_EXIT;
     }
 
     slog->index_pos = 0;
     slog->pos       = lseek(slog->fd, 0, SEEK_END);
 
-	int i;
-	int *idxdata = (int*)(slog->index + SYNCLOG_HEAD_LEN);
-	for (i = 0; i < SYNCLOG_INDEXNUM; i++) {
-		if (idxdata[i] == 0) {
-			slog->index_pos = i;
-			break;
-		}
-	}
+    int i;
+    int *idxdata = (int*)(slog->index + SYNCLOG_HEAD_LEN);
+    for (i = 0; i < SYNCLOG_INDEXNUM; i++) {
+        if (idxdata[i] == 0) {
+            slog->index_pos = i;
+            break;
+        }
+    }
     if (slog->index_pos == 0 && i == SYNCLOG_INDEXNUM) {
         slog->index_pos = SYNCLOG_INDEXNUM;
     }
 
     slog->version = *(unsigned int*)(slog->index + sizeof(short));
 
-	return slog;
+    return slog;
 }
 
 int
@@ -227,7 +239,9 @@ synclog_new(SyncLog *slog)
 {
     slog->fd = open(slog->filename, O_RDWR|O_CREAT, 0644);
     if (slog->fd == -1) {
-        DERROR("open synclog %s error: %s\n", slog->filename, strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("open synclog %s error: %s\n", slog->filename,  errbuf);
         zz_free(slog);
         MEMLINK_EXIT;
         return -1;
@@ -248,7 +262,7 @@ synclog_new(SyncLog *slog)
         DERROR("write synclog newver error: %d\n", newver);
         MEMLINK_EXIT;
     }
-	/*if (writen(slog->fd, &g_cf->role, sizeof(char), 0) < 0) {
+    /*if (writen(slog->fd, &g_cf->role, sizeof(char), 0) < 0) {
         DERROR("write synclog role error: %d\n", g_cf->role);
         MEMLINK_EXIT;
     }*/
@@ -263,13 +277,15 @@ synclog_new(SyncLog *slog)
 
     slog->index = mmap(NULL, slog->len, PROT_READ|PROT_WRITE, MAP_SHARED, slog->fd, 0);
     if (slog->index == MAP_FAILED) {
-        DERROR("synclog mmap error: %s\n", strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("synclog mmap error: %s\n",  errbuf);
         MEMLINK_EXIT;
     }
 
     slog->pos       = slog->len;
     slog->index_pos = 0;
-	g_runtime->logver += 1;
+    g_runtime->logver += 1;
 
     return 0;
 }
@@ -296,7 +312,9 @@ synclog_rotate(SyncLog *slog)
 
     ret = munmap(slog->index, slog->len);
     if (ret == -1) {
-        DERROR("munmap error: %s\n", strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("munmap error: %s\n",  errbuf);
     }
     slog->index = NULL;
     close(slog->fd);
@@ -324,51 +342,51 @@ synclog_validate(SyncLog *slog)
     char *data  = slog->index + SYNCLOG_HEAD_LEN; // skip to index
     unsigned int *loopdata = (unsigned int*)data;
     unsigned int lastidx   = slog->len;
-	char dumpfile[PATH_MAX];
-	int dumplogver, dumplogpos, ret;
-	
-	//add by lanwenhong
-	snprintf(dumpfile, PATH_MAX, "%s/%s", g_cf->datadir, DUMP_FILE_NAME);
-	if (isfile(dumpfile) != 0 && g_cf->role == ROLE_SLAVE) {
-		FILE *fp = NULL;
-		unsigned int offset = 0;
+    char dumpfile[PATH_MAX];
+    int dumplogver, dumplogpos, ret;
+    
+    //add by lanwenhong
+    snprintf(dumpfile, PATH_MAX, "%s/%s", g_cf->datadir, DUMP_FILE_NAME);
+    if (isfile(dumpfile) != 0 && g_cf->role == ROLE_SLAVE) {
+        FILE *fp = NULL;
+        unsigned int offset = 0;
 
-		fp = fopen64(dumpfile, "rb");
-		offset = sizeof(short) + sizeof(int);
-		fseek(fp, offset, SEEK_SET);
-		ret = ffread(&dumplogver, sizeof(int), 1, fp);
-		ret = ffread(&dumplogpos, sizeof(int), 1, fp);
-		//DNOTE("dumlogver: %d, g_runtime->logver: %d\n", dumplogver, g_runtime->logver);
-		if (dumplogver == g_runtime->logver) {
-			i = dumplogpos;
-		}
-		//DNOTE("dumplogpos: %d\n", dumplogpos);
-		fclose(fp);
-		
-	}	
-	//modify by lanwenhong
+        fp = fopen64(dumpfile, "rb");
+        offset = sizeof(short) + sizeof(int);
+        fseek(fp, offset, SEEK_SET);
+        ret = ffread(&dumplogver, sizeof(int), 1, fp);
+        ret = ffread(&dumplogpos, sizeof(int), 1, fp);
+        //DNOTE("dumlogver: %d, g_runtime->logver: %d\n", dumplogver, g_runtime->logver);
+        if (dumplogver == g_runtime->logver) {
+            i = dumplogpos;
+        }
+        //DNOTE("dumplogpos: %d\n", dumplogpos);
+        fclose(fp);
+        
+    }    
+    //modify by lanwenhong
     for (; i < looplen; i++) {
         if (loopdata[i] == 0) {
             break;
         }
         lastidx = loopdata[i];
     }
-	
+    
     slog->index_pos = i;
-	//索引第一个是0
-	if (i == 0) {
-		slog->pos = slog->len;
-		return 0;
-	}
-	else if (i == dumplogpos) {
-		lastidx = loopdata[i - 1];
-		if (lastidx == 0) {
-			slog->pos = slog->len;
-			slog->index_pos = dumplogpos;
-			return 0;
-		}
-	}
-	
+    //索引第一个是0
+    if (i == 0) {
+        slog->pos = slog->len;
+        return 0;
+    }
+    else if (i == dumplogpos) {
+        lastidx = loopdata[i - 1];
+        if (lastidx == 0) {
+            slog->pos = slog->len;
+            slog->index_pos = dumplogpos;
+            return 0;
+        }
+    }
+    
 
     unsigned int dlen;
     int            filelen = lseek(slog->fd, 0, SEEK_END);
@@ -378,8 +396,8 @@ synclog_validate(SyncLog *slog)
     //unsigned int oldidx = lastidx; 
     while (lastidx < filelen) {
         //DINFO("check offset: %d\n", lastidx);
-		// skip logver and logline
-		lastidx += sizeof(int) + sizeof(int);
+        // skip logver and logline
+        lastidx += sizeof(int) + sizeof(int);
         int cur = lseek(slog->fd, lastidx, SEEK_SET);
         if (readn(slog->fd, &dlen, sizeof(int), 0) != sizeof(int)) {
             DERROR("synclog readn error, lastidx: %u, cur: %u\n", lastidx, cur);
@@ -407,12 +425,12 @@ synclog_validate(SyncLog *slog)
         }else{
             DERROR("index too small, at:%u, index:%d\n", cur, i);
             MEMLINK_EXIT;
-			/*
+            /*
             lastidx = lastidx + sizeof(int) + dlen; // skip to next
             if (i == 0 || lastidx > oldidx) { // add index
                 loopdata[slog->index_pos] = lastidx;
                 slog->index_pos += 1;
-				DNOTE("lastidx: %d, oldidx: %d\n", lastidx, oldidx);
+                DNOTE("lastidx: %d, oldidx: %d\n", lastidx, oldidx);
             }*/
         }
     }
@@ -436,37 +454,37 @@ synclog_write(SyncLog *slog, char *data, int datalen)
     int wpos = 0;
     int ret;
     int cur;
-	char *wdata = data;
+    char *wdata = data;
     //int pos = lseek(slog->fd, 0, SEEK_CUR);
     //char buf[128];
-	
-	if (slog->index_pos == SYNCLOG_INDEXNUM) {
-		synclog_rotate(slog);
-	}
+    
+    if (slog->index_pos == SYNCLOG_INDEXNUM) {
+        synclog_rotate(slog);
+    }
 
-	// add logver/logline for master
-	if (g_cf->role == ROLE_MASTER) {
-		//int count = 0;
+    // add logver/logline for master
+    if (g_cf->role == ROLE_MASTER) {
+        //int count = 0;
         wlen = datalen + sizeof(int) + sizeof(int);
-		wdata = (char *)alloca(wlen);
-		memcpy(wdata, &g_runtime->logver, sizeof(int));
-		memcpy(wdata + sizeof(int), &slog->index_pos, sizeof(int));
-		memcpy(wdata + sizeof(int) + sizeof(int), data, datalen);
-	}
+        wdata = (char *)alloca(wlen);
+        memcpy(wdata, &g_runtime->logver, sizeof(int));
+        memcpy(wdata + sizeof(int), &slog->index_pos, sizeof(int));
+        memcpy(wdata + sizeof(int) + sizeof(int), data, datalen);
+    }
 
 #ifdef DEBUG
-	char tmpbuf[512];
-	DINFO("write log: %s\n", formath(wdata, wlen, tmpbuf, 512));
+    char tmpbuf[512];
+    DINFO("write log: %s\n", formath(wdata, wlen, tmpbuf, 512));
 #endif
-	DINFO("datalen: %d, wlen: %d, pos:%d, index_pos:%d\n", datalen, wlen, slog->pos, slog->index_pos);
+    DINFO("datalen: %d, wlen: %d, pos:%d, index_pos:%d\n", datalen, wlen, slog->pos, slog->index_pos);
     cur = lseek(slog->fd, slog->pos, SEEK_SET);
-	/*
+    /*
     DINFO("write synclog, cur: %u, pos: %d, %d, wlen: %d, %s\n", cur, slog->pos, 
-				(unsigned int)lseek(slog->fd, 0, SEEK_CUR),
-				wlen, formath(data, wlen, buf, 128));
-	ret = write(slog->fd, "zhaowei", 7);
-	DINFO("write test ret: %d, cur: %d\n", ret, (unsigned int)lseek(slog->fd, 0, SEEK_CUR));
-	*/	
+                (unsigned int)lseek(slog->fd, 0, SEEK_CUR),
+                wlen, formath(data, wlen, buf, 128));
+    ret = write(slog->fd, "zhaowei", 7);
+    DINFO("write test ret: %d, cur: %d\n", ret, (unsigned int)lseek(slog->fd, 0, SEEK_CUR));
+    */    
     offset = wlen;
     while (wlen > 0) {
         /*int old = lseek(slog->fd, 0, SEEK_CUR);
@@ -474,17 +492,19 @@ synclog_write(SyncLog *slog, char *data, int datalen)
         int rsize = read(slog->fd, databuf, 23);
         DINFO("read: %s\n", formath(databuf, rsize, buf, 128)); 
         lseek(slog->fd, old, SEEK_SET);
-		*/
+        */
 
-		//DINFO("write pos: %u wpos:%d, wlen:%d, data:%s\n", (unsigned int)lseek(slog->fd, 0, SEEK_CUR), wpos, wlen, formath(data+wpos, wlen, buf, 128));
-		DINFO("write pos: %u wpos:%d, wlen:%d\n", (unsigned int)lseek(slog->fd, 0, SEEK_CUR), wpos, wlen);
+        //DINFO("write pos: %u wpos:%d, wlen:%d, data:%s\n", (unsigned int)lseek(slog->fd, 0, SEEK_CUR), wpos, wlen, formath(data+wpos, wlen, buf, 128));
+        DINFO("write pos: %u wpos:%d, wlen:%d\n", (unsigned int)lseek(slog->fd, 0, SEEK_CUR), wpos, wlen);
         ret = write(slog->fd, wdata + wpos, wlen);
         DINFO("write return:%d\n", ret);
         if (ret == -1) {
             if (errno == EINTR) {
                 continue;
             }else{
-                DERROR("write synclog error: %s\n", strerror(errno));
+                char errbuf[1024];
+                strerror_r(errno, errbuf, 1024);
+                DERROR("write synclog error: %s\n",  errbuf);
                 MEMLINK_EXIT;
                 return -1;
             }
@@ -493,8 +513,8 @@ synclog_write(SyncLog *slog, char *data, int datalen)
             wpos += ret;
         }
     }
-	
-	DINFO("after write pos: %u\n", (unsigned int)lseek(slog->fd, 0, SEEK_CUR));
+    
+    DINFO("after write pos: %u\n", (unsigned int)lseek(slog->fd, 0, SEEK_CUR));
     //unsigned int *idxdata = (unsigned int*)(slog->index + sizeof(short) + sizeof(int) * 2);
     unsigned int *idxdata = (unsigned int*)(slog->index + SYNCLOG_HEAD_LEN);
     DINFO("write index: %u, %u\n", slog->index_pos, slog->pos);
@@ -507,18 +527,20 @@ synclog_write(SyncLog *slog, char *data, int datalen)
 int
 synclog_version(SyncLog *slog, unsigned int *logver)
 {
-	lseek(slog->fd, sizeof(short), SEEK_SET);		
+    lseek(slog->fd, sizeof(short), SEEK_SET);        
 
-	unsigned int ver;
+    unsigned int ver;
 
-	int ret = readn(slog->fd, &ver, sizeof(int), 0);
-	if (ret != sizeof(int)) {
-		DERROR("readn error: %d, %s\n", ret, strerror(errno));
-		return -1;
-	}
+    int ret = readn(slog->fd, &ver, sizeof(int), 0);
+    if (ret != sizeof(int)) {
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+		DERROR("readn error: %d, %s\n", ret,  errbuf);
+        return -1;
+    }
 
-	*logver = ver;
-	return 0;
+    *logver = ver;
+    return 0;
 }
 
 void
@@ -528,7 +550,9 @@ synclog_close(SyncLog *slog)
         return;
     
     if (munmap(slog->index, slog->len) == -1) {
-        DERROR("munmap error: %s\n", strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("munmap error: %s\n",  errbuf);
     }
     slog->index = NULL;
     close(slog->fd); 
@@ -545,7 +569,9 @@ synclog_destroy(SyncLog *slog)
         return;
     
     if (munmap(slog->index, slog->len) == -1) {
-        DERROR("munmap error: %s\n", strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("munmap error: %s\n",  errbuf);
     }
    
     close(slog->fd); 
@@ -565,7 +591,9 @@ synclog_lastlog()
 
     mydir = opendir(g_cf->datadir);
     if (NULL == mydir) {
-        DERROR("opendir %s error: %s\n", g_cf->datadir, strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("opendir %s error: %s\n", g_cf->datadir,  errbuf);
         MEMLINK_EXIT;
         return 0;
     }
@@ -594,13 +622,15 @@ synclog_prevlog(int curid)
     struct  dirent *nodes;
     int     maxid = 0;
 
-	if (curid == 0) {
-		curid = INT_MAX;
-	}
+    if (curid == 0) {
+        curid = INT_MAX;
+    }
 
     mydir = opendir(g_cf->datadir);
     if (NULL == mydir) {
-        DERROR("opendir %s error: %s\n", g_cf->datadir, strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("opendir %s error: %s\n", g_cf->datadir,  errbuf);
         MEMLINK_EXIT;
         return 0;
     }
@@ -624,7 +654,7 @@ synclog_prevlog(int curid)
 int
 synclog_scan_binlog(int *result, int rsize)
 {
-	DIR     *mydir; 
+    DIR     *mydir; 
     struct  dirent *nodes;
     int     minid = g_runtime->dumplogver;
     //int     logids[10000] = {0};
@@ -633,24 +663,26 @@ synclog_scan_binlog(int *result, int rsize)
     DINFO("try get synclog ...\n");
     mydir = opendir(g_cf->datadir);
     if (NULL == mydir) {
-        DERROR("opendir %s error: %s\n", g_cf->datadir, strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("opendir %s error: %s\n", g_cf->datadir,  errbuf);
         return -2; 
     } 
-   	//本地没有dump.dat文件	
-   	if (g_runtime->dumplogver == 0) {
-		minid = 1;
-	}	
+       //本地没有dump.dat文件    
+       if (g_runtime->dumplogver == 0) {
+        minid = 1;
+    }    
     while ((nodes = readdir(mydir)) != NULL) {
         //DINFO("name: %s\n", nodes->d_name);
         if (strncmp(nodes->d_name, "bin.log.", 8) == 0) {
             int binid = atoi(&nodes->d_name[8]);
             if (binid >= minid) {
                 //logids[i] = binid;
-				if (i >= rsize) {
-					DERROR("array to store binlog, too small.\n");
-					return -100;
-				}
-				result[i] = binid;
+                if (i >= rsize) {
+                    DERROR("array to store binlog, too small.\n");
+                    return -100;
+                }
+                result[i] = binid;
                 i++;
             }   
         }   
@@ -659,7 +691,7 @@ synclog_scan_binlog(int *result, int rsize)
 
     qsort(result, i, sizeof(int), compare_int);
 
-	return i;
+    return i;
 }
 
 /**
@@ -687,7 +719,9 @@ synclog_truncate(SyncLog *slog, int index)
 
     ret = lseek(slog->fd, lastpos + SYNCPOS_LEN, SEEK_SET);
     if (ret < 0) {
-        DERROR("lseek error: %u, %s\n", (unsigned int)(lastpos + SYNCPOS_LEN), strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("lseek error: %u, %s\n", (unsigned int)(lastpos + SYNCPOS_LEN),  errbuf);
         MEMLINK_EXIT;
     }
 
@@ -703,7 +737,9 @@ synclog_truncate(SyncLog *slog, int index)
     DINFO("truncate synclog to %d\n", lastpos);
     ret = ftruncate(slog->fd, lastpos);
     if (ret == -1) {
-        DERROR("ftruncate synclog error: %s\n", strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("ftruncate synclog error: %s\n",  errbuf);
         MEMLINK_EXIT;
     }
 
@@ -731,14 +767,16 @@ synclog_truncate(SyncLog *slog, unsigned int logver, unsigned int dumplogpos)
     //DINFO("truncate synclog to %d\n", lastpos);
     ret = ftruncate(slog->fd, SYNCLOG_HEAD_LEN + SYNCLOG_INDEXNUM * sizeof(int));
     if (ret == -1) {
-        DERROR("ftruncate synclog error: %s\n", strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("ftruncate synclog error: %s\n",  errbuf);
         MEMLINK_EXIT;
     }
 
     slog->index_pos = dumplogpos;
     slog->pos       = SYNCLOG_HEAD_LEN + SYNCLOG_INDEXNUM * sizeof(int);
-	
-	memcpy(slog->index + sizeof(short), &logver, sizeof(int)); 
+    
+    memcpy(slog->index + sizeof(short), &logver, sizeof(int)); 
     return 0;
 }
 
@@ -763,7 +801,9 @@ synclog_resize(unsigned int logver, unsigned int logline)
         DINFO("rotate bin.log to %s\n", logname_new);
         ret = rename(logname, logname_new);
         if (ret < 0) {
-            DERROR("rename %s error: %d, %s\n", logname, ret, strerror(errno));
+            char errbuf[1024];
+            strerror_r(errno, errbuf, 1024);
+            DERROR("rename %s error: %d, %s\n", logname, ret,  errbuf);
             MEMLINK_EXIT;
         }
 
@@ -773,7 +813,9 @@ synclog_resize(unsigned int logver, unsigned int logline)
         DINFO("restore %s to bin.log\n", logname);
         ret = rename(logname, logname_new);
         if (ret < 0) {
-            DERROR("rename %s error: %d, %s\n", logname, ret, strerror(errno));
+            char errbuf[1024];
+            strerror_r(errno, errbuf, 1024);
+            DERROR("rename %s error: %d, %s\n", logname, ret,  errbuf);
             MEMLINK_EXIT;
         }
 
@@ -800,7 +842,9 @@ synclog_resize(unsigned int logver, unsigned int logline)
                 DINFO("ok, rename %s to %s\n", logname, logname_new);
                 ret = rename(logname, logname_new);
                 if (ret < 0) {
-                    DERROR("rename %s error: %d, %s\n", logname, ret, strerror(errno));
+                    char errbuf[1024];
+                    strerror_r(errno, errbuf, 1024);
+                    DERROR("rename %s error: %d, %s\n", logname, ret,  errbuf);
                     MEMLINK_EXIT;
                 }
             }
@@ -823,7 +867,9 @@ synclog_resize(unsigned int logver, unsigned int logline)
         
         ret = lseek(g_runtime->synclog->fd, lastpos + SYNCPOS_LEN, SEEK_SET);
         if (ret < 0) {
-            DERROR("lseek error: %u, %s\n", lastpos + SYNCPOS_LEN, strerror(errno));
+            char errbuf[1024];
+            strerror_r(errno, errbuf, 1024);
+            DERROR("lseek error: %u, %s\n", lastpos + SYNCPOS_LEN,  errbuf);
             MEMLINK_EXIT;
         }
         
@@ -839,7 +885,9 @@ synclog_resize(unsigned int logver, unsigned int logline)
         DINFO("truncate synclog to %d\n", lastpos);
         ret = ftruncate(g_runtime->synclog->fd, lastpos);
         if (ret == -1) {
-            DERROR("ftruncate synclog error: %s\n", strerror(errno));
+            char errbuf[1024];
+            strerror_r(errno, errbuf, 1024);
+            DERROR("ftruncate synclog error: %s\n",  errbuf);
             MEMLINK_EXIT;
         }
         */
@@ -851,49 +899,53 @@ synclog_resize(unsigned int logver, unsigned int logline)
 
 int synclog_clean(unsigned int logver, unsigned int dumplogpos)
 {
-	DIR     *mydir; 
+    DIR     *mydir; 
     struct  dirent *nodes;
-	char logname[PATH_MAX];
-	char logname_new[PATH_MAX];
+    char logname[PATH_MAX];
+    char logname_new[PATH_MAX];
 
     DINFO("try get synclog ...\n");
     mydir = opendir(g_cf->datadir);
     if (NULL == mydir) {
-        DERROR("opendir %s error: %s\n", g_cf->datadir, strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("opendir %s error: %s\n", g_cf->datadir,  errbuf);
         return -2; 
     }   
-	while ((nodes = readdir(mydir)) != NULL) {
-		//DINFO("name: %s\n", nodes->d_name);
-		if (strncmp(nodes->d_name, "bin.log.", 8) == 0) {
-			int binid = atoi(&nodes->d_name[8]);
+    while ((nodes = readdir(mydir)) != NULL) {
+        //DINFO("name: %s\n", nodes->d_name);
+        if (strncmp(nodes->d_name, "bin.log.", 8) == 0) {
+            int binid = atoi(&nodes->d_name[8]);
 
-			snprintf(logname, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, binid);
-			snprintf(logname_new, PATH_MAX, "%s/rm.bin.log.%d", g_cf->datadir, binid);
-			if (isfile(logname)) {
-				int ret;
+            snprintf(logname, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, binid);
+            snprintf(logname_new, PATH_MAX, "%s/rm.bin.log.%d", g_cf->datadir, binid);
+            if (isfile(logname)) {
+                int ret;
 
-				DINFO("ok, rename %s to %s\n", logname, logname_new);
-				ret = rename(logname, logname_new);
-				if (ret < 0) {
-					DERROR("rename %s error: %d, %s\n", logname, ret, strerror(errno));
-					MEMLINK_EXIT;
-				}
-			}
-		}   
-	}  
+                DINFO("ok, rename %s to %s\n", logname, logname_new);
+                ret = rename(logname, logname_new);
+                if (ret < 0) {
+                    char errbuf[1024];
+                    strerror_r(errno, errbuf, 1024);
+					DERROR("rename %s error: %d, %s\n", logname, ret,  errbuf);
+                    MEMLINK_EXIT;
+                }
+            }
+        }   
+    }  
 
-	synclog_close(g_runtime->synclog);
-	snprintf(logname, PATH_MAX, "%s/bin.log", g_cf->datadir);
-	snprintf(logname_new, PATH_MAX, "%s/rm.bin.log", g_cf->datadir);
-	if (isfile(logname)) {
-		rename(logname, logname_new);
-	}
-	g_runtime->logver = g_runtime->synclog->version = logver - 1;
-	synclog_new(g_runtime->synclog);
-	g_runtime->synclog->index_pos = dumplogpos;
-	closedir(mydir);
-	//synclog_truncate(g_runtime->synclog, logver, dumplogpos);	
-	return 1;
+    synclog_close(g_runtime->synclog);
+    snprintf(logname, PATH_MAX, "%s/bin.log", g_cf->datadir);
+    snprintf(logname_new, PATH_MAX, "%s/rm.bin.log", g_cf->datadir);
+    if (isfile(logname)) {
+        rename(logname, logname_new);
+    }
+    g_runtime->logver = g_runtime->synclog->version = logver - 1;
+    synclog_new(g_runtime->synclog);
+    g_runtime->synclog->index_pos = dumplogpos;
+    closedir(mydir);
+    //synclog_truncate(g_runtime->synclog, logver, dumplogpos);    
+    return 1;
 }
 
 /**
