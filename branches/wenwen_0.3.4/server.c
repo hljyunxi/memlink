@@ -83,7 +83,7 @@ mainserver_read(int fd, short event, void *arg)
         return;
     }
     conn->port  = g_cf->read_port;
-	conn->ready = rdata_ready;
+    conn->ready = rdata_ready;
 
     if (conn_check_max(conn) != MEMLINK_OK) {
         DNOTE("too many read conn.\n");
@@ -100,8 +100,9 @@ mainserver_read(int fd, short event, void *arg)
     queue_append(ts->cq, conn); 
     DINFO("send socket %d to notify ...\n", conn->sock);
     if (write(ts->notify_send_fd, "", 1) == -1) {
-        DERROR("Writing to thread %d notify pipe error: %s\n", 
-                    n, strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("Writing to thread %d notify pipe error: %s\n", n,  errbuf);
         //conn->destroy(conn);
     }
 }
@@ -123,57 +124,57 @@ mainserver_loop(MainServer *ms)
 static void
 thserver_notify(int fd, short event, void *arg)
 {
-	ThreadServer    *ts   = (ThreadServer*)arg;
-	QueueItem       *itemhead = queue_get(ts->cq);
-	QueueItem		*item = itemhead;
-	Conn            *conn;
-	int				ret;
+    ThreadServer    *ts   = (ThreadServer*)arg;
+    QueueItem       *itemhead = queue_get(ts->cq);
+    QueueItem        *item = itemhead;
+    Conn            *conn;
+    int                ret;
     int             conn_limit = g_cf->max_read_conn;
 
-	DINFO("thserver_notify: %d\n", fd);
+    DINFO("thserver_notify: %d\n", fd);
 
     /*if (conn_limit <= 0) {
         conn_limit = g_cf->max_conn;
     }*/
 
-	char buf;
-	int  i;
-	RwConnInfo *coninfo = ts->rw_conn_info;
+    char buf;
+    int  i;
+    RwConnInfo *coninfo = ts->rw_conn_info;
 
-	ret = read(ts->notify_recv_fd, &buf, 1);
-	while (item) {
-		conn = item->conn; 
-		DINFO("notify fd: %d\n", conn->sock);
-		ts->conns++;
-		for (i = 0; i < conn_limit; i++) {
-			coninfo = &(ts->rw_conn_info[i]);
-			if (coninfo->fd == 0) {
-				coninfo->fd = conn->sock;
-				strcpy(coninfo->client_ip, conn->client_ip);
-				coninfo->port = conn->client_port;
-				memcpy(&coninfo->start, &conn->ctime, sizeof(struct timeval));
-				//coninfo->conn_start = time(0);
-				break;
-			}
-		}
-		conn->thread = ts;
-		conn->base   = ts->base;
-		ret = change_event(conn, EV_READ|EV_PERSIST, g_cf->timeout, 1);
-		if (ret < 0) {
-			DERROR("change event error: %d, close conn\n", ret);
-			conn->destroy(conn);
-		}
-		item = item->next;
-	}
+    ret = read(ts->notify_recv_fd, &buf, 1);
+    while (item) {
+        conn = item->conn; 
+        DINFO("notify fd: %d\n", conn->sock);
+        ts->conns++;
+        for (i = 0; i < conn_limit; i++) {
+            coninfo = &(ts->rw_conn_info[i]);
+            if (coninfo->fd == 0) {
+                coninfo->fd = conn->sock;
+                strcpy(coninfo->client_ip, conn->client_ip);
+                coninfo->port = conn->client_port;
+                memcpy(&coninfo->start, &conn->ctime, sizeof(struct timeval));
+                //coninfo->conn_start = time(0);
+                break;
+            }
+        }
+        conn->thread = ts;
+        conn->base   = ts->base;
+        ret = change_event(conn, EV_READ|EV_PERSIST, g_cf->timeout, 1);
+        if (ret < 0) {
+            DERROR("change event error: %d, close conn\n", ret);
+            conn->destroy(conn);
+        }
+        item = item->next;
+    }
 
-	if (itemhead) {
+    if (itemhead) {
         /*QueueItem *qh = itemhead;
         while (qh) {
             DINFO("try free: %p\n", qh);
             qh = qh->next;
         }*/
-		queue_free(ts->cq, itemhead); 
-	}
+        queue_free(ts->cq, itemhead); 
+    }
 }
 
 static void*
@@ -192,12 +193,12 @@ thserver_init(ThreadServer *ts)
     ts->base = event_base_new();
 
     int conn_limit = g_cf->max_read_conn > 0 ? g_cf->max_read_conn : g_cf->max_conn;
-	ts->rw_conn_info = (RwConnInfo *)zz_malloc(sizeof(RwConnInfo) * conn_limit);
-	if (ts->rw_conn_info == NULL) {
-		DERROR("memlink malloc read connect info error.\n");
-		MEMLINK_EXIT;
-	}
-	memset(ts->rw_conn_info, 0, sizeof(RwConnInfo) * conn_limit);
+    ts->rw_conn_info = (RwConnInfo *)zz_malloc(sizeof(RwConnInfo) * conn_limit);
+    if (ts->rw_conn_info == NULL) {
+        DERROR("memlink malloc read connect info error.\n");
+        MEMLINK_EXIT;
+    }
+    memset(ts->rw_conn_info, 0, sizeof(RwConnInfo) * conn_limit);
 
     ts->cq = queue_create();
     if (NULL == ts->cq) {
@@ -208,7 +209,9 @@ thserver_init(ThreadServer *ts)
     int fds[2];     
     
     if (pipe(fds) == -1) {
-        DERROR("create pipe error! %s\n", strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("create pipe error! %s\n",  errbuf);
         MEMLINK_EXIT;
     }
     
@@ -225,21 +228,27 @@ thserver_init(ThreadServer *ts)
 
     ret = pthread_attr_init(&attr);
     if (ret != 0) {
-        DERROR("pthread_attr_init error: %s\n", strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("pthread_attr_init error: %s\n",  errbuf);
         MEMLINK_EXIT;
     }
 
     ret = pthread_create(&ts->threadid, &attr, thserver_run, ts);
     if (ret != 0) {
-        DERROR("pthread_create error: %s\n", strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("pthread_create error: %s\n",  errbuf);
         MEMLINK_EXIT;
     }
 
-	ret = pthread_detach(ts->threadid);
-	if (ret != 0) {
-		DERROR("pthread_detach error: %s\n", strerror(errno));
-		MEMLINK_EXIT;
-	}
+    ret = pthread_detach(ts->threadid);
+    if (ret != 0) {
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+		DERROR("pthread_detach error: %s\n",  errbuf);
+        MEMLINK_EXIT;
+    }
 
     return 0;
 }

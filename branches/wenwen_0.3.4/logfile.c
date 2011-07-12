@@ -29,7 +29,7 @@ logfile_create(char *filename, int loglevel)
         DERROR("malloc LogFile error!\n");
         return NULL;
     }
-	memset(logger, 0, sizeof(LogFile));
+    memset(logger, 0, sizeof(LogFile));
     logger->loglevel = loglevel;
 
     if (strcmp(filename, "stdout") == 0) {
@@ -39,9 +39,11 @@ logfile_create(char *filename, int loglevel)
         strncpy(logger->filename, filename, 1023);
         logger->logfd = open(filename, O_CREAT|O_WRONLY|O_APPEND, 0644);
         if (-1 == logger->logfd) {
-            fprintf(stderr, "open log file %s error: %s\n", filename, strerror(errno));
+            char errbuf[1024];
+            strerror_r(errno, errbuf, 1024);
+            fprintf(stderr, "open log file %s error: %s\n", filename,  errbuf);
             zz_free(logger);
-			MEMLINK_EXIT;
+            MEMLINK_EXIT;
             return NULL;
         }
     }
@@ -116,34 +118,40 @@ logfile_write(LogFile *log, char *level, char *file, int line, char *format, ...
         wrn   += ret;
     }
 
-	if (log->maxsize > 0) {
-		struct stat fs;
-		ret = fstat(log->logfd, &fs);
-		if (ret == -1) {
-			DERROR("log fstat error: %s\n", strerror(errno));
-		}else{
-			if (fs.st_size >= log->maxsize) {
-				close(log->logfd);
-				char newpath[PATH_MAX];
-				snprintf(newpath, PATH_MAX, "%s.%d%02d%02d-%02d%02d%02d", log->filename, 
-					timestru.tm_year+1900, timestru.tm_mon+1, timestru.tm_mday, 
+    if (log->maxsize > 0) {
+        struct stat fs;
+        ret = fstat(log->logfd, &fs);
+        if (ret == -1) {
+            char errbuf[1024];
+            strerror_r(errno, errbuf, 1024);
+			DERROR("log fstat error: %s\n",  errbuf);
+        }else{
+            if (fs.st_size >= log->maxsize) {
+                close(log->logfd);
+                char newpath[PATH_MAX];
+                snprintf(newpath, PATH_MAX, "%s.%d%02d%02d-%02d%02d%02d", log->filename, 
+                    timestru.tm_year+1900, timestru.tm_mon+1, timestru.tm_mday, 
                     timestru.tm_hour, timestru.tm_min, timestru.tm_sec);
-				ret = rename(log->filename, newpath);
-				if (ret == -1) {
-					DERROR("rename log to %s error! %s\n", newpath, strerror(errno));
-					MEMLINK_EXIT;
-				}
-				log->logfd = open(log->filename, O_CREAT|O_WRONLY|O_APPEND, 0644);
-				if (-1 == log->logfd) {
-					fprintf(stderr, "open log file %s error: %s\n", log->filename, strerror(errno));
-					zz_free(log);
-					MEMLINK_EXIT;
-				}
+                ret = rename(log->filename, newpath);
+                if (ret == -1) {
+                    char errbuf[1024];
+                    strerror_r(errno, errbuf, 1024);
+					DERROR("rename log to %s error! %s\n", newpath,  errbuf);
+                    MEMLINK_EXIT;
+                }
+                log->logfd = open(log->filename, O_CREAT|O_WRONLY|O_APPEND, 0644);
+                if (-1 == log->logfd) {
+                    char errbuf[1024];
+                    strerror_r(errno, errbuf, 1024);
+					fprintf(stderr, "open log file %s error: %s\n", log->filename,  errbuf);
+                    zz_free(log);
+                    MEMLINK_EXIT;
+                }
 
-			}
-		}
+            }
+        }
 
-	}
+    }
 }
 
 /**

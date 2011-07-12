@@ -42,12 +42,12 @@ mask_string2array(char *maskstr, unsigned int *result)
             result[i] = UINT_MAX;
         }else{
         //modifed by wyx 12.27
-        	unsigned long num = strtoul(m, NULL, 10);
-			if (num >= UINT_MAX){
-				//DERROR("num:%lu\n", num);
-				return MEMLINK_ERR_PARAM;
-			}
-			result[i] = num; 
+            unsigned long num = strtoul(m, NULL, 10);
+            if (num >= UINT_MAX){
+                //DERROR("num:%lu\n", num);
+                return MEMLINK_ERR_PARAM;
+            }
+            result[i] = num; 
         }
         i++;
         if (fi != NULL) {
@@ -93,28 +93,28 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
         
         unsigned char y = (b + mf) % 8;
         n = (b + mf) / 8 + (y>0 ? 1: 0);
-		if (n > 4) {
-			flow = v >> (32 - b);
-		}
+        if (n > 4) {
+            flow = v >> (32 - b);
+        }
         v = v << b;
         unsigned char m = 0xffffffff >> (32 - b);
         unsigned char x = mask[idx] & m;
 
         v = v | x;
-		if (n > 4) {
-        	memcpy(&mask[idx], &v, sizeof(int));
-		} else {
-			memcpy(&mask[idx], &v, n);
-		}
+        if (n > 4) {
+            memcpy(&mask[idx], &v, sizeof(int));
+        } else {
+            memcpy(&mask[idx], &v, n);
+        }
 
         if (y > 0) {
             idx += n - 1;
         }else{
             idx += n;
         }
-		if (n > 4) {
-			mask[idx] = mask[idx] | flow;
-		}
+        if (n > 4) {
+            mask[idx] = mask[idx] | flow;
+        }
 
         b = y;
 
@@ -161,13 +161,13 @@ int2string(char *s, unsigned int val)
     int ret, i = 0, j = 0;
     char ss[32];
 
-	if (v == 0) {
-		s[0] = '0';
-		return 1;
-	}
+    if (v == 0) {
+        s[0] = '0';
+        return 1;
+    }
 
-	if (v == UINT_MAX)
-		return 0;
+    if (v == UINT_MAX)
+        return 0;
 
     while (v > 0) {
         yu = v % 10;
@@ -189,20 +189,20 @@ int2string(char *s, unsigned int val)
 int 
 mask_binary2string(unsigned char *maskformat, int masknum, char *mask, int masklen, char *maskstr)
 {
-	int n	= 2;
-	int idx = 0;
-	unsigned int val;
-	int i;
-	int widx = 0;
+    int n    = 2;
+    int idx = 0;
+    unsigned int val;
+    int i;
+    int widx = 0;
    
-	for (i = 0; i < masknum; i++) {
-		int fs = maskformat[i];
-		int offset = (fs + n) % 8;
-		int yu = offset > 0 ? 1: 0;
-		int cs = (fs + n) / 8 + yu;
+    for (i = 0; i < masknum; i++) {
+        int fs = maskformat[i];
+        int offset = (fs + n) % 8;
+        int yu = offset > 0 ? 1: 0;
+        int cs = (fs + n) / 8 + yu;
 
         //DINFO("i:%d, fs:%d, cs:%d, offset:%d, n:%d, widx:%d\n", i, fs, cs, offset, n, widx);
-		val = 0;
+        val = 0;
         if (cs <= 4) {
             //DINFO("copy:%d\n", cs);
             memcpy(&val, &mask[idx], cs);
@@ -220,22 +220,22 @@ mask_binary2string(unsigned char *maskformat, int masknum, char *mask, int maskl
             val = val | val2;
         }
 
-		if (widx != 0) {
-			maskstr[widx] = ':';	
-			widx ++;
-		}
-		int len = int2string(&maskstr[widx], val);		
-		widx += len;
+        if (widx != 0) {
+            maskstr[widx] = ':';    
+            widx ++;
+        }
+        int len = int2string(&maskstr[widx], val);        
+        widx += len;
 
-		idx += cs - 1;
-		if (yu == 0) {
-			idx += 1;
-		}
-	    n = offset;
-	}
+        idx += cs - 1;
+        if (yu == 0) {
+            idx += 1;
+        }
+        n = offset;
+    }
     maskstr[widx] = 0;
 
-	return widx;
+    return widx;
 }
 
 int 
@@ -263,17 +263,17 @@ mask_array2flag(unsigned char *maskformat, unsigned int *maskarray, char masknum
             v = v << b;
 
             char *cpdata = (char *)&v;
-			if (xlen <= 4) {
-				for (j = 0; j < xlen; j++) {
-					mask[idx + j] |= cpdata[j];
-				}
-			}else{
-				for (j = 0; j < 4; j++) {
-					mask[idx + j] |= cpdata[j];
-				}
-				unsigned char v2 = 0xff >> (8 - (mf + b) - 32);
-				mask[idx + j] |= v2;
-			}
+            if (xlen <= 4) {
+                for (j = 0; j < xlen; j++) {
+                    mask[idx + j] |= cpdata[j];
+                }
+            }else{
+                for (j = 0; j < 4; j++) {
+                    mask[idx + j] |= cpdata[j];
+                }
+                unsigned char v2 = 0xff >> (8 - (mf + b) - 32);
+                mask[idx + j] |= v2;
+            }
             //idx += xlen - 1;
             idx += (b + mf) / 8;
             b   = (b + mf) % 8;
@@ -471,7 +471,7 @@ cmd_count_pack(char *data, char *key, unsigned char masknum, unsigned int *maska
 
     ret = pack_string(data + count, key, 0);
     count += ret;
-	count += pack_mask(data + count, maskarray, masknum);
+    count += pack_mask(data + count, maskarray, masknum);
 
     len = count - CMD_REQ_SIZE_LEN;
     memcpy(data, &len, CMD_REQ_SIZE_LEN);
@@ -486,7 +486,7 @@ cmd_count_unpack(char *data, char *key, unsigned char *masknum, unsigned int *ma
     int count = CMD_REQ_HEAD_LEN;
 
     count += unpack_string(data + count, key, &keylen);
-	unpack_mask(data + count, maskarray, masknum);
+    unpack_mask(data + count, maskarray, masknum);
 
     return 0;
 }
@@ -505,7 +505,7 @@ cmd_sortlist_count_pack(char *data, char *key, unsigned char masknum, unsigned i
 
     ret = pack_string(data + count, key, 0);
     count += ret;
-	count += pack_mask(data + count, maskarray, masknum);
+    count += pack_mask(data + count, maskarray, masknum);
     count += pack_string(data + count, valmin, vminlen);
     count += pack_string(data + count, valmax, vmaxlen);
 
@@ -523,7 +523,7 @@ cmd_sortlist_count_unpack(char *data, char *key, unsigned char *masknum, unsigne
     int count = CMD_REQ_HEAD_LEN;
 
     count += unpack_string(data + count, key, &keylen);
-	count += unpack_mask(data + count, maskarray, masknum);
+    count += unpack_mask(data + count, maskarray, masknum);
     count += unpack_string(data + count, valmin, vminlen);
     unpack_string(data + count, valmax, vmaxlen);
 
@@ -874,8 +874,8 @@ cmd_range_pack(char *data, char *key, unsigned char kind, unsigned char masknum,
     memcpy(data + count, &cmd, sizeof(char));
     count += sizeof(char);
     count += pack_string(data + count, key, 0);
-	memcpy(data + count, &kind, sizeof(char));
-	count += sizeof(char);
+    memcpy(data + count, &kind, sizeof(char));
+    count += sizeof(char);
     //count += pack_string(data + count, maskformat, masknum);
     count += pack_mask(data + count, maskarray, masknum);
     memcpy(data + count, &frompos, sizeof(int));
@@ -896,8 +896,8 @@ cmd_range_unpack(char *data, char *key, unsigned char *kind, unsigned char *mask
     int count = CMD_REQ_HEAD_LEN;
     //unsigned char mlen;
     count += unpack_string(data + count, key, NULL); 
-	memcpy(kind, data + count, sizeof(char));
-	count += sizeof(char);
+    memcpy(kind, data + count, sizeof(char));
+    count += sizeof(char);
     //count += unpack_string(data + count, maskformat, &mlen);
     count += unpack_mask(data + count, maskarray, masknum);
     memcpy(frompos, data + count, sizeof(int));
@@ -919,8 +919,8 @@ cmd_sortlist_range_pack(char *data, char *key, unsigned char kind,
     memcpy(data + count, &cmd, sizeof(char));
     count += sizeof(char);
     count += pack_string(data + count, key, 0);
-	memcpy(data + count, &kind, sizeof(char));
-	count += sizeof(char);
+    memcpy(data + count, &kind, sizeof(char));
+    count += sizeof(char);
     //count += pack_string(data + count, maskformat, masknum);
     count += pack_mask(data + count, maskarray, masknum);
     //memcpy(data + count, &frompos, sizeof(int));
@@ -944,8 +944,8 @@ cmd_sortlist_range_unpack(char *data, char *key, unsigned char *kind,
     int count = CMD_REQ_HEAD_LEN;
     //unsigned char mlen;
     count += unpack_string(data + count, key, NULL); 
-	memcpy(kind, data + count, sizeof(char));
-	count += sizeof(char);
+    memcpy(kind, data + count, sizeof(char));
+    count += sizeof(char);
     //count += unpack_string(data + count, maskformat, &mlen);
     count += unpack_mask(data + count, maskarray, masknum);
     //memcpy(frompos, data + count, sizeof(int));
@@ -961,7 +961,7 @@ cmd_sortlist_range_unpack(char *data, char *key, unsigned char *kind,
 int 
 cmd_ping_pack(char *data)
 {
-	unsigned char  cmd = CMD_PING;
+    unsigned char  cmd = CMD_PING;
     unsigned int  len;
     int count = CMD_REQ_SIZE_LEN;
 
@@ -970,12 +970,12 @@ cmd_ping_pack(char *data)
     len = count - CMD_REQ_SIZE_LEN;
     memcpy(data, &len, CMD_REQ_SIZE_LEN);
 
-	return count;
+    return count;
 }
 int 
 cmd_ping_unpack(char *data)
 {
-	return 0;
+    return 0;
 }
 
 int 
@@ -1082,26 +1082,26 @@ cmd_sync_pack(char *data, unsigned int logver, unsigned int logpos)
     memcpy(data + count, &cmd, sizeof(char));
     count += sizeof(char);
 
-	memcpy(data + count, &logver, sizeof(int));
-	count += sizeof(int);
-	memcpy(data + count, &logpos, sizeof(int));
-	count += sizeof(int);
-	len = count - CMD_REQ_SIZE_LEN;
+    memcpy(data + count, &logver, sizeof(int));
+    count += sizeof(int);
+    memcpy(data + count, &logpos, sizeof(int));
+    count += sizeof(int);
+    len = count - CMD_REQ_SIZE_LEN;
     memcpy(data, &len, CMD_REQ_SIZE_LEN);
-	
-	return count;
+    
+    return count;
 }
 
 int 
 cmd_sync_unpack(char *data, unsigned int *logver, unsigned int *logpos)
 {
-	int count = CMD_REQ_HEAD_LEN;
-	
-	memcpy(logver, data + count, sizeof(int));
-	count += sizeof(int);
-	memcpy(logpos, data + count, sizeof(int));
+    int count = CMD_REQ_HEAD_LEN;
+    
+    memcpy(logver, data + count, sizeof(int));
+    count += sizeof(int);
+    memcpy(logpos, data + count, sizeof(int));
 
-	return 0;
+    return 0;
 }
 
 int 
@@ -1114,26 +1114,26 @@ cmd_getdump_pack(char *data, unsigned int dumpver, unsigned long long size)
     memcpy(data + count, &cmd, sizeof(char));
     count += sizeof(char);
 
-	memcpy(data + count, &dumpver, sizeof(int));
-	count += sizeof(int);
-	memcpy(data + count, &size, sizeof(long long));
-	count += sizeof(long long);
-	len = count - CMD_REQ_SIZE_LEN;
+    memcpy(data + count, &dumpver, sizeof(int));
+    count += sizeof(int);
+    memcpy(data + count, &size, sizeof(long long));
+    count += sizeof(long long);
+    len = count - CMD_REQ_SIZE_LEN;
     memcpy(data, &len, CMD_REQ_SIZE_LEN);
-	
-	return count;
+    
+    return count;
 }
 
 int 
 cmd_getdump_unpack(char *data, unsigned int *dumpver, unsigned long long *size)
 {
-	int count = CMD_REQ_HEAD_LEN;
-	
-	memcpy(dumpver, data + count, sizeof(int));
-	count += sizeof(int);
-	memcpy(size, data + count, sizeof(long long));
+    int count = CMD_REQ_HEAD_LEN;
+    
+    memcpy(dumpver, data + count, sizeof(int));
+    count += sizeof(int);
+    memcpy(size, data + count, sizeof(long long));
 
-	return 0;
+    return 0;
 }
 
 /*int 
@@ -1196,184 +1196,184 @@ cmd_insert_mvalue_unpack(char *data, char *key, MemLinkInsertVal **items, int *n
 int
 cmd_del_by_mask_pack(char *data, char *key, unsigned int *maskarray, unsigned char masknum)
 {
-	unsigned char cmd = CMD_DEL_BY_MASK;
-	int count = CMD_REQ_SIZE_LEN;
-	unsigned int len;
+    unsigned char cmd = CMD_DEL_BY_MASK;
+    int count = CMD_REQ_SIZE_LEN;
+    unsigned int len;
 
-	memcpy(data + count, &cmd, sizeof(char));
-	count += sizeof(char);
-	count += pack_string(data + count, key, 0);
-	count += pack_mask(data + count, maskarray, masknum);
+    memcpy(data + count, &cmd, sizeof(char));
+    count += sizeof(char);
+    count += pack_string(data + count, key, 0);
+    count += pack_mask(data + count, maskarray, masknum);
 
-	len = count - CMD_REQ_SIZE_LEN;
-	memcpy(data, &len, CMD_REQ_SIZE_LEN);
+    len = count - CMD_REQ_SIZE_LEN;
+    memcpy(data, &len, CMD_REQ_SIZE_LEN);
 
-	return count;
+    return count;
 }
 
 int
 cmd_del_by_mask_unpack(char *data, char *key, unsigned int *maskarray, unsigned char *masknum)
 {
-	int count = CMD_REQ_HEAD_LEN;
+    int count = CMD_REQ_HEAD_LEN;
 
-	count += unpack_string(data + count, key, NULL);
-	count += unpack_mask(data + count, maskarray, masknum);
+    count += unpack_string(data + count, key, NULL);
+    count += unpack_mask(data + count, maskarray, masknum);
 
-	return 0;
+    return 0;
 }
 
 int
 cmd_insert_mkv_pack(char *data, MemLinkInsertMkv *mkv)
 {
-	unsigned char cmd = CMD_INSERT_MKV;
-	unsigned int len;
-	int count = CMD_REQ_SIZE_LEN;
-	MemLinkInsertKey *keyitem;
-	MemLinkInsertVal *valitem;
+    unsigned char cmd = CMD_INSERT_MKV;
+    unsigned int len;
+    int count = CMD_REQ_SIZE_LEN;
+    MemLinkInsertKey *keyitem;
+    MemLinkInsertVal *valitem;
 
-	memcpy(data + count, &cmd, sizeof(char));
-	count += sizeof(char);
-	//memcpy(data + count, &(mkv->keynum), sizeof(int));
-	//count += sizeof(int);
+    memcpy(data + count, &cmd, sizeof(char));
+    count += sizeof(char);
+    //memcpy(data + count, &(mkv->keynum), sizeof(int));
+    //count += sizeof(int);
 
-	keyitem = mkv->keylist;
+    keyitem = mkv->keylist;
 
-	while(keyitem != NULL) {
-		valitem = keyitem->vallist;
-		//memcpy(data + count, &(keyitem->keylen), sizeof(char));
-		//count += sizeof(char);
-		//memcpy(data + count , keyitem->key, keyitem->keylen);
-		//count += keyitem->keylen;
-		count += pack_string(data + count, keyitem->key, 0);
-		memcpy(data + count, &(keyitem->valnum), sizeof(int));
-		count += sizeof(int);
+    while(keyitem != NULL) {
+        valitem = keyitem->vallist;
+        //memcpy(data + count, &(keyitem->keylen), sizeof(char));
+        //count += sizeof(char);
+        //memcpy(data + count , keyitem->key, keyitem->keylen);
+        //count += keyitem->keylen;
+        count += pack_string(data + count, keyitem->key, 0);
+        memcpy(data + count, &(keyitem->valnum), sizeof(int));
+        count += sizeof(int);
 
-		while (valitem != NULL) {
-			count += pack_string(data + count, valitem->value, valitem->valuelen);
-			count += pack_mask(data + count, valitem->maskarray, valitem->masknum);
-			memcpy(data + count, &(valitem->pos), sizeof(int));
-			count += sizeof(int);
-			valitem = valitem->next;
-		}
-		keyitem = keyitem->next;
-	}
+        while (valitem != NULL) {
+            count += pack_string(data + count, valitem->value, valitem->valuelen);
+            count += pack_mask(data + count, valitem->maskarray, valitem->masknum);
+            memcpy(data + count, &(valitem->pos), sizeof(int));
+            count += sizeof(int);
+            valitem = valitem->next;
+        }
+        keyitem = keyitem->next;
+    }
 
-	len = count - CMD_REQ_SIZE_LEN;
-	memcpy(data, &len, CMD_REQ_SIZE_LEN);
-	
-	return count;
+    len = count - CMD_REQ_SIZE_LEN;
+    memcpy(data, &len, CMD_REQ_SIZE_LEN);
+    
+    return count;
 }
 
 int
 cmd_insert_mkv_unpack_packagelen(char *data, unsigned int *package_len)
 {
-	int count = 0;
+    int count = 0;
 
-	memcpy(package_len, data, sizeof(int));
-	count += sizeof(int);
-	return count;
+    memcpy(package_len, data, sizeof(int));
+    count += sizeof(int);
+    return count;
 }
 
 int
 cmd_insert_mkv_unpack_keycount(char *data, unsigned int *keycount)
 {
-	int count = 0;
+    int count = 0;
 
-	memcpy(keycount, data, sizeof(int));
-	count += sizeof(int);
-	
-	return count;
+    memcpy(keycount, data, sizeof(int));
+    count += sizeof(int);
+    
+    return count;
 }
 
 int
 cmd_insert_mkv_unpack_key(char *data, char *key, unsigned int *valcount, char **countstart)
 {
-	int count = 0;
-	
-	count += unpack_string(data, key, NULL);
-	memcpy(valcount, data + count, sizeof(int));
-	//记录每个key下面value个数在包中的位置， 这个可能被修改
-	*countstart = data + count;
-	count += sizeof(int);
+    int count = 0;
+    
+    count += unpack_string(data, key, NULL);
+    memcpy(valcount, data + count, sizeof(int));
+    //记录每个key下面value个数在包中的位置， 这个可能被修改
+    *countstart = data + count;
+    count += sizeof(int);
 
-	return count;
+    return count;
 }
 
 int
 cmd_insert_mkv_unpack_val(char *data, char *value, unsigned char *valuelen,
-	unsigned char *masknum, unsigned int *maskarray, int *pos)
+    unsigned char *masknum, unsigned int *maskarray, int *pos)
 {
-	int count = 0;
-	unsigned char vlen;
+    int count = 0;
+    unsigned char vlen;
 
-	count += unpack_string(data, value, &vlen);
-	*valuelen = vlen;
-	count += unpack_mask(data + count, maskarray, masknum);
-	memcpy(pos, data + count, sizeof(int));
-	count += sizeof(int);
+    count += unpack_string(data, value, &vlen);
+    *valuelen = vlen;
+    count += unpack_mask(data + count, maskarray, masknum);
+    memcpy(pos, data + count, sizeof(int));
+    count += sizeof(int);
 
-	return count;
+    return count;
 }
 
 int
 cmd_read_conn_info_pack(char *data)
 {
-	unsigned char cmd = CMD_READ_CONN_INFO;
-	int count = CMD_REQ_SIZE_LEN;
+    unsigned char cmd = CMD_READ_CONN_INFO;
+    int count = CMD_REQ_SIZE_LEN;
 
-	memcpy(data + count, &cmd, sizeof(char));
-	count += sizeof(char);
-	
-	int len = count - CMD_REQ_SIZE_LEN;
-	memcpy(data, &len, CMD_REQ_SIZE_LEN);
-	return count;
+    memcpy(data + count, &cmd, sizeof(char));
+    count += sizeof(char);
+    
+    int len = count - CMD_REQ_SIZE_LEN;
+    memcpy(data, &len, CMD_REQ_SIZE_LEN);
+    return count;
 }
 int
 cmd_read_conn_info_unpack(char *data)
 {
-	return 0;
+    return 0;
 }
 
 
 int
 cmd_write_conn_info_pack(char *data)
 {
-	unsigned char cmd = CMD_WRITE_CONN_INFO;
-	int count = CMD_REQ_SIZE_LEN;
+    unsigned char cmd = CMD_WRITE_CONN_INFO;
+    int count = CMD_REQ_SIZE_LEN;
 
-	memcpy(data + count, &cmd, sizeof(char));
-	count += sizeof(char);
-	
-	int len = count - CMD_REQ_SIZE_LEN;
+    memcpy(data + count, &cmd, sizeof(char));
+    count += sizeof(char);
+    
+    int len = count - CMD_REQ_SIZE_LEN;
 
-	memcpy(data, &len, CMD_REQ_SIZE_LEN);
-	return count;
+    memcpy(data, &len, CMD_REQ_SIZE_LEN);
+    return count;
 }
 int
 cmd_write_conn_info_unpack(char *data)
 {
-	return 0;
+    return 0;
 }
 
 int
 cmd_sync_conn_info_pack(char *data)
 {
-	unsigned char cmd = CMD_SYNC_CONN_INFO;
-	int count = CMD_REQ_SIZE_LEN;
+    unsigned char cmd = CMD_SYNC_CONN_INFO;
+    int count = CMD_REQ_SIZE_LEN;
 
-	memcpy(data + count, &cmd, sizeof(char));
-	count += sizeof(char);
-	
-	int len = count - CMD_REQ_SIZE_LEN;
+    memcpy(data + count, &cmd, sizeof(char));
+    count += sizeof(char);
+    
+    int len = count - CMD_REQ_SIZE_LEN;
 
-	memcpy(data, &len, CMD_REQ_SIZE_LEN);
-	return count;
+    memcpy(data, &len, CMD_REQ_SIZE_LEN);
+    return count;
 }
 
 int
 cmd_sync_conn_info_unpack(char *data)
 {
-	return 0;
+    return 0;
 }
 
 int 

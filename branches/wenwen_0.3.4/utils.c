@@ -121,7 +121,9 @@ timeout_wait(int fd, int timeout, int writing)
             if (errno == EINTR) {
                 continue;
             }
-            DERROR("select error: %d, %s\n", n, strerror(errno));
+            char errbuf[1024];
+            strerror_r(errno, errbuf, 1024);
+            DERROR("select error: %d, %s\n", n,  errbuf);
             return MEMLINK_ERR;
         }
         break;
@@ -160,7 +162,9 @@ timeout_wait(int fd, int timeout, int writing)
             if (errno == EINTR) {
                 continue;
             }
-            DERROR("poll error: %d, %s\n", fds[0].fd, strerror(errno));
+            char errbuf[1024];
+            strerror_r(errno, errbuf, 1024);
+            DERROR("poll error: %d, %s\n", fds[0].fd,  errbuf);
             return -1;
         }
         break;
@@ -178,13 +182,13 @@ timeout_wait(int fd, int timeout, int writing)
 int
 timeout_wait_read(int fd, int timeout)
 {
-	return timeout_wait(fd, timeout, 0);
+    return timeout_wait(fd, timeout, 0);
 }
 
 int
 timeout_wait_write(int fd, int timeout)
 {
-	return timeout_wait(fd, timeout, 1);
+    return timeout_wait(fd, timeout, 1);
 }
 
 /**
@@ -203,16 +207,20 @@ readn(int fd, void *vptr, size_t n, int timeout)
     nleft = n;
 
     while (nleft > 0) {
-		if (timeout > 0 && timeout_wait_read(fd, timeout) != MEMLINK_TRUE) {
+        if (timeout > 0 && timeout_wait_read(fd, timeout) != MEMLINK_TRUE) {
             DERROR("read timeout.\n");
-			break;
-		}
+            break;
+        }
         if ((nread = read(fd, ptr, nleft)) < 0) {
-            //DERROR("nread: %d, error: %s\n", nread, strerror(errno));
+            char errbuf[1024];
+            strerror_r(errno, errbuf, 1024);
+            //DERROR("nread: %d, error: %s\n", nread,  errbuf);
             if (errno == EINTR) {
                 nread = 0;
             }else {
-                DERROR("readn error: %s\n", strerror(errno));
+                char errbuf[1024];
+                strerror_r(errno, errbuf, 1024);
+                DERROR("readn error: %s\n",  errbuf);
                 //MEMLINK_EXIT;
                 return -1;
             }
@@ -243,15 +251,17 @@ writen(int fd, const void *vptr, size_t n, int timeout)
 
     while (nleft > 0) {
         //DINFO("try write %d via fd %d\n", (int)nleft, fd);
-		if (timeout > 0 && timeout_wait_write(fd, timeout) != MEMLINK_TRUE) {
-			break;
-		}
+        if (timeout > 0 && timeout_wait_write(fd, timeout) != MEMLINK_TRUE) {
+            break;
+        }
 
         if ((nwritten = write(fd, ptr, nleft)) <= 0) {
             if (nwritten < 0 && errno == EINTR){
                 nwritten = 0;
             }else{
-                DERROR("writen error: %s\n", strerror(errno));
+                char errbuf[1024];
+                strerror_r(errno, errbuf, 1024);
+                DERROR("writen error: %s\n",  errbuf);
                 //MEMLINK_EXIT;
                 return -1;
             }
@@ -341,11 +351,11 @@ formath(char *data, int datalen, char *buf, int blen)
     int i;
     unsigned char c;
     int idx = 0;
-	int maxlen = blen - 4;
+    int maxlen = blen - 4;
 
     for (i = datalen - 1; i >= 0; i--) {
-		if (idx >= maxlen)
-			break;
+        if (idx >= maxlen)
+            break;
         c = data[i];
         snprintf(buf + idx, blen-idx, "%02x ", c);
         idx += 3;
@@ -374,7 +384,7 @@ timeend(struct timeval *start, struct timeval *end, char *info)
 unsigned int 
 timediff(struct timeval *start, struct timeval *end)
 {
-	return 1000000 * (end->tv_sec - start->tv_sec) + (end->tv_usec - start->tv_usec);
+    return 1000000 * (end->tv_sec - start->tv_sec) + (end->tv_usec - start->tv_usec);
 }
 
 /**
@@ -435,14 +445,14 @@ isexists (char *path)
 long long
 file_size(char *path)
 {
-	struct stat buf;
-	if (stat(path, &buf) != 0) {
-		return -1;
-	}
-	if (S_ISREG(buf.st_mode)) {
-		return buf.st_size;
-	}
-	return -2;
+    struct stat buf;
+    if (stat(path, &buf) != 0) {
+        return -1;
+    }
+    if (S_ISREG(buf.st_mode)) {
+        return buf.st_size;
+    }
+    return -2;
 }
 
 int 
@@ -454,23 +464,23 @@ compare_int ( const void *a , const void *b )
 size_t
 ffwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 {
-	size_t ret = fwrite(ptr, size, nmemb, stream);
-	if (ret != nmemb) {
-		DERROR("fwrite error, write:%d, must:%d\n", (int)ret, (int)nmemb);
-		MEMLINK_EXIT;
-	}
-	return ret;
+    size_t ret = fwrite(ptr, size, nmemb, stream);
+    if (ret != nmemb) {
+        DERROR("fwrite error, write:%d, must:%d\n", (int)ret, (int)nmemb);
+        MEMLINK_EXIT;
+    }
+    return ret;
 }
 
 size_t
 ffread(void *ptr, size_t size, size_t nmemb, FILE *stream)
 {
-	size_t ret = fread(ptr, size, nmemb, stream);
-	if (ret != nmemb) {
-		DERROR("fread error, read:%d, must:%d\n", (int)ret, (int)nmemb);
-		MEMLINK_EXIT;
-	}
-	return ret;
+    size_t ret = fread(ptr, size, nmemb, stream);
+    if (ret != nmemb) {
+        DERROR("fread error, read:%d, must:%d\n", (int)ret, (int)nmemb);
+        MEMLINK_EXIT;
+    }
+    return ret;
 }
 
 int
@@ -491,12 +501,16 @@ change_group_user(char *user)
     int ret;
     ret = setgid(pw->pw_gid);
     if (ret < 0) {
-        DERROR("failed to set group: %d, %s\n", pw->pw_gid, strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("failed to set group: %d, %s\n", pw->pw_gid,  errbuf);
         return -1;
     }
     ret = setuid(pw->pw_uid);
     if (ret < 0) {
-        DERROR("failed to set user %s, %s\n", user, strerror(errno));
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("failed to set user %s, %s\n", user,  errbuf);
         return -1;
     }
     
