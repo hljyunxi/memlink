@@ -80,14 +80,14 @@ mempool_get(MemPool *mp, int blocksize)
         return dbk;
     }
 
-	mp->blocks--;
-	mp->freemem[i].block_count -= 1;
+    mp->blocks--;
+    mp->freemem[i].block_count -= 1;
     dbn = dbk->next;
     mp->freemem[i].data = dbn; 
     //memset(dbk, 0, sizeof(DataBlock) + g_cf->block_data_count * blocksize);
     memset(dbk, 0, blocksize);
-	//mp->freemem[i].ht_use = mp->freemem[i].ht_use + 1;
-	
+    //mp->freemem[i].ht_use = mp->freemem[i].ht_use + 1;
+    
     return dbk;
 }
 
@@ -105,20 +105,20 @@ mempool_put(MemPool *mp, DataBlock *dbk, int blocksize)
 {
     int i;
 
-	zz_check(dbk);
+    zz_check(dbk);
 
-	dbk->data_count = 0;
+    dbk->data_count = 0;
     dbk->prev = NULL;
     for (i = 0; i < mp->used; i++) {
         if (mp->freemem[i].memsize == blocksize) {
             dbk->next = mp->freemem[i].data;
             mp->freemem[i].data = dbk; 
-			mp->blocks++;
-			mp->freemem[i].block_count += 1;
+            mp->blocks++;
+            mp->freemem[i].block_count += 1;
             return 0;
         }
     }
-	dbk->next = NULL;
+    dbk->next = NULL;
     if (i < mp->size) {
         mp->freemem[i].data = dbk;
         mp->freemem[i].memsize = blocksize;
@@ -131,12 +131,12 @@ mempool_put(MemPool *mp, DataBlock *dbk, int blocksize)
         mp->freemem[mp->used].data = dbk;
 
         mp->used += 1;
-	
+    
         zz_check(dbk);
     }
 
-	mp->blocks++;
-	mp->freemem[i].block_count += 1;
+    mp->blocks++;
+    mp->freemem[i].block_count += 1;
     return 0;
 }
 
@@ -152,8 +152,8 @@ mempool_expand(MemPool *mp)
     int newnum = mp->size * 2;           
     MemItem  *newitems = (MemItem*)zz_malloc(sizeof(MemItem) * newnum);
     if (NULL == newitems) {
-		DERROR("malloc error!\n");
-		MEMLINK_EXIT;
+        DERROR("malloc error!\n");
+        MEMLINK_EXIT;
         return -1;
     }
     
@@ -181,7 +181,7 @@ mempool_free(MemPool *mp, int blocksize)
                 dbk = dbk->next;
 
                 zz_free(tmp);
-				mp->blocks--;
+                mp->blocks--;
             }
             mp->freemem[i].data = NULL;
         }
