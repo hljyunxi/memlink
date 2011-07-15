@@ -219,8 +219,8 @@ MemLinkResult.__str__ = memlinkresult_print
 def memlinkrcinfo_free(self):
     memlink_rcinfo_free(self)
 
-def memlinkrcinfo_print(slef):
-    s = 'connect count: %d' % (self.conncount)
+def memlinkrcinfo_print(self):
+    s = 'read count: %d\n' % (self.conncount)
     item = self.root
     while item:
         s += 'fd:%s client_ip: %s port: %s cmd_count: %s conn_time: %s\n' % \
@@ -236,7 +236,7 @@ def memlinkwcinfo_free(self):
     memlink_wcinfo_free(self)
 
 def memlinkwcinfo_print(self):
-    s = 'connect count: %d' % (self.conncount)
+    s = 'write count: %d\n' % (self.conncount)
     item = self.root
     while item:
         s += 'fd: %s client_ip: %s port: %s cmd_count: %s conn_time: %s\n' % \
@@ -252,7 +252,7 @@ def memlinkscinfo_free(self):
     memlink_scinfo_free(self)
 
 def memlinkscinfo_print(self):
-    s = 'connect count: %d' % (self.conncount)
+    s = 'sync count: %d\n' % (self.conncount)
     item = self.root
     while item:
         s += 'fd: %s client_ip: %s port: %s cmd_count: %s conn_time: %s logver: %s logline: %s delay: %s\n' % \
