@@ -4,31 +4,35 @@ import os, glob
 libevent_version = 1
 install_dir = '/opt/memlink'
 defs     = ['RECV_LOG_BY_PACKAGE', 'DEBUG', "__USE_FILE_OFFSET64", "__USE_LARGEFILE64", "_LARGEFILE_SOURCE", "_LARGEFILE64_SOURCE", "_FILE_OFFSET_BITS=64", '_REENTRANT']
-#defs     = ['RECV_LOG_BY_PACKAGE','DEBUG', "__USE_FILE_OFFSET64", "__USE_LARGEFILE64", "_LARGEFILE_SOURCE", "_LARGEFILE64_SOURCE", "_FILE_OFFSET_BITS=64"]
 includes = ['.']
 libpath  = []
 
 # use gnu malloc
-libs     = ['event', 'm', 'pthread']
-# use tcmalloc
-#libs     = ['event', 'm', 'tcmalloc_minimal']
+libs     = ['m', 'pthread']
 
 cflags   = "-ggdb -pthread -std=gnu99 -Wall -Werror"
+libevent = '/usr/lib/libevent.a'
+libtcmalloc = '/usr/local/lib/libtcmalloc_minimal.a'
+files = glob.glob("*.c")
 
-if 'debug' in  BUILD_TARGETS or 'memlink-debug' in BUILD_TARGETS:
-	libtcmalloc = '/usr/local/lib/libtcmalloc_minimal.a'
-	bin = 'memlink-debug'
-	if 'debug' in BUILD_TARGETS:
-		BUILD_TARGETS[0] = bin
-	files = glob.glob("*.c")
-	files.append('/usr/local/lib/libevent.a')
+if ARGUMENTS.get('static','0') == '1':
+	files.append(libevent)
+	libs.append('rt')
+else:
+	libs.insert(0,'event')
+if ARGUMENTS.get('tcmalloc','0') == '1':
 	if os.path.isfile(libtcmalloc):
 		print '====== use google tcmalloc! ======'
 		files.append(libtcmalloc)
 		libs.append('stdc++')
 		defs.append('TCMALLOC')
 	else:
-		print '====== use gnu malloc! ======'
+		print '====== not find tcmalloc,use gnu malloc! ======'
+
+if 'debug' in  BUILD_TARGETS or 'memlink-debug' in BUILD_TARGETS:
+	bin = 'memlink-debug'
+	if 'debug' in BUILD_TARGETS:
+		BUILD_TARGETS[0] = bin
 	defs.append('DEBUGMEM')
 
 	env = Environment(CFLAGS=cflags, CPPDEFINES=defs, CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
@@ -36,19 +40,8 @@ if 'debug' in  BUILD_TARGETS or 'memlink-debug' in BUILD_TARGETS:
 	#env.StaticLibrary(bin, files)
 	Default(memlink)
 else:
-	libtcmalloc = '/usr/local/lib/libtcmalloc_minimal.a'
 	bin    = "memlink"
 	cflags += " -O2"
-	files = glob.glob("*.c")
-	files.append('/usr/local/lib/libevent.a')
-	if os.path.isfile(libtcmalloc):
-		print '====== use google tcmalloc! ======'
-		files.append(libtcmalloc)
-		libs.append('stdc++')
-		defs.append('TCMALLOC')
-	else:
-		print '====== use gnu malloc! ======'
-
 	env = Environment(CFLAGS=cflags, CPPDEFINES=defs, CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
 	memlink = env.Program(bin, files)
 

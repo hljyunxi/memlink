@@ -145,7 +145,7 @@ memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
             return ret;
         }
     }
-    ret = send_t(fd, rbuf, RECV_PKG_SIZE_LEN,0,m->timeout);
+    ret = recv_t(fd, rbuf, RECV_PKG_SIZE_LEN,0,m->timeout);
     //DINFO("read head: %d\n", ret);
     if (ret != RECV_PKG_SIZE_LEN) {
         DERROR("read head error! ret:%d, %u\n", ret, RECV_PKG_SIZE_LEN);
@@ -168,7 +168,7 @@ memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
         return MEMLINK_ERR_RECV_BUFFER;
     }
 
-    ret = send_t(fd, rbuf + RECV_PKG_SIZE_LEN, datalen,0, m->timeout);
+    ret = recv_t(fd, rbuf + RECV_PKG_SIZE_LEN, datalen,0, m->timeout);
     //DINFO("readn return: %d\n", ret);
     if (ret != datalen) {
         DERROR("read data error! ret:%d\n", ret);
@@ -216,7 +216,7 @@ memlink_write(MemLink *m, int fdtype, char *wbuf, int wlen)
         }
     }
 
-    ret = writen(fd, wbuf, wlen, m->timeout);
+    ret = send_t(fd, wbuf, wlen,0,m->timeout);
     //DINFO("writen: %d\n", ret);
     if (ret < 0) {
         DERROR("write data error, ret: %d\n", ret);
@@ -253,11 +253,15 @@ memlink_do_cmd(MemLink *m, int fdtype, char *data, int len, char *retdata, int r
     int ret;
     //check socket valid every loop    
     if (fdtype == MEMLINK_READER) {
-        if(m->readfd>0 && checksock(m->readfd)<0)
-            m->readfd=-1;
+        if(m->readfd>0 && (checksock(m->readfd)<0)){
+            close(m->readfd);
+            m->readfd=0;
+        }
     }else if (fdtype == MEMLINK_WRITER) {
-        if(m->writefd>0 && checksock(m->writefd)<0)
-            m->writefd=-1;
+        if(m->writefd>0 && (checksock(m->writefd)<0)){
+            close(m->writefd);
+            m->writefd=0;
+        }
     }
 
     //DINFO("======= write to server ...\n");
