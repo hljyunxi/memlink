@@ -3,7 +3,8 @@ import os, glob
 # maybe use libevent-2.0.x, set libevent_versioin=2, not implemented
 libevent_version = 1
 install_dir = '/opt/memlink'
-defs     = ['RECV_LOG_BY_PACKAGE', "__USE_FILE_OFFSET64", "__USE_LARGEFILE64", "_LARGEFILE_SOURCE", "_LARGEFILE64_SOURCE", "_FILE_OFFSET_BITS=64", '_REENTRANT']
+defs     = ['RECV_LOG_BY_PACKAGE', "__USE_FILE_OFFSET64", "__USE_LARGEFILE64", "_LARGEFILE_SOURCE", "_LARGEFILE64_SOURCE", "_FILE_OFFSET_BITS=64", "WITH_MASTER_BACKUP", '_REENTRANT']
+#defs     = ['RECV_LOG_BY_PACKAGE','DEBUG', "__USE_FILE_OFFSET64", "__USE_LARGEFILE64", "_LARGEFILE_SOURCE", "_LARGEFILE64_SOURCE", "_FILE_OFFSET_BITS=64"]
 includes = ['.', 'base']
 libpath  = ['base']
 debugdefs = []
