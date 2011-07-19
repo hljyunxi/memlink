@@ -1,15 +1,14 @@
 import os, glob
 
-# maybe use libevent-2.0.x, set libevent_versioin=2
+# maybe use libevent-2.0.x, set libevent_versioin=2, not implemented
 libevent_version = 1
 install_dir = '/opt/memlink'
-defs     = ['RECV_LOG_BY_PACKAGE', 'DEBUG', "__USE_FILE_OFFSET64", "__USE_LARGEFILE64", "_LARGEFILE_SOURCE", "_LARGEFILE64_SOURCE", "_FILE_OFFSET_BITS=64", '_REENTRANT']
-#defs     = ['RECV_LOG_BY_PACKAGE','DEBUG', "__USE_FILE_OFFSET64", "__USE_LARGEFILE64", "_LARGEFILE_SOURCE", "_LARGEFILE64_SOURCE", "_FILE_OFFSET_BITS=64"]
-includes = ['.']
-libpath  = []
-
+defs     = ['RECV_LOG_BY_PACKAGE', "__USE_FILE_OFFSET64", "__USE_LARGEFILE64", "_LARGEFILE_SOURCE", "_LARGEFILE64_SOURCE", "_FILE_OFFSET_BITS=64", '_REENTRANT']
+includes = ['.', 'base']
+libpath  = ['base']
+debugdefs = []
 # use gnu malloc
-libs     = ['m', 'pthread']
+libs     = ['base', 'event', 'm', 'pthread']
 # use tcmalloc
 #libs     = ['event', 'm', 'tcmalloc_minimal']
 
@@ -23,14 +22,16 @@ if 'debug' in  BUILD_TARGETS or 'memlink-debug' in BUILD_TARGETS:
 	files = glob.glob("*.c")
 	if os.path.isfile(libtcmalloc):
 		print '====== use google tcmalloc! ======'
-		files.append(libtcmalloc)
+		#files.append(libtcmalloc)
 		libs.append('stdc++')
-		defs.append('TCMALLOC')
+		debugdefs.append('TCMALLOC')
+		#defs.append('TCMALLOC')
 	else:
 		print '====== use gnu malloc! ======'
+	debugdefs.append('DEBUGMEM')
+	debugdefs.append('DEBUG')
+	defs.append('DEBUG')
 	defs.append('DEBUGMEM')
-
-	files.append('/usr/local/lib/libevent.a')
 	env = Environment(CFLAGS=cflags, CPPDEFINES=defs, CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
 	memlink = env.Program(bin, files)
 	#env.StaticLibrary(bin, files)
@@ -40,12 +41,12 @@ else:
 	bin    = "memlink"
 	cflags += " -O2"
 	files = glob.glob("*.c")
-	files.append('/usr/local/lib/libevent.a')
 	if os.path.isfile(libtcmalloc):
 		print '====== use google tcmalloc! ======'
-		files.append(libtcmalloc)
+		#files.append(libtcmalloc)
 		libs.append('stdc++')
-		defs.append('TCMALLOC')
+		debugdefs.append('TCMALLOC')
+		#defs.append('TCMALLOC')
 	else:
 		print '====== use gnu malloc! ======'
 
@@ -56,6 +57,11 @@ else:
 	env.Install(os.path.join(install_dir, 'etc'), 'etc/memlink.conf')
 	#env.StaticLibrary(bin, files)
 
-SConscript(['client/c/SConstruct', 'unittest/SConstruct', 'test/SConstruct', 'performance/SConstruct'])
+SConscript('base/SConstruct', exports='debugdefs')
+SConscript(['client/c/SConstruct', 
+			'unittest/SConstruct', 
+			'test/SConstruct', 
+			'performance/SConstruct', 
+			'vote/SConstruct'])
 
 

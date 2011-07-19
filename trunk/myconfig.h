@@ -14,8 +14,11 @@
 #include "sthread.h"
 
 // TODO is there a pre-defined const for this?
-#define IP_ADDR_MAX_LEN         20
+#define IP_ADDR_MAX_LEN         16
 #define BLOCK_DATA_COUNT_MAX    16
+
+#define CONF_LOAD_ALL		1
+#define CONF_LOAD_DYNAMIC	2
 
 typedef struct _myconfig
 {
@@ -26,66 +29,53 @@ typedef struct _myconfig
     float        block_clean_cond;
     int          block_clean_start;
     int          block_clean_num;
-    char         ip[IP_ADDR_MAX_LEN];  //bind ip,if empty bind any
+	char		 host[IP_ADDR_MAX_LEN];
     int          read_port;
     int          write_port;
     int          sync_port;
+    int          heartbeat_port;
     char         datadir[PATH_MAX];
     int          log_level;
     char         log_name[PATH_MAX];
+    char         log_error_name[PATH_MAX];
+	unsigned int log_size;
+	unsigned int log_time;
+	int			 log_count;    
+	int			 log_rotate_type;
 	int			 write_binlog;
     int          timeout;
+    int          heartbeat_timeout;
+    int          backup_timeout;
     int          thread_num;
     int          max_conn;                            // max connection
     int          max_read_conn;
     int          max_write_conn;
 	int		     max_sync_conn;
     int          max_core;                            // maximize core file limit
+	long long	 max_mem;	// maximize memory used
     int          is_daemon;                           // is run with daemon
     char         role;                                // 1 means master; 0 means slave
     char         master_sync_host[IP_ADDR_MAX_LEN];
     int          master_sync_port;
-    unsigned int sync_interval;                       // in seconds
+    char         vote_host[IP_ADDR_MAX_LEN];
+    int          vote_port;
+    unsigned int sync_check_interval;                       // in seconds
+	unsigned int sync_disk_interval;
+	int			 sync_mode;
+    int          dumpfile_num_max;
 	char		 user[128];
 }MyConfig;
 
-
-/*typedef struct _runtime
-{
-    char            home[PATH_MAX]; // programe home dir
-    char            conffile[PATH_MAX];
-    pthread_mutex_t mutex; // write lock
-    unsigned int    dumpver; // dump file version
-    unsigned int    dumplogver; // log version in dump file
-    unsigned int    dumplogpos; // log position in dump file
-    unsigned int    logver;  // synclog version
-    SyncLog         *synclog;  // current synclog
-    MemPool         *mpool; 
-    HashTable       *ht;
-	volatile int	inclean;
-    //char			cleankey[512];
-    WThread         *wthread;
-    MainServer      *server;
-    SSlave          *slave; // sync slave
-    SThread         *sthread; // sync thread
-    unsigned int    conn_num; // current conn count
-	time_t          last_dump;
-	unsigned int    memlink_start;
-
-	pthread_mutex_t	mutex_mem;
-	long long		mem_used;
-}Runtime;
-*/
 extern MyConfig *g_cf;
-//extern Runtime  *g_runtime;
 
 MyConfig*   myconfig_create(char *filename);
-/*Runtime*    runtime_create_master(char *pgname, char *conffile);
-Runtime*    runtime_create_slave(char *pgname, char *conffile);
-void        runtime_destroy(Runtime *rt);*/
 int         myconfig_change();
+int			myconfig_print(MyConfig *cf);
+
+int			myconfig_parser_create(MyConfig *cf, char *filepath, int loadflag);
 
 int			mem_used_inc(long long size);	
 int			mem_used_dec(long long size);
+int         conn_check_max(Conn *conn);
 
 #endif

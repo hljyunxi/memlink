@@ -13,5 +13,7 @@ int  dumpfile_load(HashTable *ht, char *filename, int localdump);
 void dumpfile_call_loop(int fd, short event, void *arg);
 int  dumpfile_call();
 int  dumpfile_logver(char *filename, unsigned int *logver, unsigned int *logpos);
+int  dumpfile_latest(char *filename);
+int  dumpfile_reserve(int num);
 
 #endif

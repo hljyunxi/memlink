@@ -106,17 +106,17 @@ int test_insert(TestArgs *args)
 {
     MemLink *m;
     int ret, i;
-	int pos;
+    int pos;
     char value[512] = {0};
     char format[64] = {0};
-	char maskstr[64] = {0};
+    char maskstr[64] = {0};
     
     DINFO("====== insert ======\n");
     if (args->key[0] == 0 || args->valuesize == 0) {
         DERROR("key and valuesize must not null!\n");
         return -1;
     }
-	pos = args->pos;
+    pos = args->pos;
 
     sprintf(format, "%%0%dd", args->valuesize);
     if (args->longconn) {
@@ -128,10 +128,10 @@ int test_insert(TestArgs *args)
         }
         for (i = 0; i < args->testcount; i++) {
             sprintf(value, format, i);
-			if (pos < -1) {
-				pos = random();
-			}
-			//sprintf(maskstr, "%d:%d", args->tid * args->testcount + i, 1);
+            if (pos < -1) {
+                pos = random();
+            }
+            //sprintf(maskstr, "%d:%d", args->tid * args->testcount + i, 1);
             ret = memlink_cmd_insert(m, args->key, value, args->valuesize, args->maskstr, pos);
             if (ret != MEMLINK_OK) {
                 DERROR("insert error! ret:%d, key:%s,value:%s,mask:%s,pos:%d\n", 
@@ -149,7 +149,7 @@ int test_insert(TestArgs *args)
                 return -1;
             }
             sprintf(value, format, i);
-			//sprintf(maskstr, "%d:%d", args->tid * args->testcount + i, 1);
+            //sprintf(maskstr, "%d:%d", args->tid * args->testcount + i, 1);
             ret = memlink_cmd_insert(m, args->key, value, args->valuesize, args->maskstr, args->pos);
             //ret = memlink_cmd_insert(m, args->key, value, args->valuesize, maskstr, args->pos);
             if (ret != MEMLINK_OK) {
@@ -432,17 +432,17 @@ int test_lpush(TestArgs *args)
 {
     MemLink *m;
     int ret, i;
-	int pos;
+    int pos;
     char value[512] = {0};
     char format[64] = {0};
-	char maskstr[64] = {0};
+    char maskstr[64] = {0};
     
     DINFO("====== lpush ======\n");
     if (args->key[0] == 0 || args->valuesize == 0) {
         DERROR("key and valuesize must not null!\n");
         return -1;
     }
-	pos = args->pos;
+    pos = args->pos;
 
     sprintf(format, "%%0%dd", args->valuesize);
     if (args->longconn) {
@@ -454,10 +454,10 @@ int test_lpush(TestArgs *args)
         }
         for (i = 0; i < args->testcount; i++) {
             sprintf(value, format, i);
-			if (pos < -1) {
-				pos = random();
-			}
-			//sprintf(maskstr, "%d:%d", args->tid * args->testcount + i, 1);
+            if (pos < -1) {
+                pos = random();
+            }
+            //sprintf(maskstr, "%d:%d", args->tid * args->testcount + i, 1);
             ret = memlink_cmd_lpush(m, args->key, value, args->valuesize, args->maskstr);
             if (ret != MEMLINK_OK) {
                 DERROR("lpush error! ret:%d, key:%s,value:%s,mask:%s,pos:%d\n", 
@@ -475,7 +475,7 @@ int test_lpush(TestArgs *args)
                 return -1;
             }
             sprintf(value, format, i);
-			//sprintf(maskstr, "%d:%d", args->tid * args->testcount + i, 1);
+            //sprintf(maskstr, "%d:%d", args->tid * args->testcount + i, 1);
             ret = memlink_cmd_lpush(m, args->key, value, args->valuesize, args->maskstr);
             //ret = memlink_cmd_insert(m, args->key, value, args->valuesize, maskstr, args->pos);
             if (ret != MEMLINK_OK) {
@@ -494,17 +494,17 @@ int test_rpush(TestArgs *args)
 {
     MemLink *m;
     int ret, i;
-	int pos;
+    int pos;
     char value[512] = {0};
     char format[64] = {0};
-	char maskstr[64] = {0};
+    char maskstr[64] = {0};
     
     DINFO("====== rpush ======\n");
     if (args->key[0] == 0 || args->valuesize == 0) {
         DERROR("key and valuesize must not null!\n");
         return -1;
     }
-	pos = args->pos;
+    pos = args->pos;
 
     sprintf(format, "%%0%dd", args->valuesize);
     if (args->longconn) {
@@ -516,10 +516,10 @@ int test_rpush(TestArgs *args)
         }
         for (i = 0; i < args->testcount; i++) {
             sprintf(value, format, i);
-			if (pos < -1) {
-				pos = random();
-			}
-			//sprintf(maskstr, "%d:%d", args->tid * args->testcount + i, 1);
+            if (pos < -1) {
+                pos = random();
+            }
+            //sprintf(maskstr, "%d:%d", args->tid * args->testcount + i, 1);
             ret = memlink_cmd_rpush(m, args->key, value, args->valuesize, args->maskstr);
             if (ret != MEMLINK_OK) {
                 DERROR("rpush error! ret:%d, key:%s,value:%s,mask:%s,pos:%d\n", 
@@ -537,7 +537,7 @@ int test_rpush(TestArgs *args)
                 return -1;
             }
             sprintf(value, format, i);
-			//sprintf(maskstr, "%d:%d", args->tid * args->testcount + i, 1);
+            //sprintf(maskstr, "%d:%d", args->tid * args->testcount + i, 1);
             ret = memlink_cmd_rpush(m, args->key, value, args->valuesize, args->maskstr);
             //ret = memlink_cmd_insert(m, args->key, value, args->valuesize, maskstr, args->pos);
             if (ret != MEMLINK_OK) {
@@ -748,6 +748,7 @@ int test_sl_del(TestArgs *args)
 
 
 volatile int    thread_create_count = 0;
+volatile int    thread_run = 0;
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  cond = PTHREAD_COND_INITIALIZER;
 
@@ -757,8 +758,20 @@ void* thread_start(void *args)
     struct timeval start, end;  
 
     pthread_mutex_lock(&lock);
-    while (thread_create_count < ta->threads) {
-        pthread_cond_wait(&cond, &lock);
+    //while (thread_create_count < ta->threads) {
+    while (thread_run == 0) {
+        if (thread_create_count == ta->threads) {
+            thread_run = 1;
+
+            int ret = pthread_cond_broadcast(&cond);
+            if (ret != 0) {
+                char errbuf[1024];
+                strerror_r(errno, errbuf, 1024);
+                DERROR("pthread_cond_broadcase error: %s\n",  errbuf);
+            }
+        }else{
+            pthread_cond_wait(&cond, &lock);
+        }
         DINFO("cond wait return ...\n");
     }   
     pthread_mutex_unlock(&lock);
@@ -769,9 +782,9 @@ void* thread_start(void *args)
 
     unsigned int tmd = timediff(&start, &end);
     double speed = ((double)ta->args->testcount / tmd) * 1000000;
-	double onetime = 1000 / speed;
+    double onetime = 1000 / speed;
     DINFO("thread test use time:%u, speed:%.2f, time:%.2f\n", tmd, speed, onetime);
-	long mytime = (int)ceil(onetime);
+    long mytime = (int)ceil(onetime);
     if (ret < 0) {
         mytime = mytime  * -1;
     }
@@ -782,18 +795,18 @@ int single_start(ThreadArgs *ta)
 {
     struct timeval start, end;  
 
-	gettimeofday(&start, NULL);
+    gettimeofday(&start, NULL);
     int ret = ta->func(ta->args);
     gettimeofday(&end, NULL);
 
     unsigned int tmd = timediff(&start, &end);
     double speed = ((double)ta->args->testcount / tmd) * 1000000;
     DINFO("thread test use time:%u, speed:%.2f\n", tmd, speed);
-	
-	free(ta->args);
-	free(ta);
+    
+    free(ta->args);
+    free(ta);
 
-	return ret;
+    return ret;
 }
 
 int test_start(TestConfig *cf)
@@ -805,28 +818,32 @@ int test_start(TestConfig *cf)
     DINFO("====== test start with thread:%d ======\n", cf->threads);
     for (i = 0; i < cf->threads; i++) {
         ThreadArgs  *ta = (ThreadArgs*)malloc(sizeof(ThreadArgs));
-		TestArgs	*ts = (TestArgs*)malloc(sizeof(TestArgs));
-		memcpy(ts, &cf->args, sizeof(TestArgs));
-		ts->tid  = i;
+        TestArgs    *ts = (TestArgs*)malloc(sizeof(TestArgs));
+        memcpy(ts, &cf->args, sizeof(TestArgs));
+        ts->tid  = i;
         ta->func = cf->func;
         ta->args = ts;
         ta->threads = cf->threads;
         
+        thread_create_count += 1;
         ret = pthread_create(&threads[i], NULL, thread_start, ta); 
         if (ret != 0) {
-            DERROR("pthread_create error! %s\n", strerror(errno));
+            char errbuf[1024];
+            strerror_r(errno, errbuf, 1024);
+            DERROR("pthread_create error! %s\n",  errbuf);
             return -1;
         }
-        thread_create_count += 1;
     }
 
     gettimeofday(&start, NULL);
-    ret = pthread_cond_broadcast(&cond);
+    /*ret = pthread_cond_broadcast(&cond);
     if (ret != 0) {
-        DERROR("pthread_cond_broadcase error: %s\n", strerror(errno));
-    }
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("pthread_cond_broadcase error: %s\n",  errbuf);
+    }*/
 
-	long reqtime[1000] = {0};
+    long reqtime[1000] = {0};
 
     for (i = 0; i < cf->threads; i++) {
         pthread_join(threads[i], (void**)&reqtime[i]);
@@ -834,15 +851,15 @@ int test_start(TestConfig *cf)
     gettimeofday(&end, NULL);
 
     ret = 0;
-	int sum = 0;
-	for (i = 0; i < cf->threads; i++) {
+    int sum = 0;
+    for (i = 0; i < cf->threads; i++) {
         if (reqtime[i] > 0) {
-		    sum += reqtime[i];
+            sum += reqtime[i];
         }else{
-		    sum += reqtime[i] * -1;
+            sum += reqtime[i] * -1;
             ret = -1;
         }
-	}
+    }
 
     unsigned int tmd = timediff(&start, &end);
     double speed = (((double)cf->args.testcount * cf->threads)/ tmd) * 1000000;
@@ -890,7 +907,7 @@ TestFunc funclink_find(char *name)
 
 int show_help()
 {
-	printf("usage:\n\tperf [options]\n");
+    printf("usage:\n\tperf [options]\n");
     printf("options:\n");
     printf("\t--host,-h\tmemlink server ip\n");
     printf("\t--readport,-r\tserver read port. default 11001\n");
@@ -910,14 +927,14 @@ int show_help()
     printf("\t--longconn,-c\tuse long connection for test. default 1\n");
     printf("\n\n");
 
-	exit(0);
+    exit(0);
 }
 
 int main(int argc, char *argv[])
 {
-	logfile_create("stdout", 4);
+    logfile_create("stdout", 4);
 
-	int     optret;
+    int     optret;
     int     optidx = 0;
     char    *optstr = "h:t:n:f:l:k:v:s:p:o:i:a:m:d:c:r:w:";
     struct option myoptions[] = {{"host", 0, NULL, 'h'},
@@ -944,8 +961,8 @@ int main(int argc, char *argv[])
         show_help();
         return -1;
     }
-	
-	TestConfig tcf;
+    
+    TestConfig tcf;
     memset(&tcf, 0, sizeof(TestConfig));
 
     sprintf(tcf.args.host, "%s", MEMLINK_HOST);
@@ -960,33 +977,33 @@ int main(int argc, char *argv[])
 
         switch (optret) {
         case 'f':
-			tcf.args.from = atoi(optarg);	
+            tcf.args.from = atoi(optarg);    
             break;
-		case 't':
-			tcf.threads = atoi(optarg);
-			break;
-		case 'n':
-			tcf.args.testcount   = atoi(optarg);
-			break;
-		case 'c':
-			tcf.args.longconn = atoi(optarg);
-			break;
-		case 'l':
-			tcf.args.len = atoi(optarg);
-			break;		
-		case 'd':
-			snprintf(tcf.action, 64, "%s", optarg);
+        case 't':
+            tcf.threads = atoi(optarg);
+            break;
+        case 'n':
+            tcf.args.testcount   = atoi(optarg);
+            break;
+        case 'c':
+            tcf.args.longconn = atoi(optarg);
+            break;
+        case 'l':
+            tcf.args.len = atoi(optarg);
+            break;        
+        case 'd':
+            snprintf(tcf.action, 64, "%s", optarg);
             tcf.func = funclink_find(tcf.action);
             if (tcf.func == NULL) {
                 printf("--do/-d error: %s\n", optarg);
                 exit(0);
             }
-			break;
+            break;
         case 'k':
-			snprintf(tcf.args.key, 255, "%s", optarg);
+            snprintf(tcf.args.key, 255, "%s", optarg);
             break;
         case 'v':
-			snprintf(tcf.args.value, 255, "%s", optarg);
+            snprintf(tcf.args.value, 255, "%s", optarg);
             tcf.args.valuelen = strlen(optarg);
             break;
         case 's':
@@ -1021,7 +1038,7 @@ int main(int argc, char *argv[])
             }
             break;
         case 'm':
-			snprintf(tcf.args.maskstr, 255, "%s", optarg);
+            snprintf(tcf.args.maskstr, 255, "%s", optarg);
             break;
         case 'h':
             sprintf(tcf.args.host, "%s", optarg);
@@ -1033,24 +1050,24 @@ int main(int argc, char *argv[])
             tcf.args.wport = atoi(optarg);
             break;
         default:
-			printf("error option: %c\n", optret);
-			exit(-1);
+            printf("error option: %c\n", optret);
+            exit(-1);
             break;
         }
     }
 
-    DINFO("memlink %s r:%d w:%d\n", tcf.args.host, tcf.args.rport, tcf.args.wport);	
+    DINFO("memlink %s r:%d w:%d\n", tcf.args.host, tcf.args.rport, tcf.args.wport);    
 
-	if (tcf.threads > 0) {
-		return test_start(&tcf);
-	}else{
-		ThreadArgs  ta;// = (ThreadArgs*)malloc(sizeof(ThreadArgs));
-		ta.func = tcf.func;
-		ta.args = &tcf.args;
-		ta.threads = tcf.threads;
+    if (tcf.threads > 0) {
+        return test_start(&tcf);
+    }else{
+        ThreadArgs  ta;// = (ThreadArgs*)malloc(sizeof(ThreadArgs));
+        ta.func = tcf.func;
+        ta.args = &tcf.args;
+        ta.threads = tcf.threads;
         
-		return single_start(&ta);
-	}
+        return single_start(&ta);
+    }
 
-	return 0;
+    return 0;
 }

@@ -116,8 +116,22 @@ def dumpfile(filename):
         
     f.close()
 
+def commitfile(filename):
+    print '====================== commit log   ========================='
+    f = open(filename, 'rb')
+    # lastver, lastline, lastret, logver, logline
+    headstr = f.read(4 + 4 + 4 + 4 + 4) 
+    lastver, lastline, lastret, logver, logline = struct.unpack('IIIII', headstr)
+    print 'lastver:%d, lastline:%d, lastret:%d, logver:%d, logline:%d' % \
+                (lastver, lastline, lastret, logver, logline)
+    
+    cmdlen = struct.unpack('I', f.read(4))[0]
+    print 'cmd len:%d, cmd:%d' % (cmdlen, struct.unpack('b', f.read(1))[0])
+
+    f.close()
+
 def checklog(filename):
-    f = open(filename, 'r+')
+    f = open(filename, 'rb+')
 
     f.seek(0, 2)
     filesize = f.tell()
@@ -135,9 +149,13 @@ def checklog(filename):
     #print 'head:', repr(s)
     #print 'format:%d, logver:%d, index:%d, data:%d' % tuple(v)
     print 'filesize: ', filesize
-    if filesize == 2 + 4 + 4 + maxdata * 4:
+    minfilesize = 2 + 4 + 4 + maxdata * 4
+    if filesize == minfilesize:
         print 'log size ok!'
         return 0
+    elif filesize < minfilesize:
+        print 'log size too small'
+        return -1
         
     last_data_pos = 0
     last_index_offset = 0
@@ -153,6 +171,7 @@ def checklog(filename):
             llen = struct.unpack('I', ns)
             last_data_pos = llen[0] #pos of the last cmd
             break
+        indexnum += 1
         rdc += 4
         
     if rdc == maxdata * 4: # if the index zone is full
@@ -162,6 +181,7 @@ def checklog(filename):
         llen = struct.unpack('I', ns)
         last_data_pos = llen[0] #pos of the last cmd
         
+    print 'last_index_pos: %d' % (indexnum,)
     flag = 0
     lllen = 0
     print 'last_data_pos: ', last_data_pos
@@ -182,8 +202,19 @@ def checklog(filename):
             flag = 0
             break
         if filesize > lllen:
-            flag = 2
-            break
+            if indexnum >= maxdata:
+                print 'log index if full, but still have data, just truncate the tail.'
+                restore = True
+                flag = 2
+                break
+            else:
+                print 'revise log index: %d' % (indexnum,)
+                indexnum += 1
+                f.seek(last_index_offset+4, 0)
+                data = struct.pack("I", lllen)
+                f.write(data)
+                last_index_offset += 4
+                last_data_pos = lllen
         else:
             flag = 1
             break;
@@ -204,20 +235,23 @@ def show_help():
     print 'usage:'
     print '\tpython check.py [options]'
     print 'options:'
-    print '\t-b binlog file name'
-    print '\t-d dump file name'
+    print '\t-b bin.log file path'
+    print '\t-d dump.dat file path'
+    print '\t-m commit.log file path'
     print '\t-h only print header'
-    print '\t-c check wether bin.log\'s size is ok or not'
-    print '\t-r restore the file'
+    print '\t-c check bin.log data'
+    print '\t-r repair bin.log'
 
 def main():
     global onlyheader
     global restore
+
     binlog_filename = ''
     dump_filename   = ''
+    commit_filename = ''
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'b:d:c:h:r')
+        opts, args = getopt.getopt(sys.argv[1:], 'b:d:m:c:hr')
     except:
         show_help()
         return
@@ -228,6 +262,8 @@ def main():
             binlog_filename = arg
         elif opt == '-d':
             dump_filename = arg
+        elif opt == '-m':
+            commit_filename = arg
         elif opt == '-h':
             onlyheader = True
         elif opt == '-c':
@@ -236,7 +272,7 @@ def main():
         elif opt == '-r':
             restore = True
 
-    if not binlog_filename and not dump_filename:
+    if not binlog_filename and not dump_filename and not commit_filename:
         show_help()
         return
 
@@ -249,6 +285,9 @@ def main():
     
     if dump_filename:
         dumpfile(dump_filename)
+
+    if commit_filename:
+        commitfile(commit_filename)
 
 if __name__ == '__main__':
     main()

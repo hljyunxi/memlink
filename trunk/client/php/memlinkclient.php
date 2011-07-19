@@ -1,5 +1,5 @@
 <?php
-include_once("memlink.php");
+include_once("cmemlink.php");
 
 class MemLinkClient
 {

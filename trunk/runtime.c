@@ -17,6 +17,7 @@
 #include "common.h"
 #include "utils.h"
 #include "sslave.h"
+#include "myconfig.h"
 #include "runtime.h"
 
 
@@ -102,10 +103,16 @@ load_synclog(char *logname, unsigned int dumplogver, unsigned int dumplogpos)
             break;
         }
         DINFO("command, len:%d\n", blen);
+        DINFO("have_key: %d\n", have_key);
         if (have_key == 0) {
             ret = wdata_apply(data + SYNCPOS_LEN, blen + sizeof(int), MEMLINK_NO_LOG, NULL);
             if (ret != 0) {
                 DERROR("wdata_apply log error: %d\n", ret);
+                MEMLINK_EXIT;
+            }
+            ret = syncmem_write(g_runtime->syncmem, data + SYNCPOS_LEN, blen + sizeof(int), logver, logline);
+            if (ret != 0) {
+                DERROR("syncmem_write error: %d\n", ret);
                 MEMLINK_EXIT;
             }
             count ++;
@@ -378,7 +385,7 @@ runtime_create_common(char *pgname)
     if (realpath(pgname, rt->home) == NULL) {
         char errbuf[1024];
         strerror_r(errno, errbuf, 1024);
-		DERROR("realpath error: %s\n",  errbuf);
+        DERROR("realpath error: %s\n",  errbuf);
         MEMLINK_EXIT;
     }
     char *last = strrchr(rt->home, '/');  
@@ -394,7 +401,7 @@ runtime_create_common(char *pgname)
         if (ret == -1) {
             char errbuf[1024];
             strerror_r(errno, errbuf, 1024);
-			DERROR("create dir %s error! %s\n", g_cf->datadir,  errbuf);
+            DERROR("create dir %s error! %s\n", g_cf->datadir,  errbuf);
             MEMLINK_EXIT;
         }
     }
@@ -434,14 +441,23 @@ runtime_create_common(char *pgname)
         return NULL;
     }
     DINFO("hashtable create ok!\n");
+    
+    rt->syncmem = syncmem_create();
+    if (NULL == rt->syncmem) {
+        DERROR("syncmem_create error!\n");
+        MEMLINK_EXIT;
+        return NULL;
+    }
+    DINFO("syncmem create ok!\n");
 
-    rt->server = mainserver_create();
+    /*rt->server = mainserver_create();
     if (NULL == rt->server) {
         DERROR("mainserver_create error!\n");
         MEMLINK_EXIT;
         return NULL;
     }
     DINFO("main thread create ok!\n");
+    */
 
     rt->synclog = synclog_create();
     if (NULL == rt->synclog) {
@@ -465,6 +481,22 @@ runtime_create_slave(char *pgname, char *conffile)
         return rt;
     }
     snprintf(rt->conffile, PATH_MAX, "%s", conffile); 
+    int ret = load_data_slave();
+    if (ret < 0) {
+        DERROR("load_data error: %d\n", ret);
+        MEMLINK_EXIT;
+        return NULL;
+    }
+    DINFO("load_data ok!\n");
+    
+    rt->server = mainserver_create();
+    if (NULL == rt->server) {
+        DERROR("mainserver_create error!\n");
+        MEMLINK_EXIT;
+        return NULL;
+    }
+    DINFO("main thread create ok!\n");
+
     rt->slave = sslave_create();
     if (NULL == rt->slave) {
         DERROR("sslave_create error!\n");
@@ -480,15 +512,6 @@ runtime_create_slave(char *pgname, char *conffile)
     }
     DINFO("sync thread create ok!\n");
 
-
-    int ret = load_data_slave();
-    if (ret < 0) {
-        DERROR("load_data error: %d\n", ret);
-        MEMLINK_EXIT;
-        return NULL;
-    }
-    DINFO("load_data ok!\n");
-    
     rt->wthread = wthread_create();
     if (NULL == rt->wthread) {
         DERROR("wthread_create error!\n");
@@ -496,6 +519,8 @@ runtime_create_slave(char *pgname, char *conffile)
         return NULL;
     }
     DINFO("write thread create ok!\n");
+
+
  
     sslave_go(rt->slave);
     
@@ -521,6 +546,13 @@ runtime_create_master(char *pgname, char *conffile)
     }
     DINFO("load_data ok!\n");
 
+    rt->server = mainserver_create();
+    if (NULL == rt->server) {
+        DERROR("mainserver_create error!\n");
+        MEMLINK_EXIT;
+        return NULL;
+    }
+    DINFO("main thread create ok!\n");
 
     rt->wthread = wthread_create();
     if (NULL == rt->wthread) {
@@ -529,17 +561,14 @@ runtime_create_master(char *pgname, char *conffile)
         return NULL;
     }
     DINFO("write thread create ok!\n");
-   
     
     rt->sthread = sthread_create();
     if (NULL == rt->sthread) {
-     DERROR("sthread_create error!\n");
-     MEMLINK_EXIT;
-     return NULL;
+        DERROR("sthread_create error!\n");
+        MEMLINK_EXIT;
+        return NULL;
     }
     DINFO("sync thread create ok!\n");
-    
-
     DNOTE("create master Runtime ok!\n");
     return rt;
 }

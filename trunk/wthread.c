@@ -24,67 +24,19 @@
 #include "serial.h"
 #include "network.h"
 #include "myconfig.h"
-#include "logfile.h"
+#include "base/logfile.h"
 #include "dumpfile.h"
 #include "rthread.h"
 #include "sthread.h"
-#include "zzmalloc.h"
-#include "utils.h"
+#include "base/zzmalloc.h"
+#include "base/utils.h"
+#include "base/pack.h"
 #include "common.h"
 #include "sslave.h"
 #include "runtime.h"
-
-/**
- *
- * @param conn
- * @param newflag EV_READ or EV_WRITE
- * @param isnew 1 if the connection event has not been added before. 0 if not 
- * added.
- * @param timeout if positive, the event is added with a timeout.
- */
-int
-change_event(Conn *conn, int newflag, int timeout, int isnew)
-{
-    struct event      *event = &conn->evt;
-
-    /* 
-     * For old event, do nothing and return if the new flag is the same as the 
-     * old flag.  Otherwise, unregistered the event.
-     */
-    if (isnew == 0) {
-        if (event->ev_flags == newflag)
-            return 0;
-
-        if (event_del(event) == -1) {
-            DERROR("event del error.\n");
-            return -1;
-        }
-    }
-
-    if (newflag & EV_READ) {
-        event_set(event, conn->sock, newflag, client_read, (void *)conn);
-    }else if (newflag & EV_WRITE) {
-        event_set(event, conn->sock, newflag, client_write, (void *)conn);
-    }
-    event_base_set(conn->base, event);
-  
-    if (timeout > 0) {
-        struct timeval  tm;
-        evutil_timerclear(&tm);
-        tm.tv_sec = g_cf->timeout;
-        if (event_add(event, &tm) == -1) {
-            DERROR("event add error.\n");
-            return -3;
-        }
-    }else{
-        if (event_add(event, 0) == -1) {
-            DERROR("event add error.\n");
-            return -3;
-        }
-    }
-    return 0;
-}
-
+#include "vote.h"
+#include "backup.h"
+#include "master.h"
 
 /**
  * 回复数据
@@ -103,80 +55,16 @@ change_event(Conn *conn, int newflag, int timeout, int isnew)
  */
 
 int
-data_set_reply(Conn *conn, short retcode, char *retdata, int retlen)
-{
-    //int mlen = 0;  // msg string len
-    unsigned int datalen = 0;
-    char *wdata;
-
-    DINFO("retcode:%d, retlen:%d, retdata:%p\n", retcode, retlen, retdata);
-
-    // package length + retcode + retdata
-    datalen = CMD_REPLY_HEAD_LEN + retlen;
-    //DNOTE("datalen: %d, retcode: %d, conn->wsize: %d\n", datalen, retcode, conn->wsize); 
-   
-    wdata = conn_write_buffer(conn, datalen);
-
-    int count = 0; 
-    unsigned int dlen = datalen - sizeof(int);
-    memcpy(wdata, &dlen, sizeof(int));
-    count += sizeof(int);
-
-    memcpy(wdata + count, &retcode, sizeof(short));
-    count += sizeof(short);
-  
-    //DNOTE("retlen: %d, retdata:%p, count:%d, conn->wbuf:%p, conn->wsize:%d\n", 
-    //            retlen, retdata, count, conn->wbuf, conn->wsize);
-    if (retlen > 0) {
-        memcpy(wdata + count, retdata, retlen);
-        count += retlen;
-    }
-    conn->wlen = datalen;
-
-    zz_check(conn);
-    zz_check(conn->wbuf);
-
-#ifdef DEBUG
-    char buf[10240] = {0};
-    DINFO("reply %s\n", formath(conn->wbuf, conn->wlen, buf, 10240));
-#endif
-
-    return 0;
-}
-
-
-int
 data_reply(Conn *conn, short retcode, char *retdata, int retlen)
 {
     
-    int ret = data_set_reply(conn, retcode, retdata, retlen);
+    int ret = conn_write_buffer_reply(conn, retcode, retdata, retlen);
     if (ret < 0)
         return ret;
 
     DINFO("change event to write.\n");
-    ret = change_event(conn, EV_WRITE|EV_PERSIST, g_cf->timeout, 0);
-    if (ret < 0) {
-        DERROR("change_event error: %d, close conn.\n", ret);
-        conn->destroy(conn);
-    }
-
-    return MEMLINK_OK;
-}
-
-int
-data_reply_direct(Conn *conn)
-{
-    zz_check(conn);
-    zz_check(conn->wbuf);
-
-    DINFO("change event to write.\n");
-    int ret = change_event(conn, EV_WRITE|EV_PERSIST, g_cf->timeout, 0);
-    if (ret < 0) {
-        DERROR("change_event error: %d, close conn.\n", ret);
-        conn->destroy(conn);
-        return MEMLINK_FAILED;
-    }
-    return MEMLINK_OK;
+    
+    return conn_send_buffer(conn);
 }
 
 /* is clean?
@@ -278,7 +166,7 @@ wdata_check_clean(char *key)
     if (ret != 0) {
         char errbuf[1024];
         strerror_r(errno, errbuf, 1024);
-		DERROR("pthread_detach error; %s\n",  errbuf);
+        DERROR("pthread_detach error; %s\n",  errbuf);
         MEMLINK_EXIT;
     }
 }
@@ -335,7 +223,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
         case CMD_CLEAN:
             DINFO("<<< cmd CLEAN >>>\n");
             ret = cmd_clean_unpack(data, key);
-            if (ret != 0) {
+            if (ret <= 0) {
                 DINFO("unpack clean error! ret: %d\n", ret);
                 goto wdata_apply_over;
             }
@@ -360,16 +248,16 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             break;
         case CMD_CREATE:
             DINFO("<<< cmd CREATE >>>\n");
-            
             ret = cmd_create_unpack(data, key, &valuelen, &masknum, maskformat, &listtype, &valuetype);
-            if (ret != 0) {
+            if (ret <= 0) {
                 DINFO("unpack create error! ret: %d\n", ret);
                 goto wdata_apply_over;
             }
 
-            DINFO("unpack key: %s, valuelen: %d, masknum: %d, maskarray: %d,%d,%d\n", 
-                    key, valuelen, masknum, maskformat[0], maskformat[1], maskformat[2]);
+            DINFO("unpack key:%s, valuelen:%d, listtype:%d masknum:%d, maskarray:%d,%d,%d\n", 
+                    key, valuelen, listtype, masknum, maskformat[0], maskformat[1], maskformat[2]);
             if (key[0] == 0 || valuelen <= 0 || listtype <= 0 || listtype > MEMLINK_SORTLIST) {
+                DINFO("param error!\n");
                 ret = MEMLINK_ERR_PARAM;
                 goto wdata_apply_over;
             }
@@ -386,7 +274,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
         case CMD_DEL:
             DINFO("<<< cmd DEL >>>\n");
             ret = cmd_del_unpack(data, key, value, &valuelen);
-            if (ret != 0) {
+            if (ret <= 0) {
                 DINFO("unpack del error! ret: %d\n", ret);
                 goto wdata_apply_over;
             }
@@ -407,8 +295,9 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             unsigned char kind;
             unsigned char vminlen = 0, vmaxlen = 0;
 
-            ret = cmd_sortlist_del_unpack(data, key, &kind, valmin, &vminlen, valmax, &vmaxlen, &masknum, maskarray);
-            if (ret != 0) {
+            ret = cmd_sortlist_del_unpack(data, key, &kind, valmin, &vminlen, 
+                                valmax, &vmaxlen, &masknum, maskarray);
+            if (ret <= 0) {
                 DINFO("unpack sortlist_del error! ret: %d\n", ret);
                 goto wdata_apply_over;
             }
@@ -427,7 +316,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
         case CMD_INSERT: {
             DINFO("<<< cmd INSERT >>>\n");
             ret = cmd_insert_unpack(data, key, value, &valuelen, &masknum, maskarray, &pos);
-            if (ret != 0) {
+            if (ret <= 0) {
                 DINFO("unpack insert error! ret: %d\n", ret);
                 goto wdata_apply_over;
             }
@@ -495,7 +384,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
         case CMD_MOVE:
             DINFO("<<< cmd MOVE >>>\n");
             ret = cmd_move_unpack(data, key, value, &valuelen, &pos);
-            if (ret != 0) {
+            if (ret <= 0) {
                 DINFO("unpack move error! ret: %d\n", ret);
                 goto wdata_apply_over;
             }
@@ -519,7 +408,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
         case CMD_MASK:
             DINFO("<<< cmd MASK >>>\n");
             ret = cmd_mask_unpack(data, key, value, &valuelen, &masknum, maskarray);
-            if (ret != 0) {
+            if (ret <= 0) {
                 DINFO("unpack mask error! ret: %d\n", ret);
                 goto wdata_apply_over;
             }
@@ -536,9 +425,11 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             break;
         case CMD_TAG:
             DINFO("<<< cmd TAG >>>\n");
-            cmd_tag_unpack(data, key, value, &valuelen, &tag);
-            if (ret != 0) {
+            ret = cmd_tag_unpack(data, key, value, &valuelen, &tag);
+            if (ret <= 0) {
                 DINFO("unpack tag error! ret: %d\n", ret);
+                /*char ebuf[256];
+                DINFO("unpack: %s\n", formath(data, datalen, ebuf, 256));*/
                 goto wdata_apply_over;
             }
 
@@ -554,7 +445,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
         case CMD_RMKEY:
             DINFO("<<< cmd RMKEY >>>\n");
             ret = cmd_rmkey_unpack(data, key);
-            if (ret != 0) {
+            if (ret <= 0) {
                 DINFO("unpack tag error! ret: %d\n", ret);
                 goto wdata_apply_over;
             }
@@ -571,7 +462,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
         case CMD_DEL_BY_MASK:
             DINFO("<<< cmd DEL_BY_MASK >>>\n");
             ret = cmd_del_by_mask_unpack(data, key, maskarray, &masknum);
-            if (ret != 0) {
+            if (ret <= 0) {
                 DINFO("unpack del_by_mask error! ret: %d\n", ret);
                 goto wdata_apply_over;
             }
@@ -594,7 +485,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
         case CMD_LPUSH:
             DINFO("<<< cmd LPUSH >>>\n");
             ret = cmd_lpush_unpack(data, key, value, &valuelen, &masknum, maskarray);
-            if (ret != 0) {
+            if (ret <= 0) {
                 DINFO("unpack lpush error! ret: %d\n", ret);
                 goto wdata_apply_over;
             }
@@ -605,7 +496,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
         case CMD_RPUSH:
             DINFO("<<< cmd RPUSH >>>\n");
             ret = cmd_rpush_unpack(data, key, value, &valuelen, &masknum, maskarray);
-            if (ret != 0) {
+            if (ret <= 0) {
                 DINFO("unpack rpush error! ret: %d\n", ret);
                 goto wdata_apply_over;
             }
@@ -616,7 +507,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
         case CMD_LPOP:
             DINFO("<<< cmd LPOP >>>\n");
             ret = cmd_pop_unpack(data, key, &num);
-            if (ret != 0) {
+            if (ret <= 0) {
                 DINFO("unpack rpush error! ret: %d\n", ret);
                 goto wdata_apply_over;
             }
@@ -633,7 +524,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             //hashtable_print(g_runtime->ht, key);
 
             if (conn && ret >= 0 && writelog) {
-                ret = data_reply_direct(conn);
+                ret = conn_send_buffer(conn);
             }
             DINFO("data_reply return: %d\n", ret);
             if (ret >= 0) {
@@ -647,7 +538,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
         case CMD_RPOP:
             DINFO("<<< cmd RPOP >>>\n");
             ret = cmd_pop_unpack(data, key, &num);
-            if (ret != 0) {
+            if (ret <= 0) {
                 DINFO("unpack rpush error! ret: %d\n", ret);
                 goto wdata_apply_over;
             }
@@ -664,7 +555,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             //hashtable_print(g_runtime->ht, key);
 
             if (conn && ret >= 0 && writelog) {
-                ret = data_reply_direct(conn);
+                ret = conn_send_buffer(conn);
             }
             DINFO("data_reply return: %d\n", ret);
             //ret = MEMLINK_REPLIED;
@@ -781,14 +672,15 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
                 g_cf->block_clean_cond = atof(value);
             } else if (strcmp(key, "block_clean_start") == 0) {
                 g_cf->block_clean_start = atoi(value);
-            } else if (strcmp(key, "sync_interval") == 0) {
-                g_cf->sync_interval = atoi(value);
+            } else if (strcmp(key, "sync_check_interval") == 0) {
+                g_cf->sync_check_interval = atoi(value);
             } else if (strcmp(key, "block_clean_num") == 0) {
                 g_cf->block_clean_num = atoi(value);
             } else if (strcmp(key, "timeout") == 0) {
                 g_cf->timeout = atoi(value);
             } else if (strcmp(key, "log_level") == 0) {
                 g_cf->log_level = atoi(value);
+                g_log->loglevel = g_cf->log_level;
             } else if (strcmp(key, "master_sync_host") == 0) {
                 if (strcmp(g_cf->master_sync_host, value) != 0) {
                     strcpy(g_cf->master_sync_host, value);
@@ -813,29 +705,33 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
 
             if (g_cf->role == ROLE_SLAVE) {//本身是从
                 if (setrole == ROLE_MASTER) {//需要切换成主
-                    wait_thread_exit(g_runtime->slave->threadid);
+                    //wait_thread_exit(g_runtime->slave->threadid);
+                    sslave_stop(g_runtime->slave);
                     g_cf->role = ROLE_MASTER;
                     DINFO("=========slave to master\n");
                 } else if (setrole == ROLE_BACKUP) {//需要切换成backup状态
-                    wait_thread_exit(g_runtime->slave->threadid);
+                    //wait_thread_exit(g_runtime->slave->threadid);
+                    sslave_stop(g_runtime->slave);
                     g_cf->role = ROLE_BACKUP;
                     DINFO("=========slave to backup\n");
                 } else if (need_kill && (setrole == ROLE_SLAVE || setrole == 0)) {//更改了ip或者port
-                    wait_thread_exit(g_runtime->slave->threadid);
+                    //wait_thread_exit(g_runtime->slave->threadid);
+                    /*
                     if (g_runtime->slave) {
                         sslave_thread(g_runtime->slave);
                     } else {
                         g_runtime->slave = sslave_create();
-                    }
+                    }*/
                     sslave_go(g_runtime->slave);
                 }
             } else if ((g_cf->role == ROLE_BACKUP || g_cf->role == ROLE_MASTER) && setrole == ROLE_SLAVE) {
                 //本身能时master或者backup,需要切换成从
+                /*
                 if (g_runtime->slave) {
                     sslave_thread(g_runtime->slave);
                 } else {
                     g_runtime->slave = sslave_create();
-                }
+                }*/
                 g_cf->role = ROLE_SLAVE;
                 sslave_go(g_runtime->slave);
                 DINFO("=============master to slave\n");
@@ -850,12 +746,17 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             goto wdata_apply_over;
             break;
     }
-
+    DINFO("============================================ret: %d\n", ret);
     // write binlog
     if (writelog && (ret >= 0 || ret == MEMLINK_REPLIED)) {
         int sret = synclog_write(g_runtime->synclog, data, datalen);
         if (conn && conninfo)
             conninfo->cmd_count++;
+        if (sret < 0) {
+            DERROR("synclog_write error: %d\n", sret);
+            MEMLINK_EXIT;
+        }
+        sret = syncmem_write(g_runtime->syncmem, data, datalen, g_runtime->synclog->version, g_runtime->synclog->index_pos -1);
         if (sret < 0) {
             DERROR("synclog_write error: %d\n", sret);
             MEMLINK_EXIT;
@@ -874,26 +775,67 @@ wdata_apply_over:
  * @param data command data
  * @param datalen the length of data parameter
  */
-static int
+int
 wdata_ready(Conn *conn, char *data, int datalen)
 {
     struct timeval start, end;
-    char cmd;
-    int ret;
+    unsigned char cmd;
+    int ret = 0;
 
     zz_check(data);
     //memcpy(&cmd, data + sizeof(short), sizeof(char));
+    // slave only part of write commands
     memcpy(&cmd, data + sizeof(int), sizeof(char));
+
+#ifdef WITH_MASTER_BACKUP
+    if (cmd >= CMD_VOTE_MIN && cmd <= CMD_VOTE_MAX) {
+        vote_ready(conn, data, datalen);
+        return 0;
+    }
+#endif
+
     if (g_cf->role == ROLE_SLAVE && cmd != CMD_DUMP && 
         cmd != CMD_CLEAN && cmd != CMD_SET_CONFIG) {
         ret = MEMLINK_ERR_CLIENT_CMD;
         goto wdata_ready_over;
     }
 
+
     gettimeofday(&start, NULL);
+    // check max memory
+    if (start.tv_sec - g_runtime->mem_check_last > MEM_CHECK_INTERVAL) {
+        g_runtime->mem_used = get_process_mem(getpid());
+        g_runtime->mem_check_last = start.tv_sec;
+    }
+    
+    //DNOTE("check mem, used:%lld, max:%lld\n", g_runtime->mem_used, g_cf->max_mem);
+    if (g_cf->max_mem > 0 && g_runtime->mem_used > g_cf->max_mem) {
+        DERROR("memory used/max: %lld/%lld\n", g_runtime->mem_used, g_cf->max_mem);
+        data_reply(conn, MEMLINK_ERR_MEM, NULL, 0);
+        return 0;
+    }
+    
+    DINFO("mode:%d, role:%d\n", g_cf->sync_mode, g_cf->role);
+#ifdef WITH_MASTER_SLAVE
+    if (g_cf->sync_mode == MODE_MASTER_BACKUP) {
+        if (g_cf->role == ROLE_MASTER) {
+            DINFO("master ready ...\n");
+            ret = master_ready(conn, data, datalen);
+            return 0;
+        }else{
+            DINFO("back ready ...\n");
+            ret = backup_ready(conn, data, datalen);
+        }
+    }else{
+        pthread_mutex_lock(&g_runtime->mutex);
+        ret = wdata_apply(data, datalen, MEMLINK_WRITE_LOG, conn);
+        pthread_mutex_unlock(&g_runtime->mutex);
+    }
+#else
     pthread_mutex_lock(&g_runtime->mutex);
     ret = wdata_apply(data, datalen, MEMLINK_WRITE_LOG, conn);
     pthread_mutex_unlock(&g_runtime->mutex);
+#endif
     
     zz_check(conn);
 
@@ -902,10 +844,34 @@ wdata_ready_over:
         data_reply(conn, ret, NULL, 0);
     }
     gettimeofday(&end, NULL);
-    DNOTE("%s:%d cmd:%d %d %u us\n", conn->client_ip, conn->client_port, cmd, ret, timediff(&start, &end));
+    DINFO("%s:%d cmd:%d %d %u us\n", conn->client_ip, conn->client_port, cmd, ret, timediff(&start, &end));
     DINFO("data_reply return: %d\n", ret);
 
     return 0;
+}
+
+void
+wconn_destroy(Conn *conn)
+{
+    WThread *wt;
+    ConnInfo *conninfo = NULL; //SyncConnInfo *sconninfo;
+
+    wt = (WThread *)conn->thread;
+    if (wt) {
+        conninfo = (ConnInfo *)wt->rw_conn_info;
+        wt->conns--;
+    }
+    int i;
+    if (conninfo) {
+        for (i = 0; i < g_cf->max_write_conn; i++) {
+            if (conn->sock == conninfo[i].fd) {
+                conninfo[i].fd = 0;
+                break;
+            }
+        }
+    }
+
+    conn_destroy(conn);
 }
 
 /**
@@ -928,6 +894,9 @@ wthread_read(int fd, short event, void *arg)
         conn->port  = g_cf->write_port;
         conn->base  = wt->base;
         conn->ready = wdata_ready;
+        conn->destroy = wconn_destroy;
+        //conn->read  = client_read;
+        //conn->write = client_write;
         //连接统计信息
         int i;
         RwConnInfo *conninfo = wt->rw_conn_info;
@@ -935,6 +904,7 @@ wthread_read(int fd, short event, void *arg)
         
         for (i = 0; i < g_cf->max_write_conn; i++) {
             conninfo = &(wt->rw_conn_info[i]);
+            memset(conninfo, 0x0, sizeof(RwConnInfo));
             if (conninfo->fd == 0) {
                 conninfo->fd = conn->sock;
                 strcpy(conninfo->client_ip, conn->client_ip);
@@ -947,11 +917,11 @@ wthread_read(int fd, short event, void *arg)
 
         // check connection limit
         if (conn_check_max((Conn*)conn) != MEMLINK_OK) {
-            DNOTE("too many write conn.\n");
+            DERROR("too many write conn.\n");
             conn->destroy((Conn*)conn);
             return;
         }
-
+    
         DINFO("new conn: %d\n", conn->sock);
         DINFO("change event to read.\n");
         ret = change_event(conn, EV_READ|EV_PERSIST, g_cf->timeout, 1);
@@ -972,7 +942,7 @@ wthread_read(int fd, short event, void *arg)
  * @param event
  * @param arg connection
  */
-void
+/*void
 client_read(int fd, short event, void *arg)
 {
     Conn *conn = (Conn*)arg;
@@ -984,13 +954,12 @@ client_read(int fd, short event, void *arg)
 
     if (event & EV_TIMEOUT) {
         DWARNING("read timeout:%d, close\n", fd);
-        conn->destroy(conn);
+        //conn->destroy(conn);
+        conn->timeout(conn);
         return;
     }
-    /*
-     * Called more than one time for the same command and aready receive the 
-     * 2-byte command length.
-     */
+    //  Called more than one time for the same command and aready receive the 
+    //  2-byte command length.
     if (conn->rlen >= sizeof(int)) {
         //memcpy(&datalen, conn->rbuf, sizeof(short)); 
         memcpy(&datalen, conn->rbuf, sizeof(int));
@@ -1063,7 +1032,7 @@ client_read(int fd, short event, void *arg)
         }
     }
 }
-
+*/
 /**
  * Send data inside the connection to client. If all the data has been sent, 
  * register read event for this connection.
@@ -1072,13 +1041,14 @@ client_read(int fd, short event, void *arg)
  * @param event
  * @param arg connection
  */
-void
+/*void
 client_write(int fd, short event, void *arg)
 {
     Conn  *conn = (Conn*)arg;
     if (event & EV_TIMEOUT) {
         DWARNING("write timeout:%d, close\n", fd);
-        conn->destroy(conn);
+        //conn->destroy(conn);
+        conn->timeout(conn);
         return;
     }
 
@@ -1089,7 +1059,7 @@ client_write(int fd, short event, void *arg)
         return;
     }
     conn_write(conn);
-}
+}*/
 
 WThread*
 wthread_create()
@@ -1111,7 +1081,7 @@ wthread_create()
     }
     memset(wt->rw_conn_info, 0x0, sizeof(RwConnInfo) * g_cf->max_write_conn);
 
-    wt->sock = tcp_socket_server(g_cf->ip,g_cf->write_port); 
+    wt->sock = tcp_socket_server(g_cf->host, g_cf->write_port); 
     if (wt->sock == -1) {
         MEMLINK_EXIT;
     }
@@ -1128,13 +1098,36 @@ wthread_create()
         struct timeval tm;
         evtimer_set(&wt->dumpevt, dumpfile_call_loop, &wt->dumpevt);
         evutil_timerclear(&tm);
-        tm.tv_sec = g_cf->dump_interval * 60; 
+        tm.tv_sec = g_cf->dump_interval; 
         event_base_set(wt->base, &wt->dumpevt);
         event_add(&wt->dumpevt, &tm);
     }
 
+    if (g_cf->sync_disk_interval > 0) {
+        struct timeval tm;
+        evtimer_set(&wt->sync_disk_evt, synclog_sync_disk, &wt->sync_disk_evt);
+        evutil_timerclear(&tm);
+        tm.tv_sec = g_cf->sync_disk_interval; 
+        event_base_set(wt->base, &wt->sync_disk_evt);
+        event_add(&wt->sync_disk_evt, &tm);
+    }
+
+
+
     g_runtime->wthread = wt;
 
+    // for test
+#ifdef WITH_MASTER_BACKUP
+    if (g_cf->sync_mode == MODE_MASTER_BACKUP) {
+        g_cf->role = ROLE_NONE;
+        uint64_t eid = 0;
+        eid |= g_runtime->synclog->version;
+        eid = eid << 32;
+        eid |= g_runtime->synclog->index_pos;
+        g_runtime->voteid = 0;
+        request_vote(eid, COMMITED, g_runtime->voteid+1, g_cf->write_port);
+    }
+#endif
     pthread_t       threadid;
     pthread_attr_t  attr;
     int             ret;
@@ -1159,7 +1152,7 @@ wthread_create()
     if (ret != 0) {
         char errbuf[1024];
         strerror_r(errno, errbuf, 1024);
-		DERROR("pthread_detach error; %s\n",  errbuf);
+        DERROR("pthread_detach error; %s\n",  errbuf);
         MEMLINK_EXIT;
     }
 

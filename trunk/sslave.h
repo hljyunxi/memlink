@@ -14,7 +14,7 @@ typedef struct _sslave
     int sock;
 	int timeout;
 
-    pthread_t threadid;
+    volatile pthread_t threadid;
 	//int status; // 0.init 1. sync 2.dump 3.recv new log
 
 	//int binlog_ver;
@@ -31,11 +31,14 @@ typedef struct _sslave
     //long long    dumpfile_size; // master dumpfile size
 
     //int			 trycount; // count of get last sync position
+    volatile int is_getdump;
 	volatile int isrunning;
+    //volatile int is_backup_do;
 } SSlave;
 
 SSlave* sslave_create();
 void	sslave_go(SSlave *slave);
+void    sslave_stop(SSlave *slave);
 void	sslave_destroy(SSlave *slave);
 void	sslave_close(SSlave *slave);
 void    sslave_thread(SSlave *slave);

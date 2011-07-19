@@ -15,13 +15,18 @@
 #include <event.h>
 #include <evutil.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <ctype.h>
 #include "myconfig.h"
 #include "logfile.h"
 #include "dumpfile.h"
-#include "utils.h"
+#include "base/utils.h"
+#include "base/md5.h"
 #include "common.h"
 #include "datablock.h"
 #include "runtime.h"
+#include "zzmalloc.h"
 
 /**
  * Creates a dump file from the hash table. The old dump file is replaced by 
@@ -45,6 +50,9 @@ dumpfile(HashTable *ht)
     char        dumpfile[PATH_MAX];
     char        dumpfileok[PATH_MAX];
     char        dumpfiletime[PATH_MAX];
+    char        dumpfilemd5[PATH_MAX];
+    char        dumpfilemd5time[PATH_MAX];
+    char        dumpfilemd5tmp[PATH_MAX];
     int         i;
     long long   size = 0;
     struct timeval start, end;
@@ -54,6 +62,8 @@ dumpfile(HashTable *ht)
     snprintf(dumpfile, PATH_MAX, "%s/%s", g_cf->datadir, DUMP_FILE_NAME);
     snprintf(tmpfile, PATH_MAX, "%s/%s.tmp", g_cf->datadir, DUMP_FILE_NAME);
     snprintf(dumpfileok, PATH_MAX, "%s/%s.ok", g_cf->datadir, DUMP_FILE_NAME);
+    snprintf(dumpfilemd5, PATH_MAX, "%s/%s.md5", g_cf->datadir, DUMP_FILE_NAME);
+    snprintf(dumpfilemd5tmp, PATH_MAX, "%s/%s.md5.tmp", g_cf->datadir, DUMP_FILE_NAME);
 
     DINFO("dumpfile to tmp: %s\n", tmpfile);
    
@@ -148,8 +158,15 @@ dumpfile(HashTable *ht)
         strerror_r(errno, errbuf, 1024);
         DERROR("dumpfile rename error: %s\n",  errbuf);
     }
-    
-    if (isfile(dumpfile)) {
+    char md5[33] = {0};
+    ret = md5_file(dumpfileok, md5, 32);
+    if (ret == 0) {
+        FILE    *fp = fopen64(dumpfilemd5tmp, "wb");
+        ffwrite(md5, sizeof(char), 32, fp);
+        fclose(fp);
+    }
+ 
+    if (isfile(dumpfile) && isfile(dumpfilemd5)) {
         //保存当前的dump.dat，在后面加上时间以区分
         time_t timep;
         struct tm result, *p;
@@ -160,11 +177,18 @@ dumpfile(HashTable *ht)
         p = &result;
         snprintf(dumpfiletime, PATH_MAX, "%s/%s.%d%02d%02d.%02d%02d%02d", g_cf->datadir, DUMP_FILE_NAME, 
             p->tm_year + 1900, 1 + p->tm_mon, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec); 
+        snprintf(dumpfilemd5time, PATH_MAX, "%s/%s.md5.%d%02d%02d.%02d%02d%02d", g_cf->datadir, DUMP_FILE_NAME,
+            p->tm_year + 1900, 1 + p->tm_mon, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec);
         //如果加了这个日期后缀的文件存在，再在文件后面加一个随机数
         int i = 1;
         while (isfile(dumpfiletime)) {
             snprintf(dumpfiletime, PATH_MAX, "%s/%s.%d%02d%02d.%02d%02d%02d.%02d", g_cf->datadir, DUMP_FILE_NAME,
                 p->tm_year + 1900, 1 + p->tm_mon, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec, i);
+            i++;
+        }
+        while (isfile(dumpfilemd5time)) {
+            snprintf(dumpfiletime, PATH_MAX, "%s/%s.md5%d%02d%02d.%02d%02d%02d.%02d", g_cf->datadir, DUMP_FILE_NAME,
+                    p->tm_year + 1900, 1 + p->tm_mon, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec, i);
             i++;
         }
 
@@ -174,7 +198,14 @@ dumpfile(HashTable *ht)
         if (ret == -1) {
             char errbuf[1024];
             strerror_r(errno, errbuf, 1024);
-			DERROR("dumpfile rename error %s\n",  errbuf);
+            DERROR("dumpfile rename error %s\n",  errbuf);
+        }
+        ret = rename(dumpfilemd5, dumpfilemd5time);
+        DINFO("rename %s to %s return: %d\n", dumpfilemd5, dumpfilemd5time, ret);
+        if (ret == -1) {
+            char errbuf[1024];
+            strerror_r(errno, errbuf, 1024);
+            DERROR("dumpfile rename error %s\n",  errbuf);
         }
     }    
     //把当前的dump.dat.ok，改名为dump.dat    
@@ -183,11 +214,20 @@ dumpfile(HashTable *ht)
     if (ret == -1) {
         char errbuf[1024];
         strerror_r(errno, errbuf, 1024);
-		DERROR("dumpfile rename error %s\n",  errbuf);
+        DERROR("dumpfile rename error %s\n",  errbuf);
     }
-           
+    ret = rename(dumpfilemd5tmp, dumpfilemd5);
+    DINFO("rename %s to %s return: %d\n", dumpfilemd5tmp, dumpfilemd5, ret);
+    if (ret == -1) {
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("dumpfile rename error %s\n",  errbuf);
+    }
     gettimeofday(&end, NULL);
     DNOTE("dump time: %u us\n", timediff(&start, &end));
+
+    dumpfile_reserve(g_cf->dumpfile_num_max);
+
     return ret;
 }
 
@@ -422,7 +462,7 @@ dumpfile_call_loop(int fd, short event, void *arg)
     struct event *timeout = arg;
 
     evutil_timerclear(&tv);
-    tv.tv_sec = g_cf->dump_interval * 60; 
+    tv.tv_sec = g_cf->dump_interval; 
     event_add(timeout, &tv);
 }
 
@@ -438,6 +478,147 @@ dumpfile_call()
     pthread_mutex_unlock(&g_runtime->mutex);
     
     return ret;
+}
+
+//在系统data目录下找到最新的dump文件
+int
+dumpfile_latest(char *filename)
+{
+    unsigned int top_max = 0;
+    unsigned int buttom_max = 0;
+    unsigned int tmp;
+    DIR *dir;
+    struct dirent *dnt;
+    char dumpfile[PATH_MAX];
+    char *p;
+
+    if (!(dir = opendir(g_cf->datadir))) {
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("opendir %s error: %s\n", g_cf->datadir,  errbuf);
+        return -1;
+    }
+
+    while ((dnt = readdir(dir)) != NULL) {
+        if (strncmp(dnt->d_name, "dump.dat.", 9) == 0) {
+            strcpy(dumpfile, dnt->d_name+9);
+            p = strchr(dumpfile, '.');
+            if (p == NULL) {
+                DERROR("dumpfile %s file name invalid, ignore\n", dnt->d_name);
+                continue;
+            }
+            *p++ = '\0';
+            tmp = (unsigned int)atoi(dumpfile);
+            if (tmp > top_max) {
+                top_max = tmp;
+                buttom_max = (unsigned int)atoi(p);
+                strcpy(filename, dnt->d_name);
+            } else if (tmp == top_max) {
+                tmp  = (unsigned int)atoi(p);
+                if (tmp > buttom_max) {
+                    buttom_max = tmp;
+                    strcpy(filename, dnt->d_name);
+                }
+            }
+        }
+    }
+
+    closedir(dir);
+
+    return 0;
+}
+
+// 保留前num个dumpfile
+int
+dumpfile_reserve(int num)
+{
+    #define SUFFIXLEN 24
+    struct dumpfile
+    {
+        char data[SUFFIXLEN+1];
+        unsigned int top;
+        unsigned int bottom;
+    }*pdump;
+    DIR *dir;
+    struct dirent *dnt;
+    int dump_count = 0;
+
+    DINFO("dumpfile reserve %d\n", num);
+    if (num < 0)
+        return 0;
+
+    pdump = (struct dumpfile *)zz_malloc(sizeof(*pdump) * 1000);
+
+    memset(pdump, 0, sizeof(*pdump) * 1000);
+
+    dir = opendir(g_cf->datadir);
+    if (dir == NULL) {
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("opendir %s error: %s\n", g_cf->datadir,  errbuf);
+        zz_free(pdump);
+        return -1;
+    }
+
+    while ((dnt = readdir(dir)) != NULL) {
+        if (strncmp(dnt->d_name, "dump.dat.", 9) == 0 && isdigit(dnt->d_name[9])) {
+            strncpy(pdump[dump_count].data, dnt->d_name+9, SUFFIXLEN);
+            char *p = strchr(pdump[dump_count].data, '.');
+            if (p == NULL) {
+                DERROR("dumpfile %s file name invalid, ignore\n", dnt->d_name);
+                continue;
+            }
+            *p = '\0';
+            p++;
+            pdump[dump_count].top = (unsigned int)atoi(pdump[dump_count].data);
+            pdump[dump_count].bottom = (unsigned int)atoi(p);
+            p[-1] = '.';
+            dump_count++;
+            if (dump_count >= 1000) {
+                DERROR("dump file too many, ignore the left\n");
+                break;
+            }
+        }
+    }
+
+    closedir(dir);
+
+    if (dump_count > num) {
+        int count = dump_count - num;
+        int min = 0;
+        int i;
+        while (count > 0) {
+            for (i = 0; i < dump_count; i++) {
+                if (pdump[i].data[0] != '\0') {
+                    min = i;
+                    break;
+                }
+            }
+            for (i = min+1; i < dump_count; i++) {
+                if (pdump[i].data[0] != '\0') {
+                    if (pdump[i].top < pdump[min].top) {
+                        min = i;
+                    } else if (pdump[i].top == pdump[min].top) {
+                        if (pdump[i].bottom < pdump[min].bottom) {
+                            min = i;
+                        }
+                    }
+                }
+            }
+            char file[PATH_MAX];
+            snprintf(file, PATH_MAX, "%s/dump.dat.%s", g_cf->datadir, pdump[min].data);
+            unlink(file);
+            DINFO("delete dumpfile: %s\n", file);
+            snprintf(file, PATH_MAX, "%s/dump.dat.md5.%s", g_cf->datadir, pdump[min].data);
+            unlink(file);
+            DINFO("delete dumpfile: %s\n", file);
+            pdump[min].data[0] = '\0';
+            count--;
+        }
+    }
+
+    zz_free(pdump);
+    return 0;
 }
 
 /**

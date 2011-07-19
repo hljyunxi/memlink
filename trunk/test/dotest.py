@@ -4,6 +4,41 @@ import glob
 import subprocess
 import time
 
+def testsync(fn, wait = 2):
+    home = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    cwd  = os.getcwd()
+
+    print 'home:', home, 'cwd:', cwd
+    fpath = os.path.join(home, 'test', fn)
+   
+    if fpath.endswith('.py'):
+        fpath = 'python ' + fpath
+
+    binfiles = glob.glob('data/*')
+    for bf in binfiles:
+        print 'remove:', bf
+        os.remove(bf)
+
+    binfiles = glob.glob('data_slave/*')
+    for bf in binfiles:
+        print 'remove:', bf
+        os.remove(bf)
+
+    cmd = "killall -9 memlink_master"
+    os.system(cmd)
+
+    cmd = "killall -9 memlink_slave"
+    os.system(cmd)
+
+    print 'run test:', fpath
+    ret = os.system(fpath)
+    if ret != 0:
+        print fn, '\t\t\33[31mfailed!\33[0m'
+    else:
+        print fn, '\t\t\33[32msuccess!\33[0m'
+
+    return ret
+
 def testone(fn, wait=2):
     home = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     cwd  = os.getcwd()
@@ -56,36 +91,58 @@ def testone(fn, wait=2):
 def test():
     if os.path.isfile('dotest.log'):
         os.remove('dotest.log')
-
+    sources = glob.glob("*_test.c")
     files = glob.glob("*_test")
     files.sort()
     print files
-    #pyfiles = glob.glob("*_test.py")
-    pyfiles = ['dump_test.py', 'push_pop_test.py', 'sortlist_test.py']
+    pyfiles = glob.glob("*_test.py")
+    pyfiles = ['dump_test.py', 'push_pop_test.py', 'sortlist_test.py', 'vote_test.py']
     files += pyfiles
 
+    syncfile = ['ab_sync_test.py', 'cd_sync_test.py', 'f_sync_test.py', 'g_sync_test.py', 'h_sync_test.py']
+    #syncfile = ['g_sync_test.py']
     result = {}
-    print 'do all test ...'
     
-    f = open('dotest.log', 'w')
+    for x in sources:
+        biname = x[:-2]
+        if biname not in files:
+            result[biname] = 0
+
+    print 'do all test ...'
+
+    failed = 0
     for fn in files:
         ret = testone(fn)
         if ret != 0: # failed
-            result[fn] = -1
-            f.write('%s\t0\n' % fn)
-        else: # success
+            failed += 1
             result[fn] = 0
-            f.write('%s\t1\n' % fn)
+        else: # success
+            result[fn] = 1
+
+    for fn in syncfile:
+        ret = testsync(fn)
+        if ret != 0:
+            failed += 1
+            result[fn] = 0
+        else:
+            result[fn] = 1
+
+    f = open('dotest.log', 'w')
+    for k,v in result.iteritems():
+        if v == 0:    
+            f.write('%s\t0\n' % k)
+        else:
+            f.write('%s\t1\n' % k)
     f.close()
 
-    return result
+    #return result
+    if failed > 0:
+        return -1
+    return 0
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         sys.exit(testone(sys.argv[1]))
     else:
-        ret = test()
-        for row in ret:
-            if row < 0:
-                sys.exit(row)
+        sys.exit(test())
 

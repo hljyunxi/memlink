@@ -1,5 +1,5 @@
-#ifndef MEMLINK_DAEMON_H
-#define MEMLINK_DAEMON_H
+#ifndef BASE_DAEMON_H
+#define BASE_DAEMON_H
 
 #include <stdio.h>
 

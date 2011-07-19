@@ -9,9 +9,9 @@ public class MemLinkClient
 	
 	static {
 		try{
-			System.loadLibrary("memlink");
+			System.loadLibrary("cmemlink");
 		}catch (UnsatisfiedLinkError e) {
-			System.err.println("library libmemlink.so load error! " + e);
+			System.err.println("library libcmemlink.so load error! " + e);
 			System.exit(1);
 		}
 	}
@@ -106,7 +106,7 @@ public class MemLinkClient
 	{
 		/*MemLinkResult result = new MemLinkResult();
 		int ret = cmemlink.memlink_cmd_range(client, key, kind, maskstr, frompos, len, result);
-		if (ret == memlink.MEMLINK_OK) {
+		if (ret == cmemlink.MEMLINK_OK) {
 			return result;
 		}
 		return null;*/
@@ -172,17 +172,17 @@ public class MemLinkClient
 
     public int sortListRangeAll(String key, String vmin, String vmax, String maskstr, MemLinkResult result)
     {
-        return sortListRange(key,cmemlink.MEMLINK_VALUE_ALL, vmin, vmax, maskstr, result);
+        return sortListRange(key, cmemlink.MEMLINK_VALUE_ALL, vmin, vmax, maskstr, result);
     }
 
     public int sortListRangeVisible(String key, String vmin, String vmax, String maskstr, MemLinkResult result)
     {
-        return sortListRange(key,cmemlink.MEMLINK_VALUE_VISIBLE, vmin, vmax, maskstr, result);
+        return sortListRange(key, cmemlink.MEMLINK_VALUE_VISIBLE, vmin, vmax, maskstr, result);
     }
 
     public int sortListRangeTagdel(String key, String vmin, String vmax, String maskstr, MemLinkResult result)
     {
-        return sortListRange(key,cmemlink.MEMLINK_VALUE_TAGDEL, vmin, vmax, maskstr, result);
+        return sortListRange(key, cmemlink.MEMLINK_VALUE_TAGDEL, vmin, vmax, maskstr, result);
     }
 
 

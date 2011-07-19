@@ -6,6 +6,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <pthread.h>
+#include <stdint.h>
 #include "synclog.h"
 #include "hashtable.h"
 #include "mem.h"
@@ -13,6 +14,8 @@
 #include "server.h"
 #include "sslave.h"
 #include "sthread.h"
+#include "syncbuffer.h"
+#include "vote.h"
 
 typedef struct _runtime
 {
@@ -26,6 +29,7 @@ typedef struct _runtime
     SyncLog         *synclog;  // current synclog
     MemPool         *mpool; 
     HashTable       *ht;
+    SyncMem         *syncmem;
 	volatile int	inclean;
     //char			cleankey[512];
     WThread         *wthread;
@@ -38,6 +42,12 @@ typedef struct _runtime
 
 	pthread_mutex_t	mutex_mem;
 	long long		mem_used;
+	unsigned int	mem_check_last;
+    uint64_t voteid;
+    //unsigned char   role;
+    //Host			*hosts;
+    unsigned int    servernums;
+	struct timeval  sync_disk_last;
 }Runtime;
 
 extern Runtime  *g_runtime;

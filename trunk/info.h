@@ -31,6 +31,7 @@ typedef struct _sync_conn_info
 	int  delay;
 
 	unsigned char status;
+    char push_log_stop;
 }SyncConnInfo;
 
 int info_sys_stat(MemLinkStatSys *stat);

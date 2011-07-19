@@ -27,7 +27,7 @@ public class MemLinkInsertMkv {
 
   public synchronized void delete() {
     if (swigCPtr != 0) {
-	  cmemlink.memlink_imkv_destroy(this);
+	  //cmemlinkJNI.memlink_imkv_destroy(swigCPtr);
       if (swigCMemOwn) {
         swigCMemOwn = false;
         cmemlinkJNI.delete_MemLinkInsertMkv(swigCPtr);
@@ -87,7 +87,10 @@ public class MemLinkInsertMkv {
   }
 
   public MemLinkInsertMkv() {
-    this(cmemlinkJNI.new_MemLinkInsertMkv(), true);
+    //this(cmemlinkJNI.new_MemLinkInsertMkv(), true);
+	this(cmemlinkJNI.memlink_imkv_create(), true);
   }
-
+  public int add(MemLinkInsertKey keyobj) {
+	return cmemlinkJNI.memlink_imkv_add_key(swigCPtr, this, MemLinkInsertKey.getCPtr(keyobj), keyobj);
+  }
 }

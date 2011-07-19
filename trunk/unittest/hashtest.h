@@ -9,6 +9,8 @@
 #include "myconfig.h"
 #include "common.h"
 #include "runtime.h"
+#include "datablock.h"
+#include "syncbuffer.h"
 
 #define MY_PRINT(format,args...)  \
 {\

@@ -2,10 +2,11 @@ import sys, os
 
 #cflags   = '-ggdb -DRANGE_MASK_STR'
 cflags   = '-ggdb -Wall'
-includes = ['.', '../../']
-libpath  = ['.']
+includes = ['.', '../../', '../../base']
+libpath  = ['.', '../../base']
 libs     = ['m', 'pthread']
-comfiles = ['../../zzmalloc.c', '../../serial.c', '../../logfile.c', '../../utils.c']
+comfiles = ['../../serial.c', '../../base/utils.c', '../../base/logfile.c', 
+			'../../base/zzmalloc.c', '../../base/pack.c']
 prgfiles = comfiles + ['memlink_client.c', 'test.c']
 simfiles = comfiles + ['memlink_client.c', 'pingtest.c']
 libfiles = comfiles + ['memlink_client.c'] 

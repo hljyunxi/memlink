@@ -18,6 +18,8 @@ typedef struct _sthread
 	struct event event;
 	int    conn_sync;
 	unsigned short conns;
+    char   stop;
+    int    push_stop_nums;
 	SyncConnInfo *sync_conn_info;
 }SThread;
 
@@ -26,17 +28,20 @@ typedef struct __syncconn
 	CONN_MEMBER
 
 	struct event sync_write_evt;
-	struct event sync_interval_evt;
+	struct event sync_check_interval_evt;
 	struct event sync_read_evt;
 
 	struct timeval interval;
-	struct timeval timeout;
 	
 	unsigned char status;
 	unsigned char cmd;
 
 	SyncLog *synclog;
 	int dump_fd;
+    //int bpos;
+    int blogver;
+    int blogline;
+    char need_skip_one;
 }SyncConn;
 
 SThread *sthread_create();

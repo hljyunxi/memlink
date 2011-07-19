@@ -88,7 +88,7 @@ rdata_ready(Conn *conn, char *data, int datalen)
             ret = hashtable_range(g_runtime->ht, key, kind, maskarray, masknum, frompos, len, conn); 
             DINFO("hashtable_range return: %d\n", ret);
             //ret = data_reply(conn, ret, retrec, retlen);
-            ret = data_reply_direct(conn);
+            ret = conn_send_buffer(conn);
             DINFO("data_reply return: %d\n", ret);
             if (conninfo)
                 conninfo->cmd_count++;
@@ -130,7 +130,7 @@ rdata_ready(Conn *conn, char *data, int datalen)
                                             valmin, valmax, conn); 
             DINFO("hashtable_range return: %d\n", ret);
             //ret = data_reply(conn, ret, retrec, retlen);
-            ret = data_reply_direct(conn);
+            ret = conn_send_buffer(conn);
             DINFO("data_reply return: %d\n", ret);
             if (conninfo)
                 conninfo->cmd_count++;
@@ -244,7 +244,7 @@ rdata_ready(Conn *conn, char *data, int datalen)
             if (conninfo)
                 conninfo->cmd_count++;
             ret = info_read_conn(conn);
-            ret = data_reply_direct(conn);
+            ret = conn_send_buffer(conn);
             DINFO("data_reply return: %d\n", ret);
             break;
 
@@ -255,7 +255,7 @@ rdata_ready(Conn *conn, char *data, int datalen)
                 conninfo->cmd_count++;
             ret = info_write_conn(conn);
             DINFO("write_conn_info return: %d\n", ret);
-            ret = data_reply_direct(conn);
+            ret = conn_send_buffer(conn);
             DINFO("data_reply return: %d\n", ret);
             break;
         }
@@ -265,14 +265,14 @@ rdata_ready(Conn *conn, char *data, int datalen)
                 conninfo->cmd_count++;
             ret = info_sync_conn(conn);
             DINFO("sync_conn_info return: %d\n", ret);
-            ret = data_reply_direct(conn);
+            ret = conn_send_buffer(conn);
             DINFO("data_reply return: %d\n", ret);
             break;
         }
         case CMD_CONFIG_INFO: {
             DINFO("<<< cmd CMD_CONFIG_INFO >>>\n");
             ret = info_sys_config(conn);
-            ret = data_reply_direct(conn);
+            ret = conn_send_buffer(conn);
             DINFO("data_reply return: %d\n", ret);
             break;
         }

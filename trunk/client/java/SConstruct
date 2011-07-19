@@ -1,25 +1,28 @@
 import sys, os, subprocess, glob
 
 #java_home		= '/usr/lib/jvm/java-1.6.0-openjdk-1.6.0.0'
-#java_home		= '/usr/lib/jvm/java-1.6.0-openjdk'
+#java_home		= '/usr/java/jdk1.6.0_26'
 #java_home		= '/usr/java/jdk'
 java_home		= '/Library/Java/Home'
 java_includes	= [os.path.join(java_home, 'include'), os.path.join(java_home, 'include/linux')]
 #java_libs		= os.path.join(java_home, 'lib')
 
 os.system('swig -java -package com.googlecode.memlink -o memlink_client_java.c -outdir com/googlecode/memlink ../c/memlink_client.i')
-#os.system('cp MemLinkResult.java com/googlecode/memlink/')
-#os.system('cp MemLinkRcInfo.java com/googlecode/memlink/')
-#os.system('cp MemLinkWcInfo.java com/googlecode/memlink/')
-#os.system('cp MemLinkScInfo.java com/googlecode/memlink/')
-#os.system('cp MemLinkInsertMkv.java com/googlecode/memlink/')
+os.system('cp MemLinkResult.java com/googlecode/memlink/')
+os.system('cp MemLinkRcInfo.java com/googlecode/memlink/')
+os.system('cp MemLinkWcInfo.java com/googlecode/memlink/')
+os.system('cp MemLinkScInfo.java com/googlecode/memlink/')
+os.system('cp MemLinkInsertMkv.java com/googlecode/memlink/')
+os.system('cp MemLinkInsertKey.java com/googlecode/memlink/')
+os.system('cp MemLinkInsertVal.java com/googlecode/memlink/')
 
 cflags   = '-ggdb -fpic'
-includes = ['.', '../../', '../c/'] + java_includes
+includes = ['.', '../../', '../../base', '../c/'] + java_includes
+#libpath  = ['.', '../../base']
 libpath  = ['.']
 libs	 = ['m']
-files    = ['../../zzmalloc.c', '../../serial.c', '../../logfile.c', '../../utils.c', 
-			'../c/memlink_client.c']
+files    = ['../../serial.c', '../c/memlink_client.c', '../../base/pack.c',
+			'../../base/utils.c', '../../base/zzmalloc.c', '../../base/logfile.c']
 
 env = Environment(CCFLAGS=cflags, CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
 shared_files = []
@@ -28,10 +31,12 @@ for fn in files:
     shared_files.append(env.SharedObject('client-' + name, fn))
 shared_files.append('memlink_client_java.c')
 
-env.SharedLibrary("memlink", shared_files)
+env.SharedLibrary("cmemlink", shared_files)
 
 t = Java(target='.', source='com')
 Jar(target="memlink.jar", source=['com'])
+Java(target='.', source='test')
+Jar(target="test.jar", source=['test', 'com', 'Mainifest.txt'])
 
 # for clean
 files = glob.glob('com/googlecode/memlink/*.java')

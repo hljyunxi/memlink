@@ -14,36 +14,16 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include "logfile.h"
+#include "base/logfile.h"
 #include "myconfig.h"
 #include "mem.h"
 #include "dumpfile.h"
 #include "synclog.h"
-#include "zzmalloc.h"
+#include "base/zzmalloc.h"
 #include "common.h"
-#include "utils.h"
+#include "base/utils.h"
+#include "base/md5.h"
 #include "runtime.h"
-
-static int
-truncate_file(int fd, int len)
-{
-    int ret;
-    while (1) {
-        ret = ftruncate(fd, len);
-        if (ret == -1) {
-            if (errno == EINTR) {
-                continue;
-            }else{
-                char errbuf[1024];
-                strerror_r(errno, errbuf, 1024);
-                DERROR("ftruncate %d, %d error: %s\n", fd, len,  errbuf);
-                MEMLINK_EXIT;
-            }
-        }
-        break;
-    }
-    return 0;
-}
 
 SyncLog*
 synclog_create()
@@ -390,25 +370,43 @@ synclog_validate(SyncLog *slog)
 
     unsigned int dlen;
     int            filelen = lseek(slog->fd, 0, SEEK_END);
+    unsigned int idx;
     
     DINFO("filelen: %d, lastidx: %d, i: %d\n", filelen, lastidx, i);
+
+    if (lastidx >= filelen) {
+        idx = slog->index_pos - 1;
+        i = 1;
+        while ((lastidx = loopdata[idx-i]) >= filelen) {
+            i++;
+        }
+        DERROR("synclog lost the last %d line(s) data\n", i);
+        MEMLINK_EXIT;
+    }
 
     //unsigned int oldidx = lastidx; 
     while (lastidx < filelen) {
         //DINFO("check offset: %d\n", lastidx);
         // skip logver and logline
-        lastidx += sizeof(int) + sizeof(int);
-        int cur = lseek(slog->fd, lastidx, SEEK_SET);
+        idx = lastidx;
+        idx += sizeof(int) + sizeof(int);
+        if (idx >= filelen) {
+            DERROR("syslog data too small, at: %u, index: %d\n", idx, lastidx);
+            MEMLINK_EXIT;
+        }
+        int cur = lseek(slog->fd, idx, SEEK_SET);
         if (readn(slog->fd, &dlen, sizeof(int), 0) != sizeof(int)) {
             DERROR("synclog readn error, lastidx: %u, cur: %u\n", lastidx, cur);
             MEMLINK_EXIT;
         }
 
-        if (filelen == cur + dlen + sizeof(int)) { // size ok
+        idx = cur + dlen + sizeof(int);
+
+        if (filelen == idx) { // size ok
             slog->pos = filelen;
             break;
-        }else if (filelen < cur + dlen + sizeof(int)) { // too small
-            DERROR("synclog data too small, at:%u, index:%d\n", cur, i);
+        }else if (filelen < idx) { // too small
+            DERROR("synclog data too small, at:%u, index:%d\n", cur, lastidx);
             MEMLINK_EXIT;
             /*
             DINFO("index: %p, loopdata: %p\n", slog->index, loopdata);
@@ -423,9 +421,17 @@ synclog_validate(SyncLog *slog)
             break;
             */
         }else{
+            if (slog->index_pos >= SYNCLOG_INDEXNUM) {
+                DERROR("sync index is full, but still have datas, synclog data too large\n");
+                MEMLINK_EXIT;
+            }
+            DINFO("revise synclog index lost: %d\n", slog->index_pos);
+            loopdata[slog->index_pos] = idx;
+            lastidx = idx;
+            slog->index_pos++;
+/*
             DERROR("index too small, at:%u, index:%d\n", cur, i);
             MEMLINK_EXIT;
-            /*
             lastidx = lastidx + sizeof(int) + dlen; // skip to next
             if (i == 0 || lastidx > oldidx) { // add index
                 loopdata[slog->index_pos] = lastidx;
@@ -535,7 +541,7 @@ synclog_version(SyncLog *slog, unsigned int *logver)
     if (ret != sizeof(int)) {
         char errbuf[1024];
         strerror_r(errno, errbuf, 1024);
-		DERROR("readn error: %d, %s\n", ret,  errbuf);
+        DERROR("readn error: %d, %s\n", ret,  errbuf);
         return -1;
     }
 
@@ -927,7 +933,7 @@ int synclog_clean(unsigned int logver, unsigned int dumplogpos)
                 if (ret < 0) {
                     char errbuf[1024];
                     strerror_r(errno, errbuf, 1024);
-					DERROR("rename %s error: %d, %s\n", logname, ret,  errbuf);
+                    DERROR("rename %s error: %d, %s\n", logname, ret,  errbuf);
                     MEMLINK_EXIT;
                 }
             }
@@ -946,6 +952,177 @@ int synclog_clean(unsigned int logver, unsigned int dumplogpos)
     closedir(mydir);
     //synclog_truncate(g_runtime->synclog, logver, dumplogpos);    
     return 1;
+}
+
+void
+synclog_sync_disk(int fd, short event, void *arg)
+{
+    DINFO("=== sync binlog to disk. ===\n");
+#ifdef __linux
+    fdatasync(g_runtime->synclog->fd);
+#else // FreeBSD, MacOSX not have fdatasync
+    fsync(g_runtime->synclog->fd);
+#endif
+
+    struct timeval    tv;
+    struct event *syncevt = arg;
+
+    evutil_timerclear(&tv);
+    tv.tv_sec = g_cf->sync_disk_interval; 
+    event_add(syncevt, &tv);
+}
+
+int
+synclog_read_data(char *binlogname, int fromline, int toline, char *md5str)
+{
+    int fd;
+    int ret = 0;
+
+    fd = open(binlogname, O_RDONLY);
+    if (-1 == fd) {
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("open file %s error! %s\n", binlogname, errbuf);
+        MEMLINK_EXIT;
+    }
+
+    int len = lseek(fd, 0, SEEK_END);
+
+    char *addr = mmap(NULL, len, PROT_READ, MAP_SHARED, fd, 0);
+    if (addr == MAP_FAILED) {
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("synclog mmap %s error: %s\n", binlogname, errbuf);
+        MEMLINK_EXIT;
+    }
+    unsigned int indexlen = *(unsigned int *)(addr + SYNCLOG_HEAD_LEN - sizeof(int));
+    char *data = addr + SYNCLOG_HEAD_LEN + indexlen *sizeof(int);
+    char *enddata = addr + len;
+    int  *indexdata = (int *)(addr + SYNCLOG_HEAD_LEN);
+
+    int fpos, tpos;
+    char *fdata, *tdata;
+
+    fpos = indexdata[fromline];
+    tpos = indexdata[toline];
+    fdata = addr + fpos;
+    tdata = addr + tpos;
+
+    if (fdata < data || fdata > enddata) {
+        ret = -1;
+        goto read_data_end;
+    }
+    
+    if (fpos == 0 &&  tpos == 0) {
+        ret = -1;
+        goto read_data_end;
+    }
+    int datalen = tdata - fdata;
+    int cmdlen = 0;
+    
+    datalen += sizeof(int) * 3;
+
+    memcpy(&cmdlen, tdata + sizeof(int) *2, sizeof(int));
+
+    datalen += cmdlen;
+
+
+
+
+    /*
+    if (tdata < data || tdata > enddata) {
+        ret = -2;
+        goto read_data_end;
+    }*/
+    
+    //if (tdata - fdata > 0)
+    md5(md5str, (unsigned char *)fdata, datalen); 
+read_data_end:
+    munmap(addr, len);
+    close(fd);
+
+    return ret;
+}
+
+int
+synclog_reset(char *binlogname, int fromline, int toline)
+{    
+    int fd;
+    
+    DINFO("fromline: %d, toline: %d\n", fromline, toline);
+    synclog_destroy(g_runtime->synclog);
+    fd = open(binlogname, O_RDWR|O_CREAT, 0644);
+    if (-1 == fd) {
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("open file %s error! %s\n", binlogname, errbuf);
+        MEMLINK_EXIT;
+    }
+
+    int len = lseek(fd, 0, SEEK_END);
+
+    char *addr = mmap(NULL, len, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+    if (addr == MAP_FAILED) {
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("synclog mmap %s error: %s\n", binlogname, errbuf);
+        MEMLINK_EXIT;
+    }
+    int  *indexdata = (int *)(addr + SYNCLOG_HEAD_LEN);
+    char *enddata = addr + len;
+    
+    int fpos, tpos;
+    char *fdata, *tdata;
+
+    fpos = indexdata[fromline];
+    tpos = indexdata[toline];
+    fdata = addr + fpos;
+    tdata = addr + tpos;
+    
+    DINFO("fdata: %p, tdata: %p, enddata: %p\n", fdata, tdata, enddata);
+    int i;
+    for (i = fromline; i <= toline; i++) {
+        indexdata[i] = 0;
+    }
+    
+    int newlen = len - (enddata - fdata);
+    munmap(addr, len);
+
+    truncate_file(fd, newlen);
+#ifdef __linux
+    fdatasync(fd);
+#else // FreeBSD, MacOSX not have fdatasync
+    fsync(fd);
+#endif
+    close(fd);
+
+    if (toline - fromline < BINLOG_CHECK_COUNT) {
+        if (g_runtime->synclog->version == 1) {
+            DINFO("g_runtime->synclog->version : %d\n", g_runtime->synclog->version);
+            //synclog_destroy(g_runtime->synclog);
+            //g_runtime->synclog = synclog_create();
+            //return 0;
+            goto reset_end;
+        }
+        int n;
+        int logids[10000] = {0};
+        char logname[PATH_MAX];
+        char cur[PATH_MAX];
+        n = synclog_scan_binlog(logids, 10000);
+        DINFO("=====n: %d\n", n);
+        snprintf(logname, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, logids[n - 1]);
+        snprintf(cur, PATH_MAX, "%s/bin.log", g_cf->datadir);
+        
+        DINFO("cur: %s, logname: %s\n", cur, logname);
+        rename(logname, cur);
+        goto reset_end;
+        //g_runtime->synclog = synclog_create();
+        //return 0;
+    }
+reset_end:
+    g_runtime->synclog = synclog_create();
+
+    return 0;
 }
 
 /**
