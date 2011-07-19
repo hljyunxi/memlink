@@ -3,10 +3,10 @@ import glob
 
 cflags   = '-ggdb -DDEBUG'
 #cflags   = '-ggdb'
-includes = ['../client/c', '../']
+includes = ['../client/c', '../', '../base']
 ldflags  = []
-libpath  = ['../client/c']
-libs	 = ['m', 'pthread']
+libpath  = ['../client/c', '../base']
+libs	 = ['m', 'pthread', 'base', 'stdc++']
 
 env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
 

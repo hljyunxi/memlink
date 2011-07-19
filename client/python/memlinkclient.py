@@ -1,6 +1,6 @@
 #coding: utf-8
 import os, sys, types
-from memlink import *
+from cmemlink import *
 
 class MemLinkClietException (Exception):
     pass
@@ -71,13 +71,9 @@ class MemLinkClient:
         result = MemLinkResult()
         ret = memlink_cmd_sortlist_range(self.client, key, kind, maskstr, 
                                 valmin, len(valmin), valmax, len(valmax), result)
-        result_ = []
-        if ret == MEMLINK_OK:
-            items = result.root
-            while items:
-                result_.append( (items.value[:result.valuesize],items.mask[:result.masksize]) )
-                items = items.next
-        return ret, result_
+        if ret != MEMLINK_OK:
+            result = None
+        return ret, result
     
     def sortlist_del(self, key, kind, valmin, valmax, maskstr=''):
         return memlink_cmd_sortlist_del(self.client, key, kind, maskstr, valmin, len(valmin), valmax, len(valmax))
@@ -102,13 +98,9 @@ class MemLinkClient:
     def range(self, key, kind, frompos, rlen, maskstr=''):
         result = MemLinkResult()
         ret = memlink_cmd_range(self.client, key, kind, maskstr, frompos, rlen, result)
-        result_ = []
-        if ret == MEMLINK_OK:
-            items = result.root
-            while items:
-                result_.append( (items.value[:result.valuesize],items.mask[:result.masksize]) )
-                items = items.next
-        return ret, result_
+        if ret != MEMLINK_OK:
+            result = None
+        return ret, result
 
     def rmkey(self, key):
         return memlink_cmd_rmkey(self.client, key)
@@ -144,21 +136,21 @@ class MemLinkClient:
         info = MemLinkRcInfo()
         ret = memlink_cmd_read_conn_info(self.client, info)
         if ret != MEMLINK_OK:
-            result = None
+            info = None
         return ret, info
 
     def write_conn_info(self):
         info = MemLinkWcInfo()
         ret = memlink_cmd_write_conn_info(self.client, info)
         if ret != MEMLINK_OK:
-            result = None
+            info = None
         return ret, info
 
     def sync_conn_info(self):
         info = MemLinkScInfo()
         ret = memlink_cmd_sync_conn_info(self.client, info)
         if ret != MEMLINK_OK:
-            result = None
+            info = None
         return ret, info
 
     def insert_mkv(self, imkv):
@@ -179,16 +171,19 @@ class MemLinkClient:
         return ret, mkvobj
 
 def memlinkmkv_free(self):
-    memlink_imkv_destroy(self)
+    if MemLinkInsertMkv.is_free == 0:
+        memlink_imkv_destroy(self)
+        MemLinkInsertMkv.is_free = 1
 
 MemLinkInsertMkv.close   = memlinkmkv_free
+MemLinkInsertMkv.is_free = 0 
 MemLinkInsertMkv.__del__ = memlinkmkv_free
 
 def memlinkresult_list(self):
     v = []
     item = self.root
     while item:
-        v.append((item.value, item.mask))
+        v.append((item.value[:self.valuesize], item.mask[:self.masksize]))
         item = item.next
     return v
 
@@ -211,11 +206,11 @@ MemLinkResult.__str__ = memlinkresult_print
 def memlinkrcinfo_free(self):
     memlink_rcinfo_free(self)
 
-def memlinkrcinfo_print(slef):
-    s = 'connect count: %d' % (self.conncount)
+def memlinkrcinfo_print(self):
+    s = 'read count: %d\n' % (self.conncount)
     item = self.root
     while item:
-        s += 'fd:%s client_ip: %s port: %s cmd_count: %s conn_time: %s\n' % \
+        s += 'fd:%s ip:%s port:%s cmd:%s conn_time:%s\n' % \
                 (item.fd, item.client_ip, item.port, item.cmd_count, item.conn_time)
         item = item.next
     return s
@@ -228,10 +223,10 @@ def memlinkwcinfo_free(self):
     memlink_wcinfo_free(self)
 
 def memlinkwcinfo_print(self):
-    s = 'connect count: %d' % (self.conncount)
+    s = 'write count: %d\n' % (self.conncount)
     item = self.root
     while item:
-        s += 'fd: %s client_ip: %s port: %s cmd_count: %s conn_time: %s\n' % \
+        s += 'fd:%s ip:%s port:%s cmd:%s conn_time:%s\n' % \
                 (item.fd, item.client_ip, item.port, item.cmd_count, item.conn_time)
         item = item.next
     return s
@@ -244,10 +239,10 @@ def memlinkscinfo_free(self):
     memlink_scinfo_free(self)
 
 def memlinkscinfo_print(self):
-    s = 'connect count: %d' % (self.conncount)
+    s = 'slave count: %d\n' % (self.conncount)
     item = self.root
     while item:
-        s += 'fd: %s client_ip: %s port: %s cmd_count: %s conn_time: %s logver: %s logline: %s delay: %s\n' % \
+        s += 'fd:%s ip:%s port:%s cmd:%s conn_time:%s logver:%s logline:%s delay:%s\n' % \
                 (item.fd, item.client_ip, item.port, item.cmd_count, item.conn_time, item.logver, item.logline, item.delay)
         item = item.next
     return s
@@ -266,8 +261,8 @@ def memlinkstat_print(self):
 MemLinkStat.__str__ = memlinkstat_print
 
 def memlinkstatsys_print(self):
-    s = 'keys:%d\nvalues:%d\nblocks:%d\ndata:%d\ndata_used:%d\nblock_values:%d\nht_mem:%d\npool_blocks:%d\n' % \
-        (self.keys, self.values, self.blocks, self.data, self.data_used, self.block_values, self.ht_mem, self.pool_blocks)
+    s = 'keys:%d\nvalues:%d\nblocks:%d\ndata_all:%d\nht_mem:%d\npool.mem:%d\npool_blocks:%d\nall_mem:%d\nlogver:%d\nlogline:%d\n' % \
+        (self.keys, self.values, self.blocks, self.data_all, self.ht_mem, self.pool_mem, self.pool_blocks, self.all_mem, self.logver, self.logline)
 
     return s
 

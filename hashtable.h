@@ -14,6 +14,7 @@ typedef struct _memlink_hashnode
     DataBlock         *data_tail; // DataBlock link tail
     struct _memlink_hashnode  *next;
     unsigned char     *maskformat; // mask format:  3:4:5 => [3, 4, 5]
+	unsigned char	  flag;
     unsigned char     type:4; // key type: list/queue
     unsigned char     sortfield:4; // which sort? 0:value, 1-255:mask[0-xx]
     unsigned char     valuetype:4;

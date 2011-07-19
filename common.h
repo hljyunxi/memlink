@@ -8,6 +8,8 @@
 #ifndef MEMLINK_COMMON_H
 #define MEMLINK_COMMON_H
 
+#include "defines.h"
+
 // 客户端错误
 #define MEMLINK_ERR_CLIENT          -10
 // 服务器端错误
@@ -72,16 +74,31 @@
 #define MEMLINK_ERR_NOVAL_ALL		-40
 // 连接太多
 #define MEMLINK_ERR_CONN_TOO_MANY	-41
+
+// 不能写入
+#define MEMLINK_ERR_NOWRITE			-42
+// 同步错误
+#define MEMLINK_ERR_SYNC			-43
+// 状态错误
+#define MEMLINK_ERR_STATE			-44
+// VOTE 参数错误
+#define MEMLINK_ERR_VOTE_PARAM      -45
+// 不是主
+#define MEMLINK_ERR_NOT_MASTER      -46
+// 角色未知
+#define MEMLINK_ERR_NO_ROLE         -47
+// 处于slave模式
+#define MEMLINK_ERR_SLAVE           -48
 // 其他错误
 #define MEMLINK_ERR                 -1
 // 操作失败
-#define MEMLINK_FAILED				-1
+#define MEMLINK_FAILED				-2
 // 执行成功
 #define MEMLINK_OK                  0
 // 真
-#define MEMLINK_TRUE				1
+#define MEMLINK_TRUE				TRUE
 // 假
-#define MEMLINK_FALSE				0
+#define MEMLINK_FALSE				FALSE
 
 // GETDUMP 命令中大小错误
 #define MEMLINK_ERR_DUMP_SIZE       -100
@@ -91,9 +108,17 @@
 // 命令已回复
 #define MEMLINK_REPLIED             -10000
 
+// 主
 #define ROLE_MASTER		1
+// 备
 #define ROLE_BACKUP		2
+// 从
 #define ROLE_SLAVE		3
+#define ROLE_NONE		0
+
+#define COMMITED	1
+#define ROLLBACKED	2
+#define INCOMPLETE	3  
 
 // 命令执行返回信息头部长度
 // datalen(4B) + retcode(2B)
@@ -106,10 +131,12 @@
 // format + version + index size
 #define SYNCLOG_HEAD_LEN	(sizeof(short)+sizeof(int)+sizeof(int))
 
-#define SYNCLOG_INDEXNUM    5000000 
+#define SYNCLOG_INDEXNUM    5000000
 #define SYNCPOS_LEN		    (sizeof(int)+sizeof(int))
 
+// 标记删除
 #define MEMLINK_TAG_DEL         1
+// 恢复被标记删除的
 #define MEMLINK_TAG_RESTORE     0
 
 #define CMD_GETDUMP_OK			1
@@ -118,6 +145,7 @@
 
 #define CMD_SYNC_OK		        0
 #define CMD_SYNC_FAILED	        1
+#define CMD_SYNC_MD5_ERROR      2
 
 #define CMD_RANGE_MAX_SIZE			1024000
 
@@ -148,7 +176,7 @@
 // 按value排序的列表
 #define MEMLINK_SORTLIST    3
 
-// 查找排序列表时，每次每次跳过多少个大块
+// 查找排序列表时，每次每次跳过多少个block
 #define MEMLINK_SORTLIST_LOOKUP_STEP    10
 
 #define MEMLINK_VALUE_INT           1
@@ -169,7 +197,7 @@
 #define MEMLINK_SORTLIST_ORDER_ASC  0x00010000
 #define MEMLINK_SORTLIST_ORDER_DESC 0x00020000
 
-#define SYNC_BUF_SIZE       8192 
+#define SYNC_BUF_SIZE       1024 * 1024 
 
 #define MEMLINK_WRITE_LOG   1
 #define MEMLINK_NO_LOG      0
@@ -181,6 +209,28 @@
 
 #define MEMLINK_CMP_RANGE   1
 #define MEMLINK_CMP_EQUAL   2
+
+// 内存限制检查间隔时间，秒
+#define MEM_CHECK_INTERVAL	3
+
+
+#define STATE_INIT			200 
+#define STATE_DATAOK		201
+#define STATE_ALLREADY		202
+#define STATE_NOCONN		203
+#define STATE_SYNC			204
+#define STATE_NOWRITE		205
+
+#define MODE_MASTER_SLAVE	1
+#define MODE_MASTER_BACKUP	2
+
+#define BINLOG_CHECK_COUNT  10
+
+//#define BACKUP_READY		100
+//#define BACKUP_NOREADY		101
+
+#define MEMLINK_EXIT \
+	exit(-1);
 
 typedef struct _memlink_insert_mvalue_item
 {
@@ -253,6 +303,9 @@ typedef struct _ht_stat_sys
 	unsigned char  bit;
 	
 	unsigned int   last_dump;
+
+    int logver;
+    int logline;
 }MemLinkStatSys;
 
 typedef MemLinkStatSys	HashTableStatSys;

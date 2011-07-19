@@ -147,7 +147,7 @@ memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
     ret = readn(fd, rbuf, RECV_PKG_SIZE_LEN, m->timeout);
     //DINFO("read head: %d\n", ret);
     if (ret != RECV_PKG_SIZE_LEN) {
-        DERROR("read head error! ret:%d, %u\n", ret, RECV_PKG_SIZE_LEN);
+        DERROR("read head error! ret:%d, %lld\n", ret, (long long)RECV_PKG_SIZE_LEN);
         close(fd);
 
         if (fd == m->readfd) {

@@ -1,7 +1,7 @@
 /**
  * linux守护进程
  * @file daemon.c
- * @ingroup memlink
+ * @ingroup base
  * @{
  */
 #include <fcntl.h>

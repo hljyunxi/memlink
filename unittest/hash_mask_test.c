@@ -1,4 +1,5 @@
 #include "hashtest.h"
+#include "serial.h"
 
 int main()
 {

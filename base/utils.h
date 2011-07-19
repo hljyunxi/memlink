@@ -31,10 +31,13 @@ size_t		ffwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
 size_t		ffread(void *ptr, size_t size, size_t nmemb, FILE *stream);
 
 int			change_group_user(char *user);
-int         check_thread_alive(pthread_t id);
-int         wait_thread_exit(pthread_t id);
+//int         check_thread_alive(pthread_t id);
+//int         wait_thread_exit(pthread_t id);
+//int         thread_exit(pthread_t id);
+long long   get_process_mem(int pid);
+int         truncate_file(int fd, int len);
 
-static inline void		
+/*static inline void		
 atom_inc(unsigned int *v)
 {
 	asm volatile ("lock; incl %0"
@@ -46,7 +49,7 @@ atom_dec(unsigned int *v)
 {
 	asm volatile ("lock; decl %0"
 			: "+m" (*v));
-}
+}*/
 
 
 #endif

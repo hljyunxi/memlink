@@ -17,12 +17,13 @@
 #include <fcntl.h>
 #include <errno.h>
 #include "logfile.h"
-#include "myconfig.h"
+//#include "myconfig.h"
 #include "network.h"
+#include "defines.h"
 
 
 int 
-tcp_socket_server(char * host,int port)
+tcp_socket_server(char *host, int port)
 {
     int fd;
     int ret;
@@ -41,20 +42,21 @@ tcp_socket_server(char * host,int port)
 
     sin.sin_family = AF_INET;
     sin.sin_port = htons((short)port);
-    if(NULL == host){
-        sin.sin_addr.s_addr = htonl(INADDR_ANY);
-    }else{
+    if (host) {
         sin.sin_addr.s_addr = inet_addr(host);
+    }else{
+        sin.sin_addr.s_addr = htonl(INADDR_ANY);
     }
+    memset(&(sin.sin_zero), 0, sizeof(sin.sin_zero)); 
 
-    DINFO("bind %s:%d\n", host,port);
+    DINFO("bind to: %d\n", port);
     ret = bind(fd, (struct sockaddr*)&sin, sizeof(sin));
     if (ret == -1) {
         char errbuf[1024];
         strerror_r(errno, errbuf, 1024);
         DERROR("bind error: %s\n",  errbuf);
         close(fd);
-        return -3;
+        return -1;
     }
 
     ret = listen(fd, 128);
@@ -63,15 +65,54 @@ tcp_socket_server(char * host,int port)
         strerror_r(errno, errbuf, 1024);
         DERROR("listen error: %s\n",  errbuf);
         close(fd);
-        return -4;
+        return -1;
     }
 
     return fd;
 }
 
+int
+udp_sock_server(char *host, int port)
+{
+    int fd;
+    int ret;
+
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd == -1) {
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("create socket error: %s\n",  errbuf);
+        return -1;
+    }
+    
+    set_noblock(fd);
+
+    struct sockaddr_in sin;
+
+    sin.sin_family = AF_INET;
+    sin.sin_port = htons((short)port);
+    if (host == NULL || host[0] == 0) {
+        sin.sin_addr.s_addr = htonl(INADDR_ANY);
+    }else{
+        sin.sin_addr.s_addr = inet_addr(host);
+    }
+    memset(&(sin.sin_zero), 0, sizeof(sin.sin_zero)); 
+
+    DINFO("bind to: %d\n", port);
+    ret = bind(fd, (struct sockaddr *)&sin, sizeof(sin));
+    if (ret == -1) {
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("bind error: %s\n",  errbuf);
+        close(fd);
+        return -1;
+    }
+    DINFO("----------fd: %d\n", fd);    
+    return fd;
+}
 
 int
-tcp_socket_connect(char *host, int port, int timeout)
+tcp_socket_connect(char *host, int port, int timeout, int block)
 {
     int fd;
     int ret;
@@ -83,6 +124,9 @@ tcp_socket_connect(char *host, int port, int timeout)
         DERROR("create socket error: %s\n",  errbuf);
         return -1;
     }
+    
+    if (block == FALSE)
+        set_noblock(fd);
 
     struct linger ling = {1, 0};
     ret = setsockopt(fd, SOL_SOCKET, SO_LINGER, (void *)&ling, sizeof(ling));
@@ -101,7 +145,7 @@ tcp_socket_connect(char *host, int port, int timeout)
         DERROR("setsockopt NODELAY error: %s\n",  errbuf);
         return -1;
     }
-
+    
     ret = setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (void *)&flags, sizeof(flags));
     if (ret != 0) {
         char errbuf[1024];
@@ -114,20 +158,26 @@ tcp_socket_connect(char *host, int port, int timeout)
 
     sin.sin_family = AF_INET;
     sin.sin_port = htons((short)port);
-    if (NULL == host) {
+    if (NULL == host || 0 == host[0]) {
         sin.sin_addr.s_addr = htonl(INADDR_ANY);
     }else{
         sin.sin_addr.s_addr = inet_addr(host);
     }
 
     DINFO("connect to %s:%d\n", host, port);
-    ret = connect(fd, (struct sockaddr*)&sin, sizeof(sin));
+    do {
+        ret = connect(fd, (struct sockaddr*)&sin, sizeof(sin));
+    } while (ret == -1 && errno == EINTR);
+    
+    DINFO("ret: %d\n", ret);
     if (ret == -1) {
+        if (errno == EINPROGRESS || errno == EALREADY || errno == EWOULDBLOCK || errno == 0 || errno == EISCONN)
+            return fd;
         char errbuf[1024];
         strerror_r(errno, errbuf, 1024);
-        DERROR("connect error: %s\n",  errbuf);
+        DWARNING("connect error: %s\n",  errbuf);
         close(fd);
-        return -3;
+        return -1;
     }
 
     return fd;
@@ -145,7 +195,7 @@ tcp_server_setopt(int fd)
         strerror_r(errno, errbuf, 1024);
         DERROR("setting O_NONBLOCK error: %s\n",  errbuf);
         close(fd);
-        return -2;
+        return -1;
     }
     
     flags = 1;
@@ -156,6 +206,7 @@ tcp_server_setopt(int fd)
         char errbuf[1024];
         strerror_r(errno, errbuf, 1024);
         DERROR("setsockopt KEEPALIVE error: %s\n",  errbuf);
+        return -1;
     }
 
     struct linger ling = {0, 0};
@@ -164,7 +215,7 @@ tcp_server_setopt(int fd)
         char errbuf[1024];
         strerror_r(errno, errbuf, 1024);
         DERROR("setsockopt LINGER error: %s\n",  errbuf);
-        perror("setsockopt");
+        return -1;
     }
 
     ret = setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (void *)&flags, sizeof(flags));
@@ -172,10 +223,28 @@ tcp_server_setopt(int fd)
         char errbuf[1024];
         strerror_r(errno, errbuf, 1024);
         DERROR("setsockopt NODELAY error: %s\n",  errbuf);
+        return -1;
     }
 
     return 0;
 }
+
+int
+set_noblock(int fd)
+{
+    int flags;
+
+    if ((flags = fcntl(fd, F_GETFL, 0)) < 0 || fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) {
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("setting O_NONBLOCK error: %s\n",  errbuf);
+        close(fd);
+        return -1;
+    }
+    
+    return 0;
+}
+
 /**
  * @}
  */

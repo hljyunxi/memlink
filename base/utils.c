@@ -16,20 +16,33 @@
 #include <sys/stat.h>
 #include <signal.h>
 #include <pwd.h>
+#include <poll.h>
+#ifdef __APPLE__
+#include <mach/mach_init.h>
+#include <mach/task.h>
+#include <mach/task_info.h>
+#include <sys/resource.h>
+#include <sys/time.h>
+#endif
+#include "defines.h"
 #include "utils.h"
 #include "logfile.h"
-#include "common.h"
 
 
+/**
+ * 等待读或写事件
+ */
+
+/*
 int 
 timeout_wait(int fd, int timeout, int writing)
 {
     if (timeout <= 0)
-        return MEMLINK_TRUE;
+        return TRUE; // true
 
     if (fd < 0) {
         DERROR("fd error: %d\n", fd);
-        return MEMLINK_ERR;
+        return -1; //error
     }
 
     fd_set fds; 
@@ -47,7 +60,6 @@ timeout_wait(int fd, int timeout, int writing)
             n = select(fd+1, NULL, &fds, NULL, &tv);
         else 
             n = select(fd+1, &fds, NULL, NULL, &tv);
-        //DINFO("select return: %d\n", n);
         if (n < 0) {
             if (errno == EINTR) {
                 continue;
@@ -55,27 +67,76 @@ timeout_wait(int fd, int timeout, int writing)
             char errbuf[1024];
             strerror_r(errno, errbuf, 1024);
             DERROR("select error: %d, %s\n", n,  errbuf);
-            return MEMLINK_ERR;
+            return -1; // error
         }
         break;
     }
 
     if (n == 0)
-        return MEMLINK_FALSE;
+        return FALSE; // false
+    return TRUE;  // true
+}*/
 
-    return MEMLINK_TRUE; 
+int
+timeout_wait(int fd, int timeout, int writing)
+{
+    if (timeout <= 0)
+        return TRUE; // true
+
+    if (fd < 0) {
+        DERROR("timeout_wait fd error: %d\n", fd);
+        return FALSE; //error
+    }
+    // second to millisecond 
+    timeout = timeout * 1000;
+    struct pollfd fds[1];
+    int ret;
+    struct timeval start, end;
+
+    fds[0].fd = fd;
+    while (1) {
+        gettimeofday(&start, NULL);
+        if (writing)
+            fds[0].events = POLLOUT;
+        else
+            fds[0].events = POLLIN;
+
+        ret = poll(fds, 1, timeout);
+        if (ret < 0) {
+            if (errno == EINTR) {
+                gettimeofday(&end, NULL);
+                unsigned int td = timediff(&start, &end);
+                timeout -= td / 1000;
+                if (timeout <= 0)
+                    return FALSE;
+                continue;
+            }
+            char errbuf[1024];
+            strerror_r(errno, errbuf, 1024);
+            DWARNING("timeout_wait poll error: %d, %s\n", fds[0].fd,  errbuf);
+            return FALSE;
+        }
+        break;
+    }
+    if ((fds[0].revents & POLLOUT) && writing)
+        return TRUE;
+
+    if ((fds[0].revents & POLLIN) && !writing)
+        return TRUE;
+
+    return FALSE;
 }
 
 int
 timeout_wait_read(int fd, int timeout)
 {
-    return timeout_wait(fd, timeout, 0);
+    return timeout_wait(fd, timeout, FALSE);
 }
 
 int
 timeout_wait_write(int fd, int timeout)
 {
-    return timeout_wait(fd, timeout, 1);
+    return timeout_wait(fd, timeout, TRUE);
 }
 
 /**
@@ -94,8 +155,8 @@ readn(int fd, void *vptr, size_t n, int timeout)
     nleft = n;
 
     while (nleft > 0) {
-        if (timeout > 0 && timeout_wait_read(fd, timeout) != MEMLINK_TRUE) {
-            DERROR("read timeout.\n");
+        if (timeout > 0 && timeout_wait_read(fd, timeout) != TRUE) {
+            DWARNING("read timeout.\n");
             break;
         }
         if ((nread = read(fd, ptr, nleft)) < 0) {
@@ -138,7 +199,7 @@ writen(int fd, const void *vptr, size_t n, int timeout)
 
     while (nleft > 0) {
         //DINFO("try write %d via fd %d\n", (int)nleft, fd);
-        if (timeout > 0 && timeout_wait_write(fd, timeout) != MEMLINK_TRUE) {
+        if (timeout > 0 && timeout_wait_write(fd, timeout) != TRUE) {
             break;
         }
 
@@ -161,6 +222,9 @@ writen(int fd, const void *vptr, size_t n, int timeout)
     return n;
 }
 
+/**
+ * 显示为2进制
+ */
 void 
 printb(char *data, int datalen)
 {
@@ -182,6 +246,9 @@ printb(char *data, int datalen)
     printf("\n");
 }
 
+/**
+ * 显示为16进制
+ */
 void 
 printh(char *data, int datalen)
 {
@@ -195,6 +262,9 @@ printh(char *data, int datalen)
     printf("\n");
 }
 
+/** 
+ * 按2进制数格式化，从后往前
+ */
 char*
 formatb(char *data, int datalen, char *buf, int blen)
 {
@@ -231,7 +301,9 @@ formatb(char *data, int datalen, char *buf, int blen)
     return buf;
 }
 
-
+/**
+ * 按16进制数格式化，从后往前
+ */
 char*
 formath(char *data, int datalen, char *buf, int blen)
 {
@@ -268,6 +340,9 @@ timeend(struct timeval *start, struct timeval *end, char *info)
     return td;
 }
 
+/**
+ * 两个时间点之间的时间差，单位为微秒
+ */
 unsigned int 
 timediff(struct timeval *start, struct timeval *end)
 {
@@ -290,7 +365,9 @@ isfile (char *path)
     return 1;
 }
 
-
+/**
+ * 是否为目录
+ */
 int
 isdir (char *path)
 {
@@ -302,6 +379,9 @@ isdir (char *path)
     return 1;
 }
 
+/**
+ * 是否为符号连接
+ */
 int
 islink (char *path)
 {
@@ -329,6 +409,9 @@ isexists (char *path)
     return 1;
 }
 
+/**
+ * 获取文件大小
+ */
 long long
 file_size(char *path)
 {
@@ -342,34 +425,48 @@ file_size(char *path)
     return -2;
 }
 
+/**
+ * 整型比较，给qsort用
+ */
 int 
 compare_int ( const void *a , const void *b ) 
 { 
     return *(int *)a - *(int *)b; 
 } 
 
+/**
+ * 必须写入指定长度
+ */
 size_t
 ffwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 {
     size_t ret = fwrite(ptr, size, nmemb, stream);
     if (ret != nmemb) {
         DERROR("fwrite error, write:%d, must:%d\n", (int)ret, (int)nmemb);
-        MEMLINK_EXIT;
+        //MEMLINK_EXIT;
+        exit(EXIT_FAILURE);
     }
     return ret;
 }
 
+/**
+ * 必须要读到指定长度
+ */
 size_t
 ffread(void *ptr, size_t size, size_t nmemb, FILE *stream)
 {
     size_t ret = fread(ptr, size, nmemb, stream);
     if (ret != nmemb) {
         DERROR("fread error, read:%d, must:%d\n", (int)ret, (int)nmemb);
-        MEMLINK_EXIT;
+        //MEMLINK_EXIT;
+        exit(EXIT_FAILURE);
     }
     return ret;
 }
 
+/**
+ * 改变进程的user/group
+ */
 int
 change_group_user(char *user)
 {
@@ -404,7 +501,7 @@ change_group_user(char *user)
     return 0;
 }
 
-int
+/*int
 check_thread_alive(pthread_t id)
 {
     int err;
@@ -430,6 +527,94 @@ wait_thread_exit(pthread_t id)
         usleep(10);
     }
     return 1;
+}
+
+int
+thread_exit(pthread_t id)
+{
+    pthread_kill(id, SIGUSR1);
+    return 1;
+}*/
+
+/**
+ * 获取进程占用内存
+ */
+long long
+get_process_mem(int pid)
+{
+#ifdef __linux
+    char buf[256];
+    snprintf(buf, 256, "/proc/%d/status", pid);
+
+    FILE *fp;
+    fp = (FILE *)fopen(buf, "r");
+    if (fp == NULL) {
+        DERROR("open file %s error! \n", buf);
+        return -1;
+    }
+
+    DINFO("get memlink mem size.\n");
+    char line[512];
+    char num[512] = {0};
+    while (fgets(line, 512, fp)) {
+        if (strncmp(line, "VmRSS", 5) == 0) {
+            DINFO("line: %s", line);
+            char *ptr = line;
+            char *ptrnum = num;
+
+            while (*ptr != '\0') {
+                if (*ptr >= '0' && *ptr <= '9')
+                    break;
+                ptr++;
+            }
+            while (*ptr >= '0' && *ptr <= '9')
+                *ptrnum++ = *ptr++;
+            break;
+        }
+    }
+    fclose(fp);
+    if (num[0] != '\0') {
+        return strtoll(num, NULL, 10) * 1024;
+    }
+#endif
+
+#ifdef __APPLE__
+    struct task_basic_info  info;
+    kern_return_t           rval = 0;
+    mach_port_t             task = mach_task_self();
+    mach_msg_type_number_t  tcnt = TASK_BASIC_INFO_COUNT;
+    task_info_t             tptr = (task_info_t) &info;
+    
+    memset(&info, 0, sizeof(info));
+    
+    rval = task_info(task, TASK_BASIC_INFO, tptr, &tcnt);
+    if (!(rval == KERN_SUCCESS)) return 0;
+   
+    return info.resident_size;
+#endif
+
+    return 0;
+}
+
+int
+truncate_file(int fd, int len)
+{
+    int ret;
+    while (1) {
+        ret = ftruncate(fd, len);
+        if (ret == -1) {
+            if (errno == EINTR) {
+                continue;
+            }else{
+                char errbuf[1024];
+                strerror_r(errno, errbuf, 1024);
+                DERROR("ftruncate %d, %d error: %s\n", fd, len,  errbuf);
+                //MEMLINK_EXIT;
+            }
+        }
+        break;
+    }
+    return 0;
 }
 
 /**

@@ -925,7 +925,6 @@ hashtable_range(HashTable *ht, char *key, unsigned char kind,
 
     HashNode    *node;
     int            startn;
-    int         idx   = 0;
     char        *wbuf = NULL;
     int         ret   = 0;
     int         n     = 0;
@@ -949,22 +948,16 @@ hashtable_range(HashTable *ht, char *key, unsigned char kind,
     int  wlen = CMD_REPLY_HEAD_LEN + 3 + node->masknum + (node->valuesize + node->masksize) * len;
     //DINFO("range wlen: %d\n", wlen);
     wbuf = conn_write_buffer(conn, wlen);
-    idx += CMD_REPLY_HEAD_LEN;
+    conn->wlen += CMD_REPLY_HEAD_LEN;
     //DINFO("valuesize:%d, masksize:%d, masknum:%d\n", node->valuesize, node->masksize, node->masknum);
     unsigned char wchar;
     wchar = node->valuesize;
-    //memcpy(wbuf + idx, &node->valuesize, sizeof(char));
-    memcpy(wbuf + idx, &wchar, sizeof(char));
-    idx += sizeof(char);
-    memcpy(wbuf + idx, &node->masksize, sizeof(char));
-    idx += sizeof(char);
+    conn_write_buffer_append(conn, &wchar, sizeof(char));
+    conn_write_buffer_append(conn, &node->masksize, sizeof(char));
     wchar = node->masknum;
-    //memcpy(wbuf + idx, &node->masknum, sizeof(char));
-    memcpy(wbuf + idx, &wchar, sizeof(char));
-    idx += sizeof(char);
+    conn_write_buffer_append(conn, &wchar, sizeof(char));
     if (node->masknum > 0) {
-        memcpy(wbuf + idx, node->maskformat, node->masknum);
-        idx += node->masknum;
+        conn_write_buffer_append(conn, node->maskformat, node->masknum);
     }
 
     DataBlock *dbk = NULL;
@@ -1026,10 +1019,9 @@ hashtable_range(HashTable *ht, char *key, unsigned char kind,
                 }
                 /*char buf[128];
                 snprintf(buf, node->valuesize + 1, "%s", itemdata);
-                DINFO("\tok, copy item ... i:%d, value:%s\n", i, buf);
-                */ 
-                memcpy(wbuf + idx, itemdata, datalen);
-                idx += datalen;
+                DINFO("\tok, copy item ... i:%d, value:%s\n", i, buf);*/
+                 
+                conn_write_buffer_append(conn, itemdata, datalen);
                 n += 1;
                 if (n >= len) {
                     goto hashtable_range_over;
@@ -1045,7 +1037,7 @@ hashtable_range_over:
     DINFO("count: %d\n", n);
     //gettimeofday(&end, NULL);
     //DNOTE("over: %d\n", timediff(&start, &end));
-    conn_write_buffer_head(conn, ret, idx);
+    conn_write_buffer_head(conn, ret, conn->wlen);
 
     return ret;
 }

@@ -10,7 +10,7 @@
 #include "zzmalloc.h"
 #include "logfile.h"
 #include "mem.h"
-
+#include "common.h"
 //MemPool *g_mpool;
 
 MemPool*    
@@ -27,7 +27,7 @@ mempool_create()
 
     mp->size = MEMLINK_MEM_NUM;
     mp->freemem = (MemItem*)zz_malloc(sizeof(MemItem) * mp->size);
-    if (NULL == mp) {
+    if (NULL == mp->freemem) {
         DERROR("malloc MemItem error!\n");
         zz_free(mp);
         return NULL;

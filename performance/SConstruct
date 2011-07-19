@@ -2,11 +2,11 @@ import os, sys
 
 cflags    = '-ggdb -DDEBUG -O2 -pthread'
 #cflags   = '-ggdb'
-includes  = ['../client/c', '../']
+includes  = ['../client/c', '../', '../base']
 ldflags   = ['']
-libpath   = ['../client/c']
-libs	  = ['m', 'pthread']
-perffiles = ['perf.c', '../client/c/libmemlink.a']
+libpath   = ['../client/c', '../base']
+libs	  = ['m', 'pthread', 'base', 'stdc++', 'memlink']
+perffiles = ['perf.c']
 
 env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
 env.Program("perf", perffiles)

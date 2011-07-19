@@ -22,6 +22,39 @@
 #include "utils.h"
 #include "info.h"
 
+
+#ifdef DEBUG
+
+void
+null_dispatch_stat(int fd, short event, void *arg)
+{
+    MainServer *ms = arg;
+    struct timeval tm;
+    int i;
+
+    for (i = 0; i < g_cf->thread_num; i++) {
+        DERROR("thread<%lu>:\tconns: %d, null_dispatch: %d\n", (unsigned long)ms->threads[i].threadid, ms->threads[i].conns, ms->threads[i].null_dispatch);
+    }
+
+    evutil_timerclear(&tm);
+    tm.tv_sec = 30;
+    event_add(&ms->null_dispatch_event, &tm);
+}
+
+void
+null_dispatch_stat_set(MainServer *ms)
+{
+    struct timeval tm;
+
+    evtimer_set(&ms->null_dispatch_event, null_dispatch_stat, ms);
+    evutil_timerclear(&tm);
+    tm.tv_sec = 30;
+    event_base_set(ms->base, &ms->null_dispatch_event);
+    event_add(&ms->null_dispatch_event, &tm);
+}
+
+#endif
+
 MainServer*
 mainserver_create()
 {
@@ -43,7 +76,7 @@ mainserver_create()
         }
 
     }
-    ms->sock = tcp_socket_server(g_cf->ip,g_cf->read_port);  
+    ms->sock = tcp_socket_server(g_cf->host, g_cf->read_port);  
     if (ms->sock < 0) {
         DERROR("tcp_socket_server at port %d error: %d\n", g_cf->read_port, ms->sock);
         MEMLINK_EXIT;
@@ -53,6 +86,10 @@ mainserver_create()
     event_set(&ms->event, ms->sock, EV_READ|EV_PERSIST, mainserver_read, ms);
     event_add(&ms->event, 0);
 
+#ifdef DEBUG
+    //null_dispatch_stat_set(ms);
+#endif
+
     return ms;
 }
 
@@ -61,6 +98,31 @@ void
 mainserver_destroy(MainServer *ms)
 {
     zz_free(ms);
+}
+
+void
+rconn_destroy(Conn *conn)
+{
+    ThreadServer *ts;
+    ConnInfo *conninfo = NULL;
+
+    ts = (ThreadServer *)conn->thread;
+    if (ts) {
+        conninfo = (ConnInfo *)ts->rw_conn_info;
+        ts->conns--;
+    }
+
+    int i;
+    if (conninfo) {
+        for (i = 0; i < g_cf->max_read_conn; i++) {
+            if (conn->sock == conninfo[i].fd) {
+                conninfo[i].fd = 0;
+                break;
+            }
+        }
+    }
+
+    conn_destroy(conn);
 }
 
 /**
@@ -84,9 +146,10 @@ mainserver_read(int fd, short event, void *arg)
     }
     conn->port  = g_cf->read_port;
     conn->ready = rdata_ready;
+    conn->destroy = rconn_destroy;
 
     if (conn_check_max(conn) != MEMLINK_OK) {
-        DNOTE("too many read conn.\n");
+        DERROR("too many read conn.\n");
         conn->destroy(conn);
         return;
     }
@@ -102,8 +165,7 @@ mainserver_read(int fd, short event, void *arg)
     if (write(ts->notify_send_fd, "", 1) == -1) {
         char errbuf[1024];
         strerror_r(errno, errbuf, 1024);
-        DERROR("Writing to thread %d notify pipe error: %s\n", 
-                    n,  errbuf);
+        DERROR("Writing to thread %d notify pipe error: %s\n",  n,  errbuf);
         //conn->destroy(conn);
     }
 }
@@ -128,6 +190,7 @@ thserver_notify(int fd, short event, void *arg)
     ThreadServer    *ts   = (ThreadServer*)arg;
     QueueItem       *itemhead = queue_get(ts->cq);
     QueueItem        *item = itemhead;
+    int             items = 0;
     Conn            *conn;
     int                ret;
     int             conn_limit = g_cf->max_read_conn;
@@ -138,23 +201,28 @@ thserver_notify(int fd, short event, void *arg)
         conn_limit = g_cf->max_conn;
     }*/
 
-    char buf;
+    char buf[100];
     int  i;
     RwConnInfo *coninfo = ts->rw_conn_info;
-
-    ret = read(ts->notify_recv_fd, &buf, 1);
+/*#ifdef DEBUG
+    if (!item) {
+        ts->null_dispatch++;
+    }
+#endif*/
+    //ret = read(ts->notify_recv_fd, &buf, 1);
     while (item) {
+        items++;
         conn = item->conn; 
         DINFO("notify fd: %d\n", conn->sock);
         ts->conns++;
         for (i = 0; i < conn_limit; i++) {
             coninfo = &(ts->rw_conn_info[i]);
+            memset(coninfo, 0x0, sizeof(RwConnInfo));
             if (coninfo->fd == 0) {
                 coninfo->fd = conn->sock;
                 strcpy(coninfo->client_ip, conn->client_ip);
                 coninfo->port = conn->client_port;
                 memcpy(&coninfo->start, &conn->ctime, sizeof(struct timeval));
-                //coninfo->conn_start = time(0);
                 break;
             }
         }
@@ -167,6 +235,13 @@ thserver_notify(int fd, short event, void *arg)
         }
         item = item->next;
     }
+
+    if (items > 100)
+        items = 100;
+    else if(items == 0)
+        items = 1;
+
+    ret = read(ts->notify_recv_fd, &buf, items);
 
     if (itemhead) {
         /*QueueItem *qh = itemhead;
@@ -235,6 +310,14 @@ thserver_init(ThreadServer *ts)
         MEMLINK_EXIT;
     }
 
+    ret = pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
+    if (ret != 0) {
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("pthread_attr_setscope: %s\n",  errbuf);
+        MEMLINK_EXIT;
+    }
+
     ret = pthread_create(&ts->threadid, &attr, thserver_run, ts);
     if (ret != 0) {
         char errbuf[1024];
@@ -247,7 +330,7 @@ thserver_init(ThreadServer *ts)
     if (ret != 0) {
         char errbuf[1024];
         strerror_r(errno, errbuf, 1024);
-        DERROR("pthread_detach error: %s\n",  errbuf);
+		DERROR("pthread_detach error: %s\n",  errbuf);
         MEMLINK_EXIT;
     }
 

@@ -6,13 +6,15 @@
  * @{
  */
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <math.h>
-#include "logfile.h"
 #include "serial.h"
-#include "utils.h"
-#include "zzmalloc.h"
 #include "myconfig.h"
+#include "base/logfile.h"
+#include "base/utils.h"
+#include "base/zzmalloc.h"
+#include "base/pack.h"
 /**
  * 把字符串形式的mask转换为数组形式
  */
@@ -299,98 +301,10 @@ mask_array2flag(unsigned char *maskformat, unsigned int *maskarray, char masknum
 
 
 
-static int 
-unpack_string(char *s, char *v, unsigned char *vlen)
-{
-    unsigned char len;
-
-    memcpy(&len, s, sizeof(char));
-    if (len > 0) {
-        memcpy(v, s + sizeof(char), len);
-    }
-    v[len] = 0;
-
-    if (vlen) {
-        *vlen = len;
-    }
-    return len + sizeof(char);
-}
-
-/**
- * Pack a string into a byte array. First, a byte for the count of the bytes to 
- * be put is put into the destination array.  Then, the vlen bytes from the 
- * source string are put into the destination array.
- * 
- * @param s destination byte array
- * @param v source string
- * @param vlen length to be put into the destination array. If zero, the whole 
- * string is put.
- * @return the count of bytes which have been put into the destination array
- */
-static int
-pack_string(char *s, char *v, unsigned char vlen)
-{
-    if (vlen <= 0) {
-        vlen = strlen(v);
-    }
-    memcpy(s, &vlen, sizeof(char));
-    if (vlen > 0) {
-        memcpy(s + sizeof(char), v, vlen);
-    }
-
-    return vlen + sizeof(char);
-}
-
-static int
-unpack_mask(char *s, unsigned int *v, unsigned char *vlen)
-{
-    unsigned char len;
-    
-    memcpy(&len, s, sizeof(char));
-    int clen = len * sizeof(int);
-
-    //printh(s, clen + sizeof(char));
-    
-    if (len > 0) {
-        memcpy(v, s + sizeof(char), clen);
-    }
-
-    if (vlen) {
-        *vlen = len;
-    }
-    return clen + sizeof(char);
-}
-
-static int
-pack_mask(char *s, unsigned int *v, unsigned char vlen)
-{
-    int clen = vlen * sizeof(int);
-
-    /*
-    if (vlen < 0) {
-        DERROR("vlen must not <= 0\n");
-        MEMLINK_EXIT;
-        return 0;
-    }*/
-
-    memcpy(s, &vlen, sizeof(char));
-    if (vlen) {
-        memcpy(s + sizeof(char), v, clen);
-    }
-
-    return clen + sizeof(char);
-}
-
 int 
 cmd_dump_pack(char *data)
 {
-    unsigned int len = sizeof(char);
-    unsigned char  cmd = CMD_DUMP;
-
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-    memcpy(data + CMD_REQ_SIZE_LEN, &cmd, sizeof(char));
-
-    return len + CMD_REQ_SIZE_LEN;
+    return pack(data, 0, "$4c", CMD_DUMP);
 }
 
 int 
@@ -402,180 +316,72 @@ cmd_dump_unpack(char *data)
 int 
 cmd_clean_pack(char *data, char *key)
 {
-    unsigned char  cmd = CMD_CLEAN;
-    unsigned int  len;
-    int count = CMD_REQ_SIZE_LEN;
-    int ret;
-
-    memcpy(data + count, &cmd, sizeof(char)); 
-    count += sizeof(char);
-
-    ret = pack_string(data + count, key, 0);
-    count += ret;
-    len = count - sizeof(int);
-    //DINFO("clean len: %d, count: %d\n", len, count);
-    memcpy(data, &len, sizeof(int));
-    
-    return count;
+    return pack(data, 0, "$4cs", CMD_CLEAN, key);
 }
 
 int 
 cmd_clean_unpack(char *data, char *key)
 {
-    unsigned char keylen;
-    int count = CMD_REQ_HEAD_LEN;
-
-    unpack_string(data + count, key, &keylen);
-
-    return 0;
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "s", key);
 }
 
 int 
 cmd_rmkey_pack(char *data, char *key)
 {
-    unsigned char  cmd = CMD_RMKEY;
-    unsigned int  len;
-    int count = CMD_REQ_SIZE_LEN;
-    int ret;
-
-    memcpy(data + count, &cmd, sizeof(char)); 
-    count += sizeof(char);
-
-    ret = pack_string(data + count, key, 0);
-    count += ret;
-    len = count - CMD_REQ_SIZE_LEN;
-    //DINFO("clean len: %d, count: %d\n", len, count);
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-    
-    return count;
+    return pack(data, 0, "$4cs", CMD_RMKEY, key);
 }
 
 int 
 cmd_rmkey_unpack(char *data, char *key)
 {
-    unsigned char keylen;
-    int count = CMD_REQ_HEAD_LEN;
-
-    unpack_string(data + count, key, &keylen);
-
-    return 0;
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "s", key);
 }
 
 
 int 
 cmd_count_pack(char *data, char *key, unsigned char masknum, unsigned int *maskarray)
 {
-    unsigned char  cmd = CMD_COUNT;
-    unsigned int  len;
-    int count = CMD_REQ_SIZE_LEN;
-    int ret;
-
-    memcpy(data + count, &cmd, sizeof(char)); 
-    count += sizeof(char);
-
-    ret = pack_string(data + count, key, 0);
-    count += ret;
-    count += pack_mask(data + count, maskarray, masknum);
-
-    len = count - CMD_REQ_SIZE_LEN;
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-    
-    return count;
+    return pack(data, 0, "$4csI", CMD_COUNT, key, masknum, maskarray);
 }
 
 int 
 cmd_count_unpack(char *data, char *key, unsigned char *masknum, unsigned int *maskarray)
 {
-    unsigned char keylen;
-    int count = CMD_REQ_HEAD_LEN;
-
-    count += unpack_string(data + count, key, &keylen);
-    unpack_mask(data + count, maskarray, masknum);
-
-    return 0;
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "sI", key, masknum, maskarray);
 }
 
 int 
 cmd_sortlist_count_pack(char *data, char *key, unsigned char masknum, unsigned int *maskarray,
                         void *valmin, unsigned char vminlen, void *valmax, unsigned char vmaxlen)
 {
-    unsigned char  cmd = CMD_SL_COUNT;
-    unsigned int  len;
-    int count = CMD_REQ_SIZE_LEN;
-    int ret;
-
-    memcpy(data + count, &cmd, sizeof(char)); 
-    count += sizeof(char);
-
-    ret = pack_string(data + count, key, 0);
-    count += ret;
-    count += pack_mask(data + count, maskarray, masknum);
-    count += pack_string(data + count, valmin, vminlen);
-    count += pack_string(data + count, valmax, vmaxlen);
-
-    len = count - CMD_REQ_SIZE_LEN;
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-    
-    return count;
+    return pack(data, 0, "$4csICC", CMD_SL_COUNT, key, masknum, maskarray, 
+                vminlen, valmin, vmaxlen, valmax);
 }
 
 int 
 cmd_sortlist_count_unpack(char *data, char *key, unsigned char *masknum, unsigned int *maskarray,
                     void *valmin, unsigned char *vminlen, void *valmax, unsigned char *vmaxlen)
 {
-    unsigned char keylen;
-    int count = CMD_REQ_HEAD_LEN;
-
-    count += unpack_string(data + count, key, &keylen);
-    count += unpack_mask(data + count, maskarray, masknum);
-    count += unpack_string(data + count, valmin, vminlen);
-    unpack_string(data + count, valmax, vmaxlen);
-
-    return 0;
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "sICC", key, masknum, maskarray, 
+            vminlen, valmin, vmaxlen, valmax);
 }
 
 int 
 cmd_stat_pack(char *data, char *key)  //, HashTableStat  *stat)
 {
-    unsigned char  cmd = CMD_STAT;
-    unsigned short count = CMD_REQ_SIZE_LEN;
-    unsigned int len;
-
-    memcpy(data + count, &cmd, sizeof(char)); 
-    count += sizeof(char);
-
-    count += pack_string(data + count, key, 0);
-    //memcpy(data + count, stat, sizeof(HashTableStat)); 
-    //count += sizeof(HashTableStat);
-
-    len = count - CMD_REQ_SIZE_LEN;
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-    
-    return count;
+    return pack(data, 0, "$4cs", CMD_STAT, key);
 }
 
 int 
 cmd_stat_unpack(char *data, char *key)  //, HashTableStat *stat)
 {
-    unsigned char keylen;
-    int count = CMD_REQ_HEAD_LEN;
-
-    count = unpack_string(data + count, key, &keylen);
-    //memcpy(stat, data + count, sizeof(HashTableStat)); 
-
-    return 0;
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "s", key);
 }
 
 int 
 cmd_stat_sys_pack(char *data)
 {
-    unsigned int len = sizeof(char);
-    unsigned char  cmd = CMD_STAT_SYS;
-
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-    memcpy(data + CMD_REQ_SIZE_LEN, &cmd, sizeof(char));
-
-    return len + CMD_REQ_SIZE_LEN;
+    return pack(data, 0, "$4c", CMD_STAT_SYS);
 }
 
 int 
@@ -607,26 +413,8 @@ cmd_create_pack(char *data, char *key, unsigned char valuelen,
                 unsigned char masknum, unsigned int *maskarray,
                 unsigned char listtype, unsigned char valuetype)
 {
-    unsigned char  cmd = CMD_CREATE;
-    unsigned short count = CMD_REQ_SIZE_LEN;
-    unsigned int len;
-
-    memcpy(data + count, &cmd, sizeof(char)); 
-    count += sizeof(char);
-    count += pack_string(data + count, key, 0);
-    memcpy(data + count, &valuelen, sizeof(char));
-    count += sizeof(char);
-
-    //count += pack_string(data + count, maskarray, masknum);
-    count += pack_mask(data + count, maskarray, masknum);
-    memcpy(data + count, &listtype, sizeof(char));
-    count += sizeof(char);
-    memcpy(data + count, &valuetype, sizeof(char));
-    count += sizeof(char);
-    len = count - CMD_REQ_SIZE_LEN;
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-    
-    return count;
+    return pack(data, 0, "$4cscIcc", CMD_CREATE, key, valuelen, 
+                masknum, maskarray, listtype, valuetype);
 }
 
 int 
@@ -634,281 +422,106 @@ cmd_create_unpack(char *data, char *key, unsigned char *valuelen,
                   unsigned char *masknum, unsigned int *maskarray,
                   unsigned char *listtype, unsigned char *valuetype)
 {
-    int count = CMD_REQ_HEAD_LEN;
-    unsigned char len;
-
-    count += unpack_string(data + count, key, &len);
-    memcpy(valuelen, data + count, sizeof(char));
-    count += sizeof(char);
-    count += unpack_mask(data + count, maskarray, masknum);
-    memcpy(listtype, data + count, sizeof(char));
-    count += sizeof(char);
-    memcpy(valuetype, data + count, sizeof(char));
-
-    return 0;
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "scIcc", key, valuelen, 
+                masknum, maskarray, listtype, valuetype);
 }
 
 int 
 cmd_del_pack(char *data, char *key, char *value, unsigned char valuelen)
 {
-    unsigned char cmd = CMD_DEL;
-    unsigned int len;
-    int count = CMD_REQ_SIZE_LEN;
-
-    memcpy(data + count, &cmd, sizeof(char));
-    count += sizeof(char);
-
-    count += pack_string(data + count, key, 0);
-    count += pack_string(data + count, value, valuelen);
-
-    len = count - CMD_REQ_SIZE_LEN;
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-
-    return count;
+    return pack(data, 0, "$4csC", CMD_DEL, key, valuelen, value);
 }
 
 int 
 cmd_del_unpack(char *data, char *key, char *value, unsigned char *valuelen)
 {
-    int count = CMD_REQ_HEAD_LEN;
-    unsigned char len;
-    
-    count += unpack_string(data + count, key, &len);
-    unpack_string(data + count, value, valuelen);
-    
-    return 0;
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "sC", key, valuelen, value);
 }
 
 int 
 cmd_sortlist_del_pack(char *data, char *key, unsigned char kind, char *valmin, unsigned char vminlen, 
             char *valmax, unsigned char vmaxlen, unsigned char masknum, unsigned int *maskarray)
 {
-    unsigned char cmd = CMD_SL_DEL;
-    unsigned int len;
-    int count = CMD_REQ_SIZE_LEN;
-
-    memcpy(data + count, &cmd, sizeof(char));
-    count += sizeof(char);
-    
-    memcpy(data + count, &kind, sizeof(char));
-    count += sizeof(char);
-    
-    count += pack_string(data + count, key, 0);
-    count += pack_string(data + count, valmin, vminlen);
-    count += pack_string(data + count, valmax, vmaxlen);
-    count += pack_mask(data + count, maskarray, masknum);
-
-    len = count - CMD_REQ_SIZE_LEN;
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-
-    return count;
+    return pack(data, 0, "$4ccsCCI", CMD_SL_DEL, kind, key, vminlen, valmin,
+                    vmaxlen, valmax, masknum, maskarray);
 }
 
 int 
-cmd_sortlist_del_unpack(char *data, char *key, unsigned char *kind, char *valmin, unsigned char *vminlen,
-                        char *valmax, unsigned char *vmaxlen, unsigned char *masknum, unsigned int *maskarray)
+cmd_sortlist_del_unpack(char *data, char *key, unsigned char *kind, 
+                        char *valmin, unsigned char *vminlen,
+                        char *valmax, unsigned char *vmaxlen, 
+                        unsigned char *masknum, unsigned int *maskarray)
 {
-    int count = CMD_REQ_HEAD_LEN;
-    unsigned char len;
-   
-    memcpy(kind, data + count, sizeof(char));
-    count += sizeof(char);
-    count += unpack_string(data + count, key, &len);
-    count += unpack_string(data + count, valmin, vminlen);
-    count += unpack_string(data + count, valmax, vmaxlen);
-    unpack_mask(data + count, maskarray, masknum);
-    
-    return 0;
+    return unpack(data+CMD_REQ_HEAD_LEN, 0, "csCCI", kind, key, vminlen, valmin, vmaxlen, valmax, 
+                masknum, maskarray);
 }
 
 int 
 cmd_insert_pack(char *data, char *key, char *value, unsigned char valuelen, 
                 unsigned char masknum, unsigned int *maskarray, int pos)
 {
-    unsigned char cmd = CMD_INSERT;
-    unsigned int len;
-    int count = CMD_REQ_SIZE_LEN;
-
-    memcpy(data + count, &cmd, sizeof(char));
-    count += sizeof(char);
-    count += pack_string(data + count, key, 0);  
-    count += pack_string(data + count, value, valuelen);
-    //count += pack_string(data + count, maskformat, masknum);
-    count += pack_mask(data + count, maskarray, masknum);
-    memcpy(data + count, &pos, sizeof(int));
-    count += sizeof(int);
-
-    len = count - CMD_REQ_SIZE_LEN;
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-    
-    return count;
+    return pack(data, 0, "$4csCIi", CMD_INSERT, key, valuelen, value, masknum, maskarray, pos);
 }
 
 int 
 cmd_insert_unpack(char *data, char *key, char *value, unsigned char *valuelen,
                   unsigned char *masknum, unsigned int *maskarray, int *pos)
 {
-    int count = CMD_REQ_HEAD_LEN;
-
-    unsigned char vlen;
-    count += unpack_string(data + count, key, NULL);
-    count += unpack_string(data + count, value, &vlen);
-    //count += unpack_string(data + count, maskformat, masknum);
-    count += unpack_mask(data + count, maskarray, masknum);
-    memcpy(pos, data + count, sizeof(int));
-
-    *valuelen = vlen;
-
-    return 0;
+    return unpack(data+CMD_REQ_HEAD_LEN, 0, "sCIi", key, valuelen, value, masknum, maskarray, pos);
 }
 
 
 int 
 cmd_move_pack(char *data, char *key, char *value, unsigned char valuelen, int pos)
 {
-    unsigned char cmd = CMD_MOVE;
-    unsigned int len;
-    int count = CMD_REQ_SIZE_LEN;
-
-    memcpy(data + count, &cmd, sizeof(char));
-    count += sizeof(char);
-    count += pack_string(data + count, key, 0);
-    count += pack_string(data + count, value, valuelen);
-    memcpy(data + count, &pos, sizeof(int));
-    count += sizeof(int);
-
-    len = count - CMD_REQ_SIZE_LEN;
-    memcpy(data, &len, CMD_REQ_SIZE_LEN); 
-
-    return count;
+    return pack(data, 0, "$4csCi", CMD_MOVE, key, valuelen, value, pos);
 }
 
 int 
 cmd_move_unpack(char *data, char *key, char *value, unsigned char *valuelen, int *pos)
 {
-    int count = CMD_REQ_HEAD_LEN;
-    unsigned char vlen;
-
-    count += unpack_string(data + count, key, NULL);
-    count += unpack_string(data + count, value, &vlen);
-    memcpy(pos, data + count, sizeof(int));
-
-    *valuelen = vlen;
-    return 0;
+    return unpack(data+CMD_REQ_HEAD_LEN, 0, "sCi", key, valuelen, value, pos);
 }
 
 int 
 cmd_mask_pack(char *data, char *key, char *value, unsigned char valuelen, 
               unsigned char masknum, unsigned int *maskarray)
 {
-    unsigned char cmd = CMD_MASK;
-    unsigned int len;
-    int count = CMD_REQ_SIZE_LEN;
-
-    memcpy(data + count, &cmd, sizeof(char));
-    count += sizeof(char);
-    count += pack_string(data + count, key, 0);
-    count += pack_string(data + count, value, valuelen);
-    //count += pack_string(data + count, maskformat, masknum);
-    count += pack_mask(data + count, maskarray, masknum);
-
-    len = count - CMD_REQ_SIZE_LEN;
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-
-    return count;
+    return pack(data, 0, "$4csCI", CMD_MASK, key, valuelen, value, masknum, maskarray);
 }
 
 int 
 cmd_mask_unpack(char *data, char *key, char *value, unsigned char *valuelen, 
                 unsigned char *masknum, unsigned int *maskarray)
 {
-    int count = CMD_REQ_HEAD_LEN;
-    unsigned char vlen; 
-
-    count += unpack_string(data + count, key, NULL);
-    count += unpack_string(data + count, value, &vlen);
-    //count += unpack_string(data + count, maskformat, &mlen);
-    count += unpack_mask(data + count, maskarray, masknum);
-
-    *valuelen = vlen;
-    //*masknum  = mlen;
-    return 0;
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "sCI", key, valuelen, value, masknum, maskarray);
 }
 
 int 
 cmd_tag_pack(char *data, char *key, char *value, unsigned char valuelen, unsigned char tag)
 {
-    unsigned char cmd = CMD_TAG;
-    unsigned int len;
-    int count = CMD_REQ_SIZE_LEN;
-
-    memcpy(data + count, &cmd, sizeof(char));
-    count += sizeof(char);
-    count += pack_string(data + count, key, 0);
-    count += pack_string(data + count, value, valuelen);
-    memcpy(data + count, &tag, sizeof(char));
-    count += sizeof(char);
-
-    len = count - CMD_REQ_SIZE_LEN;
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-
-    return count;
+    return pack(data, 0, "$4csCc", CMD_TAG, key, valuelen, value, tag);
 }
 
 int 
 cmd_tag_unpack(char *data, char *key, char *value, unsigned char *valuelen, unsigned char *tag)
 {
-    int count = CMD_REQ_HEAD_LEN;
-    unsigned char vlen;
-    count += unpack_string(data + count, key, NULL);
-    count += unpack_string(data + count, value, &vlen);
-    memcpy(tag, data + count, sizeof(char));
-    *valuelen = vlen;
-    return 0;
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "sCc", key, valuelen, value, tag);
 }
 
 int 
-cmd_range_pack(char *data, char *key, unsigned char kind, unsigned char masknum, unsigned int *maskarray, 
+cmd_range_pack(char *data, char *key, unsigned char kind, 
+               unsigned char masknum, unsigned int *maskarray, 
                int frompos, int rlen)
 {
-    unsigned char cmd = CMD_RANGE;
-    unsigned int len;
-    int count = CMD_REQ_SIZE_LEN;
-
-    memcpy(data + count, &cmd, sizeof(char));
-    count += sizeof(char);
-    count += pack_string(data + count, key, 0);
-    memcpy(data + count, &kind, sizeof(char));
-    count += sizeof(char);
-    //count += pack_string(data + count, maskformat, masknum);
-    count += pack_mask(data + count, maskarray, masknum);
-    memcpy(data + count, &frompos, sizeof(int));
-    count += sizeof(int);
-    memcpy(data + count, &rlen, sizeof(int));
-    count += sizeof(int);
-
-    len = count - CMD_REQ_SIZE_LEN;
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-
-    return count;
+    return pack(data, 0, "$4cscIii", CMD_RANGE, key, kind, masknum, maskarray, frompos, rlen);
 }
 
 int 
 cmd_range_unpack(char *data, char *key, unsigned char *kind, unsigned char *masknum, unsigned int *maskarray, 
                  int *frompos, int *len)
 {
-    int count = CMD_REQ_HEAD_LEN;
-    //unsigned char mlen;
-    count += unpack_string(data + count, key, NULL); 
-    memcpy(kind, data + count, sizeof(char));
-    count += sizeof(char);
-    //count += unpack_string(data + count, maskformat, &mlen);
-    count += unpack_mask(data + count, maskarray, masknum);
-    memcpy(frompos, data + count, sizeof(int));
-    count += sizeof(int);
-    memcpy(len, data + count, sizeof(int));
-    //*masknum = mlen;
-    return 0;
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "scIii", key, kind, masknum, maskarray, frompos, len);
 }
 
 int 
@@ -916,28 +529,8 @@ cmd_sortlist_range_pack(char *data, char *key, unsigned char kind,
                 unsigned char masknum, unsigned int *maskarray, 
                 void *valmin, unsigned char vminlen, void *valmax, unsigned char vmaxlen)
 {
-    unsigned char cmd = CMD_SL_RANGE;
-    unsigned int len;
-    int count = CMD_REQ_SIZE_LEN;
-
-    memcpy(data + count, &cmd, sizeof(char));
-    count += sizeof(char);
-    count += pack_string(data + count, key, 0);
-    memcpy(data + count, &kind, sizeof(char));
-    count += sizeof(char);
-    //count += pack_string(data + count, maskformat, masknum);
-    count += pack_mask(data + count, maskarray, masknum);
-    //memcpy(data + count, &frompos, sizeof(int));
-    //count += sizeof(int);
-    count += pack_string(data + count, valmin, vminlen);
-    count += pack_string(data + count, valmax, vmaxlen);
-    //memcpy(data + count, &rlen, sizeof(int));
-    //count += sizeof(int);
-
-    len = count - CMD_REQ_SIZE_LEN;
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-
-    return count;
+    return pack(data, 0, "$4cscICC", CMD_SL_RANGE, key, kind, masknum, maskarray,
+                    vminlen, valmin, vmaxlen, valmax);
 }
 
 int 
@@ -945,36 +538,14 @@ cmd_sortlist_range_unpack(char *data, char *key, unsigned char *kind,
                     unsigned char *masknum, unsigned int *maskarray, 
                     void *valmin, unsigned char *vminlen, void *valmax, unsigned char *vmaxlen)
 {
-    int count = CMD_REQ_HEAD_LEN;
-    //unsigned char mlen;
-    count += unpack_string(data + count, key, NULL); 
-    memcpy(kind, data + count, sizeof(char));
-    count += sizeof(char);
-    //count += unpack_string(data + count, maskformat, &mlen);
-    count += unpack_mask(data + count, maskarray, masknum);
-    //memcpy(frompos, data + count, sizeof(int));
-    //count += sizeof(int);
-    count += unpack_string(data + count, valmin, vminlen);
-    count += unpack_string(data + count, valmax, vmaxlen);
-
-    //memcpy(len, data + count, sizeof(int));
-    //*masknum = mlen;
-    return 0;
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "scICC", key, kind, masknum, maskarray,
+                vminlen, valmin, vmaxlen, valmax);
 }
 
 int 
 cmd_ping_pack(char *data)
 {
-    unsigned char  cmd = CMD_PING;
-    unsigned int  len;
-    int count = CMD_REQ_SIZE_LEN;
-
-    memcpy(data + count, &cmd, sizeof(char)); 
-    count += sizeof(char);
-    len = count - CMD_REQ_SIZE_LEN;
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-
-    return count;
+    return pack(data, 0, "$4c", CMD_PING);
 }
 int 
 cmd_ping_unpack(char *data)
@@ -986,19 +557,7 @@ int
 cmd_push_pack(char *data, unsigned char cmd, char *key, char *value, unsigned char valuelen, 
                 unsigned char masknum, unsigned *maskarray)
 {
-    unsigned int len;
-    int count = CMD_REQ_SIZE_LEN;
-
-    memcpy(data + count, &cmd, sizeof(char));
-    count += sizeof(char);
-    count += pack_string(data + count, key, 0);  
-    count += pack_string(data + count, value, valuelen);
-    count += pack_mask(data + count, maskarray, masknum);
-
-    len = count - CMD_REQ_SIZE_LEN;
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-
-    return count;
+    return pack(data, 0, "$4csCI", cmd, key, valuelen, value, masknum, maskarray);
 }
 
 
@@ -1006,17 +565,7 @@ int
 cmd_push_unpack(char *data, char *key, char *value, unsigned char *valuelen,
             unsigned char *masknum, unsigned int *maskarray)
 {
-    int count = CMD_REQ_HEAD_LEN;
-
-    //memcpy(cmd, data + count, sizeof(char));
-    //count += sizeof(char);
-    unsigned char vlen;
-    count += unpack_string(data + count, key, NULL);
-    count += unpack_string(data + count, value, &vlen);
-    count += unpack_mask(data + count, maskarray, masknum);
-
-    *valuelen = vlen;
-    return 0;
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "sCI", key, valuelen, value, masknum, maskarray);
 }
 
 int 
@@ -1037,18 +586,7 @@ cmd_rpush_pack(char *data, char *key, char *value, unsigned char valuelen,
 int
 cmd_pop_pack(char *data, unsigned char cmd, char *key, int num)
 {
-    unsigned int len;
-    int count = CMD_REQ_SIZE_LEN;
-
-    memcpy(data + count, &cmd, sizeof(char));
-    count += sizeof(char);
-
-    count += pack_string(data + count, key, 0);
-    memcpy(data + count, &num, sizeof(int));
-    count += sizeof(int);
-    len = count - CMD_REQ_SIZE_LEN;
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-    return count;
+    return pack(data, 0, "$4csi", cmd, key, num);
 }
 
 int
@@ -1066,164 +604,44 @@ cmd_rpop_pack(char *data, char *key, int num)
 int 
 cmd_pop_unpack(char *data, char *key, int *num)
 {
-    int count = CMD_REQ_HEAD_LEN;
-
-    //memcpy(cmd, data + count, sizeof(char));
-    //count += sizeof(char);
-    count += unpack_string(data + count, key, NULL); 
-    memcpy(num, data + count, sizeof(int));
-
-    return 0;
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "si", key, num);
 }
 
 int 
-cmd_sync_pack(char *data, unsigned int logver, unsigned int logpos)
+cmd_sync_pack(char *data, unsigned int logver, unsigned int logpos, int bcount, char *md5)
 {
-    unsigned char cmd = CMD_SYNC;
-    unsigned int len;
-    int count = CMD_REQ_SIZE_LEN;
-
-    memcpy(data + count, &cmd, sizeof(char));
-    count += sizeof(char);
-
-    memcpy(data + count, &logver, sizeof(int));
-    count += sizeof(int);
-    memcpy(data + count, &logpos, sizeof(int));
-    count += sizeof(int);
-    len = count - CMD_REQ_SIZE_LEN;
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-    
-    return count;
+    return pack(data, 0, "$4ciiis", CMD_SYNC, logver, logpos, bcount, md5);
 }
 
 int 
-cmd_sync_unpack(char *data, unsigned int *logver, unsigned int *logpos)
+cmd_sync_unpack(char *data, unsigned int *logver, unsigned int *logpos, int *bcount, char *md5)
 {
-    int count = CMD_REQ_HEAD_LEN;
-    
-    memcpy(logver, data + count, sizeof(int));
-    count += sizeof(int);
-    memcpy(logpos, data + count, sizeof(int));
-
-    return 0;
+    return unpack(data +CMD_REQ_HEAD_LEN, 0, "iiis", logver, logpos, bcount, md5);
 }
 
 int 
-cmd_getdump_pack(char *data, unsigned int dumpver, unsigned long long size)
+cmd_getdump_pack(char *data, unsigned int dumpver, uint64_t size)
 {
-    unsigned char cmd = CMD_GETDUMP;
-    unsigned int len;
-    int count = CMD_REQ_SIZE_LEN;
-
-    memcpy(data + count, &cmd, sizeof(char));
-    count += sizeof(char);
-
-    memcpy(data + count, &dumpver, sizeof(int));
-    count += sizeof(int);
-    memcpy(data + count, &size, sizeof(long long));
-    count += sizeof(long long);
-    len = count - CMD_REQ_SIZE_LEN;
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-    
-    return count;
+    return pack(data, 0, "$4cil", CMD_GETDUMP, dumpver, size);
 }
 
 int 
-cmd_getdump_unpack(char *data, unsigned int *dumpver, unsigned long long *size)
+cmd_getdump_unpack(char *data, unsigned int *dumpver, uint64_t *size)
 {
-    int count = CMD_REQ_HEAD_LEN;
-    
-    memcpy(dumpver, data + count, sizeof(int));
-    count += sizeof(int);
-    memcpy(size, data + count, sizeof(long long));
-
-    return 0;
+    return unpack(data+CMD_REQ_HEAD_LEN, 0, "il", dumpver, size);
 }
 
-/*int 
-cmd_insert_mvalue_pack(char *data, char *key, MemLinkInsertVal *items, int num)
-{
-    unsigned char cmd = CMD_INSERT_MVALUE;
-    unsigned int len;
-    int count = CMD_REQ_SIZE_LEN;
-
-    memcpy(data + count, &cmd, sizeof(char));
-    count += sizeof(char);
-    
-    count += pack_string(data + count, key, 0);
-    int i;
-
-    memcpy(data + count, &num, sizeof(int));
-    count += sizeof(int);
-
-    for (i = 0; i < num; i++) {
-        MemLinkInsertVal *item = &items[i];
-        count += pack_string(data + count, item->value, item->valuelen);
-        count += pack_mask(data + count, item->maskarray, item->masknum);
-        memcpy(data + count, &item->pos, sizeof(int));
-        count += sizeof(int);
-    }
-    len = count - CMD_REQ_SIZE_LEN;
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-
-    return count;
-}
-
-int 
-cmd_insert_mvalue_unpack(char *data, char *key, MemLinkInsertVal **items, int *num)
-{
-    int count = CMD_REQ_HEAD_LEN;
-    MemLinkInsertVal  *values;
-
-    count += unpack_string(data + count, key, NULL);
-    memcpy(num, data + count, sizeof(int));
-
-    values = (MemLinkInsertVal*)zz_malloc(sizeof(MemLinkInsertVal) * *num);
-    if (NULL == values) {
-        DERROR("malloc MemLinkInsertVal %d error!\n", (int)sizeof(MemLinkInsertVal) * *num);
-        MEMLINK_EXIT;
-    }
-    
-    int i;
-    for (i = 0; i < *num; i++) {
-        MemLinkInsertVal *item = &values[i];
-        count += unpack_string(data + count, item->value, &item->valuelen);
-        count += unpack_mask(data + count, item->maskarray, &item->masknum);
-        memcpy(data + count, &item->pos, sizeof(int));
-        count += sizeof(int);
-    }
-
-    return 0;
-}
-*/
 //add by lanwenhong
 int
 cmd_del_by_mask_pack(char *data, char *key, unsigned int *maskarray, unsigned char masknum)
 {
-    unsigned char cmd = CMD_DEL_BY_MASK;
-    int count = CMD_REQ_SIZE_LEN;
-    unsigned int len;
-
-    memcpy(data + count, &cmd, sizeof(char));
-    count += sizeof(char);
-    count += pack_string(data + count, key, 0);
-    count += pack_mask(data + count, maskarray, masknum);
-
-    len = count - CMD_REQ_SIZE_LEN;
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-
-    return count;
+    return pack(data, 0, "$4csI", CMD_DEL_BY_MASK, key, masknum, maskarray);
 }
 
 int
 cmd_del_by_mask_unpack(char *data, char *key, unsigned int *maskarray, unsigned char *masknum)
 {
-    int count = CMD_REQ_HEAD_LEN;
-
-    count += unpack_string(data + count, key, NULL);
-    count += unpack_mask(data + count, maskarray, masknum);
-
-    return 0;
+    return unpack(data+CMD_REQ_HEAD_LEN, 0, "sI", key, masknum, maskarray);
 }
 
 int
@@ -1231,39 +649,29 @@ cmd_insert_mkv_pack(char *data, MemLinkInsertMkv *mkv)
 {
     unsigned char cmd = CMD_INSERT_MKV;
     unsigned int len;
+    int ret;
     int count = CMD_REQ_SIZE_LEN;
     MemLinkInsertKey *keyitem;
     MemLinkInsertVal *valitem;
 
-    memcpy(data + count, &cmd, sizeof(char));
-    count += sizeof(char);
-    //memcpy(data + count, &(mkv->keynum), sizeof(int));
-    //count += sizeof(int);
+    ret = pack(data + count, 0, "c", cmd);
+    count += ret;
 
     keyitem = mkv->keylist;
-
     while(keyitem != NULL) {
         valitem = keyitem->vallist;
-        //memcpy(data + count, &(keyitem->keylen), sizeof(char));
-        //count += sizeof(char);
-        //memcpy(data + count , keyitem->key, keyitem->keylen);
-        //count += keyitem->keylen;
-        count += pack_string(data + count, keyitem->key, 0);
-        memcpy(data + count, &(keyitem->valnum), sizeof(int));
-        count += sizeof(int);
 
+        count += pack(data + count, 0, "si", keyitem->key, keyitem->valnum);
         while (valitem != NULL) {
-            count += pack_string(data + count, valitem->value, valitem->valuelen);
-            count += pack_mask(data + count, valitem->maskarray, valitem->masknum);
-            memcpy(data + count, &(valitem->pos), sizeof(int));
-            count += sizeof(int);
+            count += pack(data + count, 0, "CIi", valitem->valuelen, valitem->value, 
+                            valitem->masknum, valitem->maskarray, valitem->pos);
             valitem = valitem->next;
         }
         keyitem = keyitem->next;
     }
 
     len = count - CMD_REQ_SIZE_LEN;
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
+    pack(data, 0, "i", len);
     
     return count;
 }
@@ -1271,66 +679,34 @@ cmd_insert_mkv_pack(char *data, MemLinkInsertMkv *mkv)
 int
 cmd_insert_mkv_unpack_packagelen(char *data, unsigned int *package_len)
 {
-    int count = 0;
-
-    memcpy(package_len, data, sizeof(int));
-    count += sizeof(int);
-    return count;
+    return unpack(data, 0, "i", package_len);
 }
 
 int
 cmd_insert_mkv_unpack_keycount(char *data, unsigned int *keycount)
 {
-    int count = 0;
-
-    memcpy(keycount, data, sizeof(int));
-    count += sizeof(int);
-    
-    return count;
+    return unpack(data, 0, "i", keycount);
 }
 
 int
 cmd_insert_mkv_unpack_key(char *data, char *key, unsigned int *valcount, char **countstart)
 {
-    int count = 0;
-    
-    count += unpack_string(data, key, NULL);
-    memcpy(valcount, data + count, sizeof(int));
-    //记录每个key下面value个数在包中的位置， 这个可能被修改
-    *countstart = data + count;
-    count += sizeof(int);
-
-    return count;
+    int ret = unpack(data, 0, "si", key, valcount);
+    *countstart = data + ret;
+    return ret;
 }
 
 int
 cmd_insert_mkv_unpack_val(char *data, char *value, unsigned char *valuelen,
     unsigned char *masknum, unsigned int *maskarray, int *pos)
 {
-    int count = 0;
-    unsigned char vlen;
-
-    count += unpack_string(data, value, &vlen);
-    *valuelen = vlen;
-    count += unpack_mask(data + count, maskarray, masknum);
-    memcpy(pos, data + count, sizeof(int));
-    count += sizeof(int);
-
-    return count;
+    return unpack(data, 0, "CIi", valuelen, value, masknum, maskarray, pos);
 }
 
 int
 cmd_read_conn_info_pack(char *data)
 {
-    unsigned char cmd = CMD_READ_CONN_INFO;
-    int count = CMD_REQ_SIZE_LEN;
-
-    memcpy(data + count, &cmd, sizeof(char));
-    count += sizeof(char);
-    
-    int len = count - CMD_REQ_SIZE_LEN;
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-    return count;
+    return pack(data, 0 ,"$4c", CMD_READ_CONN_INFO);
 }
 int
 cmd_read_conn_info_unpack(char *data)
@@ -1342,16 +718,7 @@ cmd_read_conn_info_unpack(char *data)
 int
 cmd_write_conn_info_pack(char *data)
 {
-    unsigned char cmd = CMD_WRITE_CONN_INFO;
-    int count = CMD_REQ_SIZE_LEN;
-
-    memcpy(data + count, &cmd, sizeof(char));
-    count += sizeof(char);
-    
-    int len = count - CMD_REQ_SIZE_LEN;
-
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-    return count;
+    return pack(data, 0 ,"$4c", CMD_WRITE_CONN_INFO);
 }
 int
 cmd_write_conn_info_unpack(char *data)
@@ -1362,16 +729,7 @@ cmd_write_conn_info_unpack(char *data)
 int
 cmd_sync_conn_info_pack(char *data)
 {
-    unsigned char cmd = CMD_SYNC_CONN_INFO;
-    int count = CMD_REQ_SIZE_LEN;
-
-    memcpy(data + count, &cmd, sizeof(char));
-    count += sizeof(char);
-    
-    int len = count - CMD_REQ_SIZE_LEN;
-
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-    return count;
+    return pack(data, 0 ,"$4c", CMD_SYNC_CONN_INFO);
 }
 
 int
@@ -1383,189 +741,70 @@ cmd_sync_conn_info_unpack(char *data)
 int 
 pack_config_struct(char *data, MyConfig *config)
 {
-    unsigned int count = 0;
-    int i;
-    int item_count = 0;
-    int ret;
-    
-    //pack bloc_data_count array
-    count += sizeof(int);
-    for (i = 0; i < BLOCK_DATA_COUNT_MAX; i++) {
-        if (config->block_data_count[i] > 0) {
-            memcpy(data + count, &(config->block_data_count[i]), sizeof(int));
-            item_count++;
-            count += sizeof(int);
-        }
-    }
-    memcpy(data, &item_count, sizeof(int)); 
-
-    memcpy(data + count, &config->block_data_count_items, sizeof(int));
-    count += sizeof(int);
-
-    memcpy(data + count, &config->block_data_reduce, sizeof(float));
-    count += sizeof(float);
-
-    memcpy(data + count, &config->dump_interval, sizeof(int));
-    count += sizeof(int);
-
-    memcpy(data + count, &config->block_clean_cond, sizeof(float));
-    count += sizeof(float);
-
-    memcpy(data + count, &config->block_clean_start, sizeof(int));
-    count += sizeof(int);
-
-    memcpy(data + count, &config->block_clean_num, sizeof(int));
-    count += sizeof(int);
-
-    memcpy(data + count, &config->read_port, sizeof(int));
-    count += sizeof(int);
-
-    memcpy(data + count, &config->write_port, sizeof(int));
-    count += sizeof(int);
-
-    memcpy(data + count, &config->sync_port, sizeof(int));
-    count += sizeof(int);
-    
-    ret = pack_string(data + count, config->datadir, 0);
-    count += ret;
-
-    memcpy(data + count, &config->log_level, sizeof(int));
-    count += sizeof(int);
-
-    ret = pack_string(data + count, config->log_name, 0);
-    count += ret;
-
-    memcpy(data + count, &config->write_binlog, sizeof(int));
-    count += sizeof(int);
-
-    memcpy(data + count, &config->timeout, sizeof(int));
-    count += sizeof(int);
-
-    memcpy(data + count, &config->thread_num, sizeof(int));
-    count += sizeof(int);
-
-    memcpy(data + count, &config->max_conn, sizeof(int));
-    count += sizeof(int);
-
-    memcpy(data + count, &config->max_core, sizeof(int));
-    count += sizeof(int);
-
-    memcpy(data + count, &config->is_daemon, sizeof(int));
-    count += sizeof(int);
-    
-    memcpy(data + count, &config->role, sizeof(char));
-    count += sizeof(char);
-
-    ret = pack_string(data + count, config->master_sync_host, 0);
-    count += ret;
-
-    memcpy(data + count, &config->master_sync_port, sizeof(int));
-    count += sizeof(int);
-
-    memcpy(data + count, &config->sync_interval, sizeof(int));
-    count += sizeof(int);
-    
-    return count;
+    return pack(data, 0, "I:4ififiiiiisisiiiiiicsii", 
+                                    config->block_data_count_items, 
+                                    config->block_data_count,
+                                    config->block_data_count_items,
+                                    config->block_data_reduce,
+                                    config->dump_interval,
+                                    config->block_clean_cond,
+                                    config->block_clean_start,
+                                    config->block_clean_num,
+                                    config->read_port,
+                                    config->write_port,
+                                    config->sync_port,
+                                    config->datadir,
+                                    config->log_level, 
+                                    config->log_name,
+                                    config->write_binlog,
+                                    config->timeout,
+                                    config->thread_num,
+                                    config->max_conn,
+                                    config->max_core,
+                                    config->is_daemon,
+                                    config->role,
+                                    config->master_sync_host,
+                                    config->master_sync_port,
+                                    config->sync_check_interval
+                                    );
 }
 
 int 
 unpack_config_struct(char *data, MyConfig *config)
 {
-    unsigned int count = 0;
-    unsigned int item_count = 0;
-    unsigned char len;
+    return unpack(data, 0, "I:4ififiiiiisisiiiiiicsii", 
+                                    &config->block_data_count_items, 
+                                    config->block_data_count,
+                                    &config->block_data_count_items,
+                                    &config->block_data_reduce,
+                                    &config->dump_interval,
+                                    &config->block_clean_cond,
+                                    &config->block_clean_start,
+                                    &config->block_clean_num,
+                                    &config->read_port,
+                                    &config->write_port,
+                                    &config->sync_port,
+                                    &config->datadir,
+                                    &config->log_level, 
+                                    config->log_name,
+                                    &config->write_binlog,
+                                    &config->timeout,
+                                    &config->thread_num,
+                                    &config->max_conn,
+                                    &config->max_core,
+                                    &config->is_daemon,
+                                    &config->role,
+                                    config->master_sync_host,
+                                    &config->master_sync_port,
+                                    &config->sync_check_interval
+                                    );
 
-    memcpy(&item_count, data + count, sizeof(int));
-    count += sizeof(int);
-
-    int i;
-    for (i = 0; i < item_count; i++) {
-        memcpy(&config->block_data_count[i], data + count, sizeof(int));
-        count += sizeof(int);
-    }
-
-    memcpy(&config->block_data_count_items, data + count, sizeof(int)); 
-    count += sizeof(int);
-
-    memcpy(&config->block_data_reduce, data + count, sizeof(float));
-    count += sizeof(float);
-
-    memcpy(&config->dump_interval, data + count, sizeof(int));
-    count += sizeof(int);
-
-    memcpy(&config->block_clean_cond, data + count, sizeof(float));
-    count += sizeof(float);
-
-    memcpy(&config->block_clean_start, data + count, sizeof(int));
-    count += sizeof(int);
-
-    memcpy(&config->block_clean_num, data + count, sizeof(int));
-    count += sizeof(int);
-
-    memcpy(&config->read_port, data + count, sizeof(int));
-    count += sizeof(int);
-
-    memcpy(&config->write_port, data + count, sizeof(int));
-    count += sizeof(int);
-
-    memcpy(&config->sync_port, data + count, sizeof(int));
-    count += sizeof(int);
-
-    len = unpack_string(data + count, config->datadir, NULL);
-    count += len;
-    
-    memcpy(&config->log_level, data + count, sizeof(int));
-    count += sizeof(int);
-
-    len = unpack_string(data + count, config->log_name, NULL);
-    count += len;
-
-    memcpy(&config->write_binlog, data + count, sizeof(int));
-    count += sizeof(int);
-
-    memcpy(&config->timeout, data + count, sizeof(int));
-    count += sizeof(int);
-    
-    memcpy(&config->thread_num, data + count,  sizeof(int));
-    count += sizeof(int);
-
-    memcpy(&config->max_conn, data + count, sizeof(int));
-    count += sizeof(int);
-
-    memcpy(&config->max_core, data + count, sizeof(int));
-    count += sizeof(int);
-    
-    memcpy(&config->is_daemon, data + count,  sizeof(int));
-    count += sizeof(int);
-
-    memcpy(&config->role, data + count, sizeof(char));
-    count += sizeof(char);
-
-    len = unpack_string(data + count, config->master_sync_host, NULL);
-    count += len;
-
-    memcpy(&config->master_sync_port, data + count, sizeof(int));
-    count += sizeof(int);
-
-    memcpy(&config->sync_interval, data + count, sizeof(int));
-    count += sizeof(int);
-    
-    return count;
 }
 
 int
 cmd_config_info_pack(char *data)
 {
-    unsigned char cmd = CMD_CONFIG_INFO;
-    int count = CMD_REQ_SIZE_LEN;
-
-    memcpy(data + count, &cmd, sizeof(char));
-    count += sizeof(char);
-
-    int len = count - CMD_REQ_SIZE_LEN;
-
-    memcpy(data, &len, CMD_REQ_SIZE_LEN);
-    return count;
+    return pack(data, 0, "$4c", CMD_CONFIG_INFO);
 }
 
 int
@@ -1577,54 +816,19 @@ cmd_config_info_unpack(char *data)
 int
 cmd_set_config_dynamic_pack(char *data, char *key, char *value)
 {
-    unsigned char cmd = CMD_SET_CONFIG;
-    int count = CMD_REQ_SIZE_LEN;
-    int ret;
-    
-    memcpy(data + count, &cmd, sizeof(char));
-    count += sizeof(char);
-
-    ret = pack_string(data + count, key, 0); 
-    count += ret;
-    
-    ret = pack_string(data + count, value, 0);
-    count += ret;
-
-    int len = count - CMD_REQ_SIZE_LEN;
-
-    memcpy(data, &len, sizeof(int));
-
-    return count;
-
+    return pack(data, 0, "$4css", CMD_SET_CONFIG, key, value);
 }
 
 int
 cmd_set_config_dynamic_unpack(char *data, char *key, char *value)
 {
-    unsigned int count = CMD_REQ_HEAD_LEN;
-    unsigned char len;
-    
-    len = unpack_string(data + count, key, NULL);
-    count += len;
-    
-    len = unpack_string(data + count, value, NULL);
-    count += len;
-
-    return 0;
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "ss", key, value);
 }
 
 int
 cmd_clean_all_pack(char *data)
 {
-    unsigned char cmd = CMD_CLEAN_ALL;
-    int count = CMD_REQ_SIZE_LEN;
-
-    memcpy(data + count, &cmd, sizeof(char));
-    count += sizeof(char);
-    int len = count - CMD_REQ_SIZE_LEN;
-
-    memcpy(data, &len, sizeof(int));
-    return count;
+    return pack(data, 0, "$4c", CMD_CLEAN_ALL);
 }
 
 int
@@ -1632,6 +836,68 @@ cmd_clean_all_unpack(char *data)
 {
     return 0;
 }
+
+int
+cmd_heartbeat_pack(char *data, int port)
+{
+    /*
+    unsigned char cmd = CMD_HEARTBEAT;
+    int count = CMD_REQ_SIZE_LEN;
+
+    memcpy(data + count, &cmd, sizeof(char));
+    count += sizeof(char);
+    memcpy(data + count, &port, sizeof(int));
+    count += sizeof(int);
+    int len = count - CMD_REQ_SIZE_LEN;
+
+    memcpy(data,&len, sizeof(int));
+    return count;
+    */
+    return pack(data, 0, "$4ci", CMD_HEARTBEAT, port);
+}
+int
+cmd_heartbeat_unpack(char *data, int *port)
+{
+    /*
+    char *ptr = data + CMD_REQ_SIZE_LEN + sizeof(char);
+
+    memcpy(port, ptr, sizeof(int));
+
+    return 0;
+    */
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "i", port);
+}
+
+int
+cmd_backup_ack_pack(char *data, char state)
+{
+    return pack(data, 0, "$4cc", CMD_BACKUP_ACK, state);
+}
+
+int
+cmd_backup_ack_unpack(char *data, unsigned char *cmd, short *ret, int *logver, int *logline)
+{
+    return unpack(data + CMD_REQ_SIZE_LEN, 0, "chii", cmd, ret, logver, logline);
+}
+
+int
+cmd_vote_pack(char *data, uint64_t id, unsigned char result, uint64_t voteid, unsigned short port)
+{
+    return pack(data, 0, "$4clclh", CMD_VOTE, id, result, voteid, port);
+}
+
+int
+unpack_votehost(char *buf, char *ip, uint16_t *port)
+{
+    return unpack(buf, 0, "sh", ip, port);
+}
+
+int
+unpack_voteid(char *buf, uint64_t *vote_id)
+{
+    return unpack(buf, 0, "l", vote_id);
+}
+
 /**
  * @}
  */

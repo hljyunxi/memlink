@@ -46,8 +46,24 @@
 
 #define CMD_CLEAN_ALL       32
 
+#define CMD_WRITE			34
+#define CMD_WRITE_RESULT	35
+#define CMD_GETPORT			36
+#define CMD_BACKUP_ACK      37
+
 #define CMD_SYNC            100
 #define CMD_GETDUMP		    101
+#define CMD_HEARTBEAT       102
+
+#define CMD_VOTE_MIN		200
+#define CMD_VOTE            200
+#define CMD_VOTE_WAIT       201
+#define CMD_VOTE_MASTER     202
+#define CMD_VOTE_BACKUP     203
+#define CMD_VOTE_NONEED     204
+#define CMD_VOTE_UPDATE     205
+#define CMD_VOTE_DETECT     206
+#define CMD_VOTE_MAX		206
 
 #define cmd_lpush_unpack    cmd_push_unpack
 #define cmd_rpush_unpack    cmd_push_unpack
@@ -128,11 +144,11 @@ int cmd_rpop_pack(char *data, char *key, int num);
 int cmd_pop_unpack(char *data, char *key, int *num);
 
 // for sync client
-int cmd_sync_pack(char *data, unsigned int logver, unsigned int logpos);
-int cmd_sync_unpack(char *data, unsigned int *logver, unsigned int *logpos);
+int cmd_sync_pack(char *data, unsigned int logver, unsigned int logpos, int bcount, char *md5);
+int cmd_sync_unpack(char *data, unsigned int *logver, unsigned int *logpos, int *bcount, char *md5);
 
-int cmd_getdump_pack(char *data, unsigned int dumpver, unsigned long long size);
-int cmd_getdump_unpack(char *data, unsigned int *dumpver, unsigned long long *size);
+int cmd_getdump_pack(char *data, unsigned int dumpver, uint64_t size);
+int cmd_getdump_unpack(char *data, unsigned int *dumpver, uint64_t *size);
 
 //int cmd_insert_mvalue_pack(char *data, char *key, MemLinkInsertVal *items, int num);
 //int cmd_insert_mvalue_unpack(char *data, char *key, MemLinkInsertVal **items, int *num);
@@ -176,5 +192,14 @@ int cmd_set_config_dynamic_pack(char *data, char *key, char *value);
 int cmd_set_config_dynamic_unpack(char *data, char *key, char *value);
 int cmd_clean_all_pack(char *data);
 int cmd_clean_all_unpack(char *data);
+int cmd_vote_pack(char *data, uint64_t id, unsigned char result, uint64_t voteid, unsigned short port);
+int cmd_heartbeat_pack(char *data, int port);
+int cmd_heartbeat_unpack(char *data, int *port);
+int cmd_backup_ack_pack(char *data, char state);
+int cmd_backup_ack_unpack(char *data, unsigned char *cmd, short *ret, int *logver, int *logline);
+int cmd_vote_pack(char *data, uint64_t id, unsigned char result, uint64_t voteid, unsigned short port);
+int unpack_votehost(char *buf, char *ip, uint16_t *port);
+int unpack_voteid(char *buf, uint64_t *vote_id);
+
 
 #endif

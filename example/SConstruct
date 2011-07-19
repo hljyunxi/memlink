@@ -16,4 +16,4 @@ env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=l
 files = glob.glob("*.c")
 for fn in files:
 	name = fn[:-2]
-	env.Program(name, [fn, '../client/c/libmemlink.a'])
+	env.Program(name, [fn, '../client/c/libmemlink.so'])

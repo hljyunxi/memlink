@@ -5,6 +5,7 @@ home = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.join(home, "client/python"))
 import time
 import subprocess
+import glob
 from memlinkclient import *
 
 MASTER_READ_PORT  = 21011
@@ -20,7 +21,7 @@ def stat_check(client2master, client2slave):
     ret1, stat1 = client2master.stat_sys()
     ret2, stat2 = client2slave.stat_sys()
     if stat1 and stat2:
-        if stat1.keys != stat2.keys or stat1.values != stat2.values :
+        if stat1.keys != stat2.keys or stat1.values != stat2.values or stat1.logline != stat2.logline:
             print 'stat error!'
             print 'ret1: %d, ret2: %d' % (ret1, ret2)
             print 'master stat', stat1
@@ -111,19 +112,21 @@ def test_init():
     memlink_slave_start = memlink_slave_file + ' test/memlink_slave.conf'
 
 def data_produce1():
+    '''
     if not os.path.isdir('data_bak'):
         cmd = 'mkdir data_bak'
         print cmd
         os.system(cmd)
     else:
         return 0
+    '''
         
     client2master = MemLinkClient('127.0.0.1', MASTER_READ_PORT, MASTER_WRITE_PORT, 30);    
     x1 = start_a_new_master()
     time.sleep(1)
-    cmd = 'cp data/dump.dat data_bak/dump.dat_bak'
-    print cmd
-    os.system(cmd)
+    #cmd = 'cp data/dump.dat data_bak/dump.dat_bak'
+    #print cmd
+    #os.system(cmd)
     
     #insert 500wan
     num2 = 5000000
@@ -137,19 +140,19 @@ def data_produce1():
     
     for i in xrange(num, num2):
         val = '%012d' % i
-        ret = client2master.insert(key, val, maskstr, i)
+        ret = client2master.insert(key, val, i, maskstr)
         if ret != MEMLINK_OK:
             print 'insert error!', key, val, maskstr, ret
             return -2;
     print 'insert %d val' % (num2 - num)
-    
+    ''' 
     client2master.dump()
-    
     cmd = 'cp data/* data_bak/'
     print cmd
     os.system(cmd)
+    '''
 
-    x1.kill()
+    #x1.kill()
     client2master.destroy()
     return 0
 
@@ -291,3 +294,122 @@ def restart_slave():
                              shell=True, env=os.environ, universal_newlines=True)
     return x2
 
+def change_synclog_indexnum(num):
+    source_name = "common.h"
+    f = open(source_name, 'r')
+
+    source_name_tmp = "common.h.tmp"
+    f1 = open(source_name_tmp, 'w+')
+
+    lines = f.readlines()
+
+    for line in lines:
+        if '#define SYNCLOG_INDEXNUM' in line:
+            newline = "#define SYNCLOG_INDEXNUM    %d\n" %  num
+            f1.write(newline)
+            continue
+        f1.write(line)
+
+    f.close()
+    f1.close()
+
+    cmd = 'mv common.h.tmp common.h'
+    os.system(cmd)
+
+    cmd = '/usr/local/bin/scons'
+
+    os.system(cmd)
+    cmd = 'cp memlink memlink_slave'
+    os.system(cmd)
+    cmd = 'cp memlink memlink_master'
+    os.system(cmd)
+
+def sync_test_clean():
+    binfiles = glob.glob('data/*')
+    for bf in binfiles:
+        print 'remove:', bf
+        os.remove(bf)
+
+    binfiles = glob.glob('data_slave/*')
+    for bf in binfiles:
+        print 'remove:', bf
+        os.remove(bf)
+
+    cmd = "killall -9 memlink_master"
+    os.system(cmd)
+
+    cmd = "killall -9 memlink_slave"
+    os.system(cmd)
+
+def mb_sync_test_init(server_nums):
+
+    home = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    os.chdir(home)
+    for i in xrange(0, server_nums):
+        bdata_dir = 'data_mb%d' % i
+        binfiles = glob.glob(bdata_dir)
+        for bf in binfiles:
+            print 'remove:', bf
+            os.remove(bf)
+
+        cmd = 'rm -rf test/memlink-mb%d' % i
+        os.system(cmd)
+
+
+    for i in xrange(0, server_nums):
+        mb = 'memlink-mb%d' % i
+        cmd = "killall -9 '%s'" % mb 
+        os.system(cmd)
+
+    cmd = '/usr/local/bin/scons'
+    os.system(cmd)
+
+
+    #create config file
+    conffile = 'etc/memlink.conf'
+    f = open(conffile, 'r')
+    lines = f.readlines()
+
+    vconffile = 'etc/vote.conf'
+    vf = open(vconffile, 'r')
+    vlines = f.readline()
+    
+    l_wport = []
+    port = 30000
+    for i in xrange (0, server_nums):
+        mconf = 'test/memlink-mb%d.conf' % i
+        f1 = open(mconf, "w+") 
+        for line in lines:
+            if 'read_port' in line:
+                newline = 'read_port = %d\n' % int(port + 1)
+                f1.write(newline)
+                continue
+            if 'write_port' in line:
+                newline = 'write_port = %d\n' % int(port + 2)
+                f1.write(newline)
+                l_wport.append(port + 2)
+                continue
+            if 'sync_port' in line and 'master_sync_port' not in line:
+                newline = 'sync_port = %d\n' % int(port + 3)
+                f1.write(newline)
+                continue
+            if 'sync_mode' in line:
+                newline = "sync_mode = %s\n" % 'master-backup'
+                f1.write(newline)
+                continue
+            if 'data_dir' in line:
+                newline = "data_dir = data_mb%d\n" % int(i)
+                f1.write(newline)
+                continue
+            if 'sync_mode' in line:
+                newline = "sync_mode = master-backup\n"
+                f1.write(newline)
+                continue
+            f1.write(line)
+        port = port + 1000
+        f1.close() 
+        cmd = 'cp memlink test/memlink-mb%d' % i 
+        os.system(cmd)
+
+    print l_wport
+    f.close()

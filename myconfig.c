@@ -7,26 +7,229 @@
  */
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <fcntl.h>
 #include <dirent.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include "logfile.h"
+#include "base/logfile.h"
+#include "base/confparse.h"
 #include "mem.h"
 #include "myconfig.h"
-#include "zzmalloc.h"
+#include "base/zzmalloc.h"
 #include "synclog.h"
 #include "server.h"
 #include "dumpfile.h"
 #include "wthread.h"
 #include "common.h"
-#include "utils.h"
+#include "base/utils.h"
 #include "sslave.h"
 #include "runtime.h"
+#include "conn.h"
 
 MyConfig *g_cf;
+
+static int
+conf_parse_sync_ipport(void *f, char *value, int i)
+{
+    MyConfig *cf = (MyConfig*)f;
+    
+    //DERROR("value:%s\n", value);
+    char *sp = strchr(value, ':'); 
+    if (NULL == sp) {
+        //DERROR("not found : in addr.\n");
+        return FALSE;
+    }
+    *sp = '\0'; 
+    char *v1 = value;
+    char *v2 = sp + 1;
+
+    while (isblank(*v1)) v1++;
+    while (isblank(*v2)) v2++;
+    
+    strncpy(cf->master_sync_host, v1, 15);
+    cf->master_sync_port = atoi(v2);
+
+    return TRUE; 
+}
+
+static int
+conf_parse_vote_ipport(void *f, char *value, int i)
+{
+    MyConfig *cf = (MyConfig*)f;
+
+    char *sp = strchr(value, ':'); 
+    if (NULL == sp) {
+        DERROR("must set as xx.xx.xx.xx:xxxx\n");
+        return FALSE;
+    }
+    *sp = '\0';
+    char *v1 = value;
+    char *v2 = sp + 1;
+
+    while (isblank(*v1)) v1++;
+    while (isblank(*v2)) v2++;
+
+    strncpy(cf->vote_host, v1, 15);
+    cf->vote_port = atoi(v2);
+
+    return TRUE; 
+}
+
+int
+myconfig_print(MyConfig *conf)
+{
+    int i;
+    for (i = 0; i < BLOCK_DATA_COUNT_MAX; i++) {
+        if (conf->block_data_count[i] <= 0)
+            break;
+        DINFO("block_data_count[%d]: %d\n", i, conf->block_data_count[i]);
+    }
+    DINFO("block_data_count_items: %d\n", conf->block_data_count_items);
+    DINFO("dump_interval: %d\n", conf->dump_interval);
+    DINFO("block_data_reduce: %f\n", conf->block_data_reduce);
+    DINFO("block_clean_cond: %f\n", conf->block_clean_cond);
+    DINFO("block_clean_start: %d\n", conf->block_clean_start);
+    DINFO("block_clean_num: %d\n", conf->block_clean_num);
+    DINFO("host: %s\n", conf->host);
+    DINFO("read_port: %d\n", conf->read_port);
+    DINFO("write_port: %d\n", conf->write_port);
+    DINFO("sync_port: %d\n", conf->sync_port);
+    DINFO("heartbeat_port: %d\n", conf->heartbeat_port);
+    DINFO("datadir: %s\n", conf->datadir);
+    DINFO("log_level: %d\n", conf->log_level);
+    DINFO("log_rotate_type: %d\n", conf->log_rotate_type);
+    DINFO("log_name: %s\n", conf->log_name);
+    DINFO("log_size: %d\n", conf->log_size);
+    DINFO("log_time: %d\n", conf->log_time);
+    DINFO("log_count: %d\n", conf->log_count);
+    DINFO("write_binlog: %d\n", conf->write_binlog);
+    DINFO("timeout: %d\n", conf->timeout);
+    DINFO("heartbeat_timeout: %d\n", conf->heartbeat_timeout);
+    DINFO("backup_timeout: %d\n", conf->backup_timeout);
+    DINFO("thread_num: %d\n", conf->thread_num);
+    DINFO("max_conn: %d\n", conf->max_conn);
+    DINFO("max_read_conn: %d\n", conf->max_read_conn);
+    DINFO("max_write_conn: %d\n", conf->max_write_conn);
+    DINFO("max_sync_conn: %d\n", conf->max_sync_conn);
+    DINFO("max_core: %d\n", conf->max_core);
+    DINFO("max_mem: %lld\n", conf->max_mem);
+    DINFO("daemon: %d\n", conf->is_daemon);
+    DINFO("sync_master: %s:%d\n", conf->master_sync_host, conf->master_sync_port);
+    DINFO("vote_server: %s:%d\n", conf->vote_host, conf->vote_port);
+    DINFO("sync_check_interval: %u\n", conf->sync_check_interval);
+    DINFO("sync_mode: %d\n", conf->sync_mode);
+    DINFO("user: %s\n", conf->user);
+    DINFO("dumpfile_num_max: %d\n", conf->dumpfile_num_max);
+
+    return 0;
+}
+
+int
+myconfig_parser_load(MyConfig *cf, char *filepath, int loadflag)
+{
+    ConfParser * cp = confparser_create(filepath);
+
+    ConfPairs   *levels = confpairs_create(5);
+    confpairs_add(levels, "error", LOG_ERROR);
+    confpairs_add(levels, "warn", LOG_WARN);
+    confpairs_add(levels, "note", LOG_NOTE);
+    confpairs_add(levels, "notice", LOG_NOTICE);
+    confpairs_add(levels, "info", LOG_INFO);
+
+    ConfPairs   *rotatetypes = confpairs_create(3);
+    confpairs_add(rotatetypes, "no", LOG_ROTATE_NO);
+    confpairs_add(rotatetypes, "size", LOG_ROTATE_SIZE);
+    confpairs_add(rotatetypes, "time", LOG_ROTATE_TIME);
+
+    ConfPairs   *roles = confpairs_create(3);
+    confpairs_add(roles, "master", ROLE_MASTER);
+    confpairs_add(roles, "backup", ROLE_BACKUP);
+    confpairs_add(roles, "slave", ROLE_SLAVE);
+
+    ConfPairs   *syncmods = confpairs_create(2);
+    confpairs_add(syncmods, "master-slave", MODE_MASTER_SLAVE);
+    confpairs_add(syncmods, "master-backup", MODE_MASTER_BACKUP);
+
+    if (loadflag == CONF_LOAD_ALL) {
+        confparser_add_param(cp, cf->block_data_count, "block_data_count", CONF_INT, 
+                    BLOCK_DATA_COUNT_MAX, NULL);
+        confparser_add_param(cp, &cf->block_data_reduce, "block_data_reduce", CONF_FLOAT, 0, NULL);
+        confparser_add_param(cp, &cf->dump_interval, "dump_interval", CONF_INT, 0, NULL);
+        confparser_add_param(cp, &cf->sync_check_interval, "sync_check_interval", CONF_INT, 0, NULL);
+        confparser_add_param(cp, &cf->block_clean_cond, "block_clean_cond", CONF_FLOAT, 0, NULL);
+        confparser_add_param(cp, &cf->block_clean_start, "block_clean_start", CONF_INT, 0, NULL);
+        confparser_add_param(cp, &cf->block_clean_num, "block_clean_num", CONF_INT, 0, NULL);
+        confparser_add_param(cp, cf->host, "host", CONF_STRING, 0, NULL);
+        confparser_add_param(cp, &cf->read_port, "read_port", CONF_INT, 0, NULL);
+        confparser_add_param(cp, &cf->write_port, "write_port", CONF_INT, 0, NULL);
+        confparser_add_param(cp, &cf->sync_port, "sync_port", CONF_INT, 0, NULL);
+        confparser_add_param(cp, cf->datadir, "data_dir", CONF_STRING, 0, NULL);
+        confparser_add_param(cp, &cf->log_level, "log_level", CONF_ENUM, 0, levels);
+        confparser_add_param(cp, cf->log_name, "log_name", CONF_STRING, 0, NULL);
+        confparser_add_param(cp, cf->log_error_name, "log_error_name", CONF_STRING, 0, NULL);
+        confparser_add_param(cp, &cf->log_size, "log_size", CONF_INT, 0, NULL);
+        confparser_add_param(cp, &cf->log_time, "log_time", CONF_INT, 0, NULL);
+        confparser_add_param(cp, &cf->log_count, "log_count", CONF_INT, 0, NULL);
+        confparser_add_param(cp, &cf->log_rotate_type, "log_rotate_type", CONF_ENUM, 0, rotatetypes);
+        confparser_add_param(cp, &cf->timeout, "timeout", CONF_INT, 0, NULL);
+        confparser_add_param(cp, &cf->thread_num, "thread_num", CONF_INT, 0, NULL);
+        confparser_add_param(cp, &cf->write_binlog, "write_binlog", CONF_BOOL, 0, NULL);
+        confparser_add_param(cp, &cf->max_conn, "max_conn", CONF_INT, 0, NULL);
+        confparser_add_param(cp, &cf->max_read_conn, "max_read_conn", CONF_INT, 0, NULL);
+        confparser_add_param(cp, &cf->max_write_conn, "max_write_conn", CONF_INT, 0, NULL);
+        confparser_add_param(cp, &cf->max_sync_conn, "max_sync_conn", CONF_INT, 0, NULL);
+        confparser_add_param(cp, &cf->max_core, "max_core", CONF_INT, 0, NULL);
+        confparser_add_param(cp, &cf->max_mem, "max_mem", CONF_INT, 0, NULL);
+        confparser_add_param(cp, &cf->is_daemon, "daemon", CONF_BOOL, 0, NULL);
+        confparser_add_param(cp, &cf->role, "role", CONF_ENUM, 0, roles);
+        confparser_add_param(cp, cf, "sync_master", CONF_USER, 0, conf_parse_sync_ipport);
+        confparser_add_param(cp, &cf->sync_check_interval, "sync_check_interval", CONF_INT, 0, NULL);
+        confparser_add_param(cp, &cf->sync_disk_interval, "sync_disk_interval", CONF_INT, 0, NULL);
+        confparser_add_param(cp, &cf->sync_mode, "sync_mode", CONF_ENUM, 0, syncmods);
+        confparser_add_param(cp, cf->user, "user", CONF_STRING, 0, NULL);
+        confparser_add_param(cp, &cf->heartbeat_timeout, "heartbeat_timeout", CONF_INT, 0, NULL);
+        confparser_add_param(cp, cf, "vote_server", CONF_USER, 0, conf_parse_vote_ipport);
+        confparser_add_param(cp, &cf->dumpfile_num_max, "dumpfile_num_max", CONF_INT, 0, NULL);
+
+    }else if (loadflag == CONF_LOAD_DYNAMIC) {
+
+    }
+    int retcode = 0;
+    if (confparser_parse(cp) < 0) {
+        retcode = -1;
+        goto myconfig_parse_load_over;
+    }
+
+    int i;
+    for (i = 0; i < BLOCK_DATA_COUNT_MAX; i++) {
+        if (cf->block_data_count[i] == 0) {
+            break;
+        }
+    }
+    cf->block_data_count_items = i;
+    qsort(cf->block_data_count, cf->block_data_count_items, sizeof(int), compare_int);
+
+    // minute to second
+    cf->dump_interval *= 60;
+    // m to byte
+    cf->log_size *= 1048576;
+    // minute to second
+    cf->log_time *= 60;
+    // m to byte
+    cf->max_mem  *= 1048576;
+
+myconfig_parse_load_over:
+    confpairs_destroy(levels);
+    confpairs_destroy(rotatetypes);
+    confpairs_destroy(roles);
+    confpairs_destroy(syncmods);
+    confparser_destroy(cp);
+
+    return retcode;
+}
 
 MyConfig*
 myconfig_create(char *filename)
@@ -41,30 +244,48 @@ myconfig_create(char *filename)
     memset(mcf, 0, sizeof(MyConfig));
 
     // set default value
-    mcf->block_data_count[0]    = 50;
-    mcf->block_data_count[1]    = 20;
+    /*mcf->block_data_count[0]    = 1;
+    mcf->block_data_count[1]    = 5;
     mcf->block_data_count[2]    = 10;
-    mcf->block_data_count[3]    = 5;
-    mcf->block_data_count[4]    = 1;
-    mcf->block_data_count_items = 5;
+    mcf->block_data_count[3]    = 20;
+    mcf->block_data_count[4]    = 50;
+    mcf->block_data_count_items = 5;*/
+    //mcf->block_data_count_items = 5;
     mcf->block_clean_cond  = 0.5;
     mcf->block_clean_start = 3;
     mcf->block_clean_num   = 100;
-    mcf->dump_interval = 60;
-    mcf->sync_interval = 60;
+    mcf->dump_interval = 60 * 60; // 1 hour
+    mcf->sync_check_interval = 60;
+    mcf->read_port  = 11001;
     mcf->write_port = 11002;
     mcf->sync_port  = 11003;
     mcf->log_level  = 3; 
+    mcf->log_size   = 200 * 1024 * 1024;  // 200M
+    mcf->log_time   = 1440 * 60; // 24h
+    mcf->log_count  = 10;
     mcf->timeout    = 30;
     mcf->max_conn   = 1000;
+    mcf->max_mem    = 0;
+    mcf->sync_mode  = MODE_MASTER_SLAVE;
+    mcf->heartbeat_timeout = 5;
+    mcf->dumpfile_num_max = 20;
+
+    strcpy(mcf->host, "0.0.0.0");
 
     snprintf(mcf->datadir, PATH_MAX, "data");
 
-    FILE    *fp;
+
+    if (myconfig_parser_load(mcf, filename, CONF_LOAD_ALL) != 0) {
+        DERROR("parse config %s error!\n", filename);
+        MEMLINK_EXIT;
+    }
+    
+    //FILE    *fp;
     //char    filepath[PATH_MAX];
     // FIXME: must absolute path
     //snprintf(filepath, PATH_MAX, "etc/%s", filename);
 
+    /*
     int lineno = 0;
     fp = fopen(filename, "r");
     if (NULL == fp) {
@@ -146,16 +367,16 @@ myconfig_create(char *filename)
             mcf->block_data_reduce = atof(start);
         }else if (strcmp(buffer, "dump_interval") == 0) {
             mcf->dump_interval = atoi(start);
-        }else if (strcmp(buffer, "sync_interval") == 0) {
-            mcf->sync_interval = atoi(start); 
+        }else if (strcmp(buffer, "sync_check_interval") == 0) {
+            mcf->sync_check_interval = atoi(start); 
         }else if (strcmp(buffer, "block_clean_cond") == 0) {
             mcf->block_clean_cond = atof(start);
         }else if (strcmp(buffer, "block_clean_start") == 0) {
             mcf->block_clean_start = atoi(start);
         }else if (strcmp(buffer, "block_clean_num") == 0) {
             mcf->block_clean_num = atoi(start);
-        }else if (strcmp(buffer, "ip") == 0) {
-            snprintf(mcf->ip, IP_ADDR_MAX_LEN, "%s", start);
+        }else if (strcmp(buffer, "host") == 0) {
+            snprintf(mcf->host, IP_ADDR_MAX_LEN, "%s", start);
         }else if (strcmp(buffer, "read_port") == 0) {
             mcf->read_port = atoi(start);
         }else if (strcmp(buffer, "write_port") == 0) {
@@ -168,6 +389,26 @@ myconfig_create(char *filename)
             mcf->log_level = atoi(start);
         }else if (strcmp(buffer, "log_name") == 0) {
             snprintf(mcf->log_name, PATH_MAX, "%s", start);    
+        }else if (strcmp(buffer, "log_error_name") == 0) {
+            snprintf(mcf->log_error_name, PATH_MAX, "%s", start);    
+        }else if (strcmp(buffer, "log_size") == 0) {
+            mcf->log_size = atoi(start) * 1024 * 1024;
+        }else if (strcmp(buffer, "log_time") == 0) {
+            mcf->log_time = atoi(start) * 60;
+        }else if (strcmp(buffer, "log_count") == 0) {
+            mcf->log_count = atoi(start);
+        }else if (strcmp(buffer, "log_rotate_type") == 0) {
+            if (strcmp(start, "no") == 0) {
+                mcf->log_rotate_type = LOG_ROTATE_NO;
+            }else if (strcmp(start, "size") == 0) {
+                mcf->log_rotate_type = LOG_ROTATE_SIZE;
+            }else if (strcmp(start, "time") == 0) {
+                mcf->log_rotate_type = LOG_ROTATE_TIME;
+            }else{
+                DERROR("config log_rotate_type must be: no/size/time\n");
+                MEMLINK_EXIT;
+            }
+            mcf->timeout = atoi(start);
         }else if (strcmp(buffer, "timeout") == 0) {
             mcf->timeout = atoi(start);
         }else if (strcmp(buffer, "thread_num") == 0) {
@@ -208,6 +449,8 @@ myconfig_create(char *filename)
             }
         }else if (strcmp(buffer, "max_core") == 0) {
             mcf->max_core = atoi(start);
+        }else if (strcmp(buffer, "max_mem") == 0) {
+            mcf->max_mem = atoi(start) * 1048576;
         }else if (strcmp(buffer, "is_daemon") == 0) {
             if (strcmp(start, "yes") == 0) {
                 mcf->is_daemon = 1;
@@ -232,16 +475,45 @@ myconfig_create(char *filename)
             snprintf(mcf->master_sync_host, IP_ADDR_MAX_LEN, "%s", start);
         }else if (strcmp(buffer, "master_sync_port") == 0) {
             mcf->master_sync_port = atoi(start);
-        }else if (strcmp(buffer, "sync_interval") == 0) {
-            mcf->sync_interval = atoi(start);
+        }else if (strcmp(buffer, "sync_check_interval") == 0) {
+            mcf->sync_check_interval = atoi(start);
+        }else if (strcmp(buffer, "sync_disk_interval") == 0) {
+            mcf->sync_disk_interval = atoi(start);
+        }else if (strcmp(buffer, "sync_mode") == 0) {
+            if (strcmp(start, "master-slave") == 0) {
+                mcf->sync_mode = MODE_MASTER_SLAVE;
+            }else if (strcmp(start, "master-backup") == 0) {
+                mcf->sync_mode = MODE_MASTER_BACKUP;
+            }else{
+                DERROR("sync_mode must set to master-slave/master-backup\n");
+                MEMLINK_EXIT;
+            }
         }else if (strcmp(buffer, "user") == 0) {
             snprintf(mcf->user, 128, "%s", start);
+        }else if (strcmp(buffer, "heartbeat_timeout") == 0) {
+            mcf->heartbeat_timeout = atoi(start);
+        }else if (strcmp(buffer, "vote_server") == 0) {
+            char *colon = strchr(start, ':');
+            if (NULL == colon) {
+                DERROR("vote_server must set as: xx.xx.xx.xx:xxxx\n");
+                MEMLINK_EXIT;
+            }
+            *colon = 0;
+            char *hport = colon + 1;
+            snprintf(mcf->vote_host, IP_ADDR_MAX_LEN, "%s", start);
+            mcf->vote_port = atoi(hport);
+        } else if (strcmp(buffer, "dumpfile_num_max") == 0) {
+            mcf->dumpfile_num_max = atoi(start);
         }
+
     }
 
     fclose(fp);
+    */
 
     // check config 
+    //myconfig_print(mcf);
+
     if (mcf->max_conn <= 0 || mcf->max_conn < mcf->max_read_conn || 
         mcf->max_conn < mcf->max_write_conn || mcf->max_conn < mcf->max_sync_conn) {
         DERROR("config max_conn must >= 0 and >= max_read_conn, >= max_write_conn, >= max_sync_conn.\n");
@@ -257,7 +529,6 @@ myconfig_create(char *filename)
     if (mcf->max_sync_conn == 0) {
         mcf->max_sync_conn = mcf->max_conn;
     }
-
 
     g_cf = mcf;
     //DINFO("create MyConfig ok!\n");
@@ -362,7 +633,7 @@ myconfig_change()
     snprintf(line, 512, "master_sync_port = %d\n", g_cf->master_sync_port);
     ffwrite(line, strlen(line), 1, fp);
 
-    snprintf(line, 512, "sync_interval = %d\n", g_cf->sync_interval);
+    snprintf(line, 512, "sync_check_interval = %d\n", g_cf->sync_check_interval);
     ffwrite(line, strlen(line), 1, fp);
 
     snprintf(line, 512, "user = %s\n", g_cf->user);
@@ -380,201 +651,6 @@ myconfig_change()
     return 1;
 }
 
-/*
-Runtime *g_runtime;
-
-Runtime*
-runtime_create_common(char *pgname)
-{
-    Runtime *rt = (Runtime*)zz_malloc(sizeof(Runtime));
-    if (NULL == rt) {
-        DERROR("malloc Runtime error!\n");
-        MEMLINK_EXIT;
-        return NULL; 
-    }
-    memset(rt, 0, sizeof(Runtime));
-    g_runtime = rt;
-    
-    rt->memlink_start = time(NULL);
-    if (realpath(pgname, rt->home) == NULL) {
-        char errbuf[1024];
-        strerror_r(errno, errbuf, 1024);
-		DERROR("realpath error: %s\n",  errbuf);
-        MEMLINK_EXIT;
-    }
-    char *last = strrchr(rt->home, '/');  
-    if (last != NULL) {
-        *last = 0;
-    }
-    DINFO("home: %s\n", rt->home);
-
-    int ret;
-    // create data and log dir
-    if (!isdir(g_cf->datadir)) {
-        ret = mkdir(g_cf->datadir, 0744);
-        if (ret == -1) {
-            char errbuf[1024];
-            strerror_r(errno, errbuf, 1024);
-			DERROR("create dir %s error! %s\n", g_cf->datadir,  errbuf);
-            MEMLINK_EXIT;
-        }
-    }
-
-    ret = pthread_mutex_init(&rt->mutex, NULL);
-    if (ret != 0) {
-        char errbuf[1024];
-        strerror_r(errno, errbuf, 1024);
-        DERROR("pthread_mutex_init error: %s\n",  errbuf);
-        MEMLINK_EXIT;
-        return NULL;
-    }
-    DINFO("mutex init ok!\n");
-
-    ret = pthread_mutex_init(&rt->mutex_mem, NULL);
-    if (ret != 0) {
-        char errbuf[1024];
-        strerror_r(errno, errbuf, 1024);
-        DERROR("pthread_mutex_init error: %s\n",  errbuf);
-        MEMLINK_EXIT;
-        return NULL;
-    }
-    DINFO("mutex_mem init ok!\n");
-
-    rt->mpool = mempool_create();
-    if (NULL == rt->mpool) {
-        DERROR("mempool create error!\n");
-        MEMLINK_EXIT;
-        return NULL;
-    }
-    DINFO("mempool create ok!\n");
-
-    rt->ht = hashtable_create();
-    if (NULL == rt->ht) {
-        DERROR("hashtable_create error!\n");
-        MEMLINK_EXIT;
-        return NULL;
-    }
-    DINFO("hashtable create ok!\n");
-
-    rt->server = mainserver_create();
-    if (NULL == rt->server) {
-        DERROR("mainserver_create error!\n");
-        MEMLINK_EXIT;
-        return NULL;
-    }
-    DINFO("main thread create ok!\n");
-
-    rt->synclog = synclog_create();
-    if (NULL == rt->synclog) {
-        DERROR("synclog_create error!\n");
-        MEMLINK_EXIT;
-        return NULL;
-    }
-    DINFO("synclog open ok!\n");
-    DINFO("synclog index_pos:%d, pos:%d\n", g_runtime->synclog->index_pos, g_runtime->synclog->pos);
-
-    return rt;
-}
-
-Runtime* 
-runtime_create_slave(char *pgname, char *conffile) 
-{
-    Runtime *rt;
-
-    rt = runtime_create_common(pgname);
-    if (NULL == rt) {
-        return rt;
-    }
-    snprintf(rt->conffile, PATH_MAX, "%s", conffile); 
-    rt->slave = sslave_create();
-    if (NULL == rt->slave) {
-        DERROR("sslave_create error!\n");
-        MEMLINK_EXIT;
-    }
-    DINFO("sslave thread create ok!\n");
-    
-    rt->sthread = sthread_create();
-    if (NULL == rt->sthread) {
-     DERROR("sthread_create error!\n");
-     MEMLINK_EXIT;
-     return NULL;
-    }
-    DINFO("sync thread create ok!\n");
-
-
-    int ret = load_data_slave();
-    if (ret < 0) {
-        DERROR("load_data error: %d\n", ret);
-        MEMLINK_EXIT;
-        return NULL;
-    }
-    DINFO("load_data ok!\n");
-    
-    rt->wthread = wthread_create();
-    if (NULL == rt->wthread) {
-        DERROR("wthread_create error!\n");
-        MEMLINK_EXIT;
-        return NULL;
-    }
-    DINFO("write thread create ok!\n");
- 
-    sslave_go(rt->slave);
-    
-    DNOTE("create slave runtime ok!\n");
-    return rt;
-}
-
-Runtime*
-runtime_create_master(char *pgname, char *conffile)
-{
-    Runtime* rt;// = runtime_init(pgname);
-
-    rt = runtime_create_common(pgname);
-    if (NULL == rt) {
-        return rt;
-    }
-    snprintf(rt->conffile, PATH_MAX, "%s", conffile);
-    int ret = load_data();
-    if (ret < 0) {
-        DERROR("load_data error: %d\n", ret);
-        MEMLINK_EXIT;
-        return NULL;
-    }
-    DINFO("load_data ok!\n");
-
-
-    rt->wthread = wthread_create();
-    if (NULL == rt->wthread) {
-        DERROR("wthread_create error!\n");
-        MEMLINK_EXIT;
-        return NULL;
-    }
-    DINFO("write thread create ok!\n");
-   
-    
-    rt->sthread = sthread_create();
-    if (NULL == rt->sthread) {
-     DERROR("sthread_create error!\n");
-     MEMLINK_EXIT;
-     return NULL;
-    }
-    DINFO("sync thread create ok!\n");
-    
-
-    DNOTE("create master Runtime ok!\n");
-    return rt;
-}
-
-void
-runtime_destroy(Runtime *rt)
-{
-    if (NULL == rt)
-        return;
-
-    pthread_mutex_destroy(&rt->mutex);
-    zz_free(rt);
-}*/
-
 int    
 mem_used_inc(long long size)
 {
@@ -591,6 +667,43 @@ mem_used_dec(long long size)
     g_runtime->mem_used -= size;
     pthread_mutex_unlock(&g_runtime->mutex_mem);
     return 0;
+}
+
+int
+conn_check_max(Conn *conn)
+{
+    int rconn = 0;
+    int i;
+    for (i = 0; i < g_cf->thread_num; i++) {
+        rconn += g_runtime->server->threads[i].conns;
+    }
+    rconn++; // add self
+   
+    int allconn = rconn + g_runtime->wthread->conns + g_runtime->sthread->conns;
+    DINFO("check conn: %d, %d\n", allconn, g_cf->max_conn);
+
+    if (allconn > g_cf->max_conn) {
+        return MEMLINK_ERR_CONN_TOO_MANY;
+    }
+    
+    if (conn->port == g_cf->read_port) {
+        DINFO("check read conn: %d, %d\n", rconn, g_cf->max_read_conn);
+        if (g_cf->max_read_conn > 0 && rconn > g_cf->max_read_conn) {
+            return MEMLINK_ERR_CONN_TOO_MANY;
+        }
+    }else if (conn->port == g_cf->write_port) {
+        DINFO("check write conn: %d, %d\n", g_runtime->wthread->conns, g_cf->max_write_conn);
+        if (g_cf->max_write_conn > 0 && g_runtime->wthread->conns > g_cf->max_write_conn) {
+            return MEMLINK_ERR_CONN_TOO_MANY;
+        }
+    }else if (conn->port == g_cf->sync_port) {
+        DINFO("check sync conn: %d, %d\n", g_runtime->sthread->conns, g_cf->max_write_conn);
+        if (g_cf->max_sync_conn > 0 && g_runtime->sthread->conns > g_cf->max_sync_conn) {
+            return MEMLINK_ERR_CONN_TOO_MANY;
+        }
+    }
+
+    return MEMLINK_OK;
 }
 
 

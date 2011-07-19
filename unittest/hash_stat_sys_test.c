@@ -45,8 +45,8 @@ int main(int argc, char **argv)
     char key[64];
     int  valuesize = 8;
     char val[64];
-    int  maskformat[3] = {4, 4, 3};
-    int  maskarray[3] = {1, 2, 1};
+    unsigned int maskformat[3] = {4, 4, 3};
+    unsigned int maskarray[3]  = {1, 2, 1};
     int  masknum = 3;
     int  num = 1000;
     int  keys = 100;

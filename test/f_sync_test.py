@@ -13,7 +13,10 @@ def test():
     client2slave  = MemLinkClient('127.0.0.1', SLAVE_READ_PORT, SLAVE_WRITE_PORT, 30);
     
     test_init()
+    change_synclog_indexnum(1000);
 
+    cmd = 'bash clean.sh'
+    os.system(cmd)
     print 
     print '============================= test f  =============================='
     x1 = start_a_new_master()
@@ -32,7 +35,7 @@ def test():
     num = 1000
     for i in xrange(0, num):
         val = '%012d' % i
-        ret = client2master.insert(key, val, maskstr, i)
+        ret = client2master.insert(key, val, i, maskstr)
         if ret != MEMLINK_OK:
             print 'insert error!', key, val, maskstr, ret
             return -2;
@@ -47,20 +50,18 @@ def test():
     num2 = 1500
     for i in xrange(num, num2):
         val = '%012d' % i
-        ret = client2master.insert(key, val, maskstr, i)
+        ret = client2master.insert(key, val, i, maskstr)
         if ret != MEMLINK_OK:
             print 'insert error!', key, val, maskstr, ret
             return -2;
     print 'insert %d val' % (num2 - num)
 
-    x2 = restart_slave()
-    time.sleep(1)
 
     #insert 1500
     num3 = 3000
     for i in xrange(num2, num3):
         val = '%012d' % i
-        ret = client2master.insert(key, val, maskstr, i)
+        ret = client2master.insert(key, val, i, maskstr)
         if ret != MEMLINK_OK:
             print 'insert error!', key, val, maskstr, ret
             return -2;
@@ -76,6 +77,7 @@ def test():
         	return -1
     print 'move %d val' % num
 
+
     #mask 1000
     num = 1000
     maskstr1 = '6:2:1'
@@ -87,6 +89,8 @@ def test():
             return -2;
     print 'mask %d val' % num
 
+    x2 = restart_slave()
+    time.sleep(1)
     #tag 300
     num = 300
     for i in xrange(0, num):
@@ -130,6 +134,7 @@ def test():
     
     client2master.destroy()
     client2slave.destroy()
+    sync_test_clean()
 
     return 0
 

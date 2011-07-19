@@ -20,6 +20,9 @@ typedef struct _thread_server
     int                 complete;
 	unsigned short     	conns; 
 	RwConnInfo          *rw_conn_info;
+#ifdef DEBUG
+    int null_dispatch;
+#endif
 }ThreadServer;
 
 typedef struct _main_server
@@ -30,6 +33,9 @@ typedef struct _main_server
     ThreadServer        threads[MEMLINK_MAX_THREADS];
     int                 lastth; // last thread for dispath
 	int                 conn_read;
+#ifdef DEBUG
+    struct event null_dispatch_event;
+#endif    
 }MainServer;
 
 MainServer*     mainserver_create();
