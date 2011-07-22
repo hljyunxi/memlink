@@ -5,9 +5,9 @@
 #include <pthread.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <sys/syscall.h>
 #include <limits.h>
 #include <time.h>
+#include <sys/syscall.h>
 #include "log.h"
 
 
@@ -42,6 +42,7 @@ namespace _log_global {
     uint32_t g_max_file_size = (1024U * 1024 * 1024 * 2) - 1;
     int g_hour = 0;
     int g_day = 0;
+    char g_std[16] = {0};
     pthread_mutex_t g_mlock;
 
     __thread char *t_put_buf = NULL;
@@ -329,6 +330,16 @@ int log_init(const char *path, const char* base_name, const int level,
 
     log_set_level(level); //check error
 
+    if ((base_name != NULL) && 
+        ((strcmp(base_name, "stderr") == 0) ||
+        (strcmp(base_name, "stdout") == 0))) {
+        strncpy(g_std, base_name, 6);
+
+        g_inited = INITED;
+
+        return 0;
+    }
+
     if (path != NULL) {
         ret = log_makedir_recursive(path);
         if (ret != 0) {
@@ -405,7 +416,6 @@ int log_print(const int level, const char* file_name,
     if (level > g_log_level)
         return 0;
 
-
     if (g_inited == NOT_INIT) {
         gettimeofday(&tm_v, NULL);
         localtime_r(&tm_v.tv_sec, &tm);
@@ -419,6 +429,35 @@ int log_print(const int level, const char* file_name,
         vfprintf(stderr, format, va);
         va_end(va);
         fprintf(stderr, "%s", END_LINE);
+        return 0;
+    }
+
+    if (strlen(g_std) != 0 &&
+        ((strncmp(g_std, "stdout", 6) == 0) || (strncmp(g_std, "stderr", 6) == 0) )) {
+        if ((level == L_ERROR) || (level == L_WARNING)) {
+            t_fp = stderr;
+        } else {
+            t_fp = stdout;
+        }
+
+        log_lock();
+
+        gettimeofday(&tm_v, NULL);
+        localtime_r(&tm_v.tv_sec, &tm);
+
+        fprintf(t_fp, "%04d-%02d-%02d %02d:%02d:%02d.%06d %s %ld %s:%d ",
+                tm.tm_year + 1900, tm.tm_mon + 1,
+                tm.tm_mday, tm.tm_hour,
+                tm.tm_min, tm.tm_sec, (int)tm_v.tv_usec,
+                level_str[level], syscall(SYS_gettid), file_name, line);
+        va_start(va, format);
+        vfprintf(t_fp, format, va);
+        va_end(va);
+        fprintf(t_fp, "%s", END_LINE);
+        fflush(t_fp);
+
+        log_unlock();
+
         return 0;
     }
 
@@ -465,6 +504,7 @@ int log_print(const int level, const char* file_name,
     vfprintf(t_fp, format, va);
     va_end(va);
     fprintf(t_fp, "%s", END_LINE);
+    fflush(t_fp);
 
     log_unlock();
 
