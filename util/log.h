@@ -1,5 +1,5 @@
-#ifndef MEMLINK_UTIL_LOG
-#define MEMLINK_UTIL_LOG
+#ifndef WENWEN2_COMMON_TRUNK_UTIL_SRC_LOG_LOG_H_
+#define WENWEN2_COMMON_TRUNK_UTIL_SRC_LOG_LOG_H_
 
 #include <stdarg.h>
 #include <stdint.h>
