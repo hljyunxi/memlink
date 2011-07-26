@@ -202,7 +202,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
     
     if (conn) {    
         wt = (WThread *)conn->thread;
-        for (i = 0; i <= g_cf->max_write_conn; i++) {
+        for (i = 0; i < g_cf->max_write_conn; i++) {
             conninfo = &(wt->rw_conn_info[i]);
             if (conninfo->fd == conn->sock)
                 break;

@@ -377,7 +377,7 @@ syncmem_read(SyncMem *smem, int logver, int logline,
         else
             i = pos + 1;*/
 
-        DERROR("smem->need_skip_one: %d\n", need_skip_one); 
+        //DERROR("smem->need_skip_one: %d\n", need_skip_one); 
         if (need_skip_one == FALSE) {
             i = pos;
             need_skip_one = TRUE;
@@ -407,8 +407,6 @@ syncmem_read(SyncMem *smem, int logver, int logline,
             memcpy(&nlogver, from, sizeof(int));
             memcpy(&nlogline, from + sizeof(int), sizeof(int));
         }
-        if (count > 1024)
-            DWARNING("====package size: %d\n", count);
         //copy数据包头    
         memcpy(data, &count, sizeof(int));
 
