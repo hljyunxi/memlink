@@ -47,7 +47,7 @@ rdata_ready(Conn *conn, char *data, int datalen)
 
 
     int i;
-    for (i = 0; i <= g_cf->max_conn; i++) {
+    for (i = 0; i < g_cf->max_conn; i++) {
         conninfo = &(st->rw_conn_info[i]);
         if (conninfo->fd == conn->sock)
             break;

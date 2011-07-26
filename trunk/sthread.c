@@ -181,7 +181,9 @@ get_synclog_record(SyncConn *conn)
     int *indxdata = (int *)(synclog->index + SYNCLOG_HEAD_LEN);
     SThread *st;
     SyncConnInfo *conninfo = NULL;
-
+    
+    zz_check(conn);
+    zz_check(conn->wbuf);
     if ( i == SYNCLOG_INDEXNUM) {
         return 0;
     }
@@ -191,7 +193,7 @@ get_synclog_record(SyncConn *conn)
         
     st = (SThread *)conn->thread;
     int j;
-    for (j = 0; j <= g_cf->max_sync_conn; j++) {
+    for (j = 0; j < g_cf->max_sync_conn; j++) {
         conninfo = &(st->sync_conn_info[j]);
         if (conninfo->fd == conn->sock)
             break;
@@ -265,6 +267,8 @@ get_synclog_record(SyncConn *conn)
         conn->blogline = logline;
         //DINFO("----------------------------------------i: %d\n", i);
     }
+    zz_check(conn);
+    zz_check(conn->wbuf);
     if (count > 0) {
         //count += sizeof(int);
         if (conn->need_skip_one == FALSE)
@@ -295,16 +299,18 @@ read_synclog(int fd, short event, void *arg)
     SThread *st;
     st = (SThread *)conn->thread;
     int j;
-    for (j = 0; j <= g_cf->max_sync_conn; j++) {
+    for (j = 0; j < g_cf->max_sync_conn; j++) {
         conninfo = &(st->sync_conn_info[j]);
         if (conninfo->fd == conn->sock)
             break;
     }
-    
+    zz_check(conn); 
+    zz_check(conn->wbuf);
     //先从缓冲区中读对应的logver, logline
     ret = syncmem_read(g_runtime->syncmem, conn->blogver, conn->blogline,
         &newlogver, &newlogline, buffer, SYNC_BUF_SIZE, conn->need_skip_one);
-
+    zz_check(conn);
+    zz_check(conn->wbuf);
     if (ret == 0) {//从buffer中读取到数据
         conn->blogver = newlogver;
         conn->blogline = newlogline;
@@ -333,7 +339,7 @@ read_synclog(int fd, short event, void *arg)
         return;
     } else {//在buffer中找不到对应的数据
         if (conn->synclog != NULL) {
-            DWARNING("-------can't find data in syncbuffer\n");
+            DINFO("-------can't find data in syncbuffer\n");
             DINFO("conn->blogver: %d, conn->blogline: %d\n", conn->blogver, conn->blogline);
             DINFO("conn->synclog->version: %d, conn->synclog->blogline: %d\n", conn->synclog->version, conn->synclog->index_pos);
             if (conn->blogver > conn->synclog->version || (conn->blogver == conn->synclog->version && conn->blogline > conn->synclog->index_pos)) {
@@ -421,7 +427,7 @@ sync_write(int fd, short event, void *arg)
             close(st->sock);
             st->sock = -1;
         }
-        for (i = 0; i <= g_cf->max_sync_conn; i++) {
+        for (i = 0; i < g_cf->max_sync_conn; i++) {
             conninfo = &(st->sync_conn_info[i]);
             if (conninfo->fd == fd && conninfo->push_log_stop == FALSE) {
                 event_del(&conn->sync_write_evt);
@@ -435,7 +441,7 @@ sync_write(int fd, short event, void *arg)
     }
 
     if (event & EV_TIMEOUT) {
-        DWARNING("write timeout: %d, close\n", fd);
+        DNOTE("write timeout: %d, close\n", fd);
         //conn->destroy((Conn *)conn);
         conn->timeout((Conn*)conn);
         return;
@@ -449,7 +455,11 @@ sync_write(int fd, short event, void *arg)
         }
 
         if (conn->cmd == CMD_SYNC) {
+            zz_check(conn);
+            zz_check(conn->wbuf);
             read_synclog(0, EV_WRITE, conn);
+            zz_check(conn);
+            zz_check(conn->wbuf);
         } else if (conn->cmd == CMD_GETDUMP) {
             read_dump(0, EV_WRITE, conn);
         }
@@ -599,30 +609,35 @@ int
 cmd_sync(SyncConn *conn, char *data, int datalen)
 {
     int ret;
-    unsigned int log_ver, log_line;
-    int bcount;
+    unsigned int log_ver =0, log_line = 0;
+    int bcount = 0;
     char md5[33] = {0};
     char md5local[33] = {0};
     char binlog[PATH_MAX];
     
     cmd_sync_unpack(data, &log_ver, &log_line, &bcount, md5);
-    DWARNING("log version: %u, log line: %u, bcount: %d, md5: %s\n", log_ver, log_line, bcount, md5);
+    DINFO("log version: %u, log line: %u, bcount: %d, md5: %s\n", log_ver, log_line, bcount, md5);
 
     snprintf(binlog, PATH_MAX, "%s/bin.log.%d", g_cf->datadir, log_ver);
     if (!isfile(binlog)) {
         snprintf(binlog, PATH_MAX, "%s/bin.log", g_cf->datadir);
     }
+    zz_check(conn);
     if (check_binlog_local(conn, log_ver, log_line) == 0) {
-        ret = synclog_read_data(binlog, log_line - bcount, log_line, md5local);
-        DWARNING("md5: %s, md5local: %s\n", md5, md5local);
-        if (strcmp(md5local, md5) == 0 || bcount == 0) { 
+        if (bcount != 0)
+            ret = synclog_read_data(binlog, log_line - bcount, log_line, md5local);
+        DINFO("md5: %s, md5local: %s\n", md5, md5local);
+        if (bcount == 0 || strcmp(md5local, md5) == 0) { 
             conn->status = SEND_LOG;
             conn->blogver = log_ver;
             conn->blogline = log_line;
             //g_runtime->syncmem->need_skip_one = FALSE;
             conn->need_skip_one = FALSE;
-            ret = data_reply((Conn *)conn, CMD_SYNC_OK, NULL, 0);
             DINFO("Found sync log file (version = %u)\n", log_ver);
+            ret = data_reply((Conn *)conn, CMD_SYNC_OK, NULL, 0);
+            zz_check(conn->rbuf);
+            zz_check(conn);
+            zz_check(conn->wbuf);
         } else {
             conn->status = NOT_SEND;
             ret = data_reply((Conn *)conn, CMD_SYNC_MD5_ERROR, NULL, 0);
@@ -649,7 +664,7 @@ sdata_ready(Conn *c, char *data, int datalen)
     st = (SThread *)conn->thread;
     
     int i;
-    for (i = 0; i <= g_cf->max_sync_conn; i++) {
+    for (i = 0; i < g_cf->max_sync_conn; i++) {
         conninfo = &(st->sync_conn_info[i]);
         if (conninfo->fd == conn->sock)
             break;
@@ -768,7 +783,9 @@ sthread_read(int fd, short event, void *arg)
         conn->thread = st;
         
         DINFO("new conn: %d\n", conn->sock);
+        zz_check(conn);
         int ret = change_event((Conn *)conn, EV_READ | EV_PERSIST, 0, 1);
+        zz_check(conn);
         if (ret < 0) {
             DERROR("change_evnet error: %d, close conn.\n", ret);
             sync_conn_destroy((Conn *)conn);
@@ -828,7 +845,7 @@ sthread_create()
     event_base_set(st->base, &st->event);
     event_add(&st->event, 0);
 
-    //g_runtime->sthread = st;
+    g_runtime->sthread = st;
 
     pthread_t threadid;
     pthread_attr_t attr;
@@ -848,6 +865,16 @@ sthread_create()
         DERROR("pthread_create error: %s\n",  errbuf);
         MEMLINK_EXIT;
     }
+
+
+    ret = pthread_detach(threadid);
+    if (ret != 0) {
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("pthread_detach error; %s\n",  errbuf);
+        MEMLINK_EXIT;
+    }
+
     DINFO("create sync thread ok\n");
     
     return st;

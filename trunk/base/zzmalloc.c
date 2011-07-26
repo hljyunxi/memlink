@@ -40,19 +40,14 @@ zz_malloc_default(size_t size)
     void *ptr;
 #ifdef TCMALLOC
     ptr = tc_malloc(size);
-    if (NULL == ptr) {
-        DERROR("mallloc error!\n");
-        exit(EXIT_FAILURE);
-    }
-    return ptr;
 #else
     ptr = malloc(size);
+#endif
     if (NULL == ptr) {
         DERROR("malloc error!\n");
         exit(EXIT_FAILURE);
     }
     return ptr;
-#endif
 }
 
 

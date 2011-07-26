@@ -134,11 +134,11 @@ sslave_recv_package_log(SSlave *ss)
                 if ( g_runtime->synclog->index_pos != 0 && logver == g_runtime->synclog->version && logline == g_runtime->synclog->index_pos - 1) {
                     //int pos = g_runtime->synclog->index_pos;
                     int *indxdata = (int *)(g_runtime->synclog->index + SYNCLOG_HEAD_LEN);
-                    DWARNING("logline: %d, indxdata[logline]=%d\n", logline, indxdata[logline]);        
+                    DINFO("logline: %d, indxdata[logline]=%d\n", logline, indxdata[logline]);        
                     if (indxdata[logline] != 0) {
                         count += SYNCPOS_LEN + sizeof(int) + rlen;
-                        DWARNING("package_len: %d, count: %d\n", package_len, count);
-                        DWARNING("---------------------skip\n");
+                        DINFO("package_len: %d, count: %d\n", package_len, count);
+                        DINFO("---------------------skip\n");
                         ptr += SYNCPOS_LEN + sizeof(int) + rlen;
                         continue;
                     }
@@ -717,9 +717,9 @@ sslave_conn_init(SSlave *ss)
                 sndlogline = g_runtime->synclog->index_pos;
             }
         }*/
-        DWARNING("sndlogver: %d, sendlogline: %d\n", sndlogver, sndlogline);
+        DINFO("sndlogver: %d, sendlogline: %d\n", sndlogver, sndlogline);
         bcount = get_binlog_md5(sndlogver, sndlogline, md5); 
-        DWARNING("send md5: %s, bcount: %d\n", md5, bcount);
+        DINFO("send md5: %s, bcount: %d\n", md5, bcount);
         if (md5[0] == '\0')
             sndlen = cmd_sync_pack(sndbuf, sndlogver, sndlogline, 0, md5);
         else
@@ -754,6 +754,8 @@ sslave_conn_init(SSlave *ss)
             char binlogname[PATH_MAX];
             snprintf(binlogname, PATH_MAX, "%s/bin.log", g_cf->datadir);
             synclog_reset(binlogname, sndlogline - bcount, sndlogline);
+            sndlogver = g_runtime->synclog->version;
+            sndlogline = g_runtime->synclog->index_pos - 1;
             md5_check_err = TRUE;
             continue;
         }
