@@ -30,7 +30,7 @@
 #define MEMLINK_ERR_NOVAL           -18
 // 内存错误
 #define MEMLINK_ERR_MEM				-19
-// mask错误
+// attr错误
 #define MEMLINK_ERR_MASK			-20
 // 包错误
 #define MEMLINK_ERR_PACKAGE			-21
@@ -89,6 +89,10 @@
 #define MEMLINK_ERR_NO_ROLE         -47
 // 处于slave模式
 #define MEMLINK_ERR_SLAVE           -48
+// 已满
+#define MEMLINK_ERR_FULL			-49
+// 已空
+#define MEMLINK_ERR_EMPTY			-50
 // 其他错误
 #define MEMLINK_ERR                 -1
 // 操作失败
@@ -151,7 +155,7 @@
 
 /// HashTable中桶的数量
 #define HASHTABLE_BUNKNUM           1000000
-/// 最大允许的mask项数
+/// 最大允许的attr项数
 #define HASHTABLE_MASK_MAX_BIT      32
 #define HASHTABLE_MASK_MAX_BYTE     4
 #define HASHTABLE_MASK_MAX_ITEM     15
@@ -236,9 +240,9 @@ typedef struct _memlink_insert_mvalue_item
 {
     char            value[255];
     unsigned char   valuelen;
-    char			maskstr[HASHTABLE_MASK_MAX_ITEM * 3];
-    unsigned int    maskarray[HASHTABLE_MASK_MAX_ITEM];
-    unsigned char   masknum;
+    char			attrstr[HASHTABLE_MASK_MAX_ITEM * 3];
+    unsigned int    attrarray[HASHTABLE_MASK_MAX_ITEM];
+    unsigned char   attrnum;
     int             pos;
 	struct _memlink_insert_mvalue_item *next;
 }MemLinkInsertVal;
@@ -269,7 +273,7 @@ typedef struct _memlink_insert_mkv
 typedef struct _memlink_stat
 {
     unsigned char   valuesize;
-    unsigned char   masksize;
+    unsigned char   attrsize;
     unsigned int    blocks; // all blocks
     unsigned int    data;   // all alloc data item
     unsigned int    data_used; // all data item used

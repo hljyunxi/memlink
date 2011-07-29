@@ -31,7 +31,7 @@ typedef struct _runtime
     HashTable       *ht;
     SyncMem         *syncmem;
 	volatile int	inclean;
-    //char			cleankey[512];
+    //char			cleankey[255];
     WThread         *wthread;
     MainServer      *server;
     SSlave          *slave; // sync slave

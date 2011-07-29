@@ -10,10 +10,10 @@ int         dataitem_check(char *itemdata, int valuesize);
 int         dataitem_check_data(HashNode *node, char *itemdata);
 char*       dataitem_lookup(HashNode *node, void *value, DataBlock **dbk);
 int         dataitem_lookup_pos(HashNode *node, void *value, DataBlock **dbk);
-int         dataitem_copy(HashNode *node, char *addr, void *value, void *mask);
-int         dataitem_copy_mask(HashNode *node, char *addr, char *maskflag, char *mask);
-int         dataitem_lookup_pos_mask(HashNode *node, int pos, unsigned char kind, 
-						char *maskval, char *maskflag, DataBlock **dbk, int *dbkpos);
+int         dataitem_copy(HashNode *node, char *addr, void *value, void *attr);
+int         dataitem_copy_attr(HashNode *node, char *addr, char *attrflag, char *attr);
+int         dataitem_lookup_pos_attr(HashNode *node, int pos, unsigned char kind, 
+						char *attrval, char *attrflag, DataBlock **dbk, int *dbkpos);
 int         dataitem_skip2pos(HashNode *node, DataBlock *dbk, int skip, unsigned char kind);
 
 int         datablock_suitable_size(int blocksize);
@@ -22,10 +22,10 @@ int         datablock_del(HashNode *node, DataBlock *dbk, char *data);
 int         datablock_del_restore(HashNode *node, DataBlock *dbk, char *data);
 int         datablock_lookup_pos(HashNode *node, int pos, unsigned char kind, DataBlock **dbk);
 int         datablock_lookup_valid_pos(HashNode *node, int pos, unsigned char kind, DataBlock **dbk);
-int         datablock_check_idle(HashNode *node, DataBlock *dbk, int skipn, void *value, void *mask);
-int         datablock_check_null_pos(HashNode *node, DataBlock *dbk, int pos, void *value, void *mask);
-DataBlock*  datablock_new_copy(HashNode *node, DataBlock *dbk, int skipn, void *value, void *mask);
-DataBlock*  datablock_new_copy_pos(HashNode *node, DataBlock *dbk, int pos, void *value, void *mask);
+int         datablock_check_idle(HashNode *node, DataBlock *dbk, int skipn, void *value, void *attr);
+int         datablock_check_null_pos(HashNode *node, DataBlock *dbk, int pos, void *value, void *attr);
+DataBlock*  datablock_new_copy(HashNode *node, DataBlock *dbk, int skipn, void *value, void *attr);
+DataBlock*  datablock_new_copy_pos(HashNode *node, DataBlock *dbk, int pos, void *value, void *attr);
 int         datablock_copy(DataBlock *tobk, DataBlock *frombk, int datalen);
 int         datablock_copy_used(HashNode *node, DataBlock *tobk, int topos, DataBlock *frombk);
 int			datablock_copy_used_blocks(HashNode *node, DataBlock *tobk, int topos, 
@@ -35,8 +35,8 @@ int         datablock_free_inverse(DataBlock *startbk, DataBlock *endbk, int dat
 
 int			datablock_resize(HashNode *node, DataBlock *dbk);
 
-int         mask_array2_binary_flag(unsigned char *maskformat, unsigned int *maskarray, 
-                                    int masknum, int masksize, char *maskval, char *maskflag);
+int         attr_array2_binary_flag(unsigned char *attrformat, unsigned int *attrarray, 
+                                    int attrnum, int attrsize, char *attrval, char *attrflag);
 
 int         sortlist_valuecmp(unsigned char type, void *v1, void *v2, int size);
 int         sortlist_lookup(HashNode *node, int step, void *value, int kind, DataBlock **dbk);
