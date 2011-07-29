@@ -28,25 +28,25 @@ int main()
 	}
 
 	int i;
-	char *maskstr = "8:3:1";
+	char *attrstr = "8:3:1";
 	char val[64];
 
 	for (i = 0; i < 100; i++) {
 		sprintf(val, "%06d", i);
-		ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr, i);
+		ret = memlink_cmd_insert(m, buf, val, strlen(val), attrstr, i);
 		if (ret != MEMLINK_OK) {
-			DINFO("insert error, key:%s, value:%s, mask:%s, i:%d\n", buf, val, maskstr, i);
+			DINFO("insert error, key:%s, value:%s, attr:%s, i:%d\n", buf, val, attrstr, i);
 			return -3;
 		}
 	}
 	//DINFO("insert 100!\n");
 
-	ret = memlink_cmd_del_by_mask(m, buf, ":3:1");	
+	ret = memlink_cmd_del_by_attr(m, buf, ":3:1");	
 	if (ret < 0) {
-		DERROR("del_by_mask key:%s, ret:%d\n", buf, ret);
+		DERROR("del_by_attr key:%s, ret:%d\n", buf, ret);
 		return -4;
 	}
-	//DINFO("del_by_mask %s!\n", ":3:1");
+	//DINFO("del_by_attr %s!\n", ":3:1");
 
 	MemLinkResult rs;
 	int frompos = 0;
@@ -54,7 +54,7 @@ int main()
 	
 	ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE,  "", frompos, len, &rs);
 	if (ret != MEMLINK_OK) {
-		DERROR("range error, key:%s, mask:%s\n", buf, "");
+		DERROR("range error, key:%s, attr:%s\n", buf, "");
 		return -3;
 	}
 	if (rs.count != 0) {
@@ -81,15 +81,15 @@ int main()
 		return -2;
 	}
 	
-	char* maskstr1[] = {"8::1", "7:2:1", "6:2:1", "3:3:3"};
+	char* attrstr1[] = {"8::1", "7:2:1", "6:2:1", "3:3:3"};
 	char* valarray[] = {"111111", "222222", "333333", "444444"};
 	int num = 100;
 
 	for (i = 0; i < num; i++) {
 		int k = i%4;
-		ret = memlink_cmd_insert(m, buf, valarray[k], 6, maskstr1[k], i);
+		ret = memlink_cmd_insert(m, buf, valarray[k], 6, attrstr1[k], i);
 		if (ret != MEMLINK_OK) {
-			DERROR("insert error, key:%s, value:%s, mask:%s, i:%d\n", buf, valarray[k], maskstr, i);
+			DERROR("insert error, key:%s, value:%s, attr:%s, i:%d\n", buf, valarray[k], attrstr, i);
 			return -3;
 		}
 	}
@@ -101,18 +101,18 @@ int main()
 		int frompos = 0;
 		int len = 100;
 
-		ret = memlink_cmd_del_by_mask(m, buf, maskstr1[k]);	
+		ret = memlink_cmd_del_by_attr(m, buf, attrstr1[k]);	
 		if (ret < 0) {
-			DERROR("del_by_mask key:%s, ret:%d\n", buf, ret);
+			DERROR("del_by_attr key:%s, ret:%d\n", buf, ret);
 			return -4;
 		}
 		
-		ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE,  maskstr1[k], frompos, len, &rs);
+		ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE,  attrstr1[k], frompos, len, &rs);
 		if (ret != MEMLINK_OK) {
-			DERROR("range error, key:%s, mask:%s\n", buf, maskstr1[k]);
+			DERROR("range error, key:%s, attr:%s\n", buf, attrstr1[k]);
 			return -3;
 		}
-		MemLinkItem* item = rs.root;
+		//MemLinkItem* item = rs.root;
 		if (rs.count != 0) {
 			DERROR("err! rs.count must be 0! rs.count:%d\n", rs.count);
 			return -1;
