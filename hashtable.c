@@ -1680,6 +1680,8 @@ hashtable_lpop_over:
 
 hashtable_lpop_end:
     if (conn) {
+        memcpy(wbuf + idx, &n, sizeof(int));
+        idx += sizeof(int);
         conn_write_buffer_head(conn, ret, idx);
         //char bufw[4096] = {0};
         //DINFO("bufw:%s\n", formath(conn->wbuf, conn->wlen, bufw, 4096));
@@ -1809,6 +1811,9 @@ hashtable_rpop_over:
 
 hashtable_rpop_end:
     if (conn) {
+        memcpy(wbuf + idx, &n, sizeof(int));
+        idx += sizeof(int);
+
         conn_write_buffer_head(conn, ret, idx);
         //char bufw[4096] = {0};
         //DINFO("bufw:%s\n", formath(conn->wbuf, conn->wlen, bufw, 4096));

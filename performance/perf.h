@@ -15,7 +15,7 @@ typedef struct
     char    value[255];
     int     valuelen;
     int     valuesize; // create valuesize
-    char    maskstr[255];
+    char    attrstr[255];
     int     from; // range from
     int     len;  // range len
     int     pos; // move pos

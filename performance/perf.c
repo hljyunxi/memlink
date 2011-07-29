@@ -74,7 +74,7 @@ int test_create(TestArgs *args)
         }
         for (i = 0; i < args->testcount; i++) {
             sprintf(key, "%s%d", args->key, args->tid * args->testcount + i);
-            ret = memlink_cmd_create_list(m, key, args->valuesize, args->maskstr);
+            ret = memlink_cmd_create_list(m, key, args->valuesize, args->attrstr);
             if (ret != MEMLINK_OK) {
                 DERROR("create list error! ret:%d\n", ret);
                 return -2;
@@ -90,7 +90,7 @@ int test_create(TestArgs *args)
                 return -1;
             }
             sprintf(key, "%s%d", args->key, args->tid * args->testcount + i);
-            ret = memlink_cmd_create_list(m, key, args->valuesize, args->maskstr);
+            ret = memlink_cmd_create_list(m, key, args->valuesize, args->attrstr);
             if (ret != MEMLINK_OK) {
                 DERROR("create list error! ret:%d\n", ret);
                 return -2;
@@ -109,7 +109,7 @@ int test_insert(TestArgs *args)
     int pos;
     char value[512] = {0};
     char format[64] = {0};
-    char maskstr[64] = {0};
+    char attrstr[64] = {0};
     
     DINFO("====== insert ======\n");
     if (args->key[0] == 0 || args->valuesize == 0) {
@@ -131,11 +131,11 @@ int test_insert(TestArgs *args)
             if (pos < -1) {
                 pos = random();
             }
-            //sprintf(maskstr, "%d:%d", args->tid * args->testcount + i, 1);
-            ret = memlink_cmd_insert(m, args->key, value, args->valuesize, args->maskstr, pos);
+            //sprintf(attrstr, "%d:%d", args->tid * args->testcount + i, 1);
+            ret = memlink_cmd_insert(m, args->key, value, args->valuesize, args->attrstr, pos);
             if (ret != MEMLINK_OK) {
-                DERROR("insert error! ret:%d, key:%s,value:%s,mask:%s,pos:%d\n", 
-                        ret, args->key, value, args->maskstr, args->pos);
+                DERROR("insert error! ret:%d, key:%s,value:%s,attr:%s,pos:%d\n", 
+                        ret, args->key, value, args->attrstr, args->pos);
                 return -2;
             }
         }
@@ -149,12 +149,12 @@ int test_insert(TestArgs *args)
                 return -1;
             }
             sprintf(value, format, i);
-            //sprintf(maskstr, "%d:%d", args->tid * args->testcount + i, 1);
-            ret = memlink_cmd_insert(m, args->key, value, args->valuesize, args->maskstr, args->pos);
-            //ret = memlink_cmd_insert(m, args->key, value, args->valuesize, maskstr, args->pos);
+            //sprintf(attrstr, "%d:%d", args->tid * args->testcount + i, 1);
+            ret = memlink_cmd_insert(m, args->key, value, args->valuesize, args->attrstr, args->pos);
+            //ret = memlink_cmd_insert(m, args->key, value, args->valuesize, attrstr, args->pos);
             if (ret != MEMLINK_OK) {
-                DERROR("insert error! ret:%d, key:%s,value:%s,mask:%s,pos:%d\n", 
-                        ret, args->key, value, args->maskstr, args->pos);
+                DERROR("insert error! ret:%d, key:%s,value:%s,attr:%s,pos:%d\n", 
+                        ret, args->key, value, args->attrstr, args->pos);
                 return -2;
             }
             memlink_destroy(m); 
@@ -179,10 +179,10 @@ int test_range(TestArgs *args)
         }
         for (i = 0; i < args->testcount; i++) {
             MemLinkResult   result;
-            ret = memlink_cmd_range(m, args->key, args->kind, args->maskstr, args->from, args->len, &result);
+            ret = memlink_cmd_range(m, args->key, args->kind, args->attrstr, args->from, args->len, &result);
             if (ret != MEMLINK_OK) {
-                DERROR("range error! ret:%d, kind:%d,mask:%s,from:%d,len:%d\n", 
-                        ret, args->kind, args->maskstr, args->from, args->len);
+                DERROR("range error! ret:%d, kind:%d,attr:%s,from:%d,len:%d\n", 
+                        ret, args->kind, args->attrstr, args->from, args->len);
                 return -2;
             }
             if (result.count != args->len) {
@@ -200,10 +200,10 @@ int test_range(TestArgs *args)
                 return -1;
             }
             MemLinkResult result;
-            ret = memlink_cmd_range(m, args->key, args->kind, args->maskstr, args->from, args->len, &result);
+            ret = memlink_cmd_range(m, args->key, args->kind, args->attrstr, args->from, args->len, &result);
             if (ret != MEMLINK_OK) {
-                DERROR("range error! ret:%d, kind:%d,mask:%s,from:%d,len:%d\n", 
-                        ret, args->kind, args->maskstr, args->from, args->len);
+                DERROR("range error! ret:%d, kind:%d,attr:%s,from:%d,len:%d\n", 
+                        ret, args->kind, args->attrstr, args->from, args->len);
                 return -2;
             }
             if (result.count != args->len) {
@@ -306,12 +306,12 @@ int test_del(TestArgs *args)
     return 0;
 }
 
-int test_mask(TestArgs *args)
+int test_attr(TestArgs *args)
 {
     MemLink *m;
     int ret, i;
     
-    DINFO("====== mask ======\n");
+    DINFO("====== attr ======\n");
     if (args->longconn) {
         m = memlink_create(args->host, args->rport, args->wport, args->timeout);
         if (NULL == m) {
@@ -320,9 +320,9 @@ int test_mask(TestArgs *args)
             return -1;
         }
         for (i = 0; i < args->testcount; i++) {
-            ret = memlink_cmd_mask(m, args->key, args->value, args->valuelen, args->maskstr);
+            ret = memlink_cmd_attr(m, args->key, args->value, args->valuelen, args->attrstr);
             if (ret != MEMLINK_OK) {
-                DERROR("mask error! ret:%d, key:%s, value:%s, mask:%s\n", ret, args->key, args->value, args->maskstr);
+                DERROR("attr error! ret:%d, key:%s, value:%s, attr:%s\n", ret, args->key, args->value, args->attrstr);
                 return -2;
             }
         }
@@ -335,9 +335,9 @@ int test_mask(TestArgs *args)
                 exit(-1);
                 return -1;
             }
-            ret = memlink_cmd_mask(m, args->key, args->value, args->valuelen, args->maskstr);
+            ret = memlink_cmd_attr(m, args->key, args->value, args->valuelen, args->attrstr);
             if (ret != MEMLINK_OK) {
-                DERROR("mask error! ret:%d, key:%s, value:%s, mask:%s\n", ret, args->key, args->value, args->maskstr);
+                DERROR("attr error! ret:%d, key:%s, value:%s, attr:%s\n", ret, args->key, args->value, args->attrstr);
                 return -2;
             }
             memlink_destroy(m); 
@@ -401,9 +401,9 @@ int test_count(TestArgs *args)
         }
         for (i = 0; i < args->testcount; i++) {
             MemLinkCount result;
-            ret = memlink_cmd_count(m, args->key, args->maskstr, &result);
+            ret = memlink_cmd_count(m, args->key, args->attrstr, &result);
             if (ret != MEMLINK_OK) {
-                DERROR("count error! ret:%d, key:%s, mask:%s\n", ret, args->key, args->maskstr);
+                DERROR("count error! ret:%d, key:%s, attr:%s\n", ret, args->key, args->attrstr);
                 return -2;
             }
         }
@@ -417,9 +417,9 @@ int test_count(TestArgs *args)
                 return -1;
             }
             MemLinkCount result;
-            ret = memlink_cmd_count(m, args->key, args->maskstr, &result);
+            ret = memlink_cmd_count(m, args->key, args->attrstr, &result);
             if (ret != MEMLINK_OK) {
-                DERROR("count error! ret:%d, key:%s, mask:%s\n", ret, args->key, args->maskstr);
+                DERROR("count error! ret:%d, key:%s, attr:%s\n", ret, args->key, args->attrstr);
                 return -2;
             }
             memlink_destroy(m); 
@@ -435,7 +435,7 @@ int test_lpush(TestArgs *args)
     int pos;
     char value[512] = {0};
     char format[64] = {0};
-    char maskstr[64] = {0};
+    char attrstr[64] = {0};
     
     DINFO("====== lpush ======\n");
     if (args->key[0] == 0 || args->valuesize == 0) {
@@ -457,11 +457,11 @@ int test_lpush(TestArgs *args)
             if (pos < -1) {
                 pos = random();
             }
-            //sprintf(maskstr, "%d:%d", args->tid * args->testcount + i, 1);
-            ret = memlink_cmd_lpush(m, args->key, value, args->valuesize, args->maskstr);
+            //sprintf(attrstr, "%d:%d", args->tid * args->testcount + i, 1);
+            ret = memlink_cmd_lpush(m, args->key, value, args->valuesize, args->attrstr);
             if (ret != MEMLINK_OK) {
-                DERROR("lpush error! ret:%d, key:%s,value:%s,mask:%s,pos:%d\n", 
-                        ret, args->key, value, args->maskstr, args->pos);
+                DERROR("lpush error! ret:%d, key:%s,value:%s,attr:%s,pos:%d\n", 
+                        ret, args->key, value, args->attrstr, args->pos);
                 return -2;
             }
         }
@@ -475,12 +475,12 @@ int test_lpush(TestArgs *args)
                 return -1;
             }
             sprintf(value, format, i);
-            //sprintf(maskstr, "%d:%d", args->tid * args->testcount + i, 1);
-            ret = memlink_cmd_lpush(m, args->key, value, args->valuesize, args->maskstr);
-            //ret = memlink_cmd_insert(m, args->key, value, args->valuesize, maskstr, args->pos);
+            //sprintf(attrstr, "%d:%d", args->tid * args->testcount + i, 1);
+            ret = memlink_cmd_lpush(m, args->key, value, args->valuesize, args->attrstr);
+            //ret = memlink_cmd_insert(m, args->key, value, args->valuesize, attrstr, args->pos);
             if (ret != MEMLINK_OK) {
-                DERROR("lpush error! ret:%d, key:%s,value:%s,mask:%s,pos:%d\n", 
-                        ret, args->key, value, args->maskstr, args->pos);
+                DERROR("lpush error! ret:%d, key:%s,value:%s,attr:%s,pos:%d\n", 
+                        ret, args->key, value, args->attrstr, args->pos);
                 return -2;
             }
             memlink_destroy(m); 
@@ -497,7 +497,7 @@ int test_rpush(TestArgs *args)
     int pos;
     char value[512] = {0};
     char format[64] = {0};
-    char maskstr[64] = {0};
+    char attrstr[64] = {0};
     
     DINFO("====== rpush ======\n");
     if (args->key[0] == 0 || args->valuesize == 0) {
@@ -519,11 +519,11 @@ int test_rpush(TestArgs *args)
             if (pos < -1) {
                 pos = random();
             }
-            //sprintf(maskstr, "%d:%d", args->tid * args->testcount + i, 1);
-            ret = memlink_cmd_rpush(m, args->key, value, args->valuesize, args->maskstr);
+            //sprintf(attrstr, "%d:%d", args->tid * args->testcount + i, 1);
+            ret = memlink_cmd_rpush(m, args->key, value, args->valuesize, args->attrstr);
             if (ret != MEMLINK_OK) {
-                DERROR("rpush error! ret:%d, key:%s,value:%s,mask:%s,pos:%d\n", 
-                        ret, args->key, value, args->maskstr, args->pos);
+                DERROR("rpush error! ret:%d, key:%s,value:%s,attr:%s,pos:%d\n", 
+                        ret, args->key, value, args->attrstr, args->pos);
                 return -2;
             }
         }
@@ -537,12 +537,12 @@ int test_rpush(TestArgs *args)
                 return -1;
             }
             sprintf(value, format, i);
-            //sprintf(maskstr, "%d:%d", args->tid * args->testcount + i, 1);
-            ret = memlink_cmd_rpush(m, args->key, value, args->valuesize, args->maskstr);
-            //ret = memlink_cmd_insert(m, args->key, value, args->valuesize, maskstr, args->pos);
+            //sprintf(attrstr, "%d:%d", args->tid * args->testcount + i, 1);
+            ret = memlink_cmd_rpush(m, args->key, value, args->valuesize, args->attrstr);
+            //ret = memlink_cmd_insert(m, args->key, value, args->valuesize, attrstr, args->pos);
             if (ret != MEMLINK_OK) {
-                DERROR("rpush error! ret:%d, key:%s,value:%s,mask:%s,pos:%d\n", 
-                        ret, args->key, value, args->maskstr, args->pos);
+                DERROR("rpush error! ret:%d, key:%s,value:%s,attr:%s,pos:%d\n", 
+                        ret, args->key, value, args->attrstr, args->pos);
                 return -2;
             }
             memlink_destroy(m); 
@@ -874,7 +874,7 @@ TestFuncLink gfuncs[] = {{"ping", test_ping},
                          {"range", test_range},
                          {"move", test_move},
                          {"del", test_del},
-                         {"mask", test_mask},
+                         {"attr", test_attr},
                          {"tag", test_tag},
                          {"count", test_count},
                          {"lpush", test_lpush},
@@ -916,14 +916,14 @@ int show_help()
     printf("\t--count,-n\tinsert number\n");
     printf("\t--from,-f\trange from position\n");
     printf("\t--len,-l\trange length\n");
-    printf("\t--do,-d\t\tping/create/insert/range/move/del/mask/tag/count/lpush/rpush/lpop/rpop\n");
+    printf("\t--do,-d\t\tping/create/insert/range/move/del/attr/tag/count/lpush/rpush/lpop/rpop\n");
     printf("\t--key,-k\tkey\n");
     printf("\t--value,-v\tvalue\n");
     printf("\t--valuesize,-s\tvaluesize for create\n");
     printf("\t--pos,-p\tposition for insert\n");
     printf("\t--popnum,-o\tpop number\n");
     printf("\t--kind,-i\tkind for range. all/visible/tagdel\n");
-    printf("\t--mask,-m\tmask str\n");
+    printf("\t--attr,-m\tattr str\n");
     printf("\t--longconn,-c\tuse long connection for test. default 1\n");
     printf("\n\n");
 
@@ -951,7 +951,7 @@ int main(int argc, char *argv[])
                                  {"popnum", 0, NULL, 'o'},
                                  {"kind", 0, NULL, 'i'},
                                  {"tag", 0, NULL, 'a'},
-                                 {"mask", 0, NULL, 'm'},
+                                 {"attr", 0, NULL, 'm'},
                                  {"do", 0, NULL, 'd'},
                                  {"longconn", 0, NULL, 'c'},
                                  {NULL, 0, NULL, 0}};
@@ -1038,7 +1038,7 @@ int main(int argc, char *argv[])
             }
             break;
         case 'm':
-            snprintf(tcf.args.maskstr, 255, "%s", optarg);
+            snprintf(tcf.args.attrstr, 255, "%s", optarg);
             break;
         case 'h':
             sprintf(tcf.args.host, "%s", optarg);
