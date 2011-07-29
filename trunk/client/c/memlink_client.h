@@ -32,17 +32,18 @@ typedef struct _memlink_count
 
 typedef struct _memlink_item
 {
-    struct _memlink_item    *next;
+	char	valuesize;
+	char	attrsize;
     char    value[256];
-    char    mask[256];
+    char    attr[256];
 }MemLinkItem;
 
 typedef struct _memlink_result
 {
     int         count;
     int         valuesize;
-    int         masksize;
-    MemLinkItem *root;
+    int         attrsize;
+    MemLinkItem *items;
 }MemLinkResult;
 
 typedef struct _memlink_rconn_item
@@ -111,43 +112,43 @@ int			memlink_cmd_clean(MemLink *m, char *key);
 int         memlink_cmd_clean_all(MemLink *m);
 int			memlink_cmd_stat(MemLink *m, char *key, MemLinkStat *stat);
 int			memlink_cmd_stat_sys(MemLink *m, MemLinkStatSys *stat);
-int			memlink_cmd_create(MemLink *m, char *key, int valuelen, char *maskstr, 
+int			memlink_cmd_create(MemLink *m, char *key, int valuelen, char *attrstr, 
                                 unsigned char listtype, unsigned char valuetype);
 
-int			memlink_cmd_create_list(MemLink *m, char *key, int valuelen, char *maskstr);
-int			memlink_cmd_create_queue(MemLink *m, char *key, int valuelen, char *maskstr);
-int			memlink_cmd_create_sortlist(MemLink *m, char *key, int valuelen, char *maskstr, 
+int			memlink_cmd_create_list(MemLink *m, char *key, int valuelen, char *attrstr);
+int			memlink_cmd_create_queue(MemLink *m, char *key, int valuelen, char *attrstr);
+int			memlink_cmd_create_sortlist(MemLink *m, char *key, int valuelen, char *attrstr, 
                                         unsigned char valuetype);
 int			memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen);
 int			memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen, 
-                               char *maskstr, int pos);
+                               char *attrstr, int pos);
 
-int			memlink_cmd_lpush(MemLink *m, char *key, char *value, int valuelen, char *maskstr);
-int			memlink_cmd_rpush(MemLink *m, char *key, char *value, int valuelen, char *maskstr);
+int			memlink_cmd_lpush(MemLink *m, char *key, char *value, int valuelen, char *attrstr);
+int			memlink_cmd_rpush(MemLink *m, char *key, char *value, int valuelen, char *attrstr);
 int			memlink_cmd_lpop(MemLink *m, char *key, int num, MemLinkResult *result);
 int			memlink_cmd_rpop(MemLink *m, char *key, int num, MemLinkResult *result);
 
 int			memlink_cmd_move(MemLink *m, char *key, char *value, int valuelen, int pos);
-int			memlink_cmd_mask(MemLink *m, char *key, char *value, int valuelen, char *maskstr);
+int			memlink_cmd_attr(MemLink *m, char *key, char *value, int valuelen, char *attrstr);
 int			memlink_cmd_tag(MemLink *m, char *key, char *value, int valuelen, int tag);
-int			memlink_cmd_range(MemLink *m, char *key, int kind, char *maskstr, 
+int			memlink_cmd_range(MemLink *m, char *key, int kind, char *attrstr, 
                               int frompos, int len, MemLinkResult *result);
 int         memlink_cmd_rmkey(MemLink *m, char *key);
-int         memlink_cmd_count(MemLink *m, char *key, char *maskstr, MemLinkCount *count);
+int         memlink_cmd_count(MemLink *m, char *key, char *attrstr, MemLinkCount *count);
 //int         memlink_cmd_insert_mvalue(MemLink *m, char *key, MemLinkInsertVal *values, int num);
 
 //add by lanwenhong
-int         memlink_cmd_del_by_mask(MemLink *m, char *key, char *maskstr);
+int         memlink_cmd_del_by_attr(MemLink *m, char *key, char *attrstr);
 
-int			memlink_cmd_sortlist_insert(MemLink *m, char *key, char *value, int valuelen, char *maskstr);
-int			memlink_cmd_sortlist_range(MemLink *m, char *key, int kind, char *maskstr, 
+int			memlink_cmd_sortlist_insert(MemLink *m, char *key, char *value, int valuelen, char *attrstr);
+int			memlink_cmd_sortlist_range(MemLink *m, char *key, int kind, char *attrstr, 
                               char *valmin, int vminlen, 
                               char *valmax, int vmaxlen, MemLinkResult *result);
 
-int			memlink_cmd_sortlist_del(MemLink *m, char *key, int kind, char *maskstr, 
+int			memlink_cmd_sortlist_del(MemLink *m, char *key, int kind, char *attrstr, 
                             char *valmin, int vminlen, 
                             char *valmax, int vmaxlen);
-int         memlink_cmd_sortlist_count(MemLink *m, char *key, char *maskstr, 
+int         memlink_cmd_sortlist_count(MemLink *m, char *key, char *attrstr, 
                             char *valmin, int vminlen, 
                             char *valmax, int vmaxlen, MemLinkCount *count);
 
@@ -158,7 +159,7 @@ int         memlink_imkv_add_key(MemLinkInsertMkv *mkv, MemLinkInsertKey *keyobj
 int         memlink_ikey_add_value(MemLinkInsertKey *keyobj, MemLinkInsertVal *valobj);
 MemLinkInsertMkv*         memlink_imkv_create(); 
 MemLinkInsertKey*         memlink_ikey_create(char *key, unsigned int keylen);
-MemLinkInsertVal*         memlink_ival_create(char *value, unsigned int valuelen, char *maskstr, int pos);
+MemLinkInsertVal*         memlink_ival_create(char *value, unsigned int valuelen, char *attrstr, int pos);
 
 int memlink_cmd_read_conn_info(MemLink *m, MemLinkRcInfo *rcinfo);
 int memlink_cmd_write_conn_info(MemLink *m, MemLinkWcInfo *wcinfo);

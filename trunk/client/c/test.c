@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
     MemLinkStat stat;
     ret = memlink_cmd_stat(m, "haha1", &stat);
     DINFO("memlink_cmd_stat: %d\n", ret);
-    DINFO("valuesize:%d, masksize:%d, blocks:%d, data:%d, data_used:%d, mem:%d\n", stat.valuesize, stat.masksize, stat.blocks, stat.data, stat.data_used, stat.mem);
+    DINFO("valuesize:%d, attrsize:%d, blocks:%d, data:%d, data_used:%d, mem:%d\n", stat.valuesize, stat.attrsize, stat.blocks, stat.data, stat.data_used, stat.mem);
 
     /*
     printf("=============================\n");
@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
     DINFO("memlink_cmd_xx: %d\n", ret);
 
     printf("=============================\n");
-    ret = memlink_cmd_mask(m, "haha", "gogo2", 5, "10:3:1");
+    ret = memlink_cmd_attr(m, "haha", "gogo2", 5, "10:3:1");
     DINFO("memlink_cmd_xx: %d\n", ret);
 
     printf("=============================\n");
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
         printf("============== range %d ===============\n", i);
         MemLinkResult result;
         ret = memlink_cmd_range(m, "haha1", 0,  "::", 2, 10, &result);
-        DINFO("valuesize:%d, masksize:%d, count:%d\n", result.valuesize, result.masksize,
+        DINFO("valuesize:%d, attrsize:%d, count:%d\n", result.valuesize, result.attrsize,
                 result.count);
     }
 
