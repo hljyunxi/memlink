@@ -16,20 +16,20 @@
 #include "base/zzmalloc.h"
 #include "base/pack.h"
 /**
- * 把字符串形式的mask转换为数组形式
+ * 把字符串形式的attr转换为数组形式
  */
 /**
- * Convert a mask string to an integer array. Digit characters delimited by : is 
+ * Convert a attr string to an integer array. Digit characters delimited by : is 
  * converted into the correspoding integer. : is converted into UINT_MAX.
  *
- * @param maskstr mask string
+ * @param attrstr attr string
  * @param result converted integer array
  * @return the count of the converted integers
  */
 int
-mask_string2array(char *maskstr, unsigned int *result)
+attr_string2array(char *attrstr, unsigned int *result)
 {
-    char *m = maskstr;
+    char *m = attrstr;
     int  i = 0;
 
     if (m[0] == 0) {
@@ -62,10 +62,10 @@ mask_string2array(char *maskstr, unsigned int *result)
 }
 
 /**
- * mask必须先初始化为0
+ * attr必须先初始化为0
  */
 int
-mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char masknum, char *mask)
+attr_array2binary(unsigned char *attrformat, unsigned int *attrarray, char attrnum, char *attr)
 {
     int i;
     int b   = 0; // 已经处理的bit
@@ -74,20 +74,20 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
     unsigned int v, flow = 0;
     char    mf;
     // 前两位分别表示真实删除和标记删除，跳过
-    // mask[idx] = mask[idx] & 0xfc;
-    //memset(mask, 0, masknum);
+    // attr[idx] = attr[idx] & 0xfc;
+    //memset(attr, 0, attrnum);
     
-    mask[0] = 0x01;  // 默认设置数据有效，非标记删除
+    attr[0] = 0x01;  // 默认设置数据有效，非标记删除
     b += 2;
 
-    for (i = 0; i < masknum; i++) {
-        mf = maskformat[i];
+    for (i = 0; i < attrnum; i++) {
+        mf = attrformat[i];
         if (mf == 0) {
-            DERROR("mask format error: %d\n", mf);
+            DERROR("attr format error: %d\n", mf);
             return -1;
         }
-        v  = maskarray[i]; 
-        //DINFO("idx:%d, b:%d, format:%d, maskvalue:%d, %x\n", idx, b, mf, v, v);
+        v  = attrarray[i]; 
+        //DINFO("idx:%d, b:%d, format:%d, attrvalue:%d, %x\n", idx, b, mf, v, v);
 
         if (v == UINT_MAX) {
             v = 0;
@@ -100,13 +100,13 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
         }
         v = v << b;
         unsigned char m = 0xffffffff >> (32 - b);
-        unsigned char x = mask[idx] & m;
+        unsigned char x = attr[idx] & m;
 
         v = v | x;
         if (n > 4) {
-            memcpy(&mask[idx], &v, sizeof(int));
+            memcpy(&attr[idx], &v, sizeof(int));
         } else {
-            memcpy(&mask[idx], &v, n);
+            memcpy(&attr[idx], &v, n);
         }
 
         if (y > 0) {
@@ -115,7 +115,7 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
             idx += n;
         }
         if (n > 4) {
-            mask[idx] = mask[idx] | flow;
+            attr[idx] = attr[idx] | flow;
         }
 
         b = y;
@@ -129,8 +129,8 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
     }
 
     if (b > 0) {
-        //mask[idx] = mask[idx] & (char)(pow(2, b) - 1);
-        mask[idx] = mask[idx] & (char)(0xff >> (8 - b));
+        //attr[idx] = attr[idx] & (char)(pow(2, b) - 1);
+        attr[idx] = attr[idx] & (char)(0xff >> (8 - b));
     }
 
 
@@ -138,19 +138,19 @@ mask_array2binary(unsigned char *maskformat, unsigned int *maskarray, char maskn
 }
 
 /**
- * mask必须先初始化为0
+ * attr必须先初始化为0
  */
 int
-mask_string2binary(unsigned char *maskformat, char *maskstr, char *mask)
+attr_string2binary(unsigned char *attrformat, char *attrstr, char *attr)
 {
-    int masknum;
-    unsigned int maskarray[HASHTABLE_MASK_MAX_ITEM] = {0};
+    int attrnum;
+    unsigned int attrarray[HASHTABLE_MASK_MAX_ITEM] = {0};
 
-    masknum = mask_string2array(maskstr, maskarray);
-    if (masknum <= 0)
+    attrnum = attr_string2array(attrstr, attrarray);
+    if (attrnum <= 0)
         return 0;
 
-    int ret = mask_array2binary(maskformat, maskarray, masknum, mask); 
+    int ret = attr_array2binary(attrformat, attrarray, attrnum, attr); 
 
     return ret;
 }
@@ -189,7 +189,7 @@ int2string(char *s, unsigned int val)
 }
 
 int 
-mask_binary2string(unsigned char *maskformat, int masknum, char *mask, int masklen, char *maskstr)
+attr_binary2string(unsigned char *attrformat, int attrnum, char *attr, int attrlen, char *attrstr)
 {
     int n    = 2;
     int idx = 0;
@@ -197,8 +197,8 @@ mask_binary2string(unsigned char *maskformat, int masknum, char *mask, int maskl
     int i;
     int widx = 0;
    
-    for (i = 0; i < masknum; i++) {
-        int fs = maskformat[i];
+    for (i = 0; i < attrnum; i++) {
+        int fs = attrformat[i];
         int offset = (fs + n) % 8;
         int yu = offset > 0 ? 1: 0;
         int cs = (fs + n) / 8 + yu;
@@ -207,26 +207,26 @@ mask_binary2string(unsigned char *maskformat, int masknum, char *mask, int maskl
         val = 0;
         if (cs <= 4) {
             //DINFO("copy:%d\n", cs);
-            memcpy(&val, &mask[idx], cs);
+            memcpy(&val, &attr[idx], cs);
             val <<= 32 - fs - n;
             val >>= 32 - fs;
         }else{
             //DINFO("copy:%d\n", sizeof(int));
-            memcpy(&val, &mask[idx], sizeof(int));
+            memcpy(&val, &attr[idx], sizeof(int));
             val >>= n;
             unsigned int val2 = 0;
             
             //DINFO("copy:%d\n", cs - sizeof(int));
-            memcpy(&val2, &mask[idx + sizeof(int)], cs - sizeof(int));
+            memcpy(&val2, &attr[idx + sizeof(int)], cs - sizeof(int));
             val2 <<= 32 - n;
             val = val | val2;
         }
 
         if (widx != 0) {
-            maskstr[widx] = ':';    
+            attrstr[widx] = ':';    
             widx ++;
         }
-        int len = int2string(&maskstr[widx], val);        
+        int len = int2string(&attrstr[widx], val);        
         widx += len;
 
         idx += cs - 1;
@@ -235,31 +235,31 @@ mask_binary2string(unsigned char *maskformat, int masknum, char *mask, int maskl
         }
         n = offset;
     }
-    maskstr[widx] = 0;
+    attrstr[widx] = 0;
 
     return widx;
 }
 
 /**
- * mask必须先初始化为0
+ * attr必须先初始化为0
  */
 int 
-mask_array2flag(unsigned char *maskformat, unsigned int *maskarray, char masknum, char *mask)
+attr_array2flag(unsigned char *attrformat, unsigned int *attrarray, char attrnum, char *attr)
 {
     int i, j;
     int idx = 0;
-    int mf; // maskformat item value
-    int m;  // maskarray item value
+    int mf; // attrformat item value
+    int m;  // attrarray item value
     int b = 0;
     int xlen;
     unsigned int v;
 
-    mask[0] = 0x03;
+    attr[0] = 0x03;
     b = 2;
     v = 0;
-    for (i = 0; i < masknum; i++) {
-        mf = maskformat[i];
-        m  = maskarray[i];
+    for (i = 0; i < attrnum; i++) {
+        mf = attrformat[i];
+        m  = attrarray[i];
         
         //DINFO("i:%d, b:%d, idx:%d, format:%d, array:%d, xlen:%d\n", i, b, idx, mf, m, (b + mf) / 8 + ((b + mf) % 8 > 0 ? 1:0));
         if (m == UINT_MAX) { // set to 1
@@ -270,14 +270,14 @@ mask_array2flag(unsigned char *maskformat, unsigned int *maskarray, char masknum
             char *cpdata = (char *)&v;
             if (xlen <= 4) {
                 for (j = 0; j < xlen; j++) {
-                    mask[idx + j] |= cpdata[j];
+                    attr[idx + j] |= cpdata[j];
                 }
             }else{
                 for (j = 0; j < 4; j++) {
-                    mask[idx + j] |= cpdata[j];
+                    attr[idx + j] |= cpdata[j];
                 }
                 unsigned char v2 = 0xff >> (8 - (mf + b) - 32);
-                mask[idx + j] |= v2;
+                attr[idx + j] |= v2;
             }
             //idx += xlen - 1;
             idx += (b + mf) / 8;
@@ -292,10 +292,10 @@ mask_array2flag(unsigned char *maskformat, unsigned int *maskarray, char masknum
     }
 
     if (b > 0) {
-        mask[idx] = mask[idx] & (char)(UCHAR_MAX >> (8 - b));
+        attr[idx] = attr[idx] & (char)(UCHAR_MAX >> (8 - b));
     }
     
-    DINFO("return:%d\n", idx+1);
+    //DINFO("return:%d\n", idx+1);
     return idx + 1;
 }
 
@@ -339,30 +339,30 @@ cmd_rmkey_unpack(char *data, char *key)
 
 
 int 
-cmd_count_pack(char *data, char *key, unsigned char masknum, unsigned int *maskarray)
+cmd_count_pack(char *data, char *key, unsigned char attrnum, unsigned int *attrarray)
 {
-    return pack(data, 0, "$4csI", CMD_COUNT, key, masknum, maskarray);
+    return pack(data, 0, "$4csI", CMD_COUNT, key, attrnum, attrarray);
 }
 
 int 
-cmd_count_unpack(char *data, char *key, unsigned char *masknum, unsigned int *maskarray)
+cmd_count_unpack(char *data, char *key, unsigned char *attrnum, unsigned int *attrarray)
 {
-    return unpack(data + CMD_REQ_HEAD_LEN, 0, "sI", key, masknum, maskarray);
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "sI", key, attrnum, attrarray);
 }
 
 int 
-cmd_sortlist_count_pack(char *data, char *key, unsigned char masknum, unsigned int *maskarray,
+cmd_sortlist_count_pack(char *data, char *key, unsigned char attrnum, unsigned int *attrarray,
                         void *valmin, unsigned char vminlen, void *valmax, unsigned char vmaxlen)
 {
-    return pack(data, 0, "$4csICC", CMD_SL_COUNT, key, masknum, maskarray, 
+    return pack(data, 0, "$4csICC", CMD_SL_COUNT, key, attrnum, attrarray, 
                 vminlen, valmin, vmaxlen, valmax);
 }
 
 int 
-cmd_sortlist_count_unpack(char *data, char *key, unsigned char *masknum, unsigned int *maskarray,
+cmd_sortlist_count_unpack(char *data, char *key, unsigned char *attrnum, unsigned int *attrarray,
                     void *valmin, unsigned char *vminlen, void *valmax, unsigned char *vmaxlen)
 {
-    return unpack(data + CMD_REQ_HEAD_LEN, 0, "sICC", key, masknum, maskarray, 
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "sICC", key, attrnum, attrarray, 
             vminlen, valmin, vmaxlen, valmax);
 }
 
@@ -396,34 +396,34 @@ cmd_stat_sys_unpack(char *data)
  * ------------------------------------------------------------------------
  * | command length (2 bytes) | cmd number (1 byte) | key length (1 byte) |
  * ------------------------------------------------------------------------
- * | key | value length (1 byte) | mask length (1 byte) | mask |
+ * | key | value length (1 byte) | attr length (1 byte) | attr |
  * -------------------------------------------------------------
- * command length is the count of bytes following it. mask length is the length 
- * of mask integer array.
+ * command length is the count of bytes following it. attr length is the length 
+ * of attr integer array.
  * 
  * @param data destination byte array
  * @param key hash key
  * @param valuelen the data value length
- * @param masknum the length of the mask array
- * @param maskarray mask array
+ * @param attrnum the length of the attr array
+ * @param attrarray attr array
  * @param return the length of the whole command.
  */
 int 
 cmd_create_pack(char *data, char *key, unsigned char valuelen, 
-                unsigned char masknum, unsigned int *maskarray,
+                unsigned char attrnum, unsigned int *attrarray,
                 unsigned char listtype, unsigned char valuetype)
 {
     return pack(data, 0, "$4cscIcc", CMD_CREATE, key, valuelen, 
-                masknum, maskarray, listtype, valuetype);
+                attrnum, attrarray, listtype, valuetype);
 }
 
 int 
 cmd_create_unpack(char *data, char *key, unsigned char *valuelen, 
-                  unsigned char *masknum, unsigned int *maskarray,
+                  unsigned char *attrnum, unsigned int *attrarray,
                   unsigned char *listtype, unsigned char *valuetype)
 {
     return unpack(data + CMD_REQ_HEAD_LEN, 0, "scIcc", key, valuelen, 
-                masknum, maskarray, listtype, valuetype);
+                attrnum, attrarray, listtype, valuetype);
 }
 
 int 
@@ -440,34 +440,34 @@ cmd_del_unpack(char *data, char *key, char *value, unsigned char *valuelen)
 
 int 
 cmd_sortlist_del_pack(char *data, char *key, unsigned char kind, char *valmin, unsigned char vminlen, 
-            char *valmax, unsigned char vmaxlen, unsigned char masknum, unsigned int *maskarray)
+            char *valmax, unsigned char vmaxlen, unsigned char attrnum, unsigned int *attrarray)
 {
     return pack(data, 0, "$4ccsCCI", CMD_SL_DEL, kind, key, vminlen, valmin,
-                    vmaxlen, valmax, masknum, maskarray);
+                    vmaxlen, valmax, attrnum, attrarray);
 }
 
 int 
 cmd_sortlist_del_unpack(char *data, char *key, unsigned char *kind, 
                         char *valmin, unsigned char *vminlen,
                         char *valmax, unsigned char *vmaxlen, 
-                        unsigned char *masknum, unsigned int *maskarray)
+                        unsigned char *attrnum, unsigned int *attrarray)
 {
     return unpack(data+CMD_REQ_HEAD_LEN, 0, "csCCI", kind, key, vminlen, valmin, vmaxlen, valmax, 
-                masknum, maskarray);
+                attrnum, attrarray);
 }
 
 int 
 cmd_insert_pack(char *data, char *key, char *value, unsigned char valuelen, 
-                unsigned char masknum, unsigned int *maskarray, int pos)
+                unsigned char attrnum, unsigned int *attrarray, int pos)
 {
-    return pack(data, 0, "$4csCIi", CMD_INSERT, key, valuelen, value, masknum, maskarray, pos);
+    return pack(data, 0, "$4csCIi", CMD_INSERT, key, valuelen, value, attrnum, attrarray, pos);
 }
 
 int 
 cmd_insert_unpack(char *data, char *key, char *value, unsigned char *valuelen,
-                  unsigned char *masknum, unsigned int *maskarray, int *pos)
+                  unsigned char *attrnum, unsigned int *attrarray, int *pos)
 {
-    return unpack(data+CMD_REQ_HEAD_LEN, 0, "sCIi", key, valuelen, value, masknum, maskarray, pos);
+    return unpack(data+CMD_REQ_HEAD_LEN, 0, "sCIi", key, valuelen, value, attrnum, attrarray, pos);
 }
 
 
@@ -484,17 +484,17 @@ cmd_move_unpack(char *data, char *key, char *value, unsigned char *valuelen, int
 }
 
 int 
-cmd_mask_pack(char *data, char *key, char *value, unsigned char valuelen, 
-              unsigned char masknum, unsigned int *maskarray)
+cmd_attr_pack(char *data, char *key, char *value, unsigned char valuelen, 
+              unsigned char attrnum, unsigned int *attrarray)
 {
-    return pack(data, 0, "$4csCI", CMD_MASK, key, valuelen, value, masknum, maskarray);
+    return pack(data, 0, "$4csCI", CMD_MASK, key, valuelen, value, attrnum, attrarray);
 }
 
 int 
-cmd_mask_unpack(char *data, char *key, char *value, unsigned char *valuelen, 
-                unsigned char *masknum, unsigned int *maskarray)
+cmd_attr_unpack(char *data, char *key, char *value, unsigned char *valuelen, 
+                unsigned char *attrnum, unsigned int *attrarray)
 {
-    return unpack(data + CMD_REQ_HEAD_LEN, 0, "sCI", key, valuelen, value, masknum, maskarray);
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "sCI", key, valuelen, value, attrnum, attrarray);
 }
 
 int 
@@ -511,34 +511,34 @@ cmd_tag_unpack(char *data, char *key, char *value, unsigned char *valuelen, unsi
 
 int 
 cmd_range_pack(char *data, char *key, unsigned char kind, 
-               unsigned char masknum, unsigned int *maskarray, 
+               unsigned char attrnum, unsigned int *attrarray, 
                int frompos, int rlen)
 {
-    return pack(data, 0, "$4cscIii", CMD_RANGE, key, kind, masknum, maskarray, frompos, rlen);
+    return pack(data, 0, "$4cscIii", CMD_RANGE, key, kind, attrnum, attrarray, frompos, rlen);
 }
 
 int 
-cmd_range_unpack(char *data, char *key, unsigned char *kind, unsigned char *masknum, unsigned int *maskarray, 
+cmd_range_unpack(char *data, char *key, unsigned char *kind, unsigned char *attrnum, unsigned int *attrarray, 
                  int *frompos, int *len)
 {
-    return unpack(data + CMD_REQ_HEAD_LEN, 0, "scIii", key, kind, masknum, maskarray, frompos, len);
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "scIii", key, kind, attrnum, attrarray, frompos, len);
 }
 
 int 
 cmd_sortlist_range_pack(char *data, char *key, unsigned char kind, 
-                unsigned char masknum, unsigned int *maskarray, 
+                unsigned char attrnum, unsigned int *attrarray, 
                 void *valmin, unsigned char vminlen, void *valmax, unsigned char vmaxlen)
 {
-    return pack(data, 0, "$4cscICC", CMD_SL_RANGE, key, kind, masknum, maskarray,
+    return pack(data, 0, "$4cscICC", CMD_SL_RANGE, key, kind, attrnum, attrarray,
                     vminlen, valmin, vmaxlen, valmax);
 }
 
 int 
 cmd_sortlist_range_unpack(char *data, char *key, unsigned char *kind, 
-                    unsigned char *masknum, unsigned int *maskarray, 
+                    unsigned char *attrnum, unsigned int *attrarray, 
                     void *valmin, unsigned char *vminlen, void *valmax, unsigned char *vmaxlen)
 {
-    return unpack(data + CMD_REQ_HEAD_LEN, 0, "scICC", key, kind, masknum, maskarray,
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "scICC", key, kind, attrnum, attrarray,
                 vminlen, valmin, vmaxlen, valmax);
 }
 
@@ -555,31 +555,31 @@ cmd_ping_unpack(char *data)
 
 int 
 cmd_push_pack(char *data, unsigned char cmd, char *key, char *value, unsigned char valuelen, 
-                unsigned char masknum, unsigned *maskarray)
+                unsigned char attrnum, unsigned *attrarray)
 {
-    return pack(data, 0, "$4csCI", cmd, key, valuelen, value, masknum, maskarray);
+    return pack(data, 0, "$4csCI", cmd, key, valuelen, value, attrnum, attrarray);
 }
 
 
 int
 cmd_push_unpack(char *data, char *key, char *value, unsigned char *valuelen,
-            unsigned char *masknum, unsigned int *maskarray)
+            unsigned char *attrnum, unsigned int *attrarray)
 {
-    return unpack(data + CMD_REQ_HEAD_LEN, 0, "sCI", key, valuelen, value, masknum, maskarray);
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "sCI", key, valuelen, value, attrnum, attrarray);
 }
 
 int 
 cmd_lpush_pack(char *data, char *key, char *value, unsigned char valuelen, 
-                unsigned char masknum, unsigned *maskarray)
+                unsigned char attrnum, unsigned *attrarray)
 {
-    return cmd_push_pack(data, CMD_LPUSH, key, value, valuelen, masknum, maskarray);
+    return cmd_push_pack(data, CMD_LPUSH, key, value, valuelen, attrnum, attrarray);
 }
 
 int 
 cmd_rpush_pack(char *data, char *key, char *value, unsigned char valuelen, 
-                unsigned char masknum, unsigned *maskarray)
+                unsigned char attrnum, unsigned *attrarray)
 {
-    return cmd_push_pack(data, CMD_RPUSH, key, value, valuelen, masknum, maskarray);
+    return cmd_push_pack(data, CMD_RPUSH, key, value, valuelen, attrnum, attrarray);
 }
 
 
@@ -633,15 +633,15 @@ cmd_getdump_unpack(char *data, unsigned int *dumpver, uint64_t *size)
 
 //add by lanwenhong
 int
-cmd_del_by_mask_pack(char *data, char *key, unsigned int *maskarray, unsigned char masknum)
+cmd_del_by_attr_pack(char *data, char *key, unsigned int *attrarray, unsigned char attrnum)
 {
-    return pack(data, 0, "$4csI", CMD_DEL_BY_MASK, key, masknum, maskarray);
+    return pack(data, 0, "$4csI", CMD_DEL_BY_MASK, key, attrnum, attrarray);
 }
 
 int
-cmd_del_by_mask_unpack(char *data, char *key, unsigned int *maskarray, unsigned char *masknum)
+cmd_del_by_attr_unpack(char *data, char *key, unsigned int *attrarray, unsigned char *attrnum)
 {
-    return unpack(data+CMD_REQ_HEAD_LEN, 0, "sI", key, masknum, maskarray);
+    return unpack(data+CMD_REQ_HEAD_LEN, 0, "sI", key, attrnum, attrarray);
 }
 
 int
@@ -664,7 +664,7 @@ cmd_insert_mkv_pack(char *data, MemLinkInsertMkv *mkv)
         count += pack(data + count, 0, "si", keyitem->key, keyitem->valnum);
         while (valitem != NULL) {
             count += pack(data + count, 0, "CIi", valitem->valuelen, valitem->value, 
-                            valitem->masknum, valitem->maskarray, valitem->pos);
+                            valitem->attrnum, valitem->attrarray, valitem->pos);
             valitem = valitem->next;
         }
         keyitem = keyitem->next;
@@ -698,9 +698,9 @@ cmd_insert_mkv_unpack_key(char *data, char *key, unsigned int *valcount, char **
 
 int
 cmd_insert_mkv_unpack_val(char *data, char *value, unsigned char *valuelen,
-    unsigned char *masknum, unsigned int *maskarray, int *pos)
+    unsigned char *attrnum, unsigned int *attrarray, int *pos)
 {
-    return unpack(data, 0, "CIi", valuelen, value, masknum, maskarray, pos);
+    return unpack(data, 0, "CIi", valuelen, value, attrnum, attrarray, pos);
 }
 
 int

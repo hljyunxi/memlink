@@ -45,22 +45,22 @@ dataitem_check_kind(int ret, int kind)
 inline int 
 dataitem_have_data(HashNode *node, char *itemdata, unsigned char kind)
 {
-    char *maskdata  = itemdata + node->valuesize;
+    char *attrdata  = itemdata + node->valuesize;
     
     if (kind == MEMLINK_VALUE_VISIBLE) { // find visible
-        if ((*maskdata & (unsigned char)0x03) == 1) {
+        if ((*attrdata & (unsigned char)0x03) == 1) {
             return MEMLINK_TRUE;
         }
     }else if (kind == MEMLINK_VALUE_TAGDEL) { // find tagdel
-        if ((*maskdata & (unsigned char)0x03) == 3) {
+        if ((*attrdata & (unsigned char)0x03) == 3) {
             return MEMLINK_TRUE;
         }
     }else if (kind == MEMLINK_VALUE_ALL) { // find visible and tagdel
-        if ((*maskdata & (unsigned char)0x01) == 1) {
+        if ((*attrdata & (unsigned char)0x01) == 1) {
             return MEMLINK_TRUE;
         }
     }else if (kind == MEMLINK_VALUE_REMOVED) {
-        if ((*maskdata & (unsigned char)0x01) == 0) {
+        if ((*attrdata & (unsigned char)0x01) == 0) {
             return MEMLINK_TRUE;
         }
     }
@@ -70,9 +70,9 @@ dataitem_have_data(HashNode *node, char *itemdata, unsigned char kind)
 inline int
 dataitem_check(char *itemdata, int valuesize)
 {
-    char *maskdata  = itemdata + valuesize;
-    int  delm = *maskdata & (unsigned char)0x01;
-    int  tagm = *maskdata & (unsigned char)0x02;
+    char *attrdata  = itemdata + valuesize;
+    int  delm = *attrdata & (unsigned char)0x01;
+    int  tagm = *attrdata & (unsigned char)0x02;
    
     if (delm == 0)
         return MEMLINK_VALUE_REMOVED;
@@ -95,7 +95,7 @@ dataitem_check_data(HashNode *node, char *itemdata)
 int
 dataitem_skip2pos(HashNode *node, DataBlock *dbk, int skip, unsigned char kind)
 {
-    int datalen = node->valuesize + node->masksize;
+    int datalen = node->valuesize + node->attrsize;
     int i;
     char *data;
     
@@ -131,7 +131,7 @@ char*
 dataitem_lookup(HashNode *node, void *value, DataBlock **dbk)
 {
     int i;
-    int datalen = node->valuesize + node->masksize;
+    int datalen = node->valuesize + node->attrsize;
     DataBlock *root = node->data;
 
     while (root) {
@@ -162,7 +162,7 @@ int
 dataitem_lookup_pos(HashNode *node, void *value, DataBlock **dbk)
 {
     int i;
-    int datalen = node->valuesize + node->masksize;
+    int datalen = node->valuesize + node->attrsize;
     DataBlock *root = node->data;
 
     while (root) {
@@ -374,7 +374,7 @@ int
 sortlist_lookup(HashNode *node, int step, void *value, int kind, DataBlock **dbk)
 {
     int ret, pos = 0;
-    int datalen = node->valuesize + node->masksize;
+    int datalen = node->valuesize + node->attrsize;
     DataBlock *checkbk = node->data;
 
     if (NULL == node->data) {
@@ -434,7 +434,7 @@ int
 sortlist_lookup_valid(HashNode *node, int step, void *value, int kind, DataBlock **dbk)
 {
     int ret, pos = 0;
-    int datalen = node->valuesize + node->masksize;
+    int datalen = node->valuesize + node->attrsize;
     DataBlock *checkbk = node->data;
     //DataBlock *startbk = node->data;
 
@@ -505,59 +505,59 @@ sortlist_lookup_valid_found:
 }
 
 /**
- * copy a value, mask to special address
+ * copy a value, attr to special address
  * @param node  HashNode be copied
  * @param addr  to address
  * @param value copied value
- * @param mask  copied mask, binary
+ * @param attr  copied attr, binary
  */
 int
-dataitem_copy(HashNode *node, char *addr, void *value, void *mask)
+dataitem_copy(HashNode *node, char *addr, void *value, void *attr)
 {
-    //char *m = mask;
+    //char *m = attr;
     //*m = *m | (*addr & 0x03);
 
-    //DINFO("dataitem_copy valuesize: %d, masksize: %d\n", node->valuesize, node->masksize);
+    //DINFO("dataitem_copy valuesize: %d, attrsize: %d\n", node->valuesize, node->attrsize);
     memcpy(addr, value, node->valuesize);
-    memcpy(addr + node->valuesize, mask, node->masksize);
+    memcpy(addr + node->valuesize, attr, node->attrsize);
     
     return MEMLINK_OK;
 }
 
 /**
- * set mask to a value
+ * set attr to a value
  */
 int
-dataitem_copy_mask(HashNode *node, char *addr, char *maskflag, char *mask)
+dataitem_copy_attr(HashNode *node, char *addr, char *attrflag, char *attr)
 {
-    //char *m = mask;
+    //char *m = attr;
     //*m = *m | (*addr & 0x03);
     int i;
-    char *maskaddr = addr + node->valuesize;
+    char *attraddr = addr + node->valuesize;
     //char buf[128];
-    //DINFO("copy_mask before: %s\n", formatb(addr, node->masksize, buf, 128)); 
+    //DINFO("copy_attr before: %s\n", formatb(addr, node->attrsize, buf, 128)); 
 
-    for (i = 0; i < node->masksize; i++) {
-        maskaddr[i] = (maskaddr[i] & maskflag[i]) | mask[i];
+    for (i = 0; i < node->attrsize; i++) {
+        attraddr[i] = (attraddr[i] & attrflag[i]) | attr[i];
     }
-    //memcpy(addr + node->valuesize, mask, node->masksize);
-    //DINFO("copy_mask after: %s\n", formatb(addr, node->masksize, buf, 128)); 
+    //memcpy(addr + node->valuesize, attr, node->attrsize);
+    //DINFO("copy_attr after: %s\n", formatb(addr, node->attrsize, buf, 128)); 
 
     return MEMLINK_OK;
 }
 
 /**
- * find a position with mask in datablock link
+ * find a position with attr in datablock link
  */
 int
-dataitem_lookup_pos_mask(HashNode *node, int pos, unsigned char kind, 
-                        char *maskval, char *maskflag, DataBlock **dbk, int *dbkpos)
+dataitem_lookup_pos_attr(HashNode *node, int pos, unsigned char kind, 
+                        char *attrval, char *attrflag, DataBlock **dbk, int *dbkpos)
 {
     DataBlock *root = node->data;
 
     int n = 0, startn = 0;
     int i, k;
-    int datalen = node->valuesize + node->masksize;
+    int datalen = node->valuesize + node->attrsize;
     
     while (root) {
         startn = n;
@@ -565,21 +565,21 @@ dataitem_lookup_pos_mask(HashNode *node, int pos, unsigned char kind,
 
         for (i = 0; i < root->data_count; i++) {
             if (dataitem_have_data(node, itemdata, kind)) {
-                char *maskdata = itemdata + node->valuesize;    
+                char *attrdata = itemdata + node->valuesize;    
                 
                 /*char buf[64], buf2[64], buf3[64];
-                DINFO("i: %d, maskdata: %s, maskflag: %s, maskval: %s\n", i, 
-                        formatb(maskdata, node->masksize, buf, 64), 
-                        formatb(maskflag, node->masksize, buf2, 64),
-                        formatb(maskval, node->masksize, buf3, 64));
+                DINFO("i: %d, attrdata: %s, attrflag: %s, attrval: %s\n", i, 
+                        formatb(attrdata, node->attrsize, buf, 64), 
+                        formatb(attrflag, node->attrsize, buf2, 64),
+                        formatb(attrval, node->attrsize, buf3, 64));
                 */ 
-                for (k = 0; k < node->masksize; k++) {
-                    //DINFO("check k:%d, maskdata:%x, maskflag:%x, maskval:%x\n", k, maskdata[k], maskflag[k], maskval[k]);
-                    if ((maskdata[k] & maskflag[k]) != maskval[k]) {
+                for (k = 0; k < node->attrsize; k++) {
+                    //DINFO("check k:%d, attrdata:%x, attrflag:%x, attrval:%x\n", k, attrdata[k], attrflag[k], attrval[k]);
+                    if ((attrdata[k] & attrflag[k]) != attrval[k]) {
                         break;
                     }
                 }
-                if (k < node->masksize) { // not equal
+                if (k < node->attrsize) { // not equal
                     //DINFO("not equal.\n");
                     itemdata += datalen;
                     continue;
@@ -617,9 +617,9 @@ datablock_print(HashNode *node, DataBlock *dbk)
 {
     int  bufsize = 2048;
     char valuebuf[2048];
-    char maskbuf[2048];
+    char attrbuf[2048];
     int  i, ret;
-    int  datalen   = node->valuesize + node->masksize;
+    int  datalen   = node->valuesize + node->attrsize;
     char *itemdata = dbk->data; 
     //char format[128];
     char delinfo[32] = "";
@@ -628,15 +628,15 @@ datablock_print(HashNode *node, DataBlock *dbk)
         /*if (dataitem_have_data(node, itemdata, 1)) {
             memcpy(buf2, itemdata, node->valuesize);
             buf2[node->valuesize] = 0;
-            DINFO("i: %03d, value: %s, mask: %s\n", i, buf2, 
-                    formath(itemdata + node->valuesize, node->masksize, buf1, 128));
+            DINFO("i: %03d, value: %s, attr: %s\n", i, buf2, 
+                    formath(itemdata + node->valuesize, node->attrsize, buf1, 128));
         }else if (dataitem_have_data(node, itemdata, 0)) {
             memcpy(buf2, itemdata, node->valuesize);
             buf2[node->valuesize] = 0;
-            DINFO("i: %03d, value: %s, mask: %s\tdel\n", i, buf2, 
-                    formath(itemdata + node->valuesize, node->masksize, buf1, 128));
+            DINFO("i: %03d, value: %s, attr: %s\tdel\n", i, buf2, 
+                    formath(itemdata + node->valuesize, node->attrsize, buf1, 128));
         }else{
-            DINFO("i: %03d, no data, mask: %s\n", i, formath(itemdata + node->valuesize, node->masksize, buf1, 128));
+            DINFO("i: %03d, no data, attr: %s\n", i, formath(itemdata + node->valuesize, node->attrsize, buf1, 128));
         }*/
         ret = dataitem_check_data(node, itemdata);
         if (ret == MEMLINK_VALUE_TAGDEL) { // tagdel
@@ -647,32 +647,32 @@ datablock_print(HashNode *node, DataBlock *dbk)
             delinfo[0] = 0;
         }
            
-        formath(itemdata + node->valuesize, node->masksize, maskbuf, bufsize);
+        formath(itemdata + node->valuesize, node->attrsize, attrbuf, bufsize);
         switch(node->valuetype) {
             case MEMLINK_VALUE_INT4:
-                DINFO("i:%03d, value:%d, mask:%s\t%s\n", i, *(int*)itemdata, maskbuf, delinfo);
+                DINFO("i:%03d, value:%d, attr:%s\t%s\n", i, *(int*)itemdata, attrbuf, delinfo);
                 break;
             case MEMLINK_VALUE_UINT4:
-                DINFO("i:%03d, value:%u, mask:%s\t%s\n", i, *(unsigned int*)itemdata, maskbuf, delinfo);
+                DINFO("i:%03d, value:%u, attr:%s\t%s\n", i, *(unsigned int*)itemdata, attrbuf, delinfo);
                 break;
             case MEMLINK_VALUE_INT8:
-                DINFO("i:%03d, value:%lld, mask:%s\t%s\n", i, *(long long*)itemdata, maskbuf, delinfo);
+                DINFO("i:%03d, value:%lld, attr:%s\t%s\n", i, *(long long*)itemdata, attrbuf, delinfo);
                 break;
             case MEMLINK_VALUE_UINT8:
-                DINFO("i:%03d, value:%llu, mask:%s\t%s\n", i, *(unsigned long long*)itemdata, maskbuf, delinfo);
+                DINFO("i:%03d, value:%llu, attr:%s\t%s\n", i, *(unsigned long long*)itemdata, attrbuf, delinfo);
                 break;
             case MEMLINK_VALUE_FLOAT4:
             case MEMLINK_VALUE_FLOAT8:
-                DINFO("i:%03d, value:%.2f, mask:%s\t%s\n", i, *(double*)itemdata, maskbuf, delinfo);
+                DINFO("i:%03d, value:%.2f, attr:%s\t%s\n", i, *(double*)itemdata, attrbuf, delinfo);
                 break;
             case MEMLINK_VALUE_STRING:
                 strncpy(valuebuf, itemdata, node->valuesize);
                 valuebuf[node->valuesize] = 0;
-                DINFO("i:%03d, value:%s, mask:%s\t%s\n", i, valuebuf, maskbuf, delinfo);
+                DINFO("i:%03d, value:%s, attr:%s\t%s\n", i, valuebuf, attrbuf, delinfo);
                 break;
             case MEMLINK_VALUE_OBJ:
                 formath(itemdata, node->valuesize, valuebuf, bufsize);
-                DINFO("i:%03d, value:%s, mask:%s\t%s\n", i, valuebuf, maskbuf, delinfo);
+                DINFO("i:%03d, value:%s, attr:%s\t%s\n", i, valuebuf, attrbuf, delinfo);
                 break;
             default:
                 return MEMLINK_ERR;
@@ -795,9 +795,9 @@ datablock_lookup_valid_pos(HashNode *node, int pos, unsigned char kind, DataBloc
  */
 /*
 DataBlock*
-datablock_new_copy_small(HashNode *node, void *value, void *mask)
+datablock_new_copy_small(HashNode *node, void *value, void *attr)
 {
-    int datalen = node->valuesize + node->masksize;
+    int datalen = node->valuesize + node->attrsize;
 
     DataBlock *newbk = mempool_get(g_runtime->mpool, sizeof(DataBlock) + datalen);
     newbk->data_count = 1;
@@ -805,7 +805,7 @@ datablock_new_copy_small(HashNode *node, void *value, void *mask)
     DINFO("create small newbk:%p\n", newbk);
     
     if (NULL != value) {
-        dataitem_copy(node, newbk->data, value, mask);
+        dataitem_copy(node, newbk->data, value, attr);
         newbk->visible_count = 1;
     }
     //node->data = newbk;
@@ -817,9 +817,9 @@ datablock_new_copy_small(HashNode *node, void *value, void *mask)
 
 // check the position in datablock is null
 int
-datablock_check_null(HashNode *node, DataBlock *dbk, int skipn, void *value, void *mask)
+datablock_check_null(HashNode *node, DataBlock *dbk, int skipn, void *value, void *attr)
 {
-    int datalen     = node->valuesize + node->masksize;
+    int datalen     = node->valuesize + node->attrsize;
     int count        = dbk->visible_count + dbk->tagdel_count;
     char *fromdata  = dbk->data;
     int i, n = 0;
@@ -832,7 +832,7 @@ datablock_check_null(HashNode *node, DataBlock *dbk, int skipn, void *value, voi
     for (i = 0; i < dbk->data_count; i++) {
         if (n == skipn) {
             if (dataitem_have_data(node, fromdata, MEMLINK_VALUE_ALL) == MEMLINK_FALSE) {
-                dataitem_copy(node, fromdata, value, mask);
+                dataitem_copy(node, fromdata, value, attr);
                 dbk->visible_count++;
                 node->used++;
                 return 1;
@@ -850,16 +850,16 @@ datablock_check_null(HashNode *node, DataBlock *dbk, int skipn, void *value, voi
 }
 
 int
-datablock_check_null_pos(HashNode *node, DataBlock *dbk, int pos, void *value, void *mask)
+datablock_check_null_pos(HashNode *node, DataBlock *dbk, int pos, void *value, void *attr)
 {
     if (pos < 0 || pos > dbk->data_count) {
         return 0;
     }
-    int datalen     = node->valuesize + node->masksize;
+    int datalen     = node->valuesize + node->attrsize;
     char *fromdata  = dbk->data + datalen * pos;
 
     if (dataitem_have_data(node, fromdata, MEMLINK_VALUE_ALL) == MEMLINK_FALSE) {
-        dataitem_copy(node, fromdata, value, mask);
+        dataitem_copy(node, fromdata, value, attr);
         dbk->visible_count++;
         node->used++;
         return 1;
@@ -873,17 +873,17 @@ datablock_check_null_pos(HashNode *node, DataBlock *dbk, int pos, void *value, v
  * @param dbk
  * @param skipn
  * @param value
- * @param mask
+ * @param attr
  */
 DataBlock*
-datablock_new_copy(HashNode *node, DataBlock *dbk, int skipn, void *value, void *mask)
+datablock_new_copy(HashNode *node, DataBlock *dbk, int skipn, void *value, void *attr)
 {
-    int datalen = node->valuesize + node->masksize;
+    int datalen = node->valuesize + node->attrsize;
 
     if (dbk == NULL) {
         DataBlock *newbk = mempool_get2(g_runtime->mpool, 1, datalen);
         if (value != NULL) {
-            dataitem_copy(node, newbk->data, value, mask);
+            dataitem_copy(node, newbk->data, value, attr);
             newbk->visible_count++;
         }
         return newbk;
@@ -907,7 +907,7 @@ datablock_new_copy(HashNode *node, DataBlock *dbk, int skipn, void *value, void 
                 break;
             }
             if (n == skipn) {
-                dataitem_copy(node, todata, value, mask);
+                dataitem_copy(node, todata, value, attr);
                 todata += datalen;
                 n++;
                 newbk->visible_count++;
@@ -930,7 +930,7 @@ datablock_new_copy(HashNode *node, DataBlock *dbk, int skipn, void *value, void 
     }
 
     if (n <= skipn && todata < end_todata) {
-        dataitem_copy(node, todata, value, mask);
+        dataitem_copy(node, todata, value, attr);
         newbk->visible_count++;
     }
     newbk->next = dbk->next;
@@ -945,18 +945,18 @@ datablock_new_copy(HashNode *node, DataBlock *dbk, int skipn, void *value, void 
  * @param dbk
  * @param pos
  * @param value
- * @param mask
+ * @param attr
  ( @return new block
  */
 DataBlock*
-datablock_new_copy_pos(HashNode *node, DataBlock *dbk, int pos, void *value, void *mask)
+datablock_new_copy_pos(HashNode *node, DataBlock *dbk, int pos, void *value, void *attr)
 {
-    int datalen = node->valuesize + node->masksize;
+    int datalen = node->valuesize + node->attrsize;
     if (dbk == NULL) { // create new datablock
         DataBlock *newbk = mempool_get2(g_runtime->mpool, 1, datalen); 
         if (value != NULL) {
             DINFO("copy value 1. %s\n", (char*)value);
-            dataitem_copy(node, newbk->data, value, mask);
+            dataitem_copy(node, newbk->data, value, attr);
             newbk->visible_count++;
         }
         return newbk;
@@ -975,7 +975,7 @@ datablock_new_copy_pos(HashNode *node, DataBlock *dbk, int pos, void *value, voi
                     }else*/ if (i < dbk->data_count - 1) {
                         DINFO("copy value 2.1 %s\n", (char*)value);
                         posdata += datalen;
-                        dataitem_copy(node, posdata, value, mask);
+                        dataitem_copy(node, posdata, value, attr);
                         dbk->visible_count++;
                         return dbk;
                     }
@@ -987,7 +987,7 @@ datablock_new_copy_pos(HashNode *node, DataBlock *dbk, int pos, void *value, voi
         char *posdata = dbk->data + pos * datalen;
         if (dataitem_check_data(node, posdata) == MEMLINK_VALUE_REMOVED) { // copy data
             DINFO("copy value 2.2 %s\n", (char*)value);
-            dataitem_copy(node, posdata, value, mask);
+            dataitem_copy(node, posdata, value, attr);
             dbk->visible_count++;
             return dbk;
         }
@@ -1005,7 +1005,7 @@ datablock_new_copy_pos(HashNode *node, DataBlock *dbk, int pos, void *value, voi
     for (i = 0; i < dbk->data_count; i++) {
         if (i == pos) {
             DINFO("copy value 3. %d, %s\n", i, (char*)value);
-            dataitem_copy(node, todata, value, mask);
+            dataitem_copy(node, todata, value, attr);
             todata += datalen;
             n++;
             newbk->visible_count++;
@@ -1033,7 +1033,7 @@ datablock_new_copy_pos(HashNode *node, DataBlock *dbk, int pos, void *value, voi
 
     if (iscopy == 0 && todata < end_todata) {
         DINFO("copy value 4. %d, %s\n", i, (char*)value);
-        dataitem_copy(node, todata, value, mask);
+        dataitem_copy(node, todata, value, attr);
         newbk->visible_count++;
     }
     newbk->next = dbk->next;
@@ -1058,7 +1058,7 @@ datablock_copy(DataBlock *tobk, DataBlock *frombk, int datalen)
 inline int
 datablock_copy_used(HashNode *node, DataBlock *tobk, int topos, DataBlock *frombk)
 {
-    int  datalen   = node->valuesize + node->masksize;
+    int  datalen   = node->valuesize + node->attrsize;
     char *fromdata = frombk->data;
     char *todata   = tobk->data + topos * datalen;
     //char *todata_end = tobk->data + tobk->data_count * datalen;
@@ -1102,7 +1102,7 @@ int
 datablock_resize(HashNode *node, DataBlock *dbk)
 {
     int blockmax = g_cf->block_data_count[g_cf->block_data_count_items - 1];
-    int datalen  = node->valuesize + node->masksize;  
+    int datalen  = node->valuesize + node->attrsize;  
     int dbksize  = dbk->visible_count + dbk->tagdel_count;
     int prevsize = 0;
     int nextsize = 0;
@@ -1244,44 +1244,44 @@ datablock_free_inverse(DataBlock *startbk, DataBlock *endbk, int datalen)
 }
 
 int
-mask_array2_binary_flag(unsigned char *maskformat, unsigned int *maskarray, int masknum, 
-                        int masksize, char *maskval, char *maskflag)
+attr_array2_binary_flag(unsigned char *attrformat, unsigned int *attrarray, int attrnum, 
+                        int attrsize, char *attrval, char *attrflag)
 {
     int j;
-    for (j = 0; j < masknum; j++) {
-        if (maskarray[j] != UINT_MAX)
+    for (j = 0; j < attrnum; j++) {
+        if (attrarray[j] != UINT_MAX)
             break;
     }
-    //DINFO("j: %d, masknum: %d\n", j, masknum);
+    //DINFO("j: %d, attrnum: %d\n", j, attrnum);
     
-    int masklen;
-    if (j < masknum) {
-        masklen = mask_array2binary(maskformat, maskarray, masknum, maskval);
-        if (masklen <= 0) {
-            DINFO("mask_string2array error\n");
+    int attrlen;
+    if (j < attrnum) {
+        attrlen = attr_array2binary(attrformat, attrarray, attrnum, attrval);
+        if (attrlen <= 0) {
+            DINFO("attr_string2array error\n");
             return -2;
         }
-        maskval[0] = maskval[0] & 0xfc;
+        attrval[0] = attrval[0] & 0xfc;
 
         //char buf[128];
-        //DINFO("len:%d 2binary: %s\n", masklen, formatb(maskval, masklen, buf, 128));
-        masklen = mask_array2flag(maskformat, maskarray, masknum, maskflag);
-        if (masklen <= 0) {
-            DINFO("mask_array2flag error\n");
+        //DINFO("len:%d 2binary: %s\n", attrlen, formatb(attrval, attrlen, buf, 128));
+        attrlen = attr_array2flag(attrformat, attrarray, attrnum, attrflag);
+        if (attrlen <= 0) {
+            DINFO("attr_array2flag error\n");
             return -2;
         }
-        //DINFO("len:%d 2flag: %s\n", masklen, formatb(maskflag, masklen, buf, 128));
-        for (j = 0; j < masksize; j++) {
-            maskflag[j] = ~maskflag[j];
+        //DINFO("len:%d 2flag: %s\n", attrlen, formatb(attrflag, attrlen, buf, 128));
+        for (j = 0; j < attrsize; j++) {
+            attrflag[j] = ~attrflag[j];
         }
-        maskflag[0] = maskflag[0] & 0xfc;
+        attrflag[0] = attrflag[0] & 0xfc;
 
-        //DINFO("len:%d ^2flag: %s\n", masklen, formatb(maskflag, masklen, buf, 128));
+        //DINFO("len:%d ^2flag: %s\n", attrlen, formatb(attrflag, attrlen, buf, 128));
     }else{
-        masknum = 0;
+        attrnum = 0;
     }
 
-    return masknum;
+    return attrnum;
 }
 
 /**
