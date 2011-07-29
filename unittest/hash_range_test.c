@@ -4,17 +4,17 @@
 int main()
 {
 #ifdef DEBUG
-	logfile_create("test.log", 3);
-	//logfile_create("stdout", 4);
+	//logfile_create("test.log", 3);
+	logfile_create("stdout", 4);
 #endif
 	HashTable* ht;
 	char key[64];
 	int  valuesize = 8;
 	char val[64];
-	unsigned int maskformat[3]   = {4, 3, 1};	
-	unsigned int maskarray[4][3] = {{ 7, 2, 1}, {6, 2, 1}, { 4, 1, UINT_MAX}, {8, 3, 1}}; 
+	unsigned int attrformat[3]   = {4, 3, 1};	
+	unsigned int attrarray[4][3] = {{ 7, 2, 1}, {6, 2, 1}, { 4, 1, UINT_MAX}, {8, 3, 1}}; 
 	int num     = 200;
-	int masknum = 3;
+	int attrnum = 3;
 	int ret;
 	int i = 0;
 
@@ -26,22 +26,22 @@ int main()
 	my_runtime_create_common("memlink");
 	ht = g_runtime->ht;
 
-	//test1 : hashtable_add_info_mask - create key
+	//test1 : hashtable_add_info_attr - create key
 	for (i = 0; i < num; i++) {
 		sprintf(key, "heihei%03d", i);
-		hashtable_key_create_mask(ht, key, valuesize, maskformat, masknum, MEMLINK_LIST, 0);
+		hashtable_key_create_attr(ht, key, valuesize, attrformat, attrnum, MEMLINK_LIST, 0);
 	}
 
 	for (i = 0; i < num; i++) {
 		sprintf(key, "heihei%03d", i);
 		HashNode* pNode = hashtable_find(ht, key);
 		if (NULL == pNode) {
-			DERROR("hashtable_add_info_mask error. can not find %s\n", key);
+			DERROR("hashtable_add_info_attr error. can not find %s\n", key);
 			return -1;
 		}
 	}
 
-	///////test : hashtable_add_mask insert num value
+	///////test : hashtable_add_attr insert num value
 	HashNode *node = NULL;
 	DataBlock *dbk = NULL;
 	char	 *item = NULL; 	
@@ -49,7 +49,7 @@ int main()
 	for (i = 0; i < num; i++) {
 		sprintf(val, "value%03d", i);
 		pos = i;
-		ret = hashtable_add_mask(ht, key, val, maskarray[3], masknum, pos); //{8, 3, 1}
+		ret = hashtable_add_attr(ht, key, val, attrarray[3], attrnum, pos); //{8, 3, 1}
 		if (ret < 0) {
 			DERROR("add value err: %d, %s\n", ret, val);
 			return ret;
@@ -65,25 +65,25 @@ int main()
 
 	for (i = 0; i < 100; i++) {
 		sprintf(val, "value%03d", i*2);
-		ret = hashtable_mask(ht, key, val, maskarray[2], masknum); //{ 4, 1, UINT_MAX}
+		ret = hashtable_attr(ht, key, val, attrarray[2], attrnum); //{ 4, 1, UINT_MAX}
 		if (MEMLINK_OK != ret) {
-			DINFO("err hashtable_mask val:%s, i:%d\n", val, i);
+			DINFO("err hashtable_attr val:%s, i:%d\n", val, i);
 			return ret;
 		}
 	}
 	
 	//////////test 5 :range
-	unsigned int maskarray2[6][3] = { { 8, 3, 1}, {8, UINT_MAX, 1}, 
+	unsigned int attrarray2[6][3] = { { 8, 3, 1}, {8, UINT_MAX, 1}, 
 							 { UINT_MAX, 3, 1}, {4, 1, 1} , 
 							 {UINT_MAX, UINT_MAX, 1},  {UINT_MAX, UINT_MAX, UINT_MAX}
 						   }; 
 	for (i = 0; i < 50; i++) {
 		int k; 
 		if (i < 25) {
-			k  = 1;  //{8, UINT_MAX, 1} masknum:3		
+			k  = 1;  //{8, UINT_MAX, 1} attrnum:3		
 			num = 100;
 		}else{	
-			k = 5;  //{UINT_MAX, UINT_MAX, UINT_MAX} masknum:0	
+			k = 5;  //{UINT_MAX, UINT_MAX, UINT_MAX} attrnum:0	
 			num = 200;
 		}
 		int frompos = my_rand(num);
@@ -100,7 +100,7 @@ int main()
 	
         Conn    conn;
         memset(&conn, 0, sizeof(Conn));
-		ret = hashtable_range(ht, key, MEMLINK_VALUE_VISIBLE, maskarray2[k], masknum, 
+		ret = hashtable_range(ht, key, MEMLINK_VALUE_VISIBLE, attrarray2[k], attrnum, 
 			            frompos, len, &conn);
         
         if (len <= 0 && MEMLINK_ERR_RANGE_SIZE == ret) {
@@ -121,9 +121,11 @@ int main()
 			//return -1;
 		}else{
 			int j = frompos;
-            MemLinkItem *item = result.root;
-
-            while (item) {
+            MemLinkItem *items = result.items;
+            int i;
+            //while (item) {
+            for (i = 0; i < result.count; i++) {
+                DINFO("value:%s, attr:%s\n", items[i].value, items[i].attr);
                 int jj;
 				if (i < 25) {
 					jj = j*2 + 1;
@@ -131,13 +133,13 @@ int main()
 					jj = j;
                 }
 				sprintf(val, "value%03d", jj);
-                int ret = memcmp(item->value, val, result.valuesize);
+                int ret = memcmp(items[i].value, val, result.valuesize);
                 if (ret != 0) {
                     DERROR("error, pos:%d, val:%s\n", jj, val);
                     return -1;
                 }
                 j++;
-                item = item->next;
+                //item = item->next;
             }
 		}
 

@@ -15,20 +15,20 @@ int main()
 
     char key[128];
     int  valuesize = 10;
-    int  masknum = 0; 
+    int  attrnum = 0; 
     int  i = 0, ret;
-    unsigned int maskformat[4] = {0};
+    unsigned int attrformat[4] = {0};
 
     sprintf(key, "haha%03d", i);
-    hashtable_key_create_mask(ht, key, valuesize, maskformat, masknum, MEMLINK_LIST, 0);
+    hashtable_key_create_attr(ht, key, valuesize, attrformat, attrnum, MEMLINK_LIST, 0);
 
-    char mask[10] = {0x01};
+    char attr[10] = {0x01};
     char value[16]= {0};
     HashNode *node = hashtable_find(ht, key);
 
     for (i = 0; i < 1; i++) {
         sprintf(value, "%010d", i);
-        ret = hashtable_add_mask_bin(ht, key, value, mask, 0);
+        ret = hashtable_add_attr_bin(ht, key, value, attr, 0);
         if (ret != MEMLINK_OK) {
             DERROR("add error:%d, key:%s, value:%d\n", ret, key, i);
         }
@@ -39,7 +39,7 @@ int main()
 
     for ( ; i < 2; i++) {
         sprintf(value, "%010d", i);
-        ret = hashtable_add_mask_bin(ht, key, value, mask, 0);
+        ret = hashtable_add_attr_bin(ht, key, value, attr, 0);
         if (ret != MEMLINK_OK) {
             DERROR("add error:%d, key:%s, value:%d\n", ret, key, i);
         }
@@ -51,7 +51,7 @@ int main()
 
     for ( ; i < 5; i++) {
         sprintf(value, "%010d", i);
-        ret = hashtable_add_mask_bin(ht, key, value, mask, 0);
+        ret = hashtable_add_attr_bin(ht, key, value, attr, 0);
         if (ret != MEMLINK_OK) {
             DERROR("add error:%d, key:%s, value:%d\n", ret, key, i);
         }
@@ -65,7 +65,7 @@ int main()
 
     for ( ; i < 10; i++) {
         sprintf(value, "%010d", i);
-        ret = hashtable_add_mask_bin(ht, key, value, mask, 0);
+        ret = hashtable_add_attr_bin(ht, key, value, attr, 0);
         if (ret != MEMLINK_OK) {
             DERROR("add error:%d, key:%s, value:%d\n", ret, key, i);
         }
@@ -77,7 +77,7 @@ int main()
 
     for ( ; i < 23; i++) {
         sprintf(value, "%010d", i);
-        ret = hashtable_add_mask_bin(ht, key, value, mask, 0);
+        ret = hashtable_add_attr_bin(ht, key, value, attr, 0);
         if (ret != MEMLINK_OK) {
             DERROR("add error:%d, key:%s, value:%d\n", ret, key, i);
         }
@@ -99,7 +99,7 @@ int main()
     // insert
     for (i = 100; i < 110; i++) {
         sprintf(value, "%010d", i);
-        ret = hashtable_add_mask_bin(ht, key, value, mask, 0);
+        ret = hashtable_add_attr_bin(ht, key, value, attr, 0);
         if (ret != MEMLINK_OK) {
             DERROR("add error:%d, key:%s, value:%d\n", ret, key, i);
         }
@@ -119,7 +119,7 @@ int main()
 
     for (i = 200; i < 213; i++) {
         sprintf(value, "%010d", i);
-        ret = hashtable_add_mask_bin(ht, key, value, mask, -1);
+        ret = hashtable_add_attr_bin(ht, key, value, attr, -1);
         if (ret != MEMLINK_OK) {
             DERROR("add error:%d, key:%s, value:%d\n", ret, key, i);
         }

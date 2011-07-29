@@ -9,10 +9,10 @@ int main()
 	char key[64];
 	int  valuesize = 8;
 	char val[64];
-	unsigned int maskformat[3] = {4, 3, 1};
-	unsigned int maskarray[3][3] = { {8, 3, 1}, { 7, 2,1}, {6, 2, 1} }; 
+	unsigned int attrformat[3] = {4, 3, 1};
+	unsigned int attrarray[3][3] = { {8, 3, 1}, { 7, 2,1}, {6, 2, 1} }; 
 	int num  = 100;
-	int masknum = 3;
+	int attrnum = 3;
 	int ret;
 	int i = 0;
 	char *conffile;
@@ -25,21 +25,21 @@ int main()
 	ht = g_runtime->ht;
 
 	///////////begin test;
-	//test1 : hashtable_add_info_mask - create key
+	//test1 : hashtable_add_info_attr - create key
 	for (i = 0; i < num; i++) {
 		sprintf(key, "heihei%03d", i);
-		hashtable_key_create_mask(ht, key, valuesize, maskformat, masknum, MEMLINK_LIST, 0);
+		hashtable_key_create_attr(ht, key, valuesize, attrformat, attrnum, MEMLINK_LIST, 0);
 	}
 	for (i = 0; i < num; i++) {
 		sprintf(key, "heihei%03d", i);
 		HashNode* pNode = hashtable_find(ht, key);
 		if (NULL == pNode) {
-			DERROR("hashtable_add_info_mask error. can not find %s\n", key);
+			DERROR("hashtable_add_info_attr error. can not find %s\n", key);
 			return -1;
 		}
 	}
 
-	///////test : hashtable_add_mask insert num value
+	///////test : hashtable_add_attr insert num value
 	HashNode    *node = NULL;
 	DataBlock   *dbk  = NULL;
 	char	    *item = NULL; 	
@@ -48,7 +48,7 @@ int main()
 	for (i = 0; i < num; i++) {
 		sprintf(val, "value%03d", i);
 		pos = i;
-		ret = hashtable_add_mask(ht, key, val, maskarray[i%3], masknum, pos);
+		ret = hashtable_add_attr(ht, key, val, attrarray[i%3], attrnum, pos);
 		if (ret < 0) {
 			DERROR("add value err: %d, key:%s, value:%s, pos:%d\n", ret, key, val, pos);
 			return ret;
@@ -85,11 +85,11 @@ int main()
 			DERROR("not found value: %d, %s\n", ret, key);
 			return ret;
 		}
-		char mask[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
+		char attr[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
 		char *mdata = item + node->valuesize;
-		memcpy(mask, mdata, node->masksize); 
+		memcpy(attr, mdata, node->attrsize); 
 
-		char flag = *(mask + 0) & 0x02;
+		char flag = *(attr + 0) & 0x02;
 		flag = flag >> 1;
 		//printf("flag:%d, tag:%d \n", flag, tag);
 		if (flag != tag) {
