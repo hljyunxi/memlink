@@ -38,8 +38,8 @@ rdata_ready(Conn *conn, char *data, int datalen)
     char *retdata = NULL;
     int  retlen = 0;
     //unsigned char   valuelen;
-    unsigned char   masknum;
-    unsigned int    maskarray[HASHTABLE_MASK_MAX_ITEM] = {0};
+    unsigned char   attrnum;
+    unsigned int    attrarray[HASHTABLE_MASK_MAX_ITEM] = {0};
     int    frompos, len;
     struct timeval start, end;
     ThreadServer *st = (ThreadServer *)conn->thread;
@@ -69,8 +69,8 @@ rdata_ready(Conn *conn, char *data, int datalen)
         case CMD_RANGE: {
             DINFO("<<< cmd RANGE >>>\n");
             unsigned char kind;
-            ret = cmd_range_unpack(data, key, &kind, &masknum, maskarray, &frompos, &len);
-            DINFO("unpack range return:%d, key:%s, masknum:%d, frompos:%d, len:%d\n", ret, key, masknum, frompos, len);
+            ret = cmd_range_unpack(data, key, &kind, &attrnum, attrarray, &frompos, &len);
+            DINFO("unpack range return:%d, key:%s, attrnum:%d, frompos:%d, len:%d\n", ret, key, attrnum, frompos, len);
 
             if (frompos < 0 || len <= 0) {
                 DERROR("from or len small than 0. from:%d, len:%d\n", frompos, len);
@@ -82,10 +82,10 @@ rdata_ready(Conn *conn, char *data, int datalen)
                 ret = MEMLINK_ERR_PARAM;
                 goto rdata_ready_error;
             }
-            // len(4B) + retcode(2B) + valuesize(1B) + masksize(1B) + masknum(1B) + maskformat(masknum B) + value.mask * len
+            // len(4B) + retcode(2B) + valuesize(1B) + attrsize(1B) + attrnum(1B) + attrformat(attrnum B) + value.attr * len
             //int wlen = sizeof(int) + sizeof(short) + sizeof(char) + sizeof(char) + sizeof(char) + 
-            //           masknum * sizeof(int) + (HASHTABLE_VALUE_MAX + (HASHTABLE_MASK_MAX_BIT/8 + 2) * masknum) * len;
-            ret = hashtable_range(g_runtime->ht, key, kind, maskarray, masknum, frompos, len, conn); 
+            //           attrnum * sizeof(int) + (HASHTABLE_VALUE_MAX + (HASHTABLE_MASK_MAX_BIT/8 + 2) * attrnum) * len;
+            ret = hashtable_range(g_runtime->ht, key, kind, attrarray, attrnum, frompos, len, conn); 
             DINFO("hashtable_range return: %d\n", ret);
             //ret = data_reply(conn, ret, retrec, retlen);
             ret = conn_send_buffer(conn);
@@ -104,10 +104,10 @@ rdata_ready(Conn *conn, char *data, int datalen)
             char valmax[512] = {0};
             unsigned char vminlen = 0, vmaxlen = 0;
 
-            ret = cmd_sortlist_range_unpack(data, key, &kind, &masknum, maskarray, 
+            ret = cmd_sortlist_range_unpack(data, key, &kind, &attrnum, attrarray, 
                                             valmin, &vminlen, valmax, &vmaxlen);
-            DINFO("unpack range return:%d, key:%s, masknum:%d, vmin:%s,%d, vmax:%s,%d, len:%d\n", 
-                            ret, key, masknum, valmin, vminlen, valmax, vmaxlen, len);
+            DINFO("unpack range return:%d, key:%s, attrnum:%d, vmin:%s,%d, vmax:%s,%d, len:%d\n", 
+                            ret, key, attrnum, valmin, vminlen, valmax, vmaxlen, len);
 
             /*
             if (frompos < 0 || len <= 0) {
@@ -120,13 +120,13 @@ rdata_ready(Conn *conn, char *data, int datalen)
                 ret = MEMLINK_ERR_PARAM;
                 goto rdata_ready_error;
             }
-            // len(4B) + retcode(2B) + valuesize(1B) + masksize(1B) + masknum(1B) + maskformat(masknum B) + value.mask * len
+            // len(4B) + retcode(2B) + valuesize(1B) + attrsize(1B) + attrnum(1B) + attrformat(attrnum B) + value.attr * len
             //int wlen = sizeof(int) + sizeof(short) + sizeof(char) + sizeof(char) + sizeof(char) + 
-            //           masknum * sizeof(int) + (HASHTABLE_VALUE_MAX + (HASHTABLE_MASK_MAX_BIT/8 + 2) * masknum) * len;
+            //           attrnum * sizeof(int) + (HASHTABLE_VALUE_MAX + (HASHTABLE_MASK_MAX_BIT/8 + 2) * attrnum) * len;
 
             //hashtable_print(g_runtime->ht, key);
 
-            ret = hashtable_sortlist_range(g_runtime->ht, key, kind, maskarray, masknum, 
+            ret = hashtable_sortlist_range(g_runtime->ht, key, kind, attrarray, attrnum, 
                                             valmin, valmax, conn); 
             DINFO("hashtable_range return: %d\n", ret);
             //ret = data_reply(conn, ret, retrec, retlen);
@@ -181,11 +181,11 @@ rdata_ready(Conn *conn, char *data, int datalen)
         }
         case CMD_COUNT: {
             DINFO("<<< cmd COUNT >>>\n");
-            unsigned char masknum;
-            //unsigned int  maskarray[HASHTABLE_MASK_MAX_ITEM * sizeof(int)];
+            unsigned char attrnum;
+            //unsigned int  attrarray[HASHTABLE_MASK_MAX_ITEM * sizeof(int)];
 
-            ret = cmd_count_unpack(data, key, &masknum, maskarray);
-            DINFO("unpack count return: %d, key: %s, mask:%d:%d:%d\n", ret, key, maskarray[0], maskarray[1], maskarray[2]);
+            ret = cmd_count_unpack(data, key, &attrnum, attrarray);
+            DINFO("unpack count return: %d, key: %s, attr:%d:%d:%d\n", ret, key, attrarray[0], attrarray[1], attrarray[2]);
            
             if (key[0] == 0) {
                 ret = MEMLINK_ERR_PARAM;
@@ -196,7 +196,7 @@ rdata_ready(Conn *conn, char *data, int datalen)
             retlen = sizeof(int) * 2;
             char retrec[retlen];
 
-            ret = hashtable_count(g_runtime->ht, key, maskarray, masknum, &vcount, &mcount);
+            ret = hashtable_count(g_runtime->ht, key, attrarray, attrnum, &vcount, &mcount);
             DINFO("hashtable count, ret:%d, visible_count:%d, tagdel_count:%d\n", ret, vcount, mcount);
             memcpy(retrec, &vcount, sizeof(int));
             memcpy(retrec + sizeof(int), &mcount, sizeof(int));
@@ -214,10 +214,10 @@ rdata_ready(Conn *conn, char *data, int datalen)
             char valmax[512] = {0};
             unsigned char vminlen = 0, vmaxlen = 0;
 
-            ret = cmd_sortlist_count_unpack(data, key, &masknum, maskarray, 
+            ret = cmd_sortlist_count_unpack(data, key, &attrnum, attrarray, 
                                             valmin, &vminlen, valmax, &vmaxlen);
-            DINFO("unpack range return:%d, key:%s, masknum:%d, vmin:%s,%d, vmax:%s,%d, len:%d\n", 
-                            ret, key, masknum, valmin, vminlen, valmax, vmaxlen, len);
+            DINFO("unpack range return:%d, key:%s, attrnum:%d, vmin:%s,%d, vmax:%s,%d, len:%d\n", 
+                            ret, key, attrnum, valmin, vminlen, valmax, vmaxlen, len);
 
             if (key[0] == 0) {
                 ret = MEMLINK_ERR_PARAM;
@@ -227,7 +227,7 @@ rdata_ready(Conn *conn, char *data, int datalen)
             retlen = sizeof(int) * 2;
             char retrec[retlen];
 
-            ret = hashtable_sortlist_count(g_runtime->ht, key, maskarray, masknum, 
+            ret = hashtable_sortlist_count(g_runtime->ht, key, attrarray, attrnum, 
                                             valmin, valmax, &vcount, &mcount); 
             DINFO("hashtable sortlist count, ret:%d, visible_count:%d, tagdel_count:%d\n", ret, vcount, mcount);
             memcpy(retrec, &vcount, sizeof(int));

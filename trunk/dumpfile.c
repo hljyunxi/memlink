@@ -110,19 +110,19 @@ dumpfile(HashTable *ht)
             //DINFO("dump keylen: %d\n", keylen);
             ffwrite(node->key, keylen, 1, fp);
             ffwrite(&node->valuesize, sizeof(char), 1, fp);
-            ffwrite(&node->masksize, sizeof(char), 1, fp);
-            wchar = node->masknum;
-            //ffwrite(&node->masknum, sizeof(char), 1, fp);
+            ffwrite(&node->attrsize, sizeof(char), 1, fp);
+            wchar = node->attrnum;
+            //ffwrite(&node->attrnum, sizeof(char), 1, fp);
             ffwrite(&wchar, sizeof(char), 1, fp);
 
-            if (node->masknum > 0) {
-                ffwrite(node->maskformat, sizeof(char) * node->masknum, 1, fp);
+            if (node->attrnum > 0) {
+                ffwrite(node->attrformat, sizeof(char) * node->attrnum, 1, fp);
             }
-            /*for (k = 0; k < node->masknum; k++) {
-                DINFO("dump mask, k:%d, mask:%d\n", k, node->maskformat[k]);
+            /*for (k = 0; k < node->attrnum; k++) {
+                DINFO("dump attr, k:%d, attr:%d\n", k, node->attrformat[k]);
             }*/
             ffwrite(&node->used, sizeof(int), 1, fp);
-            datalen = node->valuesize + node->masksize;
+            datalen = node->valuesize + node->attrsize;
 
             DataBlock *dbk = node->data;
 
@@ -294,9 +294,9 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
     ret = ffread(&size, sizeof(long long), 1, fp);
 
     unsigned char keylen;
-    unsigned char masklen;
-    unsigned char masknum;
-    unsigned char maskformat[HASHTABLE_MASK_MAX_ITEM];
+    unsigned char attrlen;
+    unsigned char attrnum;
+    unsigned char attrformat[HASHTABLE_MASK_MAX_ITEM];
     unsigned char valuelen;
     unsigned char valuetype;
     unsigned int  itemnum;
@@ -321,29 +321,29 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
         
         ret = ffread(&valuelen, sizeof(unsigned char), 1, fp);
         //DINFO("valuelen: %d\n", valuelen);
-        ret = ffread(&masklen, sizeof(unsigned char), 1, fp);
-        //DINFO("masklen: %d\n", masklen);
-        ret = ffread(&masknum, sizeof(char), 1, fp);
-        //DINFO("masknum: %d\n", masknum);
-        if (masknum > 0) {
-            ret = ffread(maskformat, sizeof(char) * masknum, 1, fp);
+        ret = ffread(&attrlen, sizeof(unsigned char), 1, fp);
+        //DINFO("attrlen: %d\n", attrlen);
+        ret = ffread(&attrnum, sizeof(char), 1, fp);
+        //DINFO("attrnum: %d\n", attrnum);
+        if (attrnum > 0) {
+            ret = ffread(attrformat, sizeof(char) * attrnum, 1, fp);
         }
             
-        /*for (i = 0; i < masknum; i++) {
-            DINFO("maskformat, i:%d, mask:%d\n", i, maskformat[i]);
+        /*for (i = 0; i < attrnum; i++) {
+            DINFO("attrformat, i:%d, attr:%d\n", i, attrformat[i]);
         }*/
         ret = ffread(&itemnum, sizeof(unsigned int), 1, fp);
-        datalen = valuelen + masklen;
+        datalen = valuelen + attrlen;
         //DINFO("itemnum: %d, datalen: %d\n", itemnum, datalen);
 
-        unsigned int maskarray[HASHTABLE_MASK_MAX_ITEM] = {0};
-        for (i = 0; i < masknum; i++) {
-            maskarray[i] = maskformat[i];
+        unsigned int attrarray[HASHTABLE_MASK_MAX_ITEM] = {0};
+        for (i = 0; i < attrnum; i++) {
+            attrarray[i] = attrformat[i];
         }
-        //DINFO("create info, key:%s, valuelen:%d, masknum:%d\n", key, valuelen, masknum);
-        ret = hashtable_key_create_mask(ht, key, valuelen, maskarray, masknum, type, valuetype);
+        //DINFO("create info, key:%s, valuelen:%d, attrnum:%d\n", key, valuelen, attrnum);
+        ret = hashtable_key_create_attr(ht, key, valuelen, attrarray, attrnum, type, valuetype);
         if (ret != MEMLINK_OK) {
-            DERROR("hashtable_key_create_mask error, ret:%d\n", ret);
+            DERROR("hashtable_key_create_attr error, ret:%d\n", ret);
             return -2;
         }
         HashNode    *node = hashtable_find(ht, key);
