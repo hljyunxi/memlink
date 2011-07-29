@@ -11,7 +11,7 @@ int check_values(int *values, int values_count, HashNode *node)
     DataBlock *dbk = node->data;
 
     int i, vi = 0;
-    int datalen = node->valuesize + node->masksize;
+    int datalen = node->valuesize + node->attrsize;
     while (dbk) {
         char *itemdata = dbk->data;
         for (i = 0; i < dbk->data_count; i++) {
@@ -27,7 +27,7 @@ int check_values(int *values, int values_count, HashNode *node)
     return 0;
 }
 
-int add_one_value(HashTable *ht, HashNode *node, char *key, int value, char *mask, 
+int add_one_value(HashTable *ht, HashNode *node, char *key, int value, char *attr, 
                     int *values, int *values_count)
 {
     DINFO("add one: %d\n", value);
@@ -36,7 +36,7 @@ int add_one_value(HashTable *ht, HashNode *node, char *key, int value, char *mas
     assert(node->used == *values_count);
    
     //int value = 5;
-    int ret = hashtable_sortlist_add_mask_bin(ht, key, &value, mask);
+    int ret = hashtable_sortlist_add_attr_bin(ht, key, &value, attr);
     if (ret != MEMLINK_OK) {
         DERROR("add error:%d, key:%s, value:%d\n", ret, key, value);
     }
@@ -68,15 +68,15 @@ int main()
 
     char key[128];
     int  valuesize = 4;
-    int  masknum = 0; 
+    int  attrnum = 0; 
     int  i = 0, ret;
-    unsigned int maskformat[4] = {0};
+    unsigned int attrformat[4] = {0};
 
     sprintf(key, "haha%03d", i);
-    hashtable_key_create_mask(ht, key, valuesize, maskformat, masknum, 
+    hashtable_key_create_attr(ht, key, valuesize, attrformat, attrnum, 
                               MEMLINK_SORTLIST, MEMLINK_VALUE_UINT4);
    
-    char mask[10] = {0x01};
+    char attr[10] = {0x01};
     int value;
     int values[1024] = {0};
     int values_count = 0;
@@ -84,7 +84,7 @@ int main()
 
     for (i = 10; i < 20; i++) {
         value = i * 2;
-        ret = hashtable_sortlist_add_mask_bin(ht, key, &value, mask);
+        ret = hashtable_sortlist_add_attr_bin(ht, key, &value, attr);
         if (ret != MEMLINK_OK) {
             DERROR("add error:%d, key:%s, value:%d\n", ret, key, i);
         }
@@ -104,11 +104,11 @@ int main()
    
     value = 100;
     DINFO("add value:%d\n", value);
-    add_one_value(ht, node, key, value, mask, values, &values_count);
+    add_one_value(ht, node, key, value, attr, values, &values_count);
 
     value = 1;
     DINFO("add value:%d\n", value);
-    add_one_value(ht, node, key, value, mask, values, &values_count);
+    add_one_value(ht, node, key, value, attr, values, &values_count);
 
     return 0;
 }

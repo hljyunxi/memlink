@@ -6,8 +6,8 @@ int check2(HashTableStat *stat, int vs, int ms, int blocks, int data, int datau,
 	    DERROR("valuesize error: %d\n", stat->valuesize);
 	}
 
-	if (stat->masksize != ms) {
-		DERROR("masksize error: %d\n", stat->masksize);
+	if (stat->attrsize != ms) {
+		DERROR("attrsize error: %d\n", stat->attrsize);
 	}
 
 	if (stat->blocks != blocks) {
@@ -41,11 +41,11 @@ int main()
 	char key[64];
 	int  valuesize = 8;
 	char val[64];
-	unsigned int  maskformat[3] = {4, 3, 1};	
-	unsigned int maskarray[6][3] = { { 7, UINT_MAX, 1}, {6, 2, 1}, { 4, 1, UINT_MAX}, 
+	unsigned int  attrformat[3] = {4, 3, 1};	
+	unsigned int attrarray[6][3] = { { 7, UINT_MAX, 1}, {6, 2, 1}, { 4, 1, UINT_MAX}, 
 		                    {8, 3, 1}, {8, 8, 8}, { UINT_MAX, UINT_MAX, UINT_MAX} }; 
 	int num  = 199;
-	int masknum = 3;
+	int attrnum = 3;
 	int ret;
 	int i = 0;
 	char *conffile;
@@ -58,21 +58,21 @@ int main()
 	ht = g_runtime->ht;
 
 	///////////begin test;
-	//test1 : hashtable_add_info_mask - create key
+	//test1 : hashtable_add_info_attr - create key
 	for (i = 0; i < num; i++) {
 		sprintf(key, "heihei%03d", i);
-		hashtable_key_create_mask(ht, key, valuesize, maskformat, masknum, MEMLINK_LIST, 0);
+		hashtable_key_create_attr(ht, key, valuesize, attrformat, attrnum, MEMLINK_LIST, 0);
 	}
 	for (i = 0; i < num; i++) {
 		sprintf(key, "heihei%03d", i);
 		HashNode* pNode = hashtable_find(ht, key);
 		if (NULL == pNode) {
-			printf("hashtable_add_info_mask error. can not find %s\n", key);
+			printf("hashtable_add_info_attr error. can not find %s\n", key);
 			return -1;
 		}
 	}
 
-	///////test : hashtable_add_mask insert num value
+	///////test : hashtable_add_attr insert num value
 	HashNode *node = NULL;
 	DataBlock *dbk = NULL;
 	char	 *item = NULL; 	
@@ -81,7 +81,7 @@ int main()
 	for (i = 0; i < num; i++) {
 		sprintf(val, "value%03d", i);
 		pos = i;
-		ret = hashtable_add_mask(ht, key, val, maskarray[i%4], masknum, pos);
+		ret = hashtable_add_attr(ht, key, val, attrarray[i%4], attrnum, pos);
 		if (ret < 0) {
 			DERROR("add value err: %d, %s\n", ret, val);
 			return ret;

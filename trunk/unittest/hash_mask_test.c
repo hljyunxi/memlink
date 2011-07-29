@@ -11,11 +11,11 @@ int main()
 	char key[64];
 	int valuesize = 8;
 	char val[64];
-	unsigned int maskformat[3] = {4, 3, 1};	
-	unsigned char charmaskformat[3] = {4, 3, 1};
-	unsigned int maskarray[4][3] = { { 7, UINT_MAX, 1}, {6, 2, 1}, { 4, 1, UINT_MAX}, {8, 3, 1} }; 
+	unsigned int attrformat[3] = {4, 3, 1};	
+	unsigned char charattrformat[3] = {4, 3, 1};
+	unsigned int attrarray[4][3] = { { 7, UINT_MAX, 1}, {6, 2, 1}, { 4, 1, UINT_MAX}, {8, 3, 1} }; 
 	int num  = 200;
-	int masknum = 3;
+	int attrnum = 3;
 	int ret;
 	int i = 0;
 	char *conffile;
@@ -28,22 +28,22 @@ int main()
 	ht = g_runtime->ht;
 
 	///////////begin test;
-	//test1 : hashtable_add_info_mask - create key
+	//test1 : hashtable_add_info_attr - create key
 	for (i = 0; i < num; i++) {
 		sprintf(key, "heihei%03d", i);
-		hashtable_key_create_mask(ht, key, valuesize, maskformat, masknum, 
+		hashtable_key_create_attr(ht, key, valuesize, attrformat, attrnum, 
                                 MEMLINK_LIST, MEMLINK_VALUE_STRING);
 	}
 	for (i = 0; i < num; i++) {
 		sprintf(key, "heihei%03d", i);
 		HashNode* pNode = hashtable_find(ht, key);
 		if (NULL == pNode) {
-			DERROR("hashtable_add_info_mask error. can not find %s\n", key);
+			DERROR("hashtable_add_info_attr error. can not find %s\n", key);
 			return -1;
 		}
 	}
     
-	///////test : hashtable_add_mask insert num value
+	///////test : hashtable_add_attr insert num value
 	HashNode *node = NULL;
 	DataBlock *dbk = NULL;
 	char	 *item = NULL; 	
@@ -52,8 +52,8 @@ int main()
 	for (i = 0; i < num; i++) {
 		sprintf(val, "value%03d", i);
 		pos = i;
-		ret = hashtable_add_mask(ht, key, val, maskarray[i%4], masknum, pos);
-        DNOTE("insert value:%s, pos:%d, masknum:%d, ret:%d\n", val, pos, masknum, ret);
+		ret = hashtable_add_attr(ht, key, val, attrarray[i%4], attrnum, pos);
+        DNOTE("insert value:%s, pos:%d, attrnum:%d, ret:%d\n", val, pos, attrnum, ret);
 		if (ret < 0) {
 			DERROR("add value err: %d, %s\n", ret, val);
 			return ret;
@@ -69,7 +69,7 @@ int main()
 	}
 	DINFO("insert %d values ok!\n", num);
 
-	//////////test 5 :mask
+	//////////test 5 :attr
 	for (i = 0; i < num; i++) {
 		HashNode *node = NULL;
 		DataBlock *dbk = NULL;
@@ -79,9 +79,9 @@ int main()
 		
 		int k = my_rand(4);
 		//hashtable_find_value(ht, key, val, &node, &dbk, &item);
-		ret = hashtable_mask(ht, key, val, maskarray[k], masknum);
+		ret = hashtable_attr(ht, key, val, attrarray[k], attrnum);
 		if (MEMLINK_OK != ret) {
-			DERROR("err hashtable_mask val:%s, k:%d\n", val, k);
+			DERROR("err hashtable_attr val:%s, k:%d\n", val, k);
 			return ret;
 		}
 		
@@ -92,29 +92,29 @@ int main()
 		}
 		char data[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
 		char flag[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
-		ret = mask_array2binary(charmaskformat, maskarray[k], masknum, data); //to binary
-		mask_array2flag(charmaskformat, maskarray[k], masknum, flag);   //to flag
-		char mask[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
+		ret = attr_array2binary(charattrformat, attrarray[k], attrnum, data); //to binary
+		attr_array2flag(charattrformat, attrarray[k], attrnum, flag);   //to flag
+		char attr[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
 		char *mdata = item + node->valuesize;
 		int j = 0;
 
-		memcpy(mask, mdata, node->masksize); 
-		mask[0] &= 0xfc;
+		memcpy(attr, mdata, node->attrsize); 
+		attr[0] &= 0xfc;
 		data[0] &= 0xfc;
 
 		for (j = 0; j < ret; j++) {
 		 	flag[j] = ~flag[j]; 
-			if (( mask[j] & flag[j] ) != data[j]) {
+			if (( attr[j] & flag[j] ) != data[j]) {
 				break;
             }
 		}
 		if (j != ret) {
-			DERROR("mask error. %d\n", i);	
+			DERROR("attr error. %d\n", i);	
 			break;
 		}
 
 	}
-	DINFO("hashtable mask test end!\n");
+	DINFO("hashtable attr test end!\n");
 	return 0;
 }
 

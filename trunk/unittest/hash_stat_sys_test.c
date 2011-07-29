@@ -45,9 +45,9 @@ int main(int argc, char **argv)
     char key[64];
     int  valuesize = 8;
     char val[64];
-    unsigned int maskformat[3] = {4, 4, 3};
-    unsigned int maskarray[3]  = {1, 2, 1};
-    int  masknum = 3;
+    unsigned int attrformat[3] = {4, 4, 3};
+    unsigned int attrarray[3]  = {1, 2, 1};
+    int  attrnum = 3;
     int  num = 1000;
     int  keys = 100;
     int  ret;
@@ -64,7 +64,7 @@ int main(int argc, char **argv)
     //创建key
     for (i = 0; i < keys; i++) {
         sprintf(key, "test%03d", i);
-        hashtable_key_create_mask(ht, key, valuesize, maskformat, masknum, MEMLINK_LIST, 0);
+        hashtable_key_create_attr(ht, key, valuesize, attrformat, attrnum, MEMLINK_LIST, 0);
     }
 
     int pos = -1; 
@@ -74,7 +74,7 @@ int main(int argc, char **argv)
         sprintf(key, "test%03d", i);
         for (j = 0; j < num; j++) {
             sprintf(val, "value%03d", j);
-            ret = hashtable_add_mask(ht, key, val, maskarray, masknum, pos);
+            ret = hashtable_add_attr(ht, key, val, attrarray, attrnum, pos);
             if (ret < 0) {
                 DERROR("add value error: %d, %s\n", ret, val);
                 return ret;
@@ -109,7 +109,7 @@ int main(int argc, char **argv)
     for (i = 0; i < HASHTABLE_BUNKNUM; i++) {
         node = ht->bunks[i];
         if (node) {
-            size += strlen(node->key) + 1 + node->masknum;
+            size += strlen(node->key) + 1 + node->attrnum;
         }
         while (node) {
             DataBlock *dbk = node->data;
@@ -118,8 +118,8 @@ int main(int argc, char **argv)
                 size += sizeof(DataBlock);
                 //DNOTE("sizeof(DataBlock): %d\n", sizeof(DataBlock));
                 //DNOTE("data_count: %d\n", dbk->data_count);
-                //DNOTE("node->masksize + node->valuesize: %d\n", node->masksize + node->valuesize);
-                size += (node->masksize + node->valuesize) * (dbk->data_count);
+                //DNOTE("node->attrsize + node->valuesize: %d\n", node->attrsize + node->valuesize);
+                size += (node->attrsize + node->valuesize) * (dbk->data_count);
                 dbk = dbk->next;
                 blocks++;
             }

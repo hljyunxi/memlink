@@ -4,7 +4,7 @@ int
 find_value_in_block(HashNode *node, DataBlock *dbk, void *value)
 {
     int pos = 0;
-    int datalen = node->valuesize + node->masksize;
+    int datalen = node->valuesize + node->attrsize;
     char *data = dbk->data;
     int i;
 
@@ -22,24 +22,24 @@ find_value_in_block(HashNode *node, DataBlock *dbk, void *value)
 }
 
 int
-build_data_model(HashTable *ht, char *key, int valuesize, unsigned int *maskformat, int masknum, int num)
+build_data_model(HashTable *ht, char *key, int valuesize, unsigned int *attrformat, int attrnum, int num)
 {
     int ret;
 
-    ret = hashtable_key_create_mask(ht, key, valuesize, maskformat, masknum, MEMLINK_LIST, MEMLINK_VALUE_STRING);
+    ret = hashtable_key_create_attr(ht, key, valuesize, attrformat, attrnum, MEMLINK_LIST, MEMLINK_VALUE_STRING);
     if (ret != MEMLINK_OK) {
         DERROR("key create error, ret: %d, key: %s\n", ret, key);
         return ret;
     }
 
     int pos = -1;
-    unsigned int maskarray[3] = {4, 4, 4};
+    unsigned int attrarray[3] = {4, 4, 4};
     int i;
     char val[64];
 
     for (i = 0; i < num; i++) {
         snprintf(val, 64, "value%03d", i);
-        ret = hashtable_add_mask(ht, key, val, maskarray, 3, pos);
+        ret = hashtable_add_attr(ht, key, val, attrarray, 3, pos);
         if (ret != MEMLINK_OK) {
             DERROR("add value error: %d, %s\n", ret, val);
             return ret;
@@ -51,13 +51,13 @@ build_data_model(HashTable *ht, char *key, int valuesize, unsigned int *maskform
 }
 
 int
-del_test1(HashTable *ht, char *key, int valuesize, unsigned int *maskformat, int masknum)
+del_test1(HashTable *ht, char *key, int valuesize, unsigned int *attrformat, int attrnum)
 {
     int ret;
     HashNode *node;
     char val[64];
 
-    ret = build_data_model(ht, key, valuesize, maskformat, masknum, 10);
+    ret = build_data_model(ht, key, valuesize, attrformat, attrnum, 10);
     if (ret < 0)
         return ret;
 
@@ -93,13 +93,13 @@ del_test1(HashTable *ht, char *key, int valuesize, unsigned int *maskformat, int
 }
 
 int
-del_test2(HashTable *ht, char *key, int valuesize, unsigned int *maskformat, int masknum)
+del_test2(HashTable *ht, char *key, int valuesize, unsigned int *attrformat, int attrnum)
 {
     int ret;
     HashNode *node;
     char val[64];
 
-    ret = build_data_model(ht, key, valuesize, maskformat, masknum, 10);
+    ret = build_data_model(ht, key, valuesize, attrformat, attrnum, 10);
     if (ret < 0)
         return ret;
 
@@ -136,13 +136,13 @@ del_test2(HashTable *ht, char *key, int valuesize, unsigned int *maskformat, int
 }
 
 int
-del_test3(HashTable *ht, char *key, int valuesize, unsigned int *maskformat, int masknum)
+del_test3(HashTable *ht, char *key, int valuesize, unsigned int *attrformat, int attrnum)
 {
     int ret;
     HashNode *node;
     char val[64];
 
-    ret = build_data_model(ht, key, valuesize, maskformat, masknum, 10);
+    ret = build_data_model(ht, key, valuesize, attrformat, attrnum, 10);
     if (ret < 0)
         return ret;
 
@@ -184,13 +184,13 @@ del_test3(HashTable *ht, char *key, int valuesize, unsigned int *maskformat, int
 }
 
 int
-del_test4(HashTable *ht, char *key, int valuesize, unsigned int *maskformat, int masknum)
+del_test4(HashTable *ht, char *key, int valuesize, unsigned int *attrformat, int attrnum)
 {
     int ret;
     HashNode *node;
     char val[64];
 
-    ret = build_data_model(ht, key, valuesize, maskformat, masknum, 10);
+    ret = build_data_model(ht, key, valuesize, attrformat, attrnum, 10);
     if (ret < 0)
         return ret;
 
@@ -231,13 +231,13 @@ del_test4(HashTable *ht, char *key, int valuesize, unsigned int *maskformat, int
 }
 
 int
-del_test5(HashTable *ht, char *key, int valuesize, unsigned int *maskformat, int masknum)
+del_test5(HashTable *ht, char *key, int valuesize, unsigned int *attrformat, int attrnum)
 {
     int ret;
     HashNode *node;
     char val[64];
 
-    ret = build_data_model(ht, key, valuesize, maskformat, masknum, 10);
+    ret = build_data_model(ht, key, valuesize, attrformat, attrnum, 10);
     if (ret < 0)
         return ret;
 
@@ -278,13 +278,13 @@ del_test5(HashTable *ht, char *key, int valuesize, unsigned int *maskformat, int
 }
 
 int
-del_test6(HashTable *ht, char *key, int valuesize, unsigned int *maskformat, int masknum)
+del_test6(HashTable *ht, char *key, int valuesize, unsigned int *attrformat, int attrnum)
 {
     int ret;
     HashNode *node;
     char val[64];
 
-    ret = build_data_model(ht, key, valuesize, maskformat, masknum, 10);
+    ret = build_data_model(ht, key, valuesize, attrformat, attrnum, 10);
     if (ret < 0)
         return ret;
 
@@ -326,13 +326,13 @@ del_test6(HashTable *ht, char *key, int valuesize, unsigned int *maskformat, int
 }
 
 int
-del_test7(HashTable *ht, char *key, int valuesize, unsigned int *maskformat, int masknum)
+del_test7(HashTable *ht, char *key, int valuesize, unsigned int *attrformat, int attrnum)
 {
     int ret;
     HashNode *node;
     char val[64];
 
-    ret = build_data_model(ht, key, valuesize, maskformat, masknum, 10);
+    ret = build_data_model(ht, key, valuesize, attrformat, attrnum, 10);
     if (ret < 0)
         return ret;
 
@@ -364,14 +364,14 @@ del_test7(HashTable *ht, char *key, int valuesize, unsigned int *maskformat, int
 }
 
 int
-del_test8(HashTable *ht, char *key, int valuesize, unsigned int *maskformat, int masknum)
+del_test8(HashTable *ht, char *key, int valuesize, unsigned int *attrformat, int attrnum)
 {
     int ret;
     HashNode *node;
     char val[64];
     int pos;
 
-    ret = build_data_model(ht, key, valuesize, maskformat, masknum, 30);
+    ret = build_data_model(ht, key, valuesize, attrformat, attrnum, 30);
     if (ret < 0)
         return ret;
     
@@ -474,13 +474,13 @@ int main(int argc, char **argv)
 
     char key[64];
     int valuesize = 8;
-    unsigned int maskarray[3] = {4, 4, 4};
+    unsigned int attrarray[3] = {4, 4, 4};
 
     snprintf(key, 64, "%s", "test");
     
     int ret;
 
-    ret = del_test8(ht, key, valuesize, maskarray, 3);
+    ret = del_test8(ht, key, valuesize, attrarray, 3);
     DNOTE("del_test8: %d\n", ret);
     if (ret < 0)
         return ret;
