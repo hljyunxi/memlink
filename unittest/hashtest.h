@@ -26,7 +26,7 @@ int my_rand(int base)
 {
 	int i = -1;
 	usleep(10);
-	srand((unsigned)time(NULL)+rand());//在种子里再加一个随机数
+	srand((unsigned)time(NULL)+rand());
 	
 	while (i < 0 )
 	{
