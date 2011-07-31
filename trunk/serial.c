@@ -155,39 +155,6 @@ attr_string2binary(unsigned char *attrformat, char *attrstr, char *attr)
     return ret;
 }
 
-static int 
-int2string(char *s, unsigned int val)
-{
-    unsigned int v = val;
-    int yu;
-    int ret, i = 0, j = 0;
-    char ss[32];
-
-    if (v == 0) {
-        s[0] = '0';
-        return 1;
-    }
-
-    if (v == UINT_MAX)
-        return 0;
-
-    while (v > 0) {
-        yu = v % 10;
-        v  = v / 10;
-
-        ss[i] = yu + 48;
-        i++;
-    }
-    ret = i;
-
-    for (i = i - 1; i >= 0; i--) {
-        s[j] = ss[i];
-        j++;
-    }
-
-    return ret;
-}
-
 int 
 attr_binary2string(unsigned char *attrformat, int attrnum, char *attr, int attrlen, char *attrstr)
 {
@@ -239,6 +206,55 @@ attr_binary2string(unsigned char *attrformat, int attrnum, char *attr, int attrl
 
     return widx;
 }
+
+int 
+attr_binary2array(unsigned char *attrformat, int attrnum, char *attr, unsigned int *attrarray)
+{
+    int n    = 2;
+    int idx = 0;
+    unsigned int val;
+    int i;
+    int widx = 0;
+   
+    for (i = 0; i < attrnum; i++) {
+        int fs = attrformat[i];
+        int offset = (fs + n) % 8;
+        int yu = offset > 0 ? 1: 0;
+        int cs = (fs + n) / 8 + yu;
+
+        //DINFO("i:%d, fs:%d, cs:%d, offset:%d, n:%d, widx:%d\n", i, fs, cs, offset, n, widx);
+        val = 0;
+        if (cs <= 4) {
+            //DINFO("copy:%d\n", cs);
+            memcpy(&val, &attr[idx], cs);
+            val <<= 32 - fs - n;
+            val >>= 32 - fs;
+        }else{
+            //DINFO("copy:%d\n", sizeof(int));
+            memcpy(&val, &attr[idx], sizeof(int));
+            val >>= n;
+            unsigned int val2 = 0;
+            
+            //DINFO("copy:%d\n", cs - sizeof(int));
+            memcpy(&val2, &attr[idx + sizeof(int)], cs - sizeof(int));
+            val2 <<= 32 - n;
+            val = val | val2;
+        }
+
+        attrarray[widx] = val;
+        widx ++;
+
+        idx += cs - 1;
+        if (yu == 0) {
+            idx += 1;
+        }
+        n = offset;
+    }
+    attrarray[widx] = 0;
+
+    return widx;
+}
+
 
 /**
  * attr必须先初始化为0

@@ -617,6 +617,39 @@ truncate_file(int fd, int len)
     return 0;
 }
 
+int
+int2string(char *s, unsigned int val)
+{
+    unsigned int v = val;
+    int yu; 
+    int ret, i = 0, j = 0;
+    char ss[32];
+
+    if (v == 0) {
+        s[0] = '0';
+        return 1;    }   
+
+    if (v == UINT_MAX)
+        return 0;
+
+    while (v > 0) {
+        yu = v % 10; 
+        v  = v / 10; 
+
+        ss[i] = yu + 48; 
+        i++;
+    }   
+    ret = i;
+
+    for (i = i - 1; i >= 0; i--) {
+        s[j] = ss[i];
+        j++;
+    }   
+
+    return ret;
+}
+
+
 /**
  * @}
  */
