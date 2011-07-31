@@ -29,17 +29,17 @@ class MemLinkClient:
     def clean(self, key):
         return memlink_cmd_clean(self.client, key)
 
-    def create(self, key, valuesize, listtype, valuetype, maskstr=''):
-        return memlink_cmd_create(self.client, key, valuesize, maskstr, listtype, valuetype)
+    def create(self, key, valuesize, listtype, valuetype, attrstr=''):
+        return memlink_cmd_create(self.client, key, valuesize, attrstr, listtype, valuetype)
 
-    def create_list(self, key, valuesize, maskstr=''):
-        return memlink_cmd_create_list(self.client, key, valuesize, maskstr);
+    def create_list(self, key, valuesize, attrstr=''):
+        return memlink_cmd_create_list(self.client, key, valuesize, attrstr);
     
-    def create_queue(self, key, valuesize, maskstr=''):
-        return memlink_cmd_create_queue(self.client, key, valuesize, maskstr);
+    def create_queue(self, key, valuesize, attrstr=''):
+        return memlink_cmd_create_queue(self.client, key, valuesize, attrstr);
 
-    def create_sortlist(self, key, valuesize, valuetype, maskstr=''):
-        return memlink_cmd_create_sortlist(self.client, key, valuesize, maskstr, valuetype);
+    def create_sortlist(self, key, valuesize, valuetype, attrstr=''):
+        return memlink_cmd_create_sortlist(self.client, key, valuesize, attrstr, valuetype);
 
     def stat(self, key):
         mstat = MemLinkStat()
@@ -58,29 +58,29 @@ class MemLinkClient:
     def delete(self, key, value):
         return memlink_cmd_del(self.client, key, value, len(value))
 
-    def delete_by_mask(self, key, mask):
-        return memlink_cmd_del_by_mask(self.client, key, mask)
+    def delete_by_attr(self, key, attr):
+        return memlink_cmd_del_by_attr(self.client, key, attr)
 
-    def insert(self, key, value, pos, maskstr=''):
-        return memlink_cmd_insert(self.client, key, value, len(value), maskstr, pos)
+    def insert(self, key, value, pos, attrstr=''):
+        return memlink_cmd_insert(self.client, key, value, len(value), attrstr, pos)
 
-    def sortlist_insert(self, key, value, maskstr=''):
-        return memlink_cmd_sortlist_insert(self.client, key, value, len(value), maskstr)
+    def sortlist_insert(self, key, value, attrstr=''):
+        return memlink_cmd_sortlist_insert(self.client, key, value, len(value), attrstr)
 
-    def sortlist_range(self, key, kind, valmin, valmax, maskstr=''):
+    def sortlist_range(self, key, kind, valmin, valmax, attrstr=''):
         result = MemLinkResult()
-        ret = memlink_cmd_sortlist_range(self.client, key, kind, maskstr, 
+        ret = memlink_cmd_sortlist_range(self.client, key, kind, attrstr, 
                                 valmin, len(valmin), valmax, len(valmax), result)
         if ret != MEMLINK_OK:
             result = None
         return ret, result
     
-    def sortlist_del(self, key, kind, valmin, valmax, maskstr=''):
-        return memlink_cmd_sortlist_del(self.client, key, kind, maskstr, valmin, len(valmin), valmax, len(valmax))
+    def sortlist_del(self, key, kind, valmin, valmax, attrstr=''):
+        return memlink_cmd_sortlist_del(self.client, key, kind, attrstr, valmin, len(valmin), valmax, len(valmax))
 
-    def sortlist_count(self, key, valmin, valmax, maskstr=''):
+    def sortlist_count(self, key, valmin, valmax, attrstr=''):
         result = MemLinkCount()
-        ret = memlink_cmd_sortlist_count(self.client, key, maskstr, 
+        ret = memlink_cmd_sortlist_count(self.client, key, attrstr, 
                                 valmin, len(valmin), valmax, len(valmax), result)
         if ret != MEMLINK_OK:
             result = None
@@ -89,15 +89,15 @@ class MemLinkClient:
     def move(self, key, value, pos):
         return memlink_cmd_move(self.client, key, value, len(value), pos)
 
-    def mask(self, key, value, maskstr):
-        return memlink_cmd_mask(self.client, key, value, len(value), maskstr)
+    def attr(self, key, value, attrstr):
+        return memlink_cmd_attr(self.client, key, value, len(value), attrstr)
 
     def tag(self, key, value, tag):
         return memlink_cmd_tag(self.client, key, value, len(value), tag)
 
-    def range(self, key, kind, frompos, rlen, maskstr=''):
+    def range(self, key, kind, frompos, rlen, attrstr=''):
         result = MemLinkResult()
-        ret = memlink_cmd_range(self.client, key, kind, maskstr, frompos, rlen, result)
+        ret = memlink_cmd_range(self.client, key, kind, attrstr, frompos, rlen, result)
         if ret != MEMLINK_OK:
             result = None
         return ret, result
@@ -105,18 +105,18 @@ class MemLinkClient:
     def rmkey(self, key):
         return memlink_cmd_rmkey(self.client, key)
 
-    def count(self, key, maskstr=''):
+    def count(self, key, attrstr=''):
         result = MemLinkCount()
-        ret = memlink_cmd_count(self.client, key, maskstr, result)
+        ret = memlink_cmd_count(self.client, key, attrstr, result)
         if ret != MEMLINK_OK:
             result = None
         return ret, result
 
-    def lpush(self, key, value, maskstr=''):
-        return memlink_cmd_lpush(self.client, key, value, len(value), maskstr)
+    def lpush(self, key, value, attrstr=''):
+        return memlink_cmd_lpush(self.client, key, value, len(value), attrstr)
 
-    def rpush(self, key, value, maskstr=''):
-        return memlink_cmd_rpush(self.client, key, value, len(value), maskstr)
+    def rpush(self, key, value, attrstr=''):
+        return memlink_cmd_rpush(self.client, key, value, len(value), attrstr)
 
     def lpop(self, key, num=1):
         result = MemLinkResult()
@@ -181,9 +181,9 @@ MemLinkInsertMkv.__del__ = memlinkmkv_free
 
 def memlinkresult_list(self):
     v = []
-    item = self.root
+    item = self.items
     while item:
-        v.append((item.value[:self.valuesize], item.mask[:self.masksize]))
+        v.append((self.items[i].value[:self.valuesize], self.items[i].attr[:self.attrsize]))
         item = item.next
     return v
 
@@ -191,10 +191,10 @@ def memlinkresult_free(self):
     memlink_result_free(self)
 
 def memlinkresult_print(self):
-    s = 'count:%d valuesize:%d masksize:%d\n' % (self.count, self.valuesize, self.masksize)
-    item = self.root
+    s = 'count:%d valuesize:%d attrsize:%d\n' % (self.count, self.valuesize, self.attrsize)
+    item = self.items
     while item:
-        s += 'value:%s mask:%s\n' % (item.value, repr(item.mask))
+        s += 'value:%s attr:%s\n' % (self.items[i].value, repr(self.items[i].attr))
         item = item.next
     return s
 
@@ -253,8 +253,8 @@ MemLinkScInfo.__str__ = memlinkscinfo_print
 
 
 def memlinkstat_print(self):
-    s = 'valuesize:%d\nmasksize:%d\nblocks:%d\ndata:%d\ndata_used:%d\nmem:%d\n' % \
-        (self.valuesize, self.masksize, self.blocks, self.data, self.data_used, self.mem)
+    s = 'valuesize:%d\nattrsize:%d\nblocks:%d\ndata:%d\ndata_used:%d\nmem:%d\n' % \
+        (self.valuesize, self.attrsize, self.blocks, self.data, self.data_used, self.mem)
 
     return s
 
