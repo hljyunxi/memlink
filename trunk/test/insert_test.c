@@ -128,12 +128,12 @@ int check_result_real(MemLink *m, char *key, char **attrstrs,
         sprintf(val, "%06d", retval[i]);
         if (strcmp(val, items[i].value) != 0) {
             DERROR("value error, item->value:%s, check value:%s, i:%d, file:%s:%d\n", 
-                        items[0].value, val, i, file, line);
+                        items[i].value, val, i, file, line);
             return -1;
         }
-        if (strcmp(attrstrs[retval[i]%3], items[0].attr) != 0) {
+        if (strcmp(attrstrs[retval[i]%3], items[i].attr) != 0) {
             DERROR("attr error, item->attr:%s, attr:%s, i:%d, file:%s:%d\n", 
-                        items[0].attr, attrstrs[i%3], i, file, line);
+                        items[i].attr, attrstrs[i%3], i, file, line);
             return -1;
         }
         //i++;
@@ -165,6 +165,7 @@ int check_insert(MemLink *m)
 
     for (i = 0; i < 10; i++) {
         sprintf(val, "%06d", i);
+        //DINFO("insert key:%s val:%s attr:%s\n", key, val, attrstrs[i%3]);
         ret = memlink_cmd_insert(m, key, val, strlen(val), attrstrs[i%3], 0);	
 		if (ret != MEMLINK_OK) {
 			DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", key, val, attrstrs[i%3], i);
@@ -514,7 +515,7 @@ int main()
 {
 	MemLink	*m;
 #ifdef DEBUG
-	logfile_create("stdout", 3);
+	logfile_create("stdout", 4);
 #endif
 	m = memlink_create("127.0.0.1", MEMLINK_READ_PORT, MEMLINK_WRITE_PORT, 30);
 	if (NULL == m) {

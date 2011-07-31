@@ -33,7 +33,7 @@ def test_result():
         return -4
 
     #print 'count:', result.count
-    item = result.root;
+    item = result.items;
 
     i = 250
     while i > 0:
@@ -69,10 +69,10 @@ def testb():
     #num = 200
     for i in xrange(0, num):
         val = '%010d' % i
-        maskstr = "8:1:1"
-        ret = m.insert(key, val, maskstr, 0)
+        attrstr = "8:1:1"
+        ret = m.insert(key, val, attrstr, 0)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, maskstr, ret
+            print 'insert error!', key, val, attrstr, ret
             return -2;
     print 'insert %d val' % num
 
@@ -92,17 +92,17 @@ def testc():
     #num = 200
     for i in xrange(0, num):
         val = '%010d' % i
-        maskstr = "8:1:1"
-        ret = m.insert(key, val, maskstr, 0)
+        attrstr = "8:1:1"
+        ret = m.insert(key, val, attrstr, 0)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, maskstr, ret
+            print 'insert error!', key, val, attrstr, ret
             return -2
     print 'insert %d val' % num
 
     i = num-1;
     while i >= 700000:
         val = '%010d' % i
-        maskstr = "8:1:1"
+        attrstr = "8:1:1"
         ret = m.delete(key, val)
         if ret != MEMLINK_OK:
             print 'del error!', key, val
@@ -116,7 +116,7 @@ def testc():
 
     while i >= 600000:
         val = '%010d' % i
-        maskstr = "8:1:1"
+        attrstr = "8:1:1"
         ret = m.delete(key, val)
         if ret != MEMLINK_OK:
             print 'del error!', key, val
@@ -140,10 +140,10 @@ def testd():
     num1 = 250000
     for i in xrange(0, num1):
         val = '%010d' % i
-        maskstr = "8:1:1"
-        ret = m.insert(key, val, maskstr, 0)
+        attrstr = "8:1:1"
+        ret = m.insert(key, val, attrstr, 0)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, maskstr, ret
+            print 'insert error!', key, val, attrstr, ret
             return -2
     print 'insert %d val' % num1
 
@@ -154,17 +154,17 @@ def testd():
     num = num1 + num2
     for i in xrange(num1, num):
         val = '%010d' % i
-        maskstr = "8:1:1"
-        ret = m.insert(key, val, maskstr, 0)
+        attrstr = "8:1:1"
+        ret = m.insert(key, val, attrstr, 0)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, maskstr, ret
+            print 'insert error!', key, val, attrstr, ret
             return -2
     print 'insert %d val' % num2
     
     i = num-1;
     while i >= 600000:
         val = '%010d' % i
-        maskstr = "8:1:1"
+        attrstr = "8:1:1"
         ret = m.delete(key, val)
         if ret != MEMLINK_OK:
             print 'del error!', key, val
@@ -185,10 +185,10 @@ def teste():
     num = 400000
     for i in xrange(0, num):
         val = '%010d' % i
-        maskstr = "8:1:1"
-        ret = m.insert(key, val, maskstr, 0)
+        attrstr = "8:1:1"
+        ret = m.insert(key, val, attrstr, 0)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, maskstr, ret
+            print 'insert error!', key, val, attrstr, ret
             return -2
     print 'insert %d val' % num
     
@@ -221,11 +221,11 @@ def teste():
     num = 300000
     for i in xrange(290000, num):
         val = '%010d' % i
-        ret = m.mask(key, val, '3:3:1')
+        ret = m.attr(key, val, '3:3:1')
         if ret != MEMLINK_OK:
-            print 'mask error!', key, val
+            print 'attr error!', key, val
             return -2
-    print 'mask %d val' % num
+    print 'attr %d val' % num
 
     i = 290000
     while i < num:
@@ -249,10 +249,10 @@ def testg():
     '''num = 25000
     for i in xrange(0, num):
         val = '%010d' % i
-        maskstr = "8:1:1"
-        ret = m.insert(key, val, maskstr, 0)
+        attrstr = "8:1:1"
+        ret = m.insert(key, val, attrstr, 0)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, maskstr, ret
+            print 'insert error!', key, val, attrstr, ret
             return -2
     print 'insert %d val' % num
 
@@ -267,10 +267,10 @@ def testg():
     num = 200000
     for i in xrange(0, num):
         val = '%010d' % i
-        maskstr = "8:1:1"
-        ret = m.insert(key, val, maskstr, 0)
+        attrstr = "8:1:1"
+        ret = m.insert(key, val, attrstr, 0)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, maskstr, ret
+            print 'insert error!', key, val, attrstr, ret
             return -2
     print 'insert %d val' % num
 
@@ -280,10 +280,10 @@ def testg():
     num = 100000
     for i in xrange(0, num):
         val = '%010d' % i
-        maskstr = "8:1:1"
-        ret = m.insert(key, val, maskstr, 0)
+        attrstr = "8:1:1"
+        ret = m.insert(key, val, attrstr, 0)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, maskstr, ret
+            print 'insert error!', key, val, attrstr, ret
             return -2
     print 'insert %d val' % num
 
@@ -298,10 +298,10 @@ def testi():
     num = 10000000
     for i in xrange(0, num):
         val = '%010d' % i
-        maskstr = "8:1:1"
-        ret = m.insert(key, val, maskstr, 0)
+        attrstr = "8:1:1"
+        ret = m.insert(key, val, attrstr, 0)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, maskstr, ret
+            print 'insert error!', key, val, attrstr, ret
             return -2
     print 'insert %d val' % num
         
@@ -324,10 +324,10 @@ def test():
     num = 1000
     for i in range(0, num):
         val = '%010d' % i
-        maskstr = "8:1:1"
-        ret = m.insert(key, val, maskstr, i)
+        attrstr = "8:1:1"
+        ret = m.insert(key, val, attrstr, i)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, maskstr, ret
+            print 'insert error!', key, val, attrstr, ret
             return -2;
     print 'insert %d val' % num
     
@@ -336,10 +336,10 @@ def test():
     num2 = 2000
     for i in range(num, num + num2):
         val = '%010d' % i
-        maskstr = "8:1:1"
-        ret = m.insert(key, val, maskstr, i)
+        attrstr = "8:1:1"
+        ret = m.insert(key, val, attrstr, i)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, maskstr, ret
+            print 'insert error!', key, val, attrstr, ret
             return -2;
     print 'insert %d val' % num2
     return 0
