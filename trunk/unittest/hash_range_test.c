@@ -4,8 +4,8 @@
 int main()
 {
 #ifdef DEBUG
-	//logfile_create("test.log", 3);
-	logfile_create("stdout", 4);
+	logfile_create("test.log", 3);
+	//logfile_create("stdout", 4);
 #endif
 	HashTable* ht;
 	char key[64];
@@ -46,15 +46,16 @@ int main()
 	DataBlock *dbk = NULL;
 	char	 *item = NULL; 	
 	int pos = 0;
+
 	for (i = 0; i < num; i++) {
 		sprintf(val, "value%03d", i);
 		pos = i;
+        DINFO("add key:%s, val:%s pos:%d\n", key, val, pos);
 		ret = hashtable_add_attr(ht, key, val, attrarray[3], attrnum, pos); //{8, 3, 1}
 		if (ret < 0) {
 			DERROR("add value err: %d, %s\n", ret, val);
 			return ret;
 		}
-		
 		ret = hashtable_find_value(ht, key, val, &node, &dbk, &item);
 		if (ret < 0) {
 			DERROR("not found value: %d, %s\n", ret, key);
@@ -63,8 +64,11 @@ int main()
 	}
 	DINFO("insert %d values ok!\n", num);
 
+    // change attr
 	for (i = 0; i < 100; i++) {
 		sprintf(val, "value%03d", i*2);
+        DINFO("set attr, key:%s, val:%s, attr: %d:%d:%d\n", key, val, 
+                attrarray[2][0], attrarray[2][1], attrarray[2][2]);
 		ret = hashtable_attr(ht, key, val, attrarray[2], attrnum); //{ 4, 1, UINT_MAX}
 		if (MEMLINK_OK != ret) {
 			DINFO("err hashtable_attr val:%s, i:%d\n", val, i);
@@ -73,10 +77,9 @@ int main()
 	}
 	
 	//////////test 5 :range
-	unsigned int attrarray2[6][3] = { { 8, 3, 1}, {8, UINT_MAX, 1}, 
-							 { UINT_MAX, 3, 1}, {4, 1, 1} , 
-							 {UINT_MAX, UINT_MAX, 1},  {UINT_MAX, UINT_MAX, UINT_MAX}
-						   }; 
+	unsigned int attrarray2[6][3] = { {8, 3, 1}, {8, UINT_MAX, 1}, 
+						 {UINT_MAX, 3, 1}, {4, 1, 1} , 
+						 {UINT_MAX, UINT_MAX, 1},  {UINT_MAX, UINT_MAX, UINT_MAX}}; 
 	for (i = 0; i < 50; i++) {
 		int k; 
 		if (i < 25) {
@@ -122,10 +125,9 @@ int main()
 		}else{
 			int j = frompos;
             MemLinkItem *items = result.items;
-            int i;
-            //while (item) {
-            for (i = 0; i < result.count; i++) {
-                DINFO("value:%s, attr:%s\n", items[i].value, items[i].attr);
+            int k;
+            for (k = 0; k < result.count; k++) {
+                DINFO("value:%s, attr:%s\n", items[k].value, items[k].attr);
                 int jj;
 				if (i < 25) {
 					jj = j*2 + 1;
@@ -133,16 +135,14 @@ int main()
 					jj = j;
                 }
 				sprintf(val, "value%03d", jj);
-                int ret = memcmp(items[i].value, val, result.valuesize);
+                int ret = memcmp(items[k].value, val, result.valuesize);
                 if (ret != 0) {
                     DERROR("error, pos:%d, val:%s\n", jj, val);
                     return -1;
                 }
                 j++;
-                //item = item->next;
             }
 		}
-
         memlink_result_free(&result);
 	}
 	DINFO("hashtable range test end!\n");
