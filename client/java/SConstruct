@@ -8,13 +8,7 @@ java_includes	= [os.path.join(java_home, 'include'), os.path.join(java_home, 'in
 #java_libs		= os.path.join(java_home, 'lib')
 
 os.system('swig -java -package com.googlecode.memlink -o memlink_client_java.c -outdir com/googlecode/memlink ../c/memlink_client.i')
-os.system('cp MemLinkResult.java com/googlecode/memlink/')
-os.system('cp MemLinkRcInfo.java com/googlecode/memlink/')
-os.system('cp MemLinkWcInfo.java com/googlecode/memlink/')
-os.system('cp MemLinkScInfo.java com/googlecode/memlink/')
-os.system('cp MemLinkInsertMkv.java com/googlecode/memlink/')
-os.system('cp MemLinkInsertKey.java com/googlecode/memlink/')
-os.system('cp MemLinkInsertVal.java com/googlecode/memlink/')
+os.system('python changesrc.py')
 
 cflags   = '-ggdb -fpic'
 includes = ['.', '../../', '../../base', '../c/'] + java_includes
@@ -36,7 +30,6 @@ env.SharedLibrary("cmemlink", shared_files)
 t = Java(target='.', source='com')
 Jar(target="memlink.jar", source=['com'])
 Java(target='.', source='test')
-Jar(target="test.jar", source=['test', 'com', 'Mainifest.txt'])
 
 # for clean
 files = glob.glob('com/googlecode/memlink/*.java')

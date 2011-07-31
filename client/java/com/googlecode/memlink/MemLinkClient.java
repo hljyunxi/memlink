@@ -42,24 +42,24 @@ public class MemLinkClient
 		}
 	}
 
-	public int create(String key, int valuesize, String maskstr, short listtype, short valuetype)
+	public int create(String key, int valuesize, String attrstr, short listtype, short valuetype)
 	{
-		return cmemlink.memlink_cmd_create(client, key, valuesize, maskstr, listtype, valuetype);
+		return cmemlink.memlink_cmd_create(client, key, valuesize, attrstr, listtype, valuetype);
 	}
     
-    public int createList(String key, int valuesize, String maskstr)
+    public int createList(String key, int valuesize, String attrstr)
 	{
-		return cmemlink.memlink_cmd_create_list(client, key, valuesize, maskstr);
+		return cmemlink.memlink_cmd_create_list(client, key, valuesize, attrstr);
 	}
 
-    public int createQueue(String key, int valuesize, String maskstr)
+    public int createQueue(String key, int valuesize, String attrstr)
 	{
-		return cmemlink.memlink_cmd_create_queue(client, key, valuesize, maskstr);
+		return cmemlink.memlink_cmd_create_queue(client, key, valuesize, attrstr);
 	}
 
-    public int createSortList(String key, int valuesize, String maskstr, int valuetype)
+    public int createSortList(String key, int valuesize, String attrstr, int valuetype)
 	{
-		return cmemlink.memlink_cmd_create_sortlist(client, key, valuesize, maskstr, (short)valuetype);
+		return cmemlink.memlink_cmd_create_sortlist(client, key, valuesize, attrstr, (short)valuetype);
 	}
 
 	public int dump()
@@ -77,57 +77,57 @@ public class MemLinkClient
 		return cmemlink.memlink_cmd_stat(client, key, ms);
 	}
 
-	public int delete(String key, String value)
+	public int delete(String key, byte []value)
 	{
-		return cmemlink.memlink_cmd_del(client, key, value, value.length());
+		return cmemlink.memlink_cmd_del(client, key, value);
 	}
 
-	public int insert(String key, String value, String maskstr, int pos)
+	public int insert(String key, byte []value, String attrstr, int pos)
 	{
-		return cmemlink.memlink_cmd_insert(client, key, value, value.length(), maskstr, pos);
+		return cmemlink.memlink_cmd_insert(client, key, value, attrstr, pos);
 	}
 
-	public int move(String key, String value, int pos)
+	public int move(String key, byte []value, int pos)
 	{
-		return cmemlink.memlink_cmd_move(client, key, value, value.length(), pos);
+		return cmemlink.memlink_cmd_move(client, key, value, pos);
 	}
 
-	public int mask(String key, String value, String maskstr)
+	public int attr(String key, byte []value, String attrstr)
 	{
-		return cmemlink.memlink_cmd_mask(client, key, value, value.length(), maskstr);
+		return cmemlink.memlink_cmd_attr(client, key, value, attrstr);
 	}
 
-	public int tag(String key, String value, int tag)
+	public int tag(String key, byte []value, int tag)
 	{
-		return cmemlink.memlink_cmd_tag(client, key, value, value.length(), tag);
+		return cmemlink.memlink_cmd_tag(client, key, value, tag);
 	}
 
-	public int range(String key, int kind, String maskstr, int frompos, int len, MemLinkResult result)
+	public int range(String key, int kind, String attrstr, int frompos, int len, MemLinkResult result)
 	{
 		/*MemLinkResult result = new MemLinkResult();
-		int ret = cmemlink.memlink_cmd_range(client, key, kind, maskstr, frompos, len, result);
+		int ret = cmemlink.memlink_cmd_range(client, key, kind, attrstr, frompos, len, result);
 		if (ret == cmemlink.MEMLINK_OK) {
 			return result;
 		}
 		return null;*/
 
-		return cmemlink.memlink_cmd_range(client, key, kind, maskstr, frompos, len, result);
+		return cmemlink.memlink_cmd_range(client, key, kind, attrstr, frompos, len, result);
 	}
 
 
-	public int rangeVisible(String key, String maskstr, int frompos, int len, MemLinkResult result)
+	public int rangeVisible(String key, String attrstr, int frompos, int len, MemLinkResult result)
     {
-        return range(key, cmemlink.MEMLINK_VALUE_VISIBLE, maskstr, frompos, len, result);
+        return range(key, cmemlink.MEMLINK_VALUE_VISIBLE, attrstr, frompos, len, result);
     }
 	
-    public int rangeTagdel(String key, String maskstr, int frompos, int len, MemLinkResult result)
+    public int rangeTagdel(String key, String attrstr, int frompos, int len, MemLinkResult result)
     {
-        return range(key, cmemlink.MEMLINK_VALUE_TAGDEL, maskstr, frompos, len, result);
+        return range(key, cmemlink.MEMLINK_VALUE_TAGDEL, attrstr, frompos, len, result);
     }
 
-	public int rangeAll(String key, String maskstr, int frompos, int len, MemLinkResult result)
+	public int rangeAll(String key, String attrstr, int frompos, int len, MemLinkResult result)
     {
-        return range(key, cmemlink.MEMLINK_VALUE_ALL, maskstr, frompos, len, result);
+        return range(key, cmemlink.MEMLINK_VALUE_ALL, attrstr, frompos, len, result);
     }
 
 	public int rmkey(String key)
@@ -135,19 +135,19 @@ public class MemLinkClient
 		return cmemlink.memlink_cmd_rmkey(client, key);
 	}
 
-	public int count(String key, String maskstr, MemLinkCount count) 
+	public int count(String key, String attrstr, MemLinkCount count) 
 	{
-		return cmemlink.memlink_cmd_count(client, key, maskstr, count);
+		return cmemlink.memlink_cmd_count(client, key, attrstr, count);
 	}	
 
-    public int lpush(String key, String value, String maskstr) 
+    public int lpush(String key, byte []value, String attrstr) 
     {
-        return cmemlink.memlink_cmd_lpush(client, key, value, value.length(), maskstr);
+        return cmemlink.memlink_cmd_lpush(client, key, value, attrstr);
     }
 
-    public int rpush(String key, String value, String maskstr) 
+    public int rpush(String key, byte []value, String attrstr) 
     {
-        return cmemlink.memlink_cmd_rpush(client, key, value, value.length(), maskstr);
+        return cmemlink.memlink_cmd_rpush(client, key, value, attrstr);
     }
 
     public int lpop(String key, int num, MemLinkResult result)
@@ -160,40 +160,41 @@ public class MemLinkClient
         return cmemlink.memlink_cmd_rpop(client, key, num, result);
     }
     
-    public int sortListInsert(String key, String value, String maskstr)
+    public int sortListInsert(String key, byte []value, String attrstr)
     {
-        return cmemlink.memlink_cmd_sortlist_insert(client, key, value, value.length(), maskstr);
+        return cmemlink.memlink_cmd_sortlist_insert(client, key, value, attrstr);
     }
 
-    public int sortListRange(String key, int kind, String vmin, String vmax, String maskstr, MemLinkResult result)
+    public int sortListRange(String key, int kind, byte []vmin, byte []vmax, 
+							String attrstr, MemLinkResult result)
     {
-        return cmemlink.memlink_cmd_sortlist_range(client, key, kind, maskstr, vmin, vmin.length(), vmax, vmax.length(), result);
+        return cmemlink.memlink_cmd_sortlist_range(client, key, kind, attrstr, vmin, vmax, result);
     }
 
-    public int sortListRangeAll(String key, String vmin, String vmax, String maskstr, MemLinkResult result)
+    public int sortListRangeAll(String key, byte []vmin, byte []vmax, String attrstr, MemLinkResult result)
     {
-        return sortListRange(key, cmemlink.MEMLINK_VALUE_ALL, vmin, vmax, maskstr, result);
+        return sortListRange(key, cmemlink.MEMLINK_VALUE_ALL, vmin, vmax, attrstr, result);
     }
 
-    public int sortListRangeVisible(String key, String vmin, String vmax, String maskstr, MemLinkResult result)
+    public int sortListRangeVisible(String key, byte []vmin, byte []vmax, String attrstr, MemLinkResult result)
     {
-        return sortListRange(key, cmemlink.MEMLINK_VALUE_VISIBLE, vmin, vmax, maskstr, result);
+        return sortListRange(key, cmemlink.MEMLINK_VALUE_VISIBLE, vmin, vmax, attrstr, result);
     }
 
-    public int sortListRangeTagdel(String key, String vmin, String vmax, String maskstr, MemLinkResult result)
+    public int sortListRangeTagdel(String key, byte []vmin, byte []vmax, String attrstr, MemLinkResult result)
     {
-        return sortListRange(key, cmemlink.MEMLINK_VALUE_TAGDEL, vmin, vmax, maskstr, result);
+        return sortListRange(key, cmemlink.MEMLINK_VALUE_TAGDEL, vmin, vmax, attrstr, result);
     }
 
 
-    public int sortListDelete(String key, int kind, String vmin, String vmax, String maskstr)
+    public int sortListDelete(String key, int kind, byte []vmin, byte []vmax, String attrstr)
     {
-        return cmemlink.memlink_cmd_sortlist_del(client, key, kind, maskstr, vmin, vmin.length(), vmax, vmax.length());
+        return cmemlink.memlink_cmd_sortlist_del(client, key, kind, attrstr, vmin, vmax);
     }
 
-    public int sortListCount(String key, String vmin, String vmax, String maskstr, MemLinkCount count)
+    public int sortListCount(String key, byte []vmin, byte []vmax, String attrstr, MemLinkCount count)
     {
-        return cmemlink.memlink_cmd_sortlist_count(client, key, maskstr, vmin, vmin.length(), vmax, vmax.length(), count);
+        return cmemlink.memlink_cmd_sortlist_count(client, key, attrstr, vmin, vmax, count);
     }
 
     public int readConnInfo(MemLinkRcInfo info)
