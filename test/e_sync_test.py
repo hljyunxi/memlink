@@ -24,7 +24,7 @@ def test():
     time.sleep(10)
 
     key = 'haha'
-    maskstr = "8:1:1"
+    attrstr = "8:1:1"
     ret = client2master.create_list(key , 12, "4:3:1")
     if ret != MEMLINK_OK:
         print 'create error:', ret, key
@@ -35,9 +35,9 @@ def test():
     num = 1800
     for i in xrange(0, num):
         val = '%012d' % i
-        ret = client2master.insert(key, val, maskstr, i)
+        ret = client2master.insert(key, val, attrstr, i)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, maskstr, ret
+            print 'insert error!', key, val, attrstr, ret
             return -2;
     print 'insert %d val' % num
 
@@ -50,9 +50,9 @@ def test():
     num2 = 3500
     for i in xrange(num, num2):
         val = '%012d' % i
-        ret = client2master.insert(key, val, maskstr, i)
+        ret = client2master.insert(key, val, attrstr, i)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, maskstr, ret
+            print 'insert error!', key, val, attrstr, ret
             return -2;
     print 'insert %d val' % (num2 - num)
     

@@ -33,7 +33,7 @@ def test_int(m):
         print 'sortlist range error, ret:%d' % (ret)
         return -1
 
-    item = result.root
+    item = result.items
     while item:
         #print repr(item.value), len(item.value)
         #print struct.unpack('I', item.value)[0]
@@ -70,7 +70,7 @@ def test_string(m):
             print 'range error, ret:%d' % (ret)
             return -1
 
-        item = result.root
+        item = result.items
         start = i * 1000
         while item:
             if item.value != '%010d' % start:
@@ -103,7 +103,7 @@ def test_string_range(m, key, count):
             print 'sortlist range:', vmin, vmax
             print 'sortlist range count error:', result.count, vmax-vmin
             return -1
-        item = result.root
+        item = result.items
         i = vmin
         while item:
             if item.value != '%010d' % i:
@@ -176,7 +176,7 @@ def test_string_del(m, key, num):
             print 'count error:', result.count, num-x[1]
             return
 
-        item = result.root
+        item = result.items
         i = x[1]
         while item:
             #print 'check:', i, int(item.value)

@@ -29,13 +29,13 @@ int main()
 	
 	int i;
 	char val[64];
-	char *maskstr = "6:3:1";
+	char *attrstr = "6:3:1";
     int  insertnum = 10;
 
 	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
         //DINFO("====== insert:%s ======\n", val);
-		ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr, 0);
+		ret = memlink_cmd_insert(m, buf, val, strlen(val), attrstr, 0);
 		if (ret != MEMLINK_OK) {
 			DERROR("insert error, key:%s,val:%s, ret:%d\n", buf, val, ret);
 			return -3;
@@ -69,7 +69,7 @@ int main()
 		return -5;
 	}
 	
-	MemLinkItem	*item = result.root;
+	MemLinkItem	*item = result.items;
 
 	while (item) {
 		if (strcmp(item->value, val) == 0) {
@@ -106,7 +106,7 @@ int main()
 		return -8;
 	}
 	
-	item = result.root;
+	item = result.items;
 
 	int found = 0;
 	while (item) {

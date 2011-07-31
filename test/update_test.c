@@ -29,12 +29,12 @@ int main()
 
 	int i;
 	char val[64];
-	char *maskstr = "6:3:1";
+	char *attrstr = "6:3:1";
     int  insertnum = 20;
 
 	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
-		ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr, i);
+		ret = memlink_cmd_insert(m, buf, val, strlen(val), attrstr, i);
 		if (ret != MEMLINK_OK) {
 			DERROR("insert error, key:%s,val:%s, ret:%d\n", buf, val, ret);
 			return -3;
@@ -77,7 +77,7 @@ int main()
 			DERROR("range error, key:%s, ret:%d\n", buf, ret);
 			return -5;
 		}
-		MemLinkItem *item = result.root;
+		MemLinkItem *item = result.items;
 			
 		if (item == NULL) {
 			DERROR("item is null, key:%s\n", buf);

@@ -14,8 +14,8 @@ int check(MemLinkStat *stat, int vs, int ms, int blocks, int data, int datau, in
 		ret =  -1;
 	}
 
-	if (stat->masksize != ms) {
-		DERROR("masksize error: %d\n", stat->masksize);
+	if (stat->attrsize != ms) {
+		DERROR("attrsize error: %d\n", stat->attrsize);
 		ret =  -1;
 	}
 
@@ -85,12 +85,12 @@ int main()
 	check(&stat, 6, 2, 0, 0, 0, ms);
 
 	char *val		= "111111";
-	char *maskstr	= "8:3:1";
+	char *attrstr	= "8:3:1";
 	
 	///insert 1 value       1
-	ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr, 0);
+	ret = memlink_cmd_insert(m, buf, val, strlen(val), attrstr, 0);
 	if (ret != MEMLINK_OK) {
-		DERROR("insert error, key:%s, val:%s, mask:%s, i:%d\n", buf, val, maskstr, 0);
+		DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", buf, val, attrstr, 0);
 		return -5;
 	}
 	
@@ -109,9 +109,9 @@ int main()
 	}
 	
 	///insert 1 value       2 
-	ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr, 0);
+	ret = memlink_cmd_insert(m, buf, val, strlen(val), attrstr, 0);
 	if (ret != MEMLINK_OK) {
-		DERROR("insert error, key:%s, val:%s, mask:%s, i:%d\n", buf, val, maskstr, 0);
+		DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", buf, val, attrstr, 0);
 		return -5;
 	}
 	MemLinkStat stat3;
@@ -136,9 +136,9 @@ int main()
 	int insertnum = 200;
 	int i;
 	for (i = 2; i < insertnum; i++) {
-		ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr, i);
+		ret = memlink_cmd_insert(m, buf, val, strlen(val), attrstr, i);
 		if (ret != MEMLINK_OK) {
-			DERROR("insert error, key:%s, val:%s, mask:%s, i:%d\n", buf, val, maskstr, i);
+			DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", buf, val, attrstr, i);
 			return -5;
 		}
 	}
@@ -159,9 +159,9 @@ int main()
 	}
 	
 	///insert 1 value       201
-	ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr, 198);
+	ret = memlink_cmd_insert(m, buf, val, strlen(val), attrstr, 198);
 	if (ret != MEMLINK_OK) {
-		DERROR("insert error, key:%s, val:%s, mask:%s, i:%d\n", buf, val, maskstr, 0);
+		DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", buf, val, attrstr, 0);
 		return -5;
 	}
 	MemLinkStat stat5;
@@ -185,9 +185,9 @@ int main()
 	///insert 1 value		202
 	insertnum = 50;
 	for (i = 201; i < 200 + insertnum; i++) {
-		ret = memlink_cmd_insert(m, buf, val, strlen(val), maskstr, i);
+		ret = memlink_cmd_insert(m, buf, val, strlen(val), attrstr, i);
 		if (ret != MEMLINK_OK) {
-			DERROR("insert error, key:%s, val:%s, mask:%s, i:%d\n", buf, val, maskstr, i);
+			DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", buf, val, attrstr, i);
 			return -5;
 		}
 	}

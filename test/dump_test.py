@@ -32,7 +32,7 @@ def test_result():
         print 'range error!', result, ret
         return -4
     #print 'count:', result.count
-    item = result.root;
+    item = result.items
 
     i = 250
     while i > 0:
@@ -65,10 +65,10 @@ def test():
     num = 200
     for i in xrange(0, num):
         val = '%010d' % i
-        maskstr = "8:1:1"
-        ret = m.insert(key, val, 0, maskstr)
+        attrstr = "8:1:1"
+        ret = m.insert(key, val, 0, attrstr)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, maskstr, ret
+            print 'insert error!', key, val, attrstr, ret
             return -2
     vnum += 200
 
@@ -77,10 +77,10 @@ def test():
     num = 1000
     for i in range(200, num):
         val = '%010d' % i
-        maskstr = "8:1:1"
-        ret = m.insert(key, val, i, maskstr)
+        attrstr = "8:1:1"
+        ret = m.insert(key, val, i, attrstr)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, maskstr, ret
+            print 'insert error!', key, val, attrstr, ret
             return -2
     vnum += num - 200
 
@@ -117,12 +117,12 @@ def test():
             print 'move val error:', ret, val
             return -1
 
-    # set all the values' mask = 4:4:1
+    # set all the values' attr = 4:4:1
     for i in range(0, 500):
         val = '%010d' % (i*2 + 1)
-        ret = m.mask(key, val, "4:4:1")
+        ret = m.attr(key, val, "4:4:1")
         if ret != MEMLINK_OK:
-            print 'mask val error:', ret, val
+            print 'attr val error:', ret, val
             return -1
 
     #tag del 250 - 499

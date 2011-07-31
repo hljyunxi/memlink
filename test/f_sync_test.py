@@ -24,7 +24,7 @@ def test():
     time.sleep(1)
 
     key = 'haha'
-    maskstr = "8:1:1"
+    attrstr = "8:1:1"
     ret = client2master.create_list(key , 12, "4:3:1")
     if ret != MEMLINK_OK:
         print 'create error:', ret, key
@@ -35,9 +35,9 @@ def test():
     num = 1000
     for i in xrange(0, num):
         val = '%012d' % i
-        ret = client2master.insert(key, val, i, maskstr)
+        ret = client2master.insert(key, val, i, attrstr)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, maskstr, ret
+            print 'insert error!', key, val, attrstr, ret
             return -2;
     print 'insert %d val' % num
 
@@ -50,9 +50,9 @@ def test():
     num2 = 1500
     for i in xrange(num, num2):
         val = '%012d' % i
-        ret = client2master.insert(key, val, i, maskstr)
+        ret = client2master.insert(key, val, i, attrstr)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, maskstr, ret
+            print 'insert error!', key, val, attrstr, ret
             return -2;
     print 'insert %d val' % (num2 - num)
 
@@ -61,9 +61,9 @@ def test():
     num3 = 3000
     for i in xrange(num2, num3):
         val = '%012d' % i
-        ret = client2master.insert(key, val, i, maskstr)
+        ret = client2master.insert(key, val, i, attrstr)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, maskstr, ret
+            print 'insert error!', key, val, attrstr, ret
             return -2;
     print 'insert %d val' % (num3 - num2)
     
@@ -78,16 +78,16 @@ def test():
     print 'move %d val' % num
 
 
-    #mask 1000
+    #attr 1000
     num = 1000
-    maskstr1 = '6:2:1'
+    attrstr1 = '6:2:1'
     for i in xrange(0, num):
         val = '%012d' % (i*3) 
-        ret = client2master.mask(key, val, maskstr1)
+        ret = client2master.attr(key, val, attrstr1)
         if ret != MEMLINK_OK:
-            print 'mask error!', val, maskstr, ret
+            print 'attr error!', val, attrstr, ret
             return -2;
-    print 'mask %d val' % num
+    print 'attr %d val' % num
 
     x2 = restart_slave()
     time.sleep(1)
@@ -105,7 +105,7 @@ def test():
     num = 1000
     ret, result = client2master.range(key, MEMLINK_VALUE_VISIBLE, 0, num)
     #print 'count:', result.count
-    item = result.root;
+    item = result.items;
     while item:
         ret = client2master.delete(key, item.value)
         if ret != MEMLINK_OK:

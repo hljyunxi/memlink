@@ -38,7 +38,7 @@ def testq(m, key, t):
     if ret != MEMLINK_OK:
         print 'range error, ret:%d, key:%s' % (ret, key)
         return -1
-    item = result.root 
+    item = result.items 
     if t == 'l':
         i = num - 1
         while item:
@@ -65,8 +65,8 @@ def testq(m, key, t):
         if result.count != 1:
             print 'lpop num error:', result.count
             return -1
-        if result.root.value != v:
-            print 'pop value error, pop value:%s, test value:%s' % (result.root.value, v)
+        if result.items.value != v:
+            print 'pop value error, pop value:%s, test value:%s' % (result.items.value, v)
             return -1
 
     ret, result = popfunc(key)        

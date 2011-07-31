@@ -4,7 +4,7 @@
 #include "logfile.h"
 #include "test.h"
 
-int check_mask(MemLink *m, char *key, char *newmask)
+int check_attr(MemLink *m, char *key, char *newattr)
 {
 	MemLinkResult	result;
 	int				ret;
@@ -15,14 +15,14 @@ int check_mask(MemLink *m, char *key, char *newmask)
 		return -5;
 	}
 
-	MemLinkItem	*item = result.root;
+	MemLinkItem	*item = result.items;
 
 	if (NULL == item) {
 		DERROR("range not return data, error!, key:%s\n", key);
 		return -6;
 	}
-	if (strcmp(item->mask, newmask) != 0) {
-		DERROR("mask set error, item->mask:%s, newmask:%s\n", item->mask, newmask);	
+	if (strcmp(item->attr, newattr) != 0) {
+		DERROR("attr set error, item->attr:%s, newattr:%s\n", item->attr, newattr);	
 		return -7;
 	}
 	
@@ -55,58 +55,58 @@ int main()
 	}
 
 	char *val	  = "111111";
-	char *maskstr = "8:3:1";
+	char *attrstr = "8:3:1";
 	int i;
 	char value[64];
 	for (i = 0; i < 20; i++)
 	{
 		sprintf(value, "%06d", i);
-		ret = memlink_cmd_insert(m, key, val, strlen(val), maskstr, 0);
+		ret = memlink_cmd_insert(m, key, val, strlen(val), attrstr, 0);
 		if (ret != MEMLINK_OK) {
-			DERROR("insert error, key:%s, val:%s, mask:%s, i:%d, ret:%d\n", key, val, maskstr, 1, ret);
+			DERROR("insert error, key:%s, val:%s, attr:%s, i:%d, ret:%d\n", key, val, attrstr, 1, ret);
 			return -3;
 		}
 	}
 	
     // added by wyx 
-	maskstr = "1:1:1";
+	attrstr = "1:1:1";
 	for (i = 0; i < 20; i++)
 	{
 		sprintf(value, "%06d", i);
-		ret = memlink_cmd_mask(m, key, "xxxx", 4, maskstr);
+		ret = memlink_cmd_attr(m, key, "xxxx", 4, attrstr);
 		if (ret != MEMLINK_ERR_NOVAL) {
-			DERROR("mask error, must novalue, key:%s, val:%s, ret:%d\n", key, "xxxx", ret);
+			DERROR("attr error, must novalue, key:%s, val:%s, ret:%d\n", key, "xxxx", ret);
 			return -4;
 		}
 	}
 
-	ret = memlink_cmd_mask(m, key, "xxxx", 4, maskstr);
+	ret = memlink_cmd_attr(m, key, "xxxx", 4, attrstr);
 	if (ret != MEMLINK_ERR_NOVAL) {
-		DERROR("mask error, must novalue, key:%s, val:%s, ret:%d\n", key, "xxxx", ret);
+		DERROR("attr error, must novalue, key:%s, val:%s, ret:%d\n", key, "xxxx", ret);
 		return -4;
 	}
-    ret = memlink_cmd_mask(m, "xxxxxx", "xxxx", 4, maskstr);
+    ret = memlink_cmd_attr(m, "xxxxxx", "xxxx", 4, attrstr);
 	if (ret != MEMLINK_ERR_NOKEY) {
-		DERROR("mask error, must nokey, key:%s\n", key);
+		DERROR("attr error, must nokey, key:%s\n", key);
 		return -4;
 	}
     // end
 
-	char *newmask  = "7:2:1";
-	ret = memlink_cmd_mask(m, key, val, strlen(val), newmask);
+	char *newattr  = "7:2:1";
+	ret = memlink_cmd_attr(m, key, val, strlen(val), newattr);
 	if (ret != MEMLINK_OK) {
-		DERROR("mask error, key:%s, val:%s, mask:%s, ret:%d\n", key, val, newmask, ret);
+		DERROR("attr error, key:%s, val:%s, attr:%s, ret:%d\n", key, val, newattr, ret);
 		return -4;
 	}
-	check_mask(m, key, newmask);
+	check_attr(m, key, newattr);
 
-	newmask  = "7:2:0";
-	ret = memlink_cmd_mask(m, key, val, strlen(val), newmask);
+	newattr  = "7:2:0";
+	ret = memlink_cmd_attr(m, key, val, strlen(val), newattr);
 	if (ret != MEMLINK_OK) {
-		DERROR("mask error, key:%s, val:%s, mask:%s, ret:%d\n", key, val, newmask, ret);
+		DERROR("attr error, key:%s, val:%s, attr:%s, ret:%d\n", key, val, newattr, ret);
 		return -4;
 	}
-	check_mask(m, key, newmask);
+	check_attr(m, key, newattr);
 
 	memlink_destroy(m);
 
