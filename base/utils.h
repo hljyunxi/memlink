@@ -36,6 +36,7 @@ int			change_group_user(char *user);
 //int         thread_exit(pthread_t id);
 long long   get_process_mem(int pid);
 int         truncate_file(int fd, int len);
+int			int2string(char *s, unsigned int val);
 
 /*static inline void		
 atom_inc(unsigned int *v)

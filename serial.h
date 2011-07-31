@@ -75,6 +75,7 @@ int attr_string2array(char *attrstr, unsigned int *result);
 int attr_array2binary(unsigned char *attrformat, unsigned int *attrarray, char attrnum, char *attr);
 int attr_string2binary(unsigned char *attrformat, char *attrstr, char *attr);
 int attr_binary2string(unsigned char *attrformat, int attrnum, char *attr, int attrlen, char *attrstr);
+int attr_binary2array(unsigned char *attrformat, int attrnum, char *attr, unsigned int *attrarray);
 int attr_array2flag(unsigned char *attrformat, unsigned int *attrarray, char attrnum, char *attr);
 
 int cmd_dump_pack(char *data);

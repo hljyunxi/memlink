@@ -914,6 +914,43 @@ hashtable_attr(HashTable *ht, char *key, void *value, unsigned int *attrarray, i
     return MEMLINK_OK;
 }
 
+int
+hashtable_attr_inc(HashTable *ht, char *key, void *value, 
+            unsigned int *attrarray, int attrnum)
+{
+    char        *item = NULL;
+    HashNode    *node = NULL;
+
+    int  ret = hashtable_find_value(ht, key, value, &node, NULL, &item);
+    if (ret < 0) {
+        return ret;
+    }
+    
+    if (node->attrnum != attrnum) {
+        return MEMLINK_ERR_MASK;
+    }
+
+    unsigned int attrvals[HASHTABLE_MASK_MAX_ITEM] = {0};
+    
+    ret = attr_binary2array(node->attrformat, attrnum, item+node->valuesize, attrvals);
+    if (ret <= 0) {
+        return MEMLINK_ERR_MASK;
+    }
+    int i;
+    for (i = 0; i < attrnum; i++) {
+        attrvals[i] += attrarray[i];
+    }
+
+    //char attrbin[node->attrsize] = {0};
+    char attrbin[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
+    ret = attr_array2binary(node->attrformat, attrvals, attrnum, attrbin);
+    if (ret <= 0) {
+        return MEMLINK_ERR_MASK;
+    }
+    memcpy(item+node->valuesize, attrbin, node->attrsize);
+
+    return MEMLINK_OK;
+}
 
 int
 hashtable_range(HashTable *ht, char *key, unsigned char kind, 

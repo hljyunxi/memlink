@@ -56,6 +56,10 @@ int             hashtable_move(HashTable *ht, char *key, void *value, int pos);
 int             hashtable_del(HashTable *ht, char *key, void *value);
 int             hashtable_tag(HashTable *ht, char *key, void *value, unsigned char tag);
 int             hashtable_attr(HashTable *ht, char *key, void *value, unsigned int *attrarray, int attrnum);
+int             hashtable_attr_inc(HashTable *ht, char *key, void *value, 
+							unsigned int *attrarray, int attrnum);
+int             hashtable_attr_dec(HashTable *ht, char *key, void *value, 
+							unsigned int *attrarray, int attrnum, int attrval);
 int             hashtable_range(HashTable *ht, char *key, unsigned char kind, unsigned int *attrarray, int attrnum, 
                                 int frompos, int len, Conn *conn);
 int             hashtable_clean(HashTable *ht, char *key);
