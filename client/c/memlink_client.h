@@ -32,6 +32,7 @@ typedef struct _memlink_count
 
 typedef struct _memlink_item
 {
+	struct _memlink_item *next;	
 	char	valuesize;
 	char	attrsize;
     char    value[256];
@@ -158,8 +159,8 @@ int         memlink_imkv_destroy(MemLinkInsertMkv *mkv);
 int         memlink_imkv_add_key(MemLinkInsertMkv *mkv, MemLinkInsertKey *keyobj);
 int         memlink_ikey_add_value(MemLinkInsertKey *keyobj, MemLinkInsertVal *valobj);
 MemLinkInsertMkv*         memlink_imkv_create(); 
-MemLinkInsertKey*         memlink_ikey_create(char *key, unsigned int keylen);
-MemLinkInsertVal*         memlink_ival_create(char *value, unsigned int valuelen, char *attrstr, int pos);
+MemLinkInsertKey*         memlink_ikey_create(char *key, int keylen);
+MemLinkInsertVal*         memlink_ival_create(char *value, int valuelen, char *attrstr, int pos);
 
 int memlink_cmd_read_conn_info(MemLink *m, MemLinkRcInfo *rcinfo);
 int memlink_cmd_write_conn_info(MemLink *m, MemLinkWcInfo *wcinfo);
