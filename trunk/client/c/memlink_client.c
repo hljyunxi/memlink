@@ -780,7 +780,9 @@ memlink_result_parse(char *retdata, MemLinkResult *result)
     for (i = 0; i < count; i++) {
         memcpy(result->items[i].value, vdata, valuesize);
         attr_binary2string(attrformat, attrnum, vdata + valuesize, attrsize, result->items[i].attr);
-
+        if (i > 0) {
+            result->items[i-1].next = &(result->items[i]);
+        }
         vdata += valuesize + attrsize;
     }
 
@@ -1207,7 +1209,7 @@ memlink_imkv_create()
 }
 
 MemLinkInsertKey*
-memlink_ikey_create(char *key, unsigned int keylen)
+memlink_ikey_create(char *key, int keylen)
 {
     MemLinkInsertKey *kobj = NULL;
 
@@ -1228,7 +1230,7 @@ memlink_ikey_create(char *key, unsigned int keylen)
 }
 
 MemLinkInsertVal*
-memlink_ival_create(char *value, unsigned int valuelen, char *attrstr, int pos)
+memlink_ival_create(char *value, int valuelen, char *attrstr, int pos)
 {
     MemLinkInsertVal *valobj = NULL;
     int attrnum = 0;
