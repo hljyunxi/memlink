@@ -91,11 +91,11 @@ timeout_wait(int fd, int timeout, int writing)
     timeout = timeout * 1000;
     struct pollfd fds[1];
     int ret;
-    struct timeval start, end;
+    //struct timeval start, end;
 
     fds[0].fd = fd;
     while (1) {
-        gettimeofday(&start, NULL);
+        //gettimeofday(&start, NULL);
         if (writing)
             fds[0].events = POLLOUT;
         else
@@ -104,11 +104,11 @@ timeout_wait(int fd, int timeout, int writing)
         ret = poll(fds, 1, timeout);
         if (ret < 0) {
             if (errno == EINTR) {
-                gettimeofday(&end, NULL);
+                /*gettimeofday(&end, NULL);
                 unsigned int td = timediff(&start, &end);
                 timeout -= td / 1000;
                 if (timeout <= 0)
-                    return FALSE;
+                    return FALSE;*/
                 continue;
             }
             char errbuf[1024];

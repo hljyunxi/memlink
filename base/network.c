@@ -239,10 +239,35 @@ set_noblock(int fd)
         strerror_r(errno, errbuf, 1024);
         DERROR("setting O_NONBLOCK error: %s\n",  errbuf);
         close(fd);
-        return -1;
+        return FAILED;
     }
     
-    return 0;
+    return OK;
+}
+
+int
+set_block(int fd)
+{
+    int flag;
+
+    flag = fcntl(fd, F_GETFL, 0);
+    if (flag < 0) {
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("fcntl F_GETFL error: %s\n",  errbuf);
+        close(fd);
+        return FAILED;
+    }
+    flag &= (~O_NONBLOCK);
+    if (fcntl(fd, F_SETFL, flag) < 0) {
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("fcntl F_SETFL error: %s\n",  errbuf);
+        close(fd);
+        return FAILED;
+    }
+    
+    return OK;
 }
 
 /**

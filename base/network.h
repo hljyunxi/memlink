@@ -8,5 +8,6 @@ int	tcp_socket_connect(char *host, int port, int timeout, int block);
 int tcp_server_setopt(int fd);
 int udp_sock_server(char *host, int port);
 int set_noblock(int fd);
+int set_block(int fd);
 
 #endif
