@@ -1811,7 +1811,7 @@ read_config(char *file)
             }
         }
         if ((getrlimit(RLIMIT_CORE, &rlim) != 0) || rlim.rlim_cur == 0) {
-            DFATALERR("failed to ensure corefile creation\n");
+            DERROR("failed to ensure corefile creation\n");
             MEMLINK_EXIT;
         }
     }
