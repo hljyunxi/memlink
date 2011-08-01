@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <errno.h>
+#include <pthread.h>
 #include <fcntl.h>
 #include <string.h>
 #include "base/logfile.h"
@@ -127,9 +128,9 @@ int test_stdout()
 
     int lines = testcount(logpath, &err, &warn, &note, &info);
     DINFO("lines:%d\n", lines);
-    DASSERT(lines == 100);
+    DASSERT(lines == 200);
     DASSERT(err == 100);
-    DASSERT(warn == 0);
+    DASSERT(warn == 100);
     DASSERT(note == 0);
     DASSERT(info == 0);
 
@@ -313,10 +314,73 @@ int test_file()
     return 0;
 }
 
+int test_put()
+{
+    char *logpath = "test.log";
+    
+    remove_files(logpath);
+    
+    LogFile *log = logfile_create(logpath, LOG_INFO);
+    int i;
+    
+    for (i = 0; i < 100; i++) {
+        PUT_INFO("tes put %d\n", i);        
+    }
+
+    PUT_FLUSH();
+ 
+    logfile_destroy(log);
+    return 0;
+}
+
+void * _put_log(void *arg)
+{
+    int i, j; 
+    for (j = 0; j < 100; j++) {
+        for (i = 0; i < 10; i++) {
+            PUT_INFO("put log %d\n", i);
+        }
+        PUT_FLUSH();
+    }
+
+    return NULL;
+}
+
+int test_put_thread()
+{
+    char *logpath = "test.log";
+    
+    remove_files(logpath);
+    
+    LogFile *log = logfile_create(logpath, LOG_INFO);
+    int threadnum = 10;
+    pthread_t threads[threadnum];
+    int i;
+
+    for (i = 0; i < threadnum; i++) {
+        if (pthread_create(&threads[i], NULL, _put_log, log) != 0) {
+            DERROR("pthread create error!\n");
+            return -1;
+        }
+    }
+    sleep(1);
+    for (i = 0; i < threadnum; i++) {
+        if (pthread_join(threads[i], NULL) != 0) {
+            DERROR("pthread join error!\n");
+            return -1;
+        }
+    }
+
+    logfile_destroy(log);
+    return 0;
+}
+
 int main()
 {
     test_stdout();
     test_file();
+    test_put();
+    test_put_thread();
 
     return 0;
 }
