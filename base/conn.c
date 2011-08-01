@@ -559,7 +559,7 @@ conn_write(Conn *conn)
                 // maybe close conn?
                 char errbuf[1024];
                 strerror_r(errno, errbuf, 1024);
-                DERROR("write error! %s\n",  errbuf);
+                DWARNING("write error! %s\n",  errbuf);
                 conn->destroy(conn);
                 break;
             }

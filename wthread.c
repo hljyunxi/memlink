@@ -62,7 +62,7 @@ data_reply(Conn *conn, short retcode, char *retdata, int retlen)
     if (ret < 0)
         return ret;
 
-    DINFO("change event to write.\n");
+    //DINFO("change event to write.\n");
     
     return conn_send_buffer(conn);
 }
@@ -84,14 +84,17 @@ is_clean_cond(HashNode *node)
         }
     }
     if (blockcount < g_cf->block_clean_start) {
+        //DNOTE("no clean, blockcount:%d smaller than %d\n", blockcount, g_cf->block_clean_start);
         return 0;
     }
 
     if (node->all == 0) {
+        //DNOTE("no clean, no value.\n");
         return 0;
     }
 
     if (g_runtime->inclean) {
+        //DNOTE("no clean, other inclean ...\n");
         return 0;
     }
 
@@ -99,9 +102,11 @@ is_clean_cond(HashNode *node)
     DINFO("check clean rate: %f\n", rate);
 
     if (g_cf->block_clean_cond > rate) {
+        //DNOTE("no clean, rate:%f smaller than %f.\n", rate, g_cf->block_clean_cond);
         return 0;
     }
-
+    
+    //DNOTE("try clean, blockcount:%d, rate:%f\n", blockcount, rate);
     return 1;
 }
 
@@ -118,7 +123,7 @@ wdata_do_clean(void *args)
     //snprintf(g_runtime->cleankey, 512, "%s", node->key);
     
     if (is_clean_cond(node) == 0) {
-        DNOTE("not need clean %s\n", node->key);
+        //DNOTE("thread check not need clean %s\n", node->key);
         goto wdata_do_clean_over;
     }
 
@@ -159,6 +164,8 @@ wdata_check_clean(char *key)
     if (is_clean_cond(node) == 0) {
         return;
     }
+    
+    DNOTE("create clean thread ..\n");
 
     pthread_t       threadid;
     pthread_attr_t  attr;
