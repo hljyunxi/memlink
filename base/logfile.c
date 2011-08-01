@@ -50,6 +50,12 @@ logfile_create(char *filepath, int loglevel)
     logger->loglevel = loglevel;
     logger->check_interval = 1; // check log rotate interval
 
+    logger->levelstr[0] = "FATAL";
+    logger->levelstr[1] = "ERR";
+    logger->levelstr[2] = "WARN";
+    logger->levelstr[3] = "NOTICE";
+    logger->levelstr[4] = "INFO";
+
     if (strcmp(filepath, "stdout") == 0) {
         logger->filepath[0] = 0;
         logger->logfd = STDOUT_FILENO;
@@ -66,6 +72,22 @@ logfile_create(char *filepath, int loglevel)
         }
     }
     if (pthread_mutex_init(&logger->lock, NULL) != 0) {
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        fprintf(stderr, "mutex init error: %s\n", errbuf);
+        zz_free(logger);
+        exit(EXIT_FAILURE);
+    }
+
+    if (pthread_key_create(&logger->put_buf, NULL) != 0) {
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        fprintf(stderr, "mutex init error: %s\n", errbuf);
+        zz_free(logger);
+        exit(EXIT_FAILURE);
+    }
+    int ret = pthread_setspecific(logger->put_buf, NULL);
+    if (ret != 0) {
         char errbuf[1024];
         strerror_r(errno, errbuf, 1024);
         fprintf(stderr, "mutex init error: %s\n", errbuf);
@@ -91,6 +113,8 @@ logfile_destroy(LogFile *log)
     if (log->errfd > 2) {
         close(log->errfd); 
     }
+
+    pthread_key_delete(log->put_buf);
  
     zz_free(log);
 
@@ -123,6 +147,12 @@ logfile_error_separate(LogFile *log, char *errfile)
     log->errfd = fd; 
 
     return 0;
+}
+
+void
+logfile_rotate_day(LogFile *log)
+{
+    log->rotype = LOG_ROTATE_DAY;
 }
 
 void
@@ -291,11 +321,12 @@ logfile_rotate(LogFile *log, int iserrfd)
     return 0;
 }
 
-int logfile_check_rotate(LogFile *log, unsigned int timenow, int iserr)
+int logfile_check_rotate(LogFile *log, time_t timenow, int iserr)
 {
     int ret;
     struct stat fs;
     int fd = iserr ? log->errfd : log->logfd;
+
     if (fd > 2) {
         switch (log->rotype) {
             case LOG_ROTATE_SIZE:
@@ -314,13 +345,36 @@ int logfile_check_rotate(LogFile *log, unsigned int timenow, int iserr)
                     log->last_rotate_time = timenow;
                 }
                 break;
+            case LOG_ROTATE_DAY: {
+                char filepath[PATH_MAX];  
+                struct tm   timestru;
+                char *path;
+
+                if (iserr) {
+                    path = log->errpath;
+                }else{
+                    path = log->filepath;
+                }
+                localtime_r(&timenow, &timestru);
+
+                if (timestru.tm_hour == 0 && timenow - log->last_rotate_time > 3600) {
+                    snprintf(filepath, PATH_MAX, "%s.%d%02d%02d", path, 
+                            timestru.tm_year+1900, timestru.tm_mon+1, timestru.tm_mday); 
+                    if (!isfile(filepath)) {
+                        logfile_rotate(log, iserr);
+                    }
+                    log->last_rotate_time = timenow;
+                }
+                
+                break;
+            }
         }
     }
     return 0;
 }
 
 void
-logfile_write(LogFile *log, char *level, char *file, int line, char *format, ...)
+logfile_write(LogFile *log, int level, char *file, int line, char *format, ...)
 {
     char    buffer[8192];
     char    *writepos;
@@ -330,6 +384,9 @@ logfile_write(LogFile *log, char *level, char *file, int line, char *format, ...
     time_t  timenow;
     char    *shortname;
     struct tm   timestru;
+
+    if (level > log->loglevel)
+        return;
    
     time(&timenow);
     localtime_r(&timenow, &timestru);
@@ -338,11 +395,11 @@ logfile_write(LogFile *log, char *level, char *file, int line, char *format, ...
     if (shortname) {
         file = shortname + 1;
     }
-
+    
     ret = snprintf(buffer, 8192, "%d%02d%02d %02d:%02d:%02d %lu %s:%d [%s] ", 
                     timestru.tm_year+1900, timestru.tm_mon+1, timestru.tm_mday, 
                     timestru.tm_hour, timestru.tm_min, timestru.tm_sec, 
-                    (unsigned long)pthread_self(), file, line, level);
+                    (unsigned long)pthread_self(), file, line, log->levelstr[level]);
 
     maxlen -= ret;
     writepos = buffer + ret;
@@ -355,7 +412,7 @@ logfile_write(LogFile *log, char *level, char *file, int line, char *format, ...
     va_end (arg);
 
     // ERR
-    int iserr = (level[0] == 'E') ? TRUE: FALSE;
+    int iserr = (level <= LOG_WARN) ? TRUE: FALSE;
     logfile_write_real(log, iserr, buffer, wlen);
     //logfile_write_real(log, TRUE, buffer, wlen);
 
@@ -368,53 +425,80 @@ logfile_write(LogFile *log, char *level, char *file, int line, char *format, ...
         logfile_check_rotate(log, timenow, TRUE);
         logfile_check_rotate(log, timenow, FALSE);
 
-        /*
-        struct stat fs;
-        if (log->logfd > 2) {
-            switch (log->rotype) {
-            case LOG_ROTATE_SIZE:
-                ret = fstat(log->logfd, &fs);
-                if (ret == -1) {
-                    LOGFILE_ERROR("fstat logfd error: %s\n");
-                }else{
-                    if (fs.st_size >= log->maxsize) {
-                        logfile_rotate(log, FALSE);
-                    }
-                }
-                break;
-            case LOG_ROTATE_TIME:
-                if (timenow - log->last_rotate_time >= log->maxtime) {
-                    logfile_rotate(log, FALSE);
-                    log->last_rotate_time = timenow;
-                }
-                break;
-            }
-        }
-
-        if (log->errfd > 2) {
-            switch (log->rotype) {
-            case LOG_ROTATE_SIZE:
-                ret = fstat(log->errfd, &fs);
-                if (ret == -1) {
-                    LOGFILE_ERROR("fstat errfd error: %s\n");
-                }else{
-                    if (fs.st_size >= log->maxsize) {
-                        logfile_rotate(log, TRUE);
-                    }
-                }
-                break;
-            case LOG_ROTATE_TIME:
-                if (timenow - log->last_rotate_time >= log->maxtime) {
-                    logfile_rotate(log, TRUE);
-                    log->last_rotate_time = timenow;
-                }
-                break;
-            }
-        }
-        */
         pthread_mutex_unlock(&log->lock);
     }
 }
+
+#define PUT_BUFFER_SIZE  8192
+int 
+logfile_put(LogFile *log, int level, char *format, ...)
+{
+    char    buffer[PUT_BUFFER_SIZE];
+    va_list arg;
+    int     maxlen = PUT_BUFFER_SIZE;
+    int     ret, wlen = 0;
+    
+    if (level > log->loglevel) {
+        return 0;
+    }
+
+    char *buf = pthread_getspecific(log->put_buf);
+
+    va_start (arg, format);
+    ret = vsnprintf (buffer, maxlen, format, arg); 
+    wlen += ret;
+    va_end (arg);
+
+    if (buf == NULL) {
+        buf = (char*)zz_malloc(PUT_BUFFER_SIZE); 
+        strcpy(buf, buffer);
+            
+        ret = pthread_setspecific(log->put_buf, buf);
+        if (ret != 0) {
+            LOGFILE_ERROR("setspecific error: %s\n");
+            return -1;
+        }
+    }else{
+        int buflen  = strlen(buf);
+        int newsize = buflen + wlen + 1;
+        if (newsize >= PUT_BUFFER_SIZE) {
+            int allocsize = (newsize/4096 + (newsize%4096 > 0)? 1: 0) * 4096;
+            char *newbuf = (char*)zz_malloc(allocsize);
+            memset(newbuf, 0, allocsize);
+            memcpy(newbuf, buf, buflen);
+           
+            buf = newbuf;
+
+            ret = pthread_setspecific(log->put_buf, newbuf);
+            if (ret != 0) {
+                LOGFILE_ERROR("setspecific error: %s\n");
+                return -1;
+            }
+        }
+
+        strcpy(buf+buflen, buffer);
+
+    }
+
+    
+    return 0;
+}
+
+void
+logfile_put_flush(LogFile *log, char *file, int line)
+{
+    char *buf = pthread_getspecific(log->put_buf);
+    
+    if (buf == NULL) {
+        return;
+    }
+
+    logfile_write(log, log->loglevel, file, line, "%s", buf);
+    buf[0] = 0; 
+
+}
+
+
 
 /**
  * @}
