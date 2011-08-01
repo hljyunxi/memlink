@@ -16,6 +16,7 @@
 #include "logfile.h"
 #include "zzmalloc.h"
 #include "utils.h"
+#include "network.h"
 #include "serial.h"
 
 #define RECV_PKG_SIZE_LEN    sizeof(int)
@@ -26,7 +27,9 @@ memlink_create(char *host, int readport, int writeport, int timeout)
     MemLink *m;
 
 #ifdef DEBUG
-    //logfile_create("stdout", 1);
+    if (g_log == NULL) {
+        logfile_create("stdout", 3);
+    }
 #endif
 
     m = (MemLink*)zz_malloc(sizeof(MemLink));
@@ -96,12 +99,47 @@ memlink_connect(MemLink *m, int fdtype)
         sin.sin_addr.s_addr = inet_addr(m->host);
     }    
 
+    set_noblock(sock); 
+
     do { 
         ret = connect(sock, (struct sockaddr*)&sin, sizeof(sin));
     } while (ret == -1 && errno == EINTR);  
 
+    if (ret == -1 && (errno == EINPROGRESS ||errno == EALREADY)) {
+        if (timeout_wait_write(sock, m->timeout) == TRUE) {
+            int error = 0;
+            socklen_t slen = sizeof(int);
+            int retv = getsockopt(sock, SOL_SOCKET, SO_ERROR, &error, &slen);
+            if (retv != 0 || error != 0) {
+                char errbuf[1024];
+                strerror_r(errno, errbuf, 1024);
+                DERROR("connect error: %s\n", errbuf);
+                return MEMLINK_ERR_CONNECT;
+            }
+        }else{
+            DERROR("connect timeout.\n");
+            close(sock);
+            return MEMLINK_ERR_TIMEOUT;
+        }
+    }else if (ret == -1 && errno != EISCONN) {
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("connect error: %s\n",  errbuf);
+        close(sock);
+
+        return MEMLINK_ERR_CONNECT;
+    }
+    DNOTE("connect ok!\n");
+    set_block(sock); 
+
+    if (fdtype == MEMLINK_READER) {
+        m->readfd = sock;
+    }else{
+        m->writefd = sock;
+    }
+
     //DINFO("connect ret: %d\n", ret);
-    if (ret >= 0) {
+    /*if (ret >= 0) {
         if (fdtype == MEMLINK_READER) {
             m->readfd = sock;
         }else{
@@ -113,9 +151,9 @@ memlink_connect(MemLink *m, int fdtype)
         DERROR("connect error: %s\n",  errbuf);
         close(sock);
         ret = MEMLINK_ERR_CONNECT;
-    }
+    }*/
 
-    return ret;
+    return MEMLINK_OK;
 }
 
 // TODO should check the received data is not bigger than rlen
@@ -197,6 +235,7 @@ memlink_write(MemLink *m, int fdtype, char *wbuf, int wlen)
     }else if (fdtype == MEMLINK_WRITER) {
         fd = m->writefd;
     }else{
+        DERROR("fdtype error:%d\n", fdtype);
         return MEMLINK_ERR_CLIENT;
     }
     //DINFO("fd: %d\n", fd);
