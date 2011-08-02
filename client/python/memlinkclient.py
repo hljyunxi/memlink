@@ -183,7 +183,7 @@ def memlinkresult_list(self):
     v = []
     item = self.items
     while item:
-        v.append((self.items[i].value[:self.valuesize], self.items[i].attr[:self.attrsize]))
+        v.append((item.value, item.attr))
         item = item.next
     return v
 
@@ -194,7 +194,7 @@ def memlinkresult_print(self):
     s = 'count:%d valuesize:%d attrsize:%d\n' % (self.count, self.valuesize, self.attrsize)
     item = self.items
     while item:
-        s += 'value:%s attr:%s\n' % (self.items[i].value, repr(self.items[i].attr))
+        s += 'value:%s attr:%s\n' % (item.value, item.attr)
         item = item.next
     return s
 
