@@ -15,7 +15,7 @@ includes = ['.', '../../', '../../base', '../c/'] + java_includes
 #libpath  = ['.', '../../base']
 libpath  = ['.']
 libs	 = ['m']
-files    = ['../../serial.c', '../c/memlink_client.c', '../../base/pack.c',
+files    = ['../../serial.c', '../c/memlink_client.c', '../../base/pack.c', '../../base/network.c',
 			'../../base/utils.c', '../../base/zzmalloc.c', '../../base/logfile.c']
 
 env = Environment(CCFLAGS=cflags, CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
@@ -33,6 +33,7 @@ Java(target='.', source='test')
 
 # for clean
 files = glob.glob('com/googlecode/memlink/*.java')
+files += glob.glob('com/googlecode/memlink/*.class')
 files.remove('com/googlecode/memlink/MemLinkClient.java')
 files.append('memlink_client_java.c')
 files += glob.glob("*.class")
