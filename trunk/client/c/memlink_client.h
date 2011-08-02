@@ -33,10 +33,10 @@ typedef struct _memlink_count
 typedef struct _memlink_item
 {
 	struct _memlink_item *next;	
-	char	valuesize;
-	char	attrsize;
     char    value[256];
+	char	valuesize;
     char    attr[256];
+	char	attrsize;
 }MemLinkItem;
 
 typedef struct _memlink_result
@@ -82,20 +82,20 @@ typedef struct _memlink_sconn_item
 
 typedef struct _memlink_rconn_info
 {
-	int             conncount;
-	MemLinkRcItem   *root;
+	int             count;
+	MemLinkRcItem   *items;
 }MemLinkRcInfo;
 
 typedef struct _memlink_wconn_info
 {
-	int             conncount;
-	MemLinkWcItem   *root;
+	int             count;
+	MemLinkWcItem   *items;
 }MemLinkWcInfo;
 
 typedef struct _memlink_Sconn_info
 {
-	int             conncount;
-	MemLinkScItem   *root;
+	int             count;
+	MemLinkScItem   *items;
 }MemLinkScInfo;
 
 

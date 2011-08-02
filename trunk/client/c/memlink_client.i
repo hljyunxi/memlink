@@ -2,6 +2,7 @@
 %{
 #include "../../common.h"
 #include "memlink_client.h"
+#include <stddef.h>
 %}
 
 #if defined(SWIGJAVA)
@@ -28,12 +29,16 @@
 %typemap(jstype) (char BYTE[256]) "byte[]"
 
 %apply(char BYTE[256]){(char value[256])};
-%apply(char BYTE[256]){(char mask[256])};
+%apply(char BYTE[256]){(char attr[256])};
 
 #elif defined(SWIGPYTHON)
 
-%typemap(out) char BYTE[256]{
-    resultobj = SWIG_FromCharPtrAndSize($1,256);
+%typemap(out) char [256]{
+    if (offsetof(MemLinkItem, value) == ((unsigned long)$1 - (unsigned long)arg1)) {
+        resultobj = SWIG_FromCharPtrAndSize($1,arg1->valuesize);
+    }else{
+        resultobj = SWIG_FromCharPtrAndSize($1,arg1->attrsize);
+    }
 }
 
 #elif defined(SWIGPHP)

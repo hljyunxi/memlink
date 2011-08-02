@@ -27,9 +27,9 @@ memlink_create(char *host, int readport, int writeport, int timeout)
     MemLink *m;
 
 #ifdef DEBUG
-    if (g_log == NULL) {
+    /*if (g_log == NULL) {
         logfile_create("stdout", 3);
-    }
+    }*/
 #endif
 
     m = (MemLink*)zz_malloc(sizeof(MemLink));
@@ -816,9 +816,13 @@ memlink_result_parse(char *retdata, MemLinkResult *result)
     }
 
     int i;
+    MemLinkItem *item = NULL;
     for (i = 0; i < count; i++) {
-        memcpy(result->items[i].value, vdata, valuesize);
-        attr_binary2string(attrformat, attrnum, vdata + valuesize, attrsize, result->items[i].attr);
+        item = &result->items[i];
+        item->valuesize = valuesize;
+        item->attrsize = attrsize;
+        memcpy(item->value, vdata, valuesize);
+        attr_binary2string(attrformat, attrnum, vdata + valuesize, attrsize, item->attr);
         if (i > 0) {
             result->items[i-1].next = &(result->items[i]);
         }
@@ -1431,8 +1435,8 @@ int memlink_cmd_read_conn_info(MemLink *m, MemLinkRcInfo *rcinfo)
     int retlen = 1000 * sizeof(MemLinkRcItem);
     char retdata[retlen];
 
-    rcinfo->conncount = 0;
-    rcinfo->root = NULL;
+    rcinfo->count = 0;
+    rcinfo->items = NULL;
     ret = memlink_do_cmd(m, MEMLINK_READER, data, len, retdata, retlen);
     if (ret <= 0) {
         DERROR("memlink_do cmd error: %d\n", ret);
@@ -1461,9 +1465,9 @@ int memlink_cmd_read_conn_info(MemLink *m, MemLinkRcInfo *rcinfo)
         count += sizeof(int);
         memcpy(&item->cmd_count, rdata + count, sizeof(int));
         count += sizeof(int);
-        item->next = rcinfo->root;
-        rcinfo->root = item;
-        rcinfo->conncount++;
+        item->next = rcinfo->items;
+        rcinfo->items = item;
+        rcinfo->count++;
     }
     return MEMLINK_OK;
 }
@@ -1480,8 +1484,8 @@ int memlink_cmd_write_conn_info(MemLink *m, MemLinkWcInfo *wcinfo)
     int retlen = 1000 * sizeof(MemLinkRcItem);
     char retdata[retlen];
 
-    wcinfo->conncount = 0;
-    wcinfo->root = NULL;
+    wcinfo->count = 0;
+    wcinfo->items = NULL;
     ret = memlink_do_cmd(m, MEMLINK_READER, data, len, retdata, retlen);
     if (ret <= 0) {
         DERROR("memlink_do_cmd error: %d\n", ret);
@@ -1510,9 +1514,9 @@ int memlink_cmd_write_conn_info(MemLink *m, MemLinkWcInfo *wcinfo)
         count += sizeof(int);
         memcpy(&item->cmd_count, rdata + count, sizeof(int));
         count += sizeof(int);
-        item->next = wcinfo->root;
-        wcinfo->root = item;
-        wcinfo->conncount++;
+        item->next = wcinfo->items;
+        wcinfo->items = item;
+        wcinfo->count++;
     }
     return MEMLINK_OK;
 }
@@ -1529,8 +1533,8 @@ int memlink_cmd_sync_conn_info(MemLink *m, MemLinkScInfo *scinfo)
     int retlen = 1000 * sizeof(MemLinkScItem);
     char retdata[retlen];
 
-    scinfo->conncount = 0;
-    scinfo->root = NULL;
+    scinfo->count = 0;
+    scinfo->items = NULL;
     ret = memlink_do_cmd(m, MEMLINK_READER, data, len, retdata, retlen);
     if (ret <= 0) {
         DERROR("memlink_do_cmd error: %d\n", ret);
@@ -1564,9 +1568,9 @@ int memlink_cmd_sync_conn_info(MemLink *m, MemLinkScInfo *scinfo)
         count += sizeof(int);
         memcpy(&item->delay, sdata + count, sizeof(int));
         count += sizeof(int);
-        item->next = scinfo->root;
-        scinfo->root = item;
-        scinfo->conncount++;
+        item->next = scinfo->items;
+        scinfo->items = item;
+        scinfo->count++;
 
     }
     return MEMLINK_OK;
@@ -1579,9 +1583,9 @@ memlink_rcinfo_free(MemLinkRcInfo *info)
     
     if (info == NULL)
         return -1;
-    while (info->root) {
-        tmp = info->root;
-        info->root = tmp->next;
+    while (info->items) {
+        tmp = info->items;
+        info->items = tmp->next;
         zz_free(tmp);
     }
     return 0;
@@ -1594,9 +1598,9 @@ memlink_wcinfo_free(MemLinkWcInfo *info)
     
     if (info == NULL)
         return -1;
-    while (info->root) {
-        tmp = info->root;
-        info->root = tmp->next;
+    while (info->items) {
+        tmp = info->items;
+        info->items = tmp->next;
         zz_free(tmp);
     }
     return 0;
@@ -1609,9 +1613,9 @@ memlink_scinfo_free(MemLinkScInfo *info)
     
     if (info == NULL)
         return -1;
-    while(info->root ) {
-        tmp = info->root;
-        info->root = tmp->next;
+    while(info->items) {
+        tmp = info->items;
+        info->items = tmp->next;
         zz_free(tmp);
     }
     return 0;
