@@ -66,16 +66,16 @@ def delete(*args):
     
     m.destroy()
 
-def delete_by_mask(*args):
+def delete_by_attr(*args):
     akey = args[0]
-    mask = args[1]
+    attr = args[1]
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30)
-    ret = m.delete_by_mask(akey, mask)
+    ret = m.delete_by_attr(akey, attr)
     if ret != MEMLINK_OK:
-        print 'delete by mask error: ', ret
+        print 'delete by attr error: ', ret
     else:
-        print 'delete by mask successfully!'
+        print 'delete by attr successfully!'
 
     m.destroy()
 
@@ -104,26 +104,25 @@ def range(*args):
         slen    = 1000
 
     try:
-        mask = args[3]
+        attr = args[3]
     except:
-        mask    = ''
+        attr    = ''
     
     print 'ALL:%d, VISIBLE:%d, TAGDEL:%d' % (MEMLINK_VALUE_ALL, MEMLINK_VALUE_VISIBLE, MEMLINK_VALUE_TAGDEL)
-    print 'range kind:%d, from:%d, len:%d, mask:%s' % (kind, frompos, slen, mask)
+    print 'range kind:%d, from:%d, len:%d, attr:%s' % (kind, frompos, slen, attr)
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
     
-    ret, recs = m.range(key, kind, frompos, slen, mask)
+    ret, recs = m.range(key, kind, frompos, slen, attr)
     if ret != MEMLINK_OK:
         print 'range error:', ret
         return
 
     print recs.count
-    items = recs.root
+    items = recs.items
     while items:
-        print items.value, repr(items.mask)
+        print items.value, repr(items.attr)
         items = items.next
-
     recs.close()
 
     m.destroy()
@@ -267,7 +266,7 @@ def lpop(*args):
     print 'lpop result:', result.count
     item = result.root
     while item:
-        print item.value, item.mask
+        print item.value, item.attr
         item = item.next
 
     m.destroy()
@@ -286,7 +285,7 @@ def rpop(*args):
     print 'rpop result:', result.count
     item = result.root
     while item:
-        print item.value, item.mask
+        print item.value, item.attr
         item = item.next
 
     m.destroy()
@@ -330,23 +329,23 @@ def sortlist_range(*args):
     akey = args[0]
     valmin = args[1]
     valmax = args[2]
-    mask = args[3]
+    attr = args[3]
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
 
-    retset = m.sortlist_range(akey, MEMLINK_VALUE_VISIBLE, valmin, valmax, mask)
+    retset = m.sortlist_range(akey, MEMLINK_VALUE_VISIBLE, valmin, valmax, attr)
 
     if retset[0] != MEMLINK_OK:
         print 'sortlist range error: ', ret
         m.destroy()
         return;
 
-    print 'count: %d, valuesize: %d, masksize: %d' % (retset[1].count, retset[1].valuesize, retset[1].masksize)
+    print 'count: %d, valuesize: %d, attrsize: %d' % (retset[1].count, retset[1].valuesize, retset[1].attrsize)
 
     n = retset[1].root
 
     while n:
-        print '\tvalue: %s, mask: %s' % (n.value, n.mask)
+        print '\tvalue: %s, attr: %s' % (n.value, n.attr)
         n = n.next
 
     m.destroy()
@@ -355,11 +354,11 @@ def sortlist_del(*args):
     akey = args[0]
     valmin = args[1]
     valmax = args[2]
-    mask = args[3]
+    attr = args[3]
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
 
-    ret = m.sortlist_del(akey, MEMLINK_VALUE_VISIBLE, valmin, valmax, mask)
+    ret = m.sortlist_del(akey, MEMLINK_VALUE_VISIBLE, valmin, valmax, attr)
 
     if ret != MEMLINK_OK:
         print 'sortlist del error: ', ret
@@ -370,11 +369,11 @@ def sortlist_count(*args):
     akey = args[0]
     valmin = args[1]
     valmax = args[2]
-    mask = args[3]
+    attr = args[3]
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
 
-    ret, count = m.sortlist_count(akey, valmin, valmax, mask)
+    ret, count = m.sortlist_count(akey, valmin, valmax, attr)
 
     if ret != MEMLINK_OK:
         print 'sortlist count error: ', ret
@@ -389,15 +388,15 @@ def create_list(*args):
     try:
         akey = args[0]
         vallen = int(args[1])
-        mask = args[2]
+        attr = args[2]
     except:
         akey = key;
         vallen = 20;
-        mask = '20:1:1'
+        attr = '20:1:1'
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30)
 
-    ret = m.create_list(akey, vallen, mask)
+    ret = m.create_list(akey, vallen, attr)
 
     if ret != MEMLINK_OK:
         print 'create_list error: ', ret
@@ -410,15 +409,15 @@ def create_queue(*args):
     try:
         akey = args[0]
         vallen = int(args[1])
-        mask = args[2]
+        attr = args[2]
     except:
         akey = key;
         vallen = 20;
-        mask = '20:1:1'
+        attr = '20:1:1'
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30)
 
-    ret = m.create_queue(akey, vallen, mask)
+    ret = m.create_queue(akey, vallen, attr)
 
     if ret != MEMLINK_OK:
         print 'create_queue error: ', ret
@@ -431,15 +430,15 @@ def create_sortlist(*args):
     try:
         akey = args[0]
         vallen = int(args[1])
-        mask = args[2]
+        attr = args[2]
     except:
         akey = key;
         vallen = 20;
-        mask = '20:1:1'
+        attr = '20:1:1'
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30)
 
-    ret = m.create_sortlist(akey, vallen, MEMLINK_SORTLIST, mask)
+    ret = m.create_sortlist(akey, vallen, MEMLINK_SORTLIST, attr)
 
     if ret != MEMLINK_OK:
         print 'create_sortlist error: ', ret
@@ -466,21 +465,21 @@ def move(*args):
 
     m.destroy()
 
-def mask(*args):
+def attr(*args):
     try:
         akey = args[0]
         val = args[1]
-        mask = args[2]
+        attr = args[2]
     except:
-        print 'args usage: key val mask'
+        print 'args usage: key val attr'
         return
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30)
 
-    ret = m.mask(akey, val, mask)
+    ret = m.attr(akey, val, attr)
 
     if ret != MEMLINK_OK:
-        print 'mask error: ', ret
+        print 'attr error: ', ret
 
     m.destroy()
 
@@ -505,14 +504,14 @@ def tag(*args):
 def count(*args):
     try:
         akey = args[0]
-        mask = args[1]
+        attr = args[1]
     except:
         akey = key
-        mask = ''
+        attr = ''
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30)
 
-    ret, count = m.count(key, mask)
+    ret, count = m.count(key, attr)
 
     if ret != MEMLINK_OK:
         print 'count error: ', ret
@@ -583,7 +582,7 @@ def sync_conn_info():
 def insert_mkv(*args):
 
     if len(args) < 4 or len(args) % 4:
-        print 'args usage: key1 value1 mask1 pos1 key1 value2 mask2 pos2...'
+        print 'args usage: key1 value1 attr1 pos1 key1 value2 attr2 pos2...'
         return
 
     imkv = []
