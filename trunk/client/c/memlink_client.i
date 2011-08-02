@@ -37,7 +37,7 @@
     if (offsetof(MemLinkItem, value) == ((unsigned long)$1 - (unsigned long)arg1)) {
         resultobj = SWIG_FromCharPtrAndSize($1,arg1->valuesize);
     }else{
-        resultobj = SWIG_FromCharPtrAndSize($1,arg1->attrsize);
+        resultobj = SWIG_FromCharPtrAndSize($1,strlen(arg1->attr));
     }
 }
 
