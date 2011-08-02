@@ -1,6 +1,7 @@
 import com.googlecode.memlink.*;
 import java.util.*;
 import java.lang.*;
+import java.nio.*;
 
 public class Test
 {
@@ -14,8 +15,8 @@ public class Test
         }   
 		System.out.println("load ok!");
     }
-
-    public static void testQueue()
+    
+	public static void testQueue()
     {
 		MemLinkClient m = new MemLinkClient("127.0.0.1", 11001, 11002, 10);
         int i;
@@ -32,7 +33,7 @@ public class Test
         }
         
         for (i = 0; i < 100; i++) {
-            String value = String.format("%010d", i);
+            byte []value = String.format("%010d", i).getBytes();
             ret = m.lpush(key, value, "8:1:1");
             if (ret != cmemlink.MEMLINK_OK) {
                 System.out.println("lpush error:" + ret);
@@ -40,7 +41,7 @@ public class Test
             }
         }
         for (i = 100; i < 200; i++) {
-            String value = String.format("%010d", i);
+            byte []value = String.format("%010d", i).getBytes();
             ret = m.rpush(key, value, "8:1:0");
             if (ret != cmemlink.MEMLINK_OK) {
                 System.out.println("rpush error:" + ret);
@@ -85,6 +86,7 @@ public class Test
 
         m.destroy();
     }
+
     public static void testSortList()
     {
         MemLinkClient m = new MemLinkClient("127.0.0.1", 11001, 11002, 10);
@@ -96,23 +98,26 @@ public class Test
         int ret;
 		int num = 100;
 
-        ret = m.createSortList(key, 10, "4:3:1", cmemlink.MEMLINK_VALUE_STRING);
+        //ret = m.createSortList(key, 10, "4:3:1", cmemlink.MEMLINK_VALUE_STRING);
+        ret = m.createSortList(key, 4, "4:3:1", cmemlink.MEMLINK_VALUE_INT);
         if (ret != cmemlink.MEMLINK_OK) {
             System.out.println("create queue error!" + ret);
             return;
         }
        
-        List<String> values = new ArrayList<String>();
+        List<byte[]> values = new ArrayList<byte[]>();
 
         for (i = 0; i < num; i++) {
-            String value = String.format("%010d", i);
+            //byte []value = String.format("%010d", i).getBytes();
+            byte []value = ByteBuffer.allocate(4).putInt(i).array();
             values.add(value);
         }
 
         Collections.shuffle(values);
 
         for (i = 0; i < num; i++) {
-            //System.out.println(values.get(i));
+            //System.out.println(new String(values.get(i)));
+            System.out.println(byteArrayToInt(values.get(i), 0));
         }
 
         for (i = 0; i < num; i++) {
@@ -131,18 +136,20 @@ public class Test
         }
         System.out.println("count:" + rs.getCount());
 
-        MemLinkItem item = rs.getRoot();
+        MemLinkItem item = rs.getItems();
         while(item != null) {
-            System.out.println(item.getValue());
+			//String val = new String(item.getValue());
+			int val = byteArrayToInt(item.getValue(), 0);
+            System.out.println(val);
             item = item.getNext();
         }
         rs.delete();
         
-        String first = String.format("%010d", 0);
-        String last = String.format("%010d", 100);
+        byte []first = String.format("%010d", 0).getBytes();
+        byte []last = String.format("%010d", 100).getBytes();
 
-        String start = String.format("%010d", 15);
-        String end   = String.format("%010d", 33);
+        byte []start = String.format("%010d", 15).getBytes();
+        byte []end   = String.format("%010d", 33).getBytes();
 
         MemLinkCount count = new MemLinkCount();
         ret = m.sortListCount(key, first, last, "", count);
@@ -151,7 +158,6 @@ public class Test
             return; 
         }
         System.out.println(count.getVisible_count());
-
 
         ret = m.sortListCount(key, start, end, "", count);
         if (ret != cmemlink.MEMLINK_OK) {
@@ -186,7 +192,7 @@ public class Test
 
         m.destroy();
     }
-
+	
     public static void test()
     {
         MemLinkClient m = new MemLinkClient("127.0.0.1", 11001, 11002, 10);
@@ -194,7 +200,7 @@ public class Test
         int ret;
         int num = 100;
         int valuelen = 12;
-        String maskformat = "4:3:1";
+        String attrformat = "4:3:1";
 		String key = "haha";
 
         ret = m.rmkey(key);
@@ -203,7 +209,7 @@ public class Test
             return;
         }
 
-	    ret = m.createList(key, valuelen, maskformat);
+	    ret = m.createList(key, valuelen, attrformat);
         if (cmemlink.MEMLINK_OK != ret) {
             System.out.println("create error:" + ret);
             return;
@@ -214,7 +220,7 @@ public class Test
         int i = 0;
         //String value = "012345678912";
         for (i = 0; i < num; i++) {
-            String value = String.format("%010d", i);
+            byte []value = String.format("%010d", i).getBytes();
             ret = m.insert(key, value, "8:3:1", 0);
             if (cmemlink.MEMLINK_OK != ret) {
                 System.out.println("insert error!");
@@ -249,22 +255,22 @@ public class Test
             return;
         }
         i = num; 
-        MemLinkItem item = rs.getRoot();
+        MemLinkItem item = rs.getItems();
         while(i > 0) {
             i--;
             String value = String.format("%010d", i);
-            System.out.println(item.getValue());
-            if (!value.equals(item.getValue())){
-                System.out.println("item.value: " + item.getValue());
+			String value2 = new String(item.getValue());	
+            System.out.println(value2);
+            if (!value.equals(value2)){
+                System.out.println("item.value: " + value2);
                 return;
             }
             item = item.getNext();
         }
         rs.delete();
 
-
         System.out.println("move first value to next slot:");
-        ret = m.move(key, "0000000000", 1);
+        ret = m.move(key, "0000000000".getBytes(), 1);
         if (ret != cmemlink.MEMLINK_OK) {
             System.out.println("move error!");
             return;
@@ -282,23 +288,24 @@ public class Test
             return;
         }
         i = num; 
-        item = rs.getRoot();
+        item = rs.getItems();
         while(i > 0) {
             i--;
             String value = String.format("%010d", i);
-            System.out.println(item.getValue());
-            if (!value.equals(item.getValue())){
-                System.out.println("item.value: " + item.getValue());
+			String value2 = new String(item.getValue());
+            System.out.println(value2);
+            if (!value.equals(value2)){
+                System.out.println("item.value: " + value2);
                 return;
             }
             item = item.getNext();
         }
         rs.delete();
 
-        System.out.print("modify the first value\'s mask:");
-		ret = m.mask(key, "0000000000", "1:1:1");
+        System.out.print("modify the first value\'s attr:");
+		ret = m.attr(key, "0000000000".getBytes(), "1:1:1");
         if (ret != cmemlink.MEMLINK_OK) {
-            System.out.println("mask error!");
+            System.out.println("attr error!");
             return;
         }
         rs = new MemLinkResult();
@@ -313,13 +320,14 @@ public class Test
             return;
         }
         i = num; 
-        item = rs.getRoot();
+        item = rs.getItems();
         while(i > 0) {
             i--;
             String value = String.format("%010d", i);
-            System.out.println(item.getValue());
-            if (!value.equals(item.getValue())){
-                System.out.println("item.value: " + item.getValue());
+			String value2 = new String(item.getValue());
+            System.out.println(value2);
+            if (!value.equals(value2)){
+                System.out.println("item.value: " + value2);
                 return;
             }
             item = item.getNext();
@@ -327,9 +335,9 @@ public class Test
         rs.delete();
 
         System.out.print("tag the first value deleted");
-		ret = m.tag(key, "0000000000", 1);
+		ret = m.tag(key, "0000000000".getBytes(), 1);
         if (ret != cmemlink.MEMLINK_OK) {
-            System.out.println("mask error!");
+            System.out.println("attr error!");
             return;
         }
         rs = new MemLinkResult();
@@ -344,13 +352,14 @@ public class Test
             return;
         }
         i = num; 
-        item = rs.getRoot();
+        item = rs.getItems();
         while(i > 0) {
             i--;
             String value = String.format("%010d", i);
-            System.out.println(item.getValue());
-            if (!value.equals(item.getValue())){
-                System.out.println("item.value: " + item.getValue());
+			String value2 = new String(item.getValue());
+            System.out.println(value2);
+            if (!value.equals(value2)){
+                System.out.println("item.value: " + value2);
                 return;
             }
             item = item.getNext();
@@ -376,8 +385,8 @@ public class Test
         m.destroy();
 
     }
-
-	public static void test_info()
+	
+	public static void testInfo()
 	{
         MemLinkClient m = new MemLinkClient("127.0.0.1", 11001, 11002, 10);
 
@@ -392,8 +401,8 @@ public class Test
 			return;
 		}
 
-		System.out.println("conncount: " + rcinfo.getConncount());
-		MemLinkRcItem rcitem = rcinfo.getRoot();
+		System.out.println("conncount: " + rcinfo.getCount());
+		MemLinkRcItem rcitem = rcinfo.getItems();
         while(rcitem != null) {
             System.out.println("client ip: " + rcitem.getClient_ip());
             System.out.println("client port: " + rcitem.getPort());
@@ -410,8 +419,8 @@ public class Test
 			return;
 		}
 
-		System.out.println("conncount: " + wcinfo.getConncount());
-		MemLinkWcItem wcitem = wcinfo.getRoot();
+		System.out.println("conncount: " + wcinfo.getCount());
+		MemLinkWcItem wcitem = wcinfo.getItems();
         while(wcitem != null) {
             System.out.println("client ip: " + wcitem.getClient_ip());
             System.out.println("client port: " + wcitem.getPort());
@@ -428,8 +437,8 @@ public class Test
 			return;
 		}
 
-		System.out.println("conncount: " + scinfo.getConncount());
-		MemLinkScItem scitem = scinfo.getRoot();
+		System.out.println("conncount: " + scinfo.getCount());
+		MemLinkScItem scitem = scinfo.getItems();
         while(scitem != null) {
             System.out.println("client ip: " + scitem.getClient_ip());
             System.out.println("client port: " + scitem.getPort());
@@ -439,12 +448,12 @@ public class Test
 		scinfo.delete();
 	}
 
-	public static void test_insertmkv()
+	public static void testInsertMkv()
 	{
         MemLinkClient m = new MemLinkClient("127.0.0.1", 11001, 11002, 10);
 
         int valuelen = 12;
-        String maskformat = "4:3:1";
+        String attrformat = "4:3:1";
 		String keyname = "haha";
 		int ret;
 
@@ -453,7 +462,7 @@ public class Test
             System.out.println("rmkey error: " + ret);
         }
 
-	    ret = m.createList(keyname, valuelen, maskformat);
+	    ret = m.createList(keyname, valuelen, attrformat);
         if (cmemlink.MEMLINK_OK != ret) {
             System.out.println("create error:" + ret);
             return;
@@ -467,7 +476,7 @@ public class Test
 		int i;
 		for (i = 0; i < 10; i++) {
             String value = String.format("%010d", i);
-	        MemLinkInsertVal val = new MemLinkInsertVal(value, "1:1:1", 0);
+	        MemLinkInsertVal val = new MemLinkInsertVal(value.getBytes(), "1:1:1", 0);
 			key.add(val);
 		}
 
@@ -485,7 +494,7 @@ public class Test
             return;
         }
         i = 10; 
-        MemLinkItem item = rs.getRoot();
+        MemLinkItem item = rs.getItems();
         while(i > 0) {
             i--;
             String value = String.format("%010d", i);
@@ -500,11 +509,69 @@ public class Test
 
 		mkv.delete();
 	}
+	
+	public static void testBinary()
+	{
+		MemLinkClient m = new MemLinkClient("127.0.0.1", 11001, 11002, 10);
+
+        int valuelen = 4;
+        String attrformat = "4:3:1";
+		String keyname = "haha";
+		int ret;
+
+        ret = m.rmkey(keyname);
+        if (ret != cmemlink.MEMLINK_OK) {
+            System.out.println("rmkey error: " + ret);
+        }
+
+	    ret = m.createList(keyname, valuelen, attrformat);
+        if (cmemlink.MEMLINK_OK != ret) {
+            System.out.println("create error:" + ret);
+            return;
+        }
+
+		int i;
+		for (i = 0; i < 10; i++) {
+			ret = m.insert(keyname, ByteBuffer.allocate(4).putInt(i).array(), "8:2:1", 0);
+			if (ret != cmemlink.MEMLINK_OK) {
+				System.out.println("insert error:" + ret);
+			}
+		}
+
+		MemLinkResult rs = new MemLinkResult();
+        ret = m.range(keyname, cmemlink.MEMLINK_VALUE_VISIBLE, "", 0, 10, rs);
+        if (cmemlink.MEMLINK_OK != ret) {
+            System.out.println("range error!");
+            return;
+        }
+		System.out.println("count: " + rs.getCount());
+        MemLinkItem item = rs.getItems();
+        while(item != null) {
+            //String value = String.format("%010d", i);
+			byte []value = item.getValue();
+            System.out.println("item.value: " + byteArrayToInt(value, 0));
+            item = item.getNext();
+        }
+        rs.delete();
+
+
+	}
+
+	public static int byteArrayToInt(byte[] b, int offset) {
+        int value = 0;
+        for (int i = 0; i < 4; i++) {
+            int shift = (4 - 1 - i) * 8;
+            value += (b[i + offset] & 0x000000FF) << shift;
+        }
+        return value;
+    }
 
 	public static void main(String [] args)
 	{
         //testQueue();			
         //testSortList();
-		test_insertmkv();
+		//test();
+		//testInsertMkv();
+		testBinary();
     }
 }
