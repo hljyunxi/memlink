@@ -21,7 +21,7 @@ includes = ['.', '../../', '../../base', '../c/'] + python_includes
 ldflags  = ''
 libpath  = ['.', '../../base']
 libs	 = python_libs + ['c', 'm', 'pthread']
-files    = ['../../serial.c', '../c/memlink_client.c', '../../base/pack.c',
+files    = ['../../serial.c', '../c/memlink_client.c', '../../base/pack.c', '../../base/network.c',
 			'../../base/utils.c', '../../base/zzmalloc.c', '../../base/logfile.c']
 
 env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
