@@ -183,9 +183,22 @@ def memlinkresult_list(self):
     v = []
     item = self.items
     while item:
-        v.append((item.value, item.attr))
+        v.append([item.value, item.attr])
         item = item.next
     return v
+
+def memlinkresult_strlist(self):
+    v = []
+    item = self.items
+    while item:
+        pos = item.value.find('\x00')
+        if pos >= 0:
+            v.append([item.value[:pos], item.attr])
+        else:
+            v.append([item.value, item.attr])
+        item = item.next
+    return v
+
 
 def memlinkresult_free(self):
     memlink_result_free(self)
@@ -199,6 +212,7 @@ def memlinkresult_print(self):
     return s
 
 MemLinkResult.list    = memlinkresult_list
+MemLinkResult.strlist = memlinkresult_strlist
 MemLinkResult.close   = memlinkresult_free
 MemLinkResult.__del__ = memlinkresult_free
 MemLinkResult.__str__ = memlinkresult_print
