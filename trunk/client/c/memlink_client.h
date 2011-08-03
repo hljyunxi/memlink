@@ -34,9 +34,9 @@ typedef struct _memlink_item
 {
 	struct _memlink_item *next;	
     char    value[256];
-	char	valuesize;
+	unsigned char	valuesize;
     char    attr[256];
-	char	attrsize;
+	unsigned char	attrsize;
 }MemLinkItem;
 
 typedef struct _memlink_result
