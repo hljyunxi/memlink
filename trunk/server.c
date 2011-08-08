@@ -116,7 +116,7 @@ rconn_destroy(Conn *conn)
     if (conninfo) {
         for (i = 0; i < g_cf->max_read_conn; i++) {
             if (conn->sock == conninfo[i].fd) {
-                conninfo[i].fd = 0;
+                memset(&conninfo[i], 0x0, sizeof(ConnInfo));
                 break;
             }
         }
@@ -189,13 +189,17 @@ thserver_notify(int fd, short event, void *arg)
 {
     ThreadServer    *ts   = (ThreadServer*)arg;
     QueueItem       *itemhead = queue_get(ts->cq);
-    QueueItem        *item = itemhead;
+    QueueItem       *item = itemhead;
     int             items = 0;
     Conn            *conn;
-    int                ret;
-    int             conn_limit = g_cf->max_read_conn;
+    int             ret;
+    int             conn_limit = 0; 
+
 
     DINFO("thserver_notify: %d\n", fd);
+
+    conn_limit = (g_cf->max_read_conn > 0 ? g_cf->max_read_conn : g_cf->max_conn);
+ 
 
     /*if (conn_limit <= 0) {
         conn_limit = g_cf->max_conn;
@@ -217,7 +221,6 @@ thserver_notify(int fd, short event, void *arg)
         ts->conns++;
         for (i = 0; i < conn_limit; i++) {
             coninfo = &(ts->rw_conn_info[i]);
-            memset(coninfo, 0x0, sizeof(RwConnInfo));
             if (coninfo->fd == 0) {
                 coninfo->fd = conn->sock;
                 strcpy(coninfo->client_ip, conn->client_ip);
