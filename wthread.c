@@ -890,7 +890,7 @@ wconn_destroy(Conn *conn)
     if (conninfo) {
         for (i = 0; i < g_cf->max_write_conn; i++) {
             if (conn->sock == conninfo[i].fd) {
-                conninfo[i].fd = 0;
+                memset(&conninfo[i], 0x0, sizeof(ConnInfo));
                 break;
             }
         }
@@ -929,7 +929,6 @@ wthread_read(int fd, short event, void *arg)
         
         for (i = 0; i < g_cf->max_write_conn; i++) {
             conninfo = &(wt->rw_conn_info[i]);
-            memset(conninfo, 0x0, sizeof(RwConnInfo));
             if (conninfo->fd == 0) {
                 conninfo->fd = conn->sock;
                 strcpy(conninfo->client_ip, conn->client_ip);

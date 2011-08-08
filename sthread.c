@@ -731,7 +731,7 @@ sync_conn_destroy(Conn *c)
     if (sconninfo) {
         for (i = 0; i < g_cf->max_sync_conn; i++) {
             if (conn->sock == sconninfo[i].fd) {
-                sconninfo[i].fd = 0;
+                memset(&sconninfo[i], 0x0, sizeof(SyncConnInfo));
                 break;
             }
         }
@@ -771,7 +771,6 @@ sthread_read(int fd, short event, void *arg)
         
         for (i = 0; i < g_cf->max_sync_conn; i++) {
             sconninfo = &(st->sync_conn_info[i]);
-            memset(sconninfo, 0x0, sizeof(SyncConnInfo));
             if (sconninfo->fd == 0) {
                 sconninfo->fd = conn->sock;
                 strcpy(sconninfo->client_ip, conn->client_ip);
