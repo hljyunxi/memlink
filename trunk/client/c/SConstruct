@@ -31,7 +31,7 @@ if 'debug' in  BUILD_TARGETS:
     debug = env.StaticLibrary("memlink", static_libfiles)
     debug = env.SharedLibrary("memlink", shared_libfiles)
 else:
-    cflags += ' -O2'
+    cflags += ' -DNOLOG -O2'
     env = Environment(CCFLAGS=cflags, CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
 
     for fn in libfiles:
