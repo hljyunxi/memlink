@@ -132,7 +132,7 @@ def data_produce1():
     maskstr = '4:2:2'
     name = 'test'
     key = name + '.haha'
-    ret = client2master.create_list(name, 12, '3:3:3')
+    ret = client2master.create_table_list(name, 12, '3:3:3')
     if ret != MEMLINK_OK:
         print 'create error: %d' % ret
         return -1
