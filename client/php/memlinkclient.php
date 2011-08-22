@@ -27,7 +27,7 @@ class MemLinkClient
         $this->client = null;
     }
 
-	function create($key, $valuesize, $maskformat, $listtype, $valuetype)
+	function create_table($key, $valuesize, $maskformat, $listtype, $valuetype)
 	{
     	if( False == is_int($valuesize) or False == is_string($key) or False == is_string($maskformat) )
     	{
@@ -37,7 +37,7 @@ class MemLinkClient
 		return memlink_cmd_create($this->client, $key, $valuesize, $maskformat, $listtype, $valuetype);
 	}
 
-	function create_list($key, $valuesize, $maskformat)
+	function create_table_list($key, $valuesize, $maskformat)
 	{
     	if( False == is_int($valuesize) or False == is_string($key) or False == is_string($maskformat) )
     	{
@@ -47,7 +47,7 @@ class MemLinkClient
 		return memlink_cmd_create_list($this->client, $key, $valuesize, $maskformat);
 	}
 
-	function create_queue($key, $valuesize, $maskformat)
+	function create_table_queue($key, $valuesize, $maskformat)
 	{
     	if( False == is_int($valuesize) or False == is_string($key) or False == is_string($maskformat) )
     	{
@@ -57,7 +57,7 @@ class MemLinkClient
 		return memlink_cmd_create_queue($this->client, $key, $valuesize, $maskformat);
 	}
 
-    function create_sortlist($key, $valuesize, $maskformat, $valuetype)
+    function create_table_sortlist($key, $valuesize, $maskformat, $valuetype)
 	{
     	if( False == is_int($valuesize) or False == is_string($key) or False == is_string($maskformat) )
     	{
@@ -65,6 +65,14 @@ class MemLinkClient
     	}
     	
 		return memlink_cmd_create_sortlist($this->client, $key, $valuesize, $maskformat, $valuetype);
+	}
+
+	function create_node($name, $key)
+	{
+		if (false == is_string($name) or false == is_string($key)) {
+			return -1;
+		}
+		return memlink_cmd_create_node($this->client, $name, $key);
 	}
 
 	function ping()

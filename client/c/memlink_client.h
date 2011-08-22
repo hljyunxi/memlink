@@ -113,13 +113,15 @@ int			memlink_cmd_clean(MemLink *m, char *key);
 int         memlink_cmd_clean_all(MemLink *m);
 int			memlink_cmd_stat(MemLink *m, char *key, MemLinkStat *stat);
 int			memlink_cmd_stat_sys(MemLink *m, MemLinkStatSys *stat);
-int			memlink_cmd_create(MemLink *m, char *key, int valuelen, char *attrstr, 
+int			memlink_cmd_create_table(MemLink *m, char *name, int valuelen, char *attrstr, 
                                 unsigned char listtype, unsigned char valuetype);
 
-int			memlink_cmd_create_list(MemLink *m, char *key, int valuelen, char *attrstr);
-int			memlink_cmd_create_queue(MemLink *m, char *key, int valuelen, char *attrstr);
-int			memlink_cmd_create_sortlist(MemLink *m, char *key, int valuelen, char *attrstr, 
+int			memlink_cmd_create_table_list(MemLink *m, char *name, int valuelen, char *attrstr);
+int			memlink_cmd_create_table_queue(MemLink *m, char *name, int valuelen, char *attrstr);
+int			memlink_cmd_create_table_sortlist(MemLink *m, char *name, int valuelen, char *attrstr, 
                                         unsigned char valuetype);
+int			memlink_cmd_create_node(MemLink *m, char *name, char *key);
+int			memlink_cmd_remove_table(MemLink *m, char *name);
 int			memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen);
 int			memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen, 
                                char *attrstr, int pos);
