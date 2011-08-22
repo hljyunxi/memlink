@@ -52,6 +52,7 @@ void    conn_destroy_udp(Conn *conn);
 int     conn_wrote(Conn *conn);
 int     conn_timeout(Conn *conn);
 int		conn_send_buffer(Conn *conn);
+int		conn_send_buffer_reply(Conn *conn, int retcode, char *retdata, int retlen);
 char*   conn_write_buffer(Conn *conn, int size);
 char*   conn_write_buffer_append(Conn *conn, void *data, int datalen);
 int     conn_write_buffer_head(Conn *conn, int retcode, int len);
