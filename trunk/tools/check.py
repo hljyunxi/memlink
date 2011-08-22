@@ -77,43 +77,62 @@ def dumpfile(filename):
         return
 
     while True:
-        ltypestr = f.read(1)
-        if not ltypestr:
+        # only check end of file
+        firststr = f.read(1)
+        if not firststr:
             break
+        # table name len
+        namelen = struct.unpack('B', firststr)[0]
+        # table name string (namelen B)
+        name  = struct.unpack(str(namelen) + 's', f.read(namelen))[0]
         # list type
-        listtype = struct.unpack('B', ltypestr)[0]
-        # value sort field
-        sortfield = struct.unpack('B', f.read(1))[0]
+        listtype = struct.unpack('B', f.read(1))[0]
         # value type 
         valuetype = struct.unpack('B', f.read(1))[0]
-        # key len (1B)
-        klen = struct.unpack('B', f.read(1))[0]
-        # key string (keylen B)
-        key  = struct.unpack(str(klen) + 's', f.read(klen))[0]
         # valuesize (1B)
-        valuelen = struct.unpack('B', f.read(1))[0]
-        # masksize (1B)
-        masklen  = struct.unpack('B', f.read(1))[0]
-        # masknum (1B)
-        masknum  = struct.unpack('B', f.read(1))[0]
-        # maskformat (masknum B)
-        s = f.read(masknum)
-        maskformat = []
-        for i in range(0, masknum):
-            maskformat.append(struct.unpack('B', s[i])[0]) 
+        valuesize = struct.unpack('B', f.read(1))[0]
+        # value sort field
+        sortfield = struct.unpack('B', f.read(1))[0]
+        # attr size (1B)
+        attrsize  = struct.unpack('B', f.read(1))[0]
+        # attr num (1B)
+        attrnum  = struct.unpack('B', f.read(1))[0]
+        # attrformat (masknum B)
+        attrstr = ''
+        if attrsize > 0:
+            s = f.read(attrnum)
+            attrformat = []
+            for i in range(0, attrnum):
+                attrformat.append(struct.unpack('B', s[i])[0]) 
+            attrstr = ':'.join([str(a) for a in attrformat])
+ 
+        #print (name, listtype, valuetype, sortfield, valuesize, attrsize, attrnum, attrstr)
+        print 'table:%s, listtype:%d, valuetype:%d, sortfield:%d, valuesize:%d, attrsize:%d, attrnum:%d, %s' % \
+            (name, listtype, valuetype, sortfield, valuesize, attrsize, attrnum, attrstr)
 
-        itemnum  = struct.unpack('I', f.read(4))[0] 
-        
-        print 'listtype:%d, valuetype:%d, sortfield:%d, key:%s, valuelen:%d, masklen:%d, masknum:%d, maskformat:%s, itemnum:%d' % \
-                (listtype, valuetype, sortfield, key, valuelen, masklen, masknum, maskformat, itemnum)
+   
+        while True: 
+            # flag
+            flag = struct.unpack('B', f.read(1))[0]
+            print 'flag:', flag
+            if flag == 0:
+                break
+            # key len (1B)
+            klen = struct.unpack('B', f.read(1))[0]
+            # key string (keylen B)
+            key  = struct.unpack(str(klen) + 's', f.read(klen))[0]
 
-        datalen  = valuelen + masklen
+            itemnum  = struct.unpack('I', f.read(4))[0] 
+            
+            print 'key:%s, num%d' % (key, itemnum)
 
-        if itemnum > 0:
-            for i in xrange(0, itemnum):
-                s = f.read(datalen)
-                print '\t' + repr(s)
-        
+            datalen  = valuesize + attrsize
+
+            if itemnum > 0:
+                for i in xrange(0, itemnum):
+                    s = f.read(datalen)
+                    print '\t' + repr(s)
+            
     f.close()
 
 def commitfile(filename):
