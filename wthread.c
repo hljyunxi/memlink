@@ -312,7 +312,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             break;
 
         case CMD_CREATE_NODE: {
-            DINFO("<<< cmd CREATE_NODE >>>");
+            DINFO("<<< cmd CREATE_NODE >>>\n");
             char name[256] = {0};
             ret = cmd_create_node_unpack(data, name, keybuf);
             if (ret <= 0) {
