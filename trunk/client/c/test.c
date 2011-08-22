@@ -1,82 +1,92 @@
 #include <stdio.h>
 #include <string.h>
+#include <pthread.h>
 #include "memlink_client.h"
-#include "logfile.h"
+#include "base/logfile.h"
 
-int main(int argc, char *argv[])
+void* test(void *arg)
 {
     MemLink *m;
     char buf[128];
-    logfile_create("stdout", 3);
+    logfile_create("stdout", LOG_INFO);
 
     m = memlink_create("127.0.0.1", 11001, 11002, 0);
     if (NULL == m) {
-        printf("memlink_create error!\n");
+        DINFO("memlink_create error!\n");
     }
 
     int ret, i;
-    //ret = memlink_cmd_dump(m);
-    //DINFO("memlink_dump: %d\n", ret);
-
-    //ret = memlink_cmd_clean(m, "haha");
-
-    //ret = memlink_cmd_stat(m, "haha");
-    //DINFO("memlink_cmd_xx: %d\n", ret);
-
-   
-    
-    printf("============== create ===============\n");
-    for (i = 0; i < 2; i++) {
-        sprintf(buf, "haha%d", i);
-        ret = memlink_cmd_create_list(m, buf, 6, "4:3:1");
-        DINFO("memlink_cmd_xx: %d\n", ret);
+    char *name = "test";
+    DINFO("============== create ===============\n");
+    for (i = 0; i < 1; i++) {
+        //sprintf(buf, "%s.haha%d", name, i);
+        ret = memlink_cmd_create_table_list(m, name, 6, "4:3:1");
+        if (ret != MEMLINK_OK) {
+            DERROR("memlink_cmd_xx: %d, key:%s\n", ret, buf);
+        }
     }
 
     //ret = memlink_cmd_del(m, "haha", "gogo", 4);
-    
-    for (i = 0; i < 30; i++) {
-        printf("============== insert ===============\n");
-        sprintf(buf, "gogo%d", i);
-        DINFO("INSERT haha1 %s\n", buf);
-        ret = memlink_cmd_insert(m, "haha1", buf, strlen(buf), "1:2:0", 0);
-        DINFO("memlink_cmd_insert: %d\n", ret);
+
+    char *key = "test.haha0";
+    while (1) {
+        for (i = 0; i < 200; i++) {
+            //DINFO("============== insert ===============\n");
+            sprintf(buf, "gogo%d", i);
+            //DINFO("INSERT haha1 %s\n", buf);
+            ret = memlink_cmd_insert(m, key, buf, strlen(buf), "1:2:0", 0);
+            if (ret != MEMLINK_OK) {
+                DERROR("memlink_cmd_insert error:%d, key:%s, val:%s\n", ret, key, buf);
+            }
+        }
+        for (i = 0; i < 200; i+=3) {
+            sprintf(buf, "gogo%d", i);
+            ret = memlink_cmd_del(m, key, buf, strlen(buf)); 
+            if (ret != MEMLINK_OK) {
+                DERROR("del error:%d, key:%s, val:%s\n", ret, key, buf);
+            }
+        }
+        for (i = 1; i < 200; i+=3) {
+            sprintf(buf, "gogo%d", i);
+            ret = memlink_cmd_del(m, key, buf, strlen(buf)); 
+            if (ret != MEMLINK_OK) {
+                DERROR("del error:%d, key:%s, val:%s\n", ret, key, buf);
+            }
+        }
+        for (i = 2; i < 200; i+=3) {
+            sprintf(buf, "gogo%d", i);
+            ret = memlink_cmd_del(m, key, buf, strlen(buf)); 
+            if (ret != MEMLINK_OK) {
+                DERROR("del error:%d, key:%s, val:%s\n", ret, key, buf);
+            }
+        }
     }
 
-    printf("============= stat ================\n");
-    MemLinkStat stat;
-    ret = memlink_cmd_stat(m, "haha1", &stat);
-    DINFO("memlink_cmd_stat: %d\n", ret);
-    DINFO("valuesize:%d, attrsize:%d, blocks:%d, data:%d, data_used:%d, mem:%d\n", stat.valuesize, stat.attrsize, stat.blocks, stat.data, stat.data_used, stat.mem);
-
-    /*
-    printf("=============================\n");
-    ret = memlink_cmd_update(m, "haha", "gogo1", 5, 0);
-    DINFO("memlink_cmd_xx: %d\n", ret);
-
-    printf("=============================\n");
-    ret = memlink_cmd_attr(m, "haha", "gogo2", 5, "10:3:1");
-    DINFO("memlink_cmd_xx: %d\n", ret);
-
-    printf("=============================\n");
-    ret = memlink_cmd_tag(m, "haha", "gogo1", 5, 1);
-    DINFO("memlink_cmd_xx: %d\n", ret);
-    */
-
-    for (i = 0; i < 1; i++) {
+    /*for (i = 0; i < 1; i++) {
         printf("============== range %d ===============\n", i);
         MemLinkResult result;
         ret = memlink_cmd_range(m, "haha1", 0,  "::", 2, 10, &result);
         DINFO("valuesize:%d, attrsize:%d, count:%d\n", result.valuesize, result.attrsize,
                 result.count);
-    }
-
-    printf("============== dump %d ===============\n", i);
-    ret = memlink_cmd_dump(m);
-    if (ret != MEMLINK_OK) {
-        DERROR("dump error: %d\n", ret);
-    }
-
+    }*/
     memlink_destroy(m);
+
+    return 0;
+}
+
+
+int main(int argc, char *argv[])
+{
+    int threadnum = 10;
+    pthread_t threads[threadnum];
+    int i;
+
+    for (i = 0; i < threadnum; i++) {
+        pthread_create(&threads[i], NULL, test, NULL);
+    }
+    for (i = 0; i < threadnum; i++) {
+        pthread_join(threads[i], NULL);
+    }
 
     return 0;
 }
