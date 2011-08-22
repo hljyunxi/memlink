@@ -77,6 +77,7 @@ timeout_wait(int fd, int timeout, int writing)
     return TRUE;  // true
 }*/
 
+/*
 int
 timeout_wait(int fd, int timeout, int writing)
 {
@@ -104,11 +105,11 @@ timeout_wait(int fd, int timeout, int writing)
         ret = poll(fds, 1, timeout);
         if (ret < 0) {
             if (errno == EINTR) {
-                /*gettimeofday(&end, NULL);
-                unsigned int td = timediff(&start, &end);
-                timeout -= td / 1000;
-                if (timeout <= 0)
-                    return FALSE;*/
+                //gettimeofday(&end, NULL);
+                //unsigned int td = timediff(&start, &end);
+                //timeout -= td / 1000;
+                //if (timeout <= 0)
+                //    return FALSE;
                 continue;
             }
             char errbuf[1024];
@@ -139,11 +140,11 @@ timeout_wait_write(int fd, int timeout)
     return timeout_wait(fd, timeout, TRUE);
 }
 
-/**
+/
  * readn - try to read n bytes with the use of a loop
  *
  * Return the bytes read. On error, -1 is returned.
- */
+ /
 ssize_t 
 readn(int fd, void *vptr, size_t n, int timeout)
 {
@@ -183,10 +184,10 @@ readn(int fd, void *vptr, size_t n, int timeout)
     return (n - nleft);
 }
 
-/**
+/
  * writen - write n bytes with the use of a loop
  *
- */
+ /
 ssize_t
 writen(int fd, const void *vptr, size_t n, int timeout)
 {
@@ -221,6 +222,7 @@ writen(int fd, const void *vptr, size_t n, int timeout)
     }
     return n;
 }
+*/
 
 /**
  * 显示为2进制

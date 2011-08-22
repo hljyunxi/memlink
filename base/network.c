@@ -16,6 +16,7 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <poll.h>
 #include "logfile.h"
 //#include "myconfig.h"
 #include "network.h"
@@ -269,6 +270,158 @@ set_block(int fd)
     
     return OK;
 }
+
+int
+timeout_wait(int fd, int timeout, int writing)
+{
+    if (timeout <= 0)
+        return TRUE; // true
+
+    if (fd < 0) {
+        DERROR("timeout_wait fd error: %d\n", fd);
+        return FALSE; //error
+    }
+    // second to millisecond 
+    timeout = timeout * 1000;
+    struct pollfd fds[1];
+    int ret;
+    //struct timeval start, end;
+
+    fds[0].fd = fd;
+    while (1) {
+        //gettimeofday(&start, NULL);
+        if (writing)
+            fds[0].events = POLLOUT;
+        else
+            fds[0].events = POLLIN;
+
+        ret = poll(fds, 1, timeout);
+        //DINFO("poll:%d\n", ret);
+        if (ret < 0) {
+            if (errno == EINTR) {
+                /*gettimeofday(&end, NULL);
+                unsigned int td = timediff(&start, &end);
+                timeout -= td / 1000;
+                if (timeout <= 0)
+                    return FALSE;*/
+                continue;
+            }
+            char errbuf[1024];
+            strerror_r(errno, errbuf, 1024);
+            DWARNING("timeout_wait poll error: %d, %s\n", fds[0].fd,  errbuf);
+            return FALSE;
+        }
+        break;
+    }
+    /*DINFO("poll %x in:%d, out:%d, err:%d, hup:%d\n", fds[0].revents, 
+            fds[0].revents & POLLIN, fds[0].revents & POLLOUT, 
+            fds[0].revents & POLLERR, fds[0].revents & POLLHUP);*/
+
+    if ((fds[0].revents & POLLOUT) && writing)
+        return TRUE;
+
+    if ((fds[0].revents & POLLIN) && !writing)
+        return TRUE;
+    
+    return FALSE;
+}
+
+int
+timeout_wait_read(int fd, int timeout)
+{
+    return timeout_wait(fd, timeout, FALSE);
+}
+
+int
+timeout_wait_write(int fd, int timeout)
+{
+    return timeout_wait(fd, timeout, TRUE);
+}
+
+/**
+ * readn - try to read n bytes with the use of a loop
+ *
+ * Return the bytes read. On error, -1 is returned.
+ */
+ssize_t 
+readn(int fd, void *vptr, size_t n, int timeout)
+{
+    size_t  nleft;
+    ssize_t nread;
+    char    *ptr;
+
+    ptr = vptr;
+    nleft = n;
+
+    while (nleft > 0) {
+        if (timeout > 0 && timeout_wait_read(fd, timeout) != TRUE) {
+            DWARNING("read timeout.\n");
+            break;
+        }
+        if ((nread = read(fd, ptr, nleft)) < 0) {
+            char errbuf[1024];
+            strerror_r(errno, errbuf, 1024);
+            //DERROR("nread: %d, error: %s\n", nread,  errbuf);
+            if (errno == EINTR) {
+                nread = 0;
+            }else {
+                char errbuf[1024];
+                strerror_r(errno, errbuf, 1024);
+                DERROR("readn error: %s\n",  errbuf);
+                //MEMLINK_EXIT;
+                return -1;
+            }
+        }else if (nread == 0) {
+            DERROR("read 0, maybe conn close.\n");
+            break;
+        }
+        nleft -= nread;
+        ptr += nread;
+    }
+
+    return (n - nleft);
+}
+
+/**
+ * writen - write n bytes with the use of a loop
+ *
+ */
+ssize_t
+writen(int fd, const void *vptr, size_t n, int timeout)
+{
+    size_t  nleft;
+    ssize_t nwritten;
+    const char *ptr;
+
+    ptr = vptr;
+    nleft = n;
+
+    while (nleft > 0) {
+        //DINFO("try write %d via fd %d\n", (int)nleft, fd);
+        if (timeout > 0 && timeout_wait_write(fd, timeout) != TRUE) {
+            break;
+        }
+
+        if ((nwritten = write(fd, ptr, nleft)) <= 0) {
+            if (nwritten < 0 && errno == EINTR){
+                nwritten = 0;
+            }else{
+                char errbuf[1024];
+                strerror_r(errno, errbuf, 1024);
+                DERROR("writen error: %s\n",  errbuf);
+                //MEMLINK_EXIT;
+                return -1;
+            }
+        }
+        //char buf[1024];
+        //DINFO("nwritten: %d, %s\n", (int)nwritten, formath((char*)ptr, (int)nwritten, buf, 1024));
+        nleft -= nwritten;
+        ptr += nwritten;
+    }
+    return n;
+}
+
+
 
 /**
  * @}

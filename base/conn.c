@@ -525,6 +525,12 @@ conn_write_buffer_reply(Conn *conn, int retcode, char *retdata, int retlen)
 }
 
 int
+conn_send_buffer_reply(Conn *conn, int retcode, char *retdata, int retlen)
+{
+    conn_write_buffer_reply(conn, retcode, retdata, retlen);
+    return conn_send_buffer(conn);
+}
+int
 conn_wrote(Conn *conn)
 {
     DINFO("write complete! change event to read.\n");
