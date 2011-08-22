@@ -43,8 +43,9 @@
 int 
 dumpfile(HashTable *ht)
 {
+    Table       *tb;
     HashNode    *node;
-    HashNode    **bks = ht->bunks;
+    //Table       **tbs = ht->tables;
 
     char        tmpfile[PATH_MAX];
     char        dumpfile[PATH_MAX];
@@ -70,6 +71,7 @@ dumpfile(HashTable *ht)
     gettimeofday(&start, NULL);
     FILE    *fp = fopen64(tmpfile, "wb");
 
+    // head
     unsigned short formatver = DUMP_FORMAT_VERSION;
     ffwrite(&formatver, sizeof(short), 1, fp);
     DINFO("write format version %d\n", formatver);
@@ -88,56 +90,62 @@ dumpfile(HashTable *ht)
 
     unsigned char keylen;
     int datalen;
-    int n;
+    int n, k;
     int dump_count = 0;
-
-    for (i = 0; i < HASHTABLE_BUNKNUM; i++) {
-        node = bks[i];
-        while (NULL != node) {
-            DINFO("start dump key: %s\n", node->key);
-            unsigned char wchar; 
-            wchar = node->type;
-            //ffwrite(&node->type, sizeof(char), 1, fp);
-            ffwrite(&wchar, sizeof(char), 1, fp);
-            wchar = node->sortfield;
-            //ffwrite(&node->sortfield, sizeof(char), 1, fp);
-            ffwrite(&wchar, sizeof(char), 1, fp);
-            wchar = node->valuetype;
-            //ffwrite(&node->valuetype, sizeof(char), 1, fp);
-            ffwrite(&wchar, sizeof(char), 1, fp);
-            keylen = strlen(node->key);
+    char nodeflag = 1;
+    
+    for (k = 0; k < HASHTABLE_MAX_TABLE; k++) {
+        tb = ht->tables[k];
+        while (tb != NULL) {
+            DINFO("start dump table: %s\n", tb->name);
+            keylen = strlen(tb->name);
             ffwrite(&keylen, sizeof(char), 1, fp);
-            //DINFO("dump keylen: %d\n", keylen);
-            ffwrite(node->key, keylen, 1, fp);
-            ffwrite(&node->valuesize, sizeof(char), 1, fp);
-            ffwrite(&node->attrsize, sizeof(char), 1, fp);
-            wchar = node->attrnum;
-            //ffwrite(&node->attrnum, sizeof(char), 1, fp);
-            ffwrite(&wchar, sizeof(char), 1, fp);
-
-            if (node->attrnum > 0) {
-                ffwrite(node->attrformat, sizeof(char) * node->attrnum, 1, fp);
+            ffwrite(tb->name, keylen, 1, fp);
+            ffwrite(&tb->listtype, sizeof(char), 1, fp);
+            ffwrite(&tb->valuetype, sizeof(char), 1, fp);
+            ffwrite(&tb->valuesize, sizeof(char), 1, fp);
+            ffwrite(&tb->sortfield, sizeof(char), 1, fp);
+            ffwrite(&tb->attrsize, sizeof(char), 1, fp);
+            ffwrite(&tb->attrnum, sizeof(char), 1, fp);
+            if (tb->attrnum > 0) {
+                ffwrite(table_attrformat(tb), sizeof(char) * tb->attrnum, 1, fp);
             }
-            /*for (k = 0; k < node->attrnum; k++) {
-                DINFO("dump attr, k:%d, attr:%d\n", k, node->attrformat[k]);
-            }*/
-            ffwrite(&node->used, sizeof(int), 1, fp);
-            datalen = node->valuesize + node->attrsize;
+            datalen = tb->valuesize + tb->attrsize;
 
-            DataBlock *dbk = node->data;
+            for (i = 0; i < HASHTABLE_BUNKNUM; i++) {
+                node = tb->nodes[i];
+                nodeflag = 1; 
+                while (NULL != node) {
+                    ffwrite(&nodeflag, sizeof(char), 1, fp);
+                    DINFO("start dump key:%s, len:%d, used:%u, datalen:%d\n", 
+                            node->key, (uint32_t)strlen(node->key), node->used, datalen);
+                    keylen = strlen(node->key);
+                    ffwrite(&keylen, sizeof(char), 1, fp);
+                    //DINFO("dump keylen: %d\n", keylen);
+                    ffwrite(node->key, keylen, 1, fp);
+                    ffwrite(&node->used, sizeof(int), 1, fp);
 
-            while (dbk) {
-                char *itemdata = dbk->data;
-                for (n = 0; n < dbk->data_count; n++) {
-                    if (dataitem_have_data(node, itemdata, 0)) {    
-                        ffwrite(itemdata, datalen, 1, fp);
-                        dump_count += 1;
+                    DataBlock *dbk = node->data;
+
+                    while (dbk) {
+                        char *itemdata = dbk->data;
+                        for (n = 0; n < dbk->data_count; n++) {
+                            if (dataitem_have_data(tb, node, itemdata, 0)) {    
+                                ffwrite(itemdata, datalen, 1, fp);
+                                dump_count += 1;
+                            }
+                            itemdata += datalen;
+                        }
+                        dbk = dbk->next;
                     }
-                    itemdata += datalen;
+                    node = node->next;
                 }
-                dbk = dbk->next;
+                if (tb->nodes[i] != NULL) {
+                    nodeflag = 0;
+                    ffwrite(&nodeflag, sizeof(char), 1, fp);
+                }
             }
-            node = node->next;
+            tb = tb->next;
         }
     }
     
@@ -289,120 +297,132 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
         g_runtime->dumplogpos = dumplogpos;
     }
 
-
     long long size;
     ret = ffread(&size, sizeof(long long), 1, fp);
 
     unsigned char keylen;
-    unsigned char attrlen;
+    unsigned char attrsize;
     unsigned char attrnum;
-    unsigned char attrformat[HASHTABLE_MASK_MAX_ITEM];
-    unsigned char valuelen;
+    unsigned char attrformat[HASHTABLE_ATTR_MAX_ITEM];
+    unsigned char valuesize;
     unsigned char valuetype;
     unsigned int  itemnum;
     char          key[256];
-    unsigned char type;
+    char          name[256];
+    unsigned char listtype;
     unsigned char sortfield;
     int           i;
     int           datalen;
     int           load_count = 0;
     unsigned int  block_data_count_max = g_cf->block_data_count[g_cf->block_data_count_items - 1];
+    
+    Table   *tb;
 
     while (ftell(fp) < filelen) {
-        //DINFO("--- cur: %d, filelen: %d, %d ---\n", (int)ftell(fp), filelen, feof(fp));
-        ret = ffread(&type, sizeof(char), 1, fp);
-        ret = ffread(&sortfield, sizeof(char), 1, fp);
-        ret = ffread(&valuetype, sizeof(char), 1, fp);
         ret = ffread(&keylen, sizeof(unsigned char), 1, fp);
-        //DINFO("keylen: %d\n", keylen);
-        ret = ffread(key, keylen, 1, fp);
-        key[keylen] = 0;
-        //DINFO("key: %s\n", key);
-        
-        ret = ffread(&valuelen, sizeof(unsigned char), 1, fp);
-        //DINFO("valuelen: %d\n", valuelen);
-        ret = ffread(&attrlen, sizeof(unsigned char), 1, fp);
-        //DINFO("attrlen: %d\n", attrlen);
+        ret = ffread(name, keylen, 1, fp);
+        name[keylen] = 0;
+        ret = ffread(&listtype, sizeof(char), 1, fp);
+        ret = ffread(&valuetype, sizeof(char), 1, fp);
+        ret = ffread(&valuesize, sizeof(unsigned char), 1, fp);
+        ret = ffread(&sortfield, sizeof(char), 1, fp);
+        ret = ffread(&attrsize, sizeof(char), 1, fp);
         ret = ffread(&attrnum, sizeof(char), 1, fp);
-        //DINFO("attrnum: %d\n", attrnum);
+
         if (attrnum > 0) {
             ret = ffread(attrformat, sizeof(char) * attrnum, 1, fp);
         }
-            
-        /*for (i = 0; i < attrnum; i++) {
-            DINFO("attrformat, i:%d, attr:%d\n", i, attrformat[i]);
-        }*/
-        ret = ffread(&itemnum, sizeof(unsigned int), 1, fp);
-        datalen = valuelen + attrlen;
-        //DINFO("itemnum: %d, datalen: %d\n", itemnum, datalen);
-
-        unsigned int attrarray[HASHTABLE_MASK_MAX_ITEM] = {0};
+        unsigned int attrarray[HASHTABLE_ATTR_MAX_ITEM] = {0};
         for (i = 0; i < attrnum; i++) {
             attrarray[i] = attrformat[i];
         }
-        //DINFO("create info, key:%s, valuelen:%d, attrnum:%d\n", key, valuelen, attrnum);
-        ret = hashtable_key_create_attr(ht, key, valuelen, attrarray, attrnum, type, valuetype);
+        
+        ret = hashtable_create_table(ht, name, valuesize, attrarray, attrnum, listtype, valuetype);
         if (ret != MEMLINK_OK) {
-            DERROR("hashtable_key_create_attr error, ret:%d\n", ret);
-            return -2;
+            DERROR("create table error! %d\n", ret);
+            return -1;
         }
-        HashNode    *node = hashtable_find(ht, key);
-        DataBlock   *dbk  = NULL;
-        DataBlock   *newdbk;
-        char        *itemdata = NULL;
+        tb = hashtable_find_table(ht, name);
 
-        for (i = 0; i < itemnum; i++) {
-            //DINFO("i: %d\n", i);
-            if (i % block_data_count_max == 0) {
-                //DINFO("create new datablock ...\n");
-                /*
-                if (itemnum == 1) {
-                    newdbk = mempool_get(g_runtime->mpool, sizeof(DataBlock) + datalen); 
-                    newdbk->data_count = 1;
-                }else{
-                    newdbk = mempool_get(g_runtime->mpool, sizeof(DataBlock) + g_cf->block_data_count *datalen); 
-                    newdbk->data_count = g_cf->block_data_count;
-                }*/
-                
-                if (itemnum - i > block_data_count_max) {
-                    newdbk = mempool_get2(g_runtime->mpool, block_data_count_max, datalen); 
-                }else{
-                    newdbk = mempool_get2(g_runtime->mpool, itemnum-i, datalen); 
-                }
+        char nodeflag;
+        while (1) {
+            ffread(&nodeflag, sizeof(char), 1, fp);
+            if (nodeflag == 0)
+                break;
 
-                if (NULL == newdbk) {
-                    DERROR("mempool_get NULL!\n");
-                    MEMLINK_EXIT;
-                }
+            ret = ffread(&keylen, sizeof(unsigned char), 1, fp);
+            ret = ffread(key, keylen, 1, fp);
+            key[keylen] = 0;
 
-                if (dbk == NULL) {
-                    node->data = newdbk;
-                }else{
-                    dbk->next = newdbk;
-                }
-                newdbk->prev = dbk;
-                dbk = newdbk;
-                //node->all += newdbk->data_count;
-
-                itemdata = dbk->data;
+            ret = table_create_node(tb, key);
+            if (ret != MEMLINK_OK) {
+                DERROR("create node error: %d\n", ret);
+                return -1;
             }
-            ret = ffread(itemdata, datalen, 1, fp);
-            ret = dataitem_check_data(node, itemdata);
-            if (ret == MEMLINK_VALUE_VISIBLE) {
-                dbk->visible_count++;
-            }else{
-                dbk->tagdel_count++;
-            }
-            node->used++;
 
-            /*char buf[256] = {0};
-            memcpy(buf, itemdata, node->valuesize);
-            DINFO("load value: %s\n", buf);*/
-            
-            itemdata += datalen;
-            load_count += 1;
+            ret = ffread(&itemnum, sizeof(unsigned int), 1, fp);
+            datalen = valuesize + attrsize;
+            //DINFO("itemnum: %d, datalen: %d\n", itemnum, datalen);
+            //DINFO("create info, key:%s, valuelen:%d, attrnum:%d\n", key, valuelen, attrnum);
+            HashNode    *node = table_find(tb, key);
+            DataBlock   *dbk  = NULL;
+            DataBlock   *newdbk;
+            char        *itemdata = NULL;
+
+            for (i = 0; i < itemnum; i++) {
+                //DINFO("i: %d\n", i);
+                if (i % block_data_count_max == 0) {
+                    //DINFO("create new datablock ...\n");
+                    /*
+                       if (itemnum == 1) {
+                       newdbk = mempool_get(g_runtime->mpool, sizeof(DataBlock) + datalen); 
+                       newdbk->data_count = 1;
+                       }else{
+                       newdbk = mempool_get(g_runtime->mpool, sizeof(DataBlock) + g_cf->block_data_count *datalen); 
+                       newdbk->data_count = g_cf->block_data_count;
+                       }*/
+
+                    if (itemnum - i > block_data_count_max) {
+                        newdbk = mempool_get2(g_runtime->mpool, block_data_count_max, datalen); 
+                    }else{
+                        newdbk = mempool_get2(g_runtime->mpool, itemnum-i, datalen); 
+                    }
+
+                    if (NULL == newdbk) {
+                        DERROR("mempool_get NULL!\n");
+                        MEMLINK_EXIT;
+                    }
+
+                    if (dbk == NULL) {
+                        node->data = newdbk;
+                    }else{
+                        dbk->next = newdbk;
+                    }
+                    newdbk->prev = dbk;
+                    dbk = newdbk;
+                    //node->all += newdbk->data_count;
+
+                    itemdata = dbk->data;
+                }
+                ret = ffread(itemdata, datalen, 1, fp);
+                ret = dataitem_check_data(tb, node, itemdata);
+                if (ret == MEMLINK_VALUE_VISIBLE) {
+                    dbk->visible_count++;
+                }else{
+                    dbk->tagdel_count++;
+                }
+                node->used++;
+
+                /*char buf[256] = {0};
+                  memcpy(buf, itemdata, node->valuesize);
+                  DINFO("load value: %s\n", buf);*/
+
+                itemdata += datalen;
+                load_count += 1;
+            }
+            node->data_tail = dbk;
+
         }
-        node->data_tail = dbk;
     }
     fclose(fp);
     //DINFO("load count: %d\n", load_count);

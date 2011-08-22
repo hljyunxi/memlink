@@ -140,7 +140,7 @@ cmd_get_dump(SyncConn *conn, char *data, int datalen)
         conn->status = NOT_SEND;
     }
     conn_send_buffer((Conn *)conn);    
-    //ret = data_reply((Conn *)conn, retcode, retrc, retlen);
+    //ret = conn_send_buffer_reply((Conn *)conn, retcode, retrc, retlen);
     return ret;
 }
 
@@ -634,18 +634,18 @@ cmd_sync(SyncConn *conn, char *data, int datalen)
             //g_runtime->syncmem->need_skip_one = FALSE;
             conn->need_skip_one = FALSE;
             DINFO("Found sync log file (version = %u)\n", log_ver);
-            ret = data_reply((Conn *)conn, CMD_SYNC_OK, NULL, 0);
+            ret = conn_send_buffer_reply((Conn *)conn, CMD_SYNC_OK, NULL, 0);
             zz_check(conn->rbuf);
             zz_check(conn);
             zz_check(conn->wbuf);
         } else {
             conn->status = NOT_SEND;
-            ret = data_reply((Conn *)conn, CMD_SYNC_MD5_ERROR, NULL, 0);
+            ret = conn_send_buffer_reply((Conn *)conn, CMD_SYNC_MD5_ERROR, NULL, 0);
             DINFO("Not found syn log file (version %u) having log record %d\n", log_ver, log_line);
         }
     } else {
         conn->status = NOT_SEND;
-        ret = data_reply((Conn *)conn, CMD_SYNC_FAILED, NULL, 0);
+        ret = conn_send_buffer_reply((Conn *)conn, CMD_SYNC_FAILED, NULL, 0);
         DINFO("Not found syn log file (version %u) having log record %d\n", log_ver, log_line);
     }
     return ret;
@@ -697,7 +697,7 @@ sdata_ready(Conn *c, char *data, int datalen)
             ret = MEMLINK_ERR_CLIENT_CMD;
             break;
     }
-    DINFO("data_reply return: %d\n", ret);
+    DINFO("conn_send_buffer_reply return: %d\n", ret);
 
     return ret;
 }

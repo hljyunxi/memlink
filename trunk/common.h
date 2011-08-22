@@ -31,7 +31,7 @@
 // 内存错误
 #define MEMLINK_ERR_MEM				-19
 // attr错误
-#define MEMLINK_ERR_MASK			-20
+#define MEMLINK_ERR_ATTR			-20
 // 包错误
 #define MEMLINK_ERR_PACKAGE			-21
 // 该项已删除
@@ -93,6 +93,14 @@
 #define MEMLINK_ERR_FULL			-49
 // 已空
 #define MEMLINK_ERR_EMPTY			-50
+// Table名称太长
+#define MEMLINK_ERR_TABLE_NAME		-51
+// 没有Table
+#define MEMLINK_ERR_NOTABLE			-52
+// Table已存在
+#define MEMLINK_ERR_ETABLE			-53
+// Table太多
+#define MEMLINK_ERR_TABLE_TOO_MANY	-54
 // 其他错误
 #define MEMLINK_ERR                 -1
 // 操作失败
@@ -153,12 +161,16 @@
 
 #define CMD_RANGE_MAX_SIZE			1024000
 
+// HashTable中最大Table数
+#define HASHTABLE_MAX_TABLE			1000
+// Table名称最大长度
+#define HASHTABLE_TABLE_NAME_SIZE	64
 /// HashTable中桶的数量
 #define HASHTABLE_BUNKNUM           1000000
 /// 最大允许的attr项数
-#define HASHTABLE_MASK_MAX_BIT      32
-#define HASHTABLE_MASK_MAX_BYTE     4
-#define HASHTABLE_MASK_MAX_ITEM     15
+#define HASHTABLE_ATTR_MAX_BIT      32
+#define HASHTABLE_ATTR_MAX_BYTE     4
+#define HASHTABLE_ATTR_MAX_ITEM     15
 // key最大长度
 #define HASHTABLE_KEY_MAX           255
 // value最大长度
@@ -240,8 +252,8 @@ typedef struct _memlink_insert_mvalue_item
 {
     char            value[255];
     unsigned char   valuelen;
-    char			attrstr[HASHTABLE_MASK_MAX_ITEM * 3];
-    unsigned int    attrarray[HASHTABLE_MASK_MAX_ITEM];
+    char			attrstr[HASHTABLE_ATTR_MAX_ITEM * 3];
+    unsigned int    attrarray[HASHTABLE_ATTR_MAX_ITEM];
     unsigned char   attrnum;
     int             pos;
 	struct _memlink_insert_mvalue_item *next;
