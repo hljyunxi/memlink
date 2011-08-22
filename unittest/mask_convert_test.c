@@ -8,7 +8,7 @@
 
 int attr_string2array_test()//随机生成一个attr，0-20个项，每项的值0-256
 {
-	int num = 1 + my_rand(HASHTABLE_MASK_MAX_ITEM);
+	int num = 1 + my_rand(HASHTABLE_ATTR_MAX_ITEM);
 	char attr[512] = {0};
 	char buf[10];
 	int i = 1;
