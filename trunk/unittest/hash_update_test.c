@@ -17,19 +17,21 @@ int main()
 	int  ret;
 	int  i = 0;
 	char *conffile;
-
+    char *name = "test";
 	conffile = "memlink.conf";
 	DINFO("config file: %s\n", conffile);
 	myconfig_create(conffile);
 	my_runtime_create_common("memlink");
 	ht = g_runtime->ht;
 
+    ret = hashtable_create_table(ht, name, valuesize, attrformat, attrnum, 
+                                        MEMLINK_LIST, MEMLINK_VALUE_STRING);
+    Table *tb = hashtable_find_table(ht, name);
 	///////////begin test;
 	//test1 : hashtable_add_info_attr - create key
 	for (i = 0; i < num; i++) {
 		sprintf(key, "heihei%03d", i);
-		ret = hashtable_key_create_attr(ht, key, valuesize, attrformat, attrnum, 
-                                        MEMLINK_LIST, MEMLINK_VALUE_STRING);
+		ret = table_create_node(tb, key);
         if (ret != MEMLINK_OK) {
             DERROR("create key %s error!\n", key);
             return -1;
@@ -37,7 +39,7 @@ int main()
 	}
 	for (i = 0; i < num; i++) {
 		sprintf(key, "heihei%03d", i);
-		HashNode* pNode = hashtable_find(ht, key);
+		HashNode* pNode = table_find(tb, key);
 		if (NULL == pNode) {
 			DERROR("hashtable_add_info_attr error. can not find %s\n", key);
 			return -1;
@@ -54,15 +56,15 @@ int main()
 		sprintf(val, "value%03d", i);
 		pos = i;
         DINFO("insert value:%s, pos:%d\n", val, pos);
-		hashtable_add_attr(ht, key, val, attrarray[i%3], attrnum, pos);
+		hashtable_insert(ht, name, key, val, attrarray[i%3], attrnum, pos);
 		if (ret < 0) {
 			DERROR("insert value err, ret:%d, key:%s, value:%s\n", ret, key, val);
 			return ret;
 		}
 
-        hashtable_check(ht, key);
+        table_check(tb, key);
 
-		ret = hashtable_find_value(ht, key, val, &node, &dbk, &item);
+		ret = table_find_value(tb, key, val, &node, &dbk, &item);
 		if (ret < 0) {
 			DERROR("not found value, ret:%d, key:%s, value:%s\n", ret, key, val);
 			return ret;
@@ -83,7 +85,7 @@ int main()
 				break;
 		}
 		DINFO("+++++=== hashtable_move key:%s value:%s, pos:%d ===+++++\n", key, val, pos);
-		int ret = hashtable_move(ht, key, val, pos);
+		int ret = hashtable_move(ht, name, key, val, pos);
 		if (MEMLINK_OK != ret) {
 			DERROR("err hashtable_move value:%s, pos:%d\n", val, pos);
 			break;

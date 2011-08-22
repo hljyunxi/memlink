@@ -15,7 +15,7 @@ int main()
 	int attrnum = 3;
 	int ret;
 	int i = 0;
-
+    char *name = "test";
 	char *conffile;
 	conffile = "memlink.conf";
 	DINFO("config file: %s\n", conffile);
@@ -24,18 +24,24 @@ int main()
 	my_runtime_create_common("memlink");
 	ht = g_runtime->ht;
 
+    ret = hashtable_create_table(ht, name, valuesize, attrformat, attrnum, 
+                    MEMLINK_LIST, MEMLINK_VALUE_STRING);
+    if (ret != MEMLINK_OK) {
+        DERROR("create table error:%d\n", ret);
+        return -1;
+    }
+    Table *tb = hashtable_find_table(ht, name);
 	///////////begin test;
 	//test1 : hashtable_add_info_attr - create key
 	for (i = 0; i < num; i++) {
 		sprintf(key, "heihei%03d", i);
-		hashtable_key_create_attr(ht, key, valuesize, attrformat, attrnum, 
-                    MEMLINK_LIST, MEMLINK_VALUE_STRING);
+		table_create_node(tb, key);
 	}
 	for (i = 0; i < num; i++) {
 		sprintf(key, "heihei%03d", i);
-		HashNode* pNode = hashtable_find(ht, key);
+		HashNode* pNode = table_find(tb, key);
 		if (NULL == pNode) {
-			DERROR("hashtable_add_info_attr error. can not find %s\n", key);
+			DERROR("table_find error. can not find %s\n", key);
 			return -1;
 		}
 	}
@@ -52,7 +58,7 @@ int main()
 	for (i = 0; i < num; i++) {
 		sprintf(val, "value%03d", i);
 		pos = i;
-		ret = hashtable_add_attr(ht, key, val, attrarray[i%3], 3, pos);
+		ret = hashtable_insert(ht, name, key, val, attrarray[i%3], 3, pos);
 		if (ret < 0) {
 			DERROR("hashtable_add_attr err! ret:%d, val:%s, pos:%d \n", ret, val, pos);
 			return ret;
@@ -62,7 +68,7 @@ int main()
 	DINFO("2 insert %d\n", num);
     
     MemLinkStat stat;
-    ret = hashtable_stat(ht, key, &stat);
+    ret = hashtable_stat(ht, name, key, &stat);
     if (ret != MEMLINK_OK) {
         DERROR("stat error!\n");
     }
@@ -71,7 +77,7 @@ int main()
 
 	for (i = 0; i < num; i++) {
 		sprintf(val, "value%03d", i);
-		ret = hashtable_find_value(ht, key, val, &node, &dbk, &item);
+		ret = table_find_value(tb, key, val, &node, &dbk, &item);
 		if (ret < 0) {
 			DERROR("not found value: %d, %s\n", ret, val);
 			return ret;
@@ -80,39 +86,39 @@ int main()
 	
 	//hashtable_print(g_runtime->ht, key);
 	sprintf(val, "value%03d", 50);
-	ret = hashtable_del(ht, key, val);
+	ret = hashtable_del(ht, name, key, val);
 	if (ret < 0) {
 		DERROR("del value: %d, %s\n", ret, val);
 		return ret;
 	}
     DINFO("deleted %s\n", val);	
-	hashtable_print(g_runtime->ht, key);
+	table_print(tb, key);
 
-    ret = hashtable_find_value(ht, key, val, &node, &dbk, &item);
+    ret = table_find_value(tb, key, val, &node, &dbk, &item);
     if (ret >= 0) {
         DERROR("found value: %d, %s\n", ret, val);
         return ret;
     }
 
-	ret = hashtable_add_attr(ht, key, val, attrarray[2], attrnum, 100);
+	ret = hashtable_insert(ht, name, key, val, attrarray[2], attrnum, 100);
 	if (ret < 0) {
 		DERROR("add value err: %d, %s\n", ret, val);
 		return ret;
 	}
 
-	ret = hashtable_find_value(ht, key, val, &node, &dbk, &item);
+	ret = table_find_value(tb, key, val, &node, &dbk, &item);
 	if (ret < 0) {
 		DERROR("not found value: %d, %s\n", ret, val);
 		return ret;
 	}
 	DINFO("test: insert ok!\n");
 
-    hashtable_print(ht, key);
+    table_print(tb, key);
     /////////// hashtable_del
 	for (i = 0; i < num; i++) {
 		sprintf(val, "value%03d", i);
 		//pos = i;
-		ret = hashtable_del(ht, key, val);
+		ret = hashtable_del(ht, name, key, val);
 		if (ret < 0) {
 			DERROR("hashtable_del err! ret:%d, val:%s \n", ret, val);
 			return ret;
@@ -122,7 +128,7 @@ int main()
 
 	for (i = 0; i < num; i++) {
 		sprintf(val, "value%03d", i);
-		ret = hashtable_find_value(ht, key, val, &node, &dbk, &item);
+		ret = table_find_value(tb, key, val, &node, &dbk, &item);
 		if (ret >= 0) {
 			DERROR("err should not found value: %d, %s\n", ret, key);
 			return ret;

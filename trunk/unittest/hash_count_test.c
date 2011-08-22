@@ -16,7 +16,7 @@ int main()
 	int attrnum = 3;
 	int ret;
 	int i = 0;
-
+    char *name = "test";
 	char *conffile;
 	conffile = "memlink.conf";
 	DINFO("config file: %s\n", conffile);
@@ -27,13 +27,25 @@ int main()
 
 	///////////begin test;
 	//test1 : hashtable_add_info_attr - create key
+    ret = hashtable_create_table(ht, name, valuesize, attrformat, attrnum, MEMLINK_LIST, 0);
+    if (ret != MEMLINK_OK) {
+        DERROR("create table error:%d\n", ret);
+        return -1;
+    }
+
+    Table *tb = hashtable_find_table(ht, name);
+
 	for (i = 0; i < num; i++) {
 		sprintf(key, "heihei%03d", i);
-		hashtable_key_create_attr(ht, key, valuesize, attrformat, attrnum, MEMLINK_LIST, 0);
+		ret = table_create_node(tb, key);
+        if (ret != MEMLINK_OK) {    
+            DERROR("create node error:%d\n", ret);
+            return -1;
+        }
 	}
 	for (i = 0; i < num; i++) {
 		sprintf(key, "heihei%03d", i);
-		HashNode* pNode = hashtable_find(ht, key);
+		HashNode* pNode = table_find(tb, key);
 		if(NULL == pNode) {
 			DERROR("hashtable_add_info_attr error. can not find %s\n", key);
 			return -1;
@@ -49,13 +61,13 @@ int main()
 	for (i = 0; i < num; i++) {
 		sprintf(val, "value%03d", i);
 		pos = i;
-		ret = hashtable_add_attr(ht, key, val, attrarray[i%4], attrnum, pos);
+		ret = hashtable_insert(ht, name, key, val, attrarray[i%4], attrnum, pos);
 		if (ret < 0) {
 			DERROR("add value err: %d, %s\n", ret, val);
 			return ret;
 		}
 		
-		ret = hashtable_find_value(ht, key, val, &node, &dbk, &item);
+		ret = table_find_value(tb, key, val, &node, &dbk, &item);
 		if (ret < 0) {
 			DERROR("not found value: %d, %s\n", ret, key);
 			return ret;
@@ -67,7 +79,7 @@ int main()
 	int visible_count;
 	int attr_count;
 	for (i = 0; i < 4; i++) {
-		ret = hashtable_count(ht, key, attrarray[i], attrnum, &visible_count, &attr_count);
+		ret = hashtable_count(ht, name, key, attrarray[i], attrnum, &visible_count, &attr_count);
 		if (ret < 0) {
 			DERROR("count key err: %d, %s\n", ret, key);
 			return ret;
@@ -79,7 +91,7 @@ int main()
 	}
 	
 	///attrfomat is out of bound: {8, 8, 8}
-	ret = hashtable_count(ht, key, attrarray[4], attrnum, &visible_count, &attr_count);
+	ret = hashtable_count(ht, name, key, attrarray[4], attrnum, &visible_count, &attr_count);
 	if (ret < 0) {
 		DERROR("count key err: %d, %s\n", ret, key);
 		return ret;
@@ -90,7 +102,7 @@ int main()
 	}
 
 	//attr is none
-	ret = hashtable_count(ht, key, attrarray[5], attrnum, &visible_count, &attr_count);
+	ret = hashtable_count(ht, name, key, attrarray[5], attrnum, &visible_count, &attr_count);
 	if (ret < 0) {
 		DERROR("count key err: %d, %s\n", ret, key);
 		return -1;
