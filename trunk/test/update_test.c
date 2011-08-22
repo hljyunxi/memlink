@@ -18,9 +18,9 @@ int main()
 
 	int  ret;
 	char buf[32];
-
-	sprintf(buf, "haha");
-	ret = memlink_cmd_create_list(m, buf, 6, "4:3:1");
+    char *name = "test";
+	sprintf(buf, "%s.haha", name);
+	ret = memlink_cmd_create_table_list(m, name, 6, "4:3:1");
 	
 	if (ret != MEMLINK_OK) {
 		DERROR("1 memlink_cmd_create %s error: %d\n", buf, ret);
@@ -53,7 +53,7 @@ int main()
 		DERROR("move error, must novalue, key:%s, val:%s, ret:%d\n", buf, "xxxx", ret);
 		return -4;
 	}
-    ret = memlink_cmd_move(m, "xxxxxx", "xxxx", 4, 0);
+    ret = memlink_cmd_move(m, "test.xxxxxx", "xxxx", 4, 0);
 	if (ret != MEMLINK_ERR_NOKEY) {
 		DERROR("move error, must nokey, key:%s\n", buf);
 		return -4;

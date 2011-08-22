@@ -59,15 +59,20 @@ int main()
 	}
 
 	int  ret;
-	char buf[32];
-
-	sprintf(buf, "haha");
-	ret = memlink_cmd_create_list(m, buf, 6, "4:3:1");
-	
+	char key[32];
+    char *name = "test";
+	sprintf(key, "%s.haha", name);
+	ret = memlink_cmd_create_table_list(m, name, 6, "4:3:1");
 	if (ret != MEMLINK_OK) {
-		DERROR("1 memlink_cmd_create %s error: %d\n", buf, ret);
+		DERROR("1 memlink_cmd_create %s error: %d\n", name, ret);
 		return -2;
 	}
+
+    ret = memlink_cmd_create_node(m, name, "haha");
+    if (ret != MEMLINK_OK) {
+        DERROR("create node error:%d\n", ret);
+        return -1;
+    }
 
 	MemLinkStat stat;
 	
@@ -77,9 +82,9 @@ int main()
 	int data  = 0;
 	int data_used = 0;
 
-	ret = memlink_cmd_stat(m, buf, &stat);
+	ret = memlink_cmd_stat(m, key, &stat);
 	if (ret != MEMLINK_OK) {
-		DERROR("stat error, key:%s, ret:%d\n", buf, ret);
+		DERROR("stat error, key:%s, ret:%d\n", key, ret);
 		return -3;
 	}
 	check(&stat, 6, 2, 0, 0, 0, ms);
@@ -88,16 +93,16 @@ int main()
 	char *attrstr	= "8:3:1";
 	
 	///insert 1 value       1
-	ret = memlink_cmd_insert(m, buf, val, strlen(val), attrstr, 0);
+	ret = memlink_cmd_insert(m, key, val, strlen(val), attrstr, 0);
 	if (ret != MEMLINK_OK) {
-		DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", buf, val, attrstr, 0);
+		DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", key, val, attrstr, 0);
 		return -5;
 	}
 	
 	MemLinkStat stat2;
-	ret = memlink_cmd_stat(m, buf, &stat2);
+	ret = memlink_cmd_stat(m, key, &stat2);
 	if (ret != MEMLINK_OK) {
-		DERROR("stat error, key:%s, ret:%d\n", buf, ret);
+		DERROR("stat error, key:%s, ret:%d\n", key, ret);
 		return -3;
 	}
 	ms  = sizeof(HashNode) + (8 * 1 + sizeof(DataBlock));
@@ -109,15 +114,15 @@ int main()
 	}
 	
 	///insert 1 value       2 
-	ret = memlink_cmd_insert(m, buf, val, strlen(val), attrstr, 0);
+	ret = memlink_cmd_insert(m, key, val, strlen(val), attrstr, 0);
 	if (ret != MEMLINK_OK) {
-		DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", buf, val, attrstr, 0);
+		DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", key, val, attrstr, 0);
 		return -5;
 	}
 	MemLinkStat stat3;
-	ret = memlink_cmd_stat(m, buf, &stat3);
+	ret = memlink_cmd_stat(m, key, &stat3);
 	if (ret != MEMLINK_OK) {
-		DERROR("stat error, key:%s, ret:%d\n", buf, ret);
+		DERROR("stat error, key:%s, ret:%d\n", key, ret);
 		return -3;
 	}
 	block = 1;
@@ -136,16 +141,16 @@ int main()
 	int insertnum = 200;
 	int i;
 	for (i = 2; i < insertnum; i++) {
-		ret = memlink_cmd_insert(m, buf, val, strlen(val), attrstr, i);
+		ret = memlink_cmd_insert(m, key, val, strlen(val), attrstr, i);
 		if (ret != MEMLINK_OK) {
-			DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", buf, val, attrstr, i);
+			DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", key, val, attrstr, i);
 			return -5;
 		}
 	}
 	MemLinkStat stat4;
-	ret = memlink_cmd_stat(m, buf, &stat4);
+	ret = memlink_cmd_stat(m, key, &stat4);
 	if (ret != MEMLINK_OK) {
-		DERROR("stat error, key:%s, ret:%d\n", buf, ret);
+		DERROR("stat error, key:%s, ret:%d\n", key, ret);
 		return -3;
 	}
 	block = 2;
@@ -159,15 +164,15 @@ int main()
 	}
 	
 	///insert 1 value       201
-	ret = memlink_cmd_insert(m, buf, val, strlen(val), attrstr, 198);
+	ret = memlink_cmd_insert(m, key, val, strlen(val), attrstr, 198);
 	if (ret != MEMLINK_OK) {
-		DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", buf, val, attrstr, 0);
+		DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", key, val, attrstr, 0);
 		return -5;
 	}
 	MemLinkStat stat5;
-	ret = memlink_cmd_stat(m, buf, &stat5);
+	ret = memlink_cmd_stat(m, key, &stat5);
 	if (ret != MEMLINK_OK) {
-		DERROR("stat error, key:%s, ret:%d\n", buf, ret);
+		DERROR("stat error, key:%s, ret:%d\n", key, ret);
 		return -3;
 	}
 	block = 3;
@@ -185,16 +190,16 @@ int main()
 	///insert 1 value		202
 	insertnum = 50;
 	for (i = 201; i < 200 + insertnum; i++) {
-		ret = memlink_cmd_insert(m, buf, val, strlen(val), attrstr, i);
+		ret = memlink_cmd_insert(m, key, val, strlen(val), attrstr, i);
 		if (ret != MEMLINK_OK) {
-			DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", buf, val, attrstr, i);
+			DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", key, val, attrstr, i);
 			return -5;
 		}
 	}
 	MemLinkStat stat8;
-	ret = memlink_cmd_stat(m, buf, &stat8);
+	ret = memlink_cmd_stat(m, key, &stat8);
 	if (ret != MEMLINK_OK) {
-		DERROR("stat error, key:%s, ret:%d\n", buf, ret);
+		DERROR("stat error, key:%s, ret:%d\n", key, ret);
 		return -3;
 	}
 	block = 3;
@@ -209,8 +214,8 @@ int main()
 
     // 空的key
 	MemLinkStat stat6; 
-	*(buf + 0) = '\0'; 
-	ret = memlink_cmd_stat(m, buf, &stat6);
+	*(key + 0) = '\0'; 
+	ret = memlink_cmd_stat(m, key, &stat6);
 	if (ret == MEMLINK_OK) {
 		DERROR("must not stat a NULL key ret:%d\n", ret);
 		return -3;
@@ -218,7 +223,7 @@ int main()
 	
     //不存在的key
 	MemLinkStat stat7;
-	//strcpy(buf, "kkkkk");
+	//strcpy(key, "kkkkk");
 	ret = memlink_cmd_stat(m, "KKKKK", &stat7); 
 	if (ret == MEMLINK_OK) {
 		DERROR("must not stat not exist key ret:%d\n", ret);

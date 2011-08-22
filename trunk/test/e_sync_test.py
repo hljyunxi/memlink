@@ -22,12 +22,13 @@ def test():
     #start a new slave
     x2 = start_a_new_slave()   
     time.sleep(10)
-
-    key = 'haha'
+    
+    name = 'test'
+    key = name + '.haha'
     attrstr = "8:1:1"
-    ret = client2master.create_list(key , 12, "4:3:1")
+    ret = client2master.create_table_list(name , 12, "4:3:1")
     if ret != MEMLINK_OK:
-        print 'create error:', ret, key
+        print 'create error:', ret, name
         return -1
     print 'create 1 key'
 

@@ -18,24 +18,23 @@ int main(int argc, char **argv)
     
     int ret;
     char key[32];
+    char *name = "test";
     int i;
-    
+
+    ret = memlink_cmd_create_table_list(m, name, 6, "4:3:1");
+    if (ret != MEMLINK_OK) {
+        DERROR("create table %s error: %d\n", name, ret);
+        return -2;
+    }
+    /*
     for (i = 0; i < 3; i++) {
         sprintf(key, "test%d", i);
-        ret = memlink_cmd_create_list(m, key, 6, "4:3:1");
+        ret = memlink_cmd_create_node(m, name, key);
         if (ret != MEMLINK_OK) {
-            DERROR("memlink_cmd_create %s error: %d\n", key, ret);
+            DERROR("create node %s.%s error: %d\n", name, key, ret);
             return -2;
         }
-    }
-
-    for (i = 0; i < 3; i++) {
-        sprintf(key, "test%d\n", i);
-        ret = memlink_cmd_create_list(m, key, 6, "4:3:1");
-        if (ret != MEMLINK_OK) {
-            DERROR("memlink_cmd_create: %d\n", ret);
-        }
-    }
+    }*/
 
     char val[64];
     char *maskstr = "8:3:1";
@@ -43,7 +42,7 @@ int main(int argc, char **argv)
     
     for (i = 0; i < 3; i++) {
         int j = 0;
-        sprintf(key, "test%d", i);
+        sprintf(key, "%s.test%d", name, i);
         for (j = 0; j < insertnum; j++) {
             sprintf(val, "%06d", j);
             ret = memlink_cmd_insert(m, key, val, strlen(val), maskstr, j); 
@@ -55,7 +54,7 @@ int main(int argc, char **argv)
     }
     
     for (i = 0; i < 3; i++) {
-        sprintf(key, "test%d", i);
+        sprintf(key, "%s.test%d", name, i);
         int j;
         for (j = 0; j < insertnum / 2; j++) {
             sprintf(val, "%06d", j);
@@ -69,7 +68,7 @@ int main(int argc, char **argv)
     
     MemLinkStat stat[3];
     for (i = 0; i  < 3; i++) {
-        sprintf(key, "test%d", i);
+        sprintf(key, "%s.test%d", name, i);
         ret = memlink_cmd_stat(m, key, &stat[i]);
         if (ret != MEMLINK_OK) {
             DERROR("stat error, key:%s, ret:%d\n", key, ret);
@@ -85,7 +84,7 @@ int main(int argc, char **argv)
 
     MemLinkStat stat1[3];
     for (i = 0; i < 3; i++) {
-        sprintf(key, "test%d", i);
+        sprintf(key, "%s.test%d", name, i);
         ret = memlink_cmd_stat(m, key, &stat1[i]);
         if (ret != MEMLINK_OK) {
             DERROR("stat error, key: %s, ret: %d\n", key, ret);

@@ -228,7 +228,7 @@ int my_rand(int base)
 
 int create_key()
 {
-	int  ret;
+	/*int  ret;
 	char my_key[32];
 	int num = my_rand(200);
 	sprintf(my_key, "haha%d", num);
@@ -236,7 +236,7 @@ int create_key()
 	if (ret != MEMLINK_OK && ret != MEMLINK_ERR_EKEY) {
 		DERROR("create %s error: %d\n", my_key, ret);
 		return -2;
-	}
+	}*/
 	return 0;
 }
 
@@ -358,9 +358,9 @@ int main()
 	}
 
 	int  ret;
-
-	sprintf(key, "haha");
-	ret = memlink_cmd_create_list(m, key, 6, "4:3:1");
+    char *name = "test";
+	sprintf(key, "%s.haha", name);
+	ret = memlink_cmd_create_table_list(m, name, 6, "4:3:1");
 	create_list(list, key);
 	if (ret != MEMLINK_OK) {
 		DERROR("create %s error: %d\n", key, ret);

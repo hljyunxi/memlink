@@ -19,14 +19,15 @@ int main()
 	
 	int  ret;
 	char key[64];
-	
-	sprintf(key, "haha");
-	ret = memlink_cmd_create_list(m, key, 6, "4:3:2");
+    char *name = "test";	
+
+	ret = memlink_cmd_create_table_list(m, name, 6, "4:3:2");
 	if (ret != MEMLINK_OK) {
-		DERROR("memlink_cmd_create %s error: %d\n", key, ret);
+		DERROR("memlink_cmd_create %s error: %d\n", name, ret);
 		return -2;
 	}
 
+	sprintf(key, "%s.haha", name);
 	int i;
 	//char* maskstr[] = {"8:3:1", "7:3:1"};
 	char* maskstr = "8:3:1";

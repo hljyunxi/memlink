@@ -18,49 +18,85 @@ int main()
 	}
 
 	int  ret;
-	char key[32];
-	
+	char key[64];
+    char name[32];	
 	int nodenum = 100;
 	int i;
-///////////创建100个不同key的hashnode
-	for( i = 0 ; i < nodenum; i++) 
+	
+    for( i = 0 ; i < nodenum; i++) 
 	{
-		sprintf(key, "haha%d", i);
-		ret = memlink_cmd_create_list(m, key, 6, "4:3:1");
+		//sprintf(key, "haha%d", i);
+        sprintf(name, "test%d", i);
+		ret = memlink_cmd_create_table_list(m, name, 6, "4:3:1");
 		
 		if (ret != MEMLINK_OK) {
-			DERROR("memlink_cmd_create %s error: %d\n", key, ret);
+			DERROR("create table %s error: %d\n", name, ret);
 			return -2;
 		}
 	}
 	
-	ret = memlink_cmd_create_list(m, key, 6, "4:3:1");
+	ret = memlink_cmd_create_table_list(m, name, 6, "4:3:1");
 	if (ret == MEMLINK_OK) {
 		DERROR("memlink_cmd_create %s error: %d\n", key, ret);
 		return -3;
 	}
 
-	strcpy(key, "haha1111");
-	ret = memlink_cmd_create_list(m, key, -1, "4:3:1");
+	strcpy(name, "haha1111");
+	ret = memlink_cmd_create_table_list(m, name, -1, "4:3:1");
 	if (ret == MEMLINK_OK) {
 		DERROR("memlink_cmd_create %s error: %d\n", key, ret);
 		return -3;
 	}
 
-	strcpy(key, "haha2222");
-	ret = memlink_cmd_create_list(m, key, 12, "4:3:21474");
+	strcpy(name, "haha2222");
+	ret = memlink_cmd_create_table_list(m, name, 12, "4:3:21474");
 	if (ret == MEMLINK_OK) {
 		DERROR("memlink_cmd_create %s error: %d, mask=%s\n", key, ret, "4:3:21474");
 		return -3;
 	}
 
-	strcpy(key, "haha3333");
-	ret = memlink_cmd_create_list(m, key, 12, "");
+	strcpy(name, "haha3333");
+	ret = memlink_cmd_create_table_list(m, name, 12, "");
 	if (ret != MEMLINK_OK) {
 		DERROR("memlink_cmd_create %s error: %d, mask=%s\n", key, ret, "");
 		return -3;
 	}
-	
+
+    // test create node
+    sprintf(key, "haha");
+    
+    ret = memlink_cmd_create_node(m, name, key);
+    if (ret != MEMLINK_OK) {
+        DERROR("create node error:%d\n", ret);
+        return -1;
+    }
+    ret = memlink_cmd_create_node(m, NULL, key);
+    if (ret == MEMLINK_OK) {
+        DERROR("create node error:%d\n", ret);
+        return -1;
+    }
+    ret = memlink_cmd_create_node(m, name, NULL);
+    if (ret == MEMLINK_OK) {
+        DERROR("create node error:%d\n", ret);
+        return -1;
+    }
+    ret = memlink_cmd_create_node(m, "", key);
+    if (ret == MEMLINK_OK) {
+        DERROR("create node error:%d\n", ret);
+        return -1;
+    }
+    ret = memlink_cmd_create_node(m, name, "");
+    if (ret == MEMLINK_OK) {
+        DERROR("create node error:%d\n", ret);
+        return -1;
+    }
+
+    ret = memlink_cmd_create_node(m, name, key);
+    if (ret == MEMLINK_OK) {
+        DERROR("create node error:%d\n", ret);
+        return -1;
+    }
+
 	memlink_destroy(m);
 
 	return 0;

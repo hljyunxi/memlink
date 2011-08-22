@@ -8,6 +8,7 @@ int main()
 {
 	MemLink	*m;
 #ifdef DEBUG
+	//logfile_create("test.log", 3);
 	logfile_create("stdout", 3);
 #endif
 	m = memlink_create("127.0.0.1", MEMLINK_READ_PORT, MEMLINK_WRITE_PORT, 30);
@@ -18,27 +19,28 @@ int main()
 
 	int  ret;
 	char key[32];
+    char *name = "test";
 
-	sprintf(key, "haha");
-	ret = memlink_cmd_create_list(m, key, 6, "4:3:1");
-	
+	ret = memlink_cmd_create_table_list(m, name, 6, "4:3:1");
 	if (ret != MEMLINK_OK) {
 		DERROR("1 memlink_cmd_create %s error: %d\n", key, ret);
 		return -2;
 	}
 	//DINFO("create %s ok!\n", key);
 
+	sprintf(key, "%s.haha", name);
+
 	int		i;
 	char	val[64];
 	char	*maskstr = "8:3:1";
     int     insertnum = 200;
+
 	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
-		//DINFO("====== try insert %s %s %d======\n", key, val, i);
+		DINFO("====== try insert %s %s %d======\n", key, val, i);
 		ret = memlink_cmd_insert(m, key, val, strlen(val), maskstr, i);
 		if (ret != MEMLINK_OK) {
 			DERROR("insert error, key:%s, val:%s, mask:%s, i:%d, ret:%d\n", key, val, maskstr, i, ret);
-
 			return -3;
 		}
 	}
