@@ -10,39 +10,40 @@ int check_exception_parameter(MemLink *m)
     int  ret;
     char key[512] = {0};
     char val[512] = {0};
+    char *name = "test1";
 
-    sprintf(key, "haha1");
-	ret = memlink_cmd_create_list(m, key, 256, "4:3:1");
+	ret = memlink_cmd_create_table_list(m, name, 256, "4:3:1");
 	if (ret == MEMLINK_OK) {
-		DERROR("memlink_cmd_create error, ret:%d key:%s\n", ret, key);
+		DERROR("create error, ret:%d name:%s\n", ret, name);
 		return -2;
 	}
-    ret = memlink_cmd_create_list(m, key, -1, "4:3:1");
+    ret = memlink_cmd_create_table_list(m, name, -1, "4:3:1");
 	if (ret == MEMLINK_OK) {
-		DERROR("memlink_cmd_create error, ret:%d key:%s\n", ret, key);
+		DERROR("create error, ret:%d name:%s\n", ret, name);
 		return -2;
 	}
-    ret = memlink_cmd_create_list(m, key, 0, "4:3:1");
+    ret = memlink_cmd_create_table_list(m, name, 0, "4:3:1");
 	if (ret == MEMLINK_OK) {
-		DERROR("memlink_cmd_create error, ret:%d key:%s\n", ret, key);
+		DERROR("create error, ret:%d name:%s\n", ret, name);
 		return -2;
 	}
-    ret = memlink_cmd_create_list(m, key, 4, "");
+    ret = memlink_cmd_create_table_list(m, name, 4, "");
 	if (ret != MEMLINK_OK) {
-		DERROR("memlink_cmd_create error, ret:%d key:%s\n", ret, key);
+		DERROR("create error, ret:%d name:%s\n", ret, name);
 		return -2;
 	}
-    ret = memlink_cmd_rmkey(m, key);
+    ret = memlink_cmd_remove_table(m, name);
     if (ret != MEMLINK_OK) {
-        DERROR("rmkey error, ret:%d, key:%s\n", ret, key);
+        DERROR("rmname error, ret:%d, name:%s\n", ret, name);
         return -1;
     }
-    ret = memlink_cmd_create_list(m, key, 6, "4:3:1");
+    ret = memlink_cmd_create_table_list(m, name, 6, "4:3:1");
 	if (ret != MEMLINK_OK) {
-		DERROR("memlink_cmd_create error, ret:%d key:%s\n", ret, key);
+		DERROR("memlink_cmd_create error, ret:%d name:%s\n", ret, name);
 		return -2;
 	}
 
+    sprintf(key, "%s.haha1", name);
 
     sprintf(val, "%06d", 2);
     ret = memlink_cmd_insert(m, key, val, strlen(val), "14294967295:3:1", 0); 
@@ -72,7 +73,7 @@ int check_exception_parameter(MemLink *m)
 		return -3;
 	}
 
-    // attr截断
+    // attr截断, 20:9:4 => binary 10100: 1001: 100
     ret = memlink_cmd_insert(m, key, val, strlen(val), "20:9:4", 0); 
 	if (ret != MEMLINK_OK) {
 		DERROR("insert error, key:%s, val:%s, attr=20:9:4, ret:%d\n", key, val, ret);
@@ -89,14 +90,9 @@ int check_exception_parameter(MemLink *m)
         DERROR("result count error: %d\n", result.count);
         return -1;
     }
-    /*MemLinkItem *item = result.root; 
-    if (strcmp(item->attr, "4:1:0") != 0) {
-        DERROR("attr error: %s\n", item->attr);
-        return -1;
-    }*/
     
     if (strcmp(result.items[0].attr, "4:1:0") != 0) {
-        DERROR("attr error: %s\n", result.items[0].attr);
+        DERROR("attr error: %s, expect: 4:1:0\n", result.items[0].attr);
         return -1;
     }
 
@@ -152,17 +148,18 @@ int check_insert(MemLink *m)
     char val[512] = {0};
     char *attrstrs[]    = {"8::1", "7:2:1", "6:2:1"}; // parameter
     char *attrstrs_in[] = {"8:0:1", "7:2:1", "6:2:1"};  // in memlink list attr
+    char *name = "test2";
     
-    sprintf(key, "haha2");
-    ret = memlink_cmd_create(m, key, 6, "4:3:1", MEMLINK_LIST, MEMLINK_VALUE_STRING);
+    ret = memlink_cmd_create_table(m, name, 6, "4:3:1", MEMLINK_LIST, MEMLINK_VALUE_STRING);
 	if (ret != MEMLINK_OK) {
-		DERROR("memlink_cmd_create error, ret:%d key:%s\n", ret, key);
+		DERROR("memlink_cmd_create error, ret:%d name:%s\n", ret, name);
 		return -1;
 	}
 
     int valnum = 0;
     int i;
 
+    sprintf(key, "%s.haha2", name);
     for (i = 0; i < 10; i++) {
         sprintf(val, "%06d", i);
         //DINFO("insert key:%s val:%s attr:%s\n", key, val, attrstrs[i%3]);

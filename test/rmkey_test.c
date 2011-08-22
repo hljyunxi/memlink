@@ -19,13 +19,25 @@ int main()
 
 	int  ret;
 	char key[32];
-
-	sprintf(key, "haha");
-	ret = memlink_cmd_create_list(m, key, 6, "4:3:1");
+    char *name = "test";
+	sprintf(key, "%s.haha", name);
+	ret = memlink_cmd_create_table_list(m, name, 6, "4:3:1");
 	if (ret != MEMLINK_OK) {
 		DERROR("create %s error: %d\n", key, ret);
 		return -2;
 	}
+
+    ret = memlink_cmd_rmkey(m, key);
+    if (ret != MEMLINK_ERR_NOKEY) {
+        DERROR("rmkey error, key:%s, ret:%d\n", key, ret);
+        return -3;
+    }
+
+    ret = memlink_cmd_create_node(m, name, "haha");
+    if (ret != MEMLINK_OK) {
+        DERROR("create node error:%d\n", ret);
+        return -1;
+    }
 
     ret = memlink_cmd_rmkey(m, key);
     if (ret != MEMLINK_OK) {
@@ -33,7 +45,7 @@ int main()
         return -3;
     }
 
-	ret = memlink_cmd_create_list(m, key, 6, "4:3:1");
+	ret = memlink_cmd_create_node(m, name, "haha");
 	if (ret != MEMLINK_OK) {
 		DERROR("create %s error: %d\n", key, ret);
 		return -4;

@@ -43,10 +43,11 @@ def test_int(m):
 
 
 def test_string(m):
-    key = 'haha2'
-    ret = m.create_sortlist(key, 10, MEMLINK_VALUE_STRING)
+    name = 'test'
+    key = name + '.haha2'
+    ret = m.create_table_sortlist(name, 10, MEMLINK_VALUE_STRING)
     if ret != MEMLINK_OK:
-        print 'create queue error, ret:%d, key:%s' % (ret, key)
+        print 'create queue error, ret:%d, name:%s' % (ret, name)
         return -1
     
     num = 1000

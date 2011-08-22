@@ -18,9 +18,9 @@ int main()
 
 	int  ret;
 	char buf[32];
-
-	sprintf(buf, "haha");
-	ret = memlink_cmd_create_list(m, buf, 6, "4:3:1");
+    char *name = "test";
+	sprintf(buf, "%s.haha", name);
+	ret = memlink_cmd_create_table_list(m, name, 6, "4:3:1");
 	
 	if (ret != MEMLINK_OK) {
 		DERROR("1 memlink_cmd_create %s error: %d\n", buf, ret);
@@ -147,7 +147,7 @@ int main()
 //test :下面是删除20个条目(50--70)，再遍历
 	int del_start = 50; 
 	int del_count = 20;
-	sprintf(buf, "haha");
+	sprintf(buf, "%s.haha", name);
 	for (i = del_start; i < del_start + del_count; i++) {
 		sprintf(val, "%06d", i);
 		ret = memlink_cmd_del(m, buf, val, strlen(val));

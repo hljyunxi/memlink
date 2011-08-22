@@ -112,14 +112,12 @@ def test_init():
     memlink_slave_start = memlink_slave_file + ' test/memlink_slave.conf'
 
 def data_produce1():
-    '''
-    if not os.path.isdir('data_bak'):
-        cmd = 'mkdir data_bak'
-        print cmd
-        os.system(cmd)
-    else:
-        return 0
-    '''
+    #if not os.path.isdir('data_bak'):
+    #    cmd = 'mkdir data_bak'
+    #    print cmd
+    #    os.system(cmd)
+    #else:
+    #    return 0
         
     client2master = MemLinkClient('127.0.0.1', MASTER_READ_PORT, MASTER_WRITE_PORT, 30);    
     x1 = start_a_new_master()
@@ -132,8 +130,9 @@ def data_produce1():
     num2 = 5000000
     num = 0
     maskstr = '4:2:2'
-    key = 'haha'
-    ret = client2master.create_list(key, 12, '3:3:3')
+    name = 'test'
+    key = name + '.haha'
+    ret = client2master.create_list(name, 12, '3:3:3')
     if ret != MEMLINK_OK:
         print 'create error: %d' % ret
         return -1
@@ -172,8 +171,9 @@ def data_produce2():
     num2 = 10000000
     num = 0
     maskstr = '4:2:2'
-    key = 'haha'
-    ret = client2master.create_list(key, 12, '3:3:3')
+    name = 'test'
+    key = name + '.haha'
+    ret = client2master.create_table_list(name, 12, '3:3:3')
     if ret != MEMLINK_OK:
         print 'create error: %d' % ret
         return -1
@@ -212,8 +212,9 @@ def data_produce3():
     num2 = 20000000
     num = 0
     maskstr = '4:2:2'
-    key = 'haha'
-    ret = client2master.create_list(key, 12, '3:3:3')
+    name = 'test'
+    key = name + '.haha'
+    ret = client2master.create_table_list(name, 12, '3:3:3')
     if ret != MEMLINK_OK:
         print 'create error: %d' % ret
         return -1
@@ -325,6 +326,13 @@ def change_synclog_indexnum(num):
     os.system(cmd)
 
 def sync_test_clean():
+    cmd = "killall -9 memlink_master"
+    os.system(cmd)
+
+    cmd = "killall -9 memlink_slave"
+    os.system(cmd)
+
+
     binfiles = glob.glob('data/*')
     for bf in binfiles:
         print 'remove:', bf
@@ -334,12 +342,14 @@ def sync_test_clean():
     for bf in binfiles:
         print 'remove:', bf
         os.remove(bf)
-
+    '''
     cmd = "killall -9 memlink_master"
     os.system(cmd)
 
     cmd = "killall -9 memlink_slave"
     os.system(cmd)
+    '''
+
 
 def mb_sync_test_init(server_nums):
 

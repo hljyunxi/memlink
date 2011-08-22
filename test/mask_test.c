@@ -36,7 +36,8 @@ int main()
 {
 	MemLink	*m;
 #ifdef DEBUG
-	logfile_create("stdout", 3);
+	//logfile_create("stdout", 3);
+	logfile_create("stdout", 4);
 #endif
 	m = memlink_create("127.0.0.1", MEMLINK_READ_PORT, MEMLINK_WRITE_PORT, 30);
 	if (NULL == m) {
@@ -46,14 +47,15 @@ int main()
 
 	int  ret;
 	char key[32];
+    char *name = "test";
 
-	sprintf(key, "haha");
-	ret = memlink_cmd_create_list(m, key, 6, "4:3:1");
+	ret = memlink_cmd_create_table_list(m, name, 6, "4:3:1");
 	if (ret != MEMLINK_OK) {
 		DERROR("1 memlink_cmd_create %s error: %d\n", key, ret);
 		return -2;
 	}
 
+	sprintf(key, "%s.haha", name);
 	char *val	  = "111111";
 	char *attrstr = "8:3:1";
 	int i;
@@ -86,10 +88,16 @@ int main()
 		return -4;
 	}
     ret = memlink_cmd_attr(m, "xxxxxx", "xxxx", 4, attrstr);
-	if (ret != MEMLINK_ERR_NOKEY) {
-		DERROR("attr error, must nokey, key:%s\n", key);
+	if (ret != MEMLINK_ERR_PARAM) {
+		DERROR("attr error, must nokey, ret:%d\n", ret);
 		return -4;
 	}
+    ret = memlink_cmd_attr(m, "test.xxxxxx", "xxxx", 4, attrstr);
+	if (ret != MEMLINK_ERR_NOKEY) {
+		DERROR("attr error, must nokey, ret:%d\n", ret);
+		return -4;
+	}
+
     // end
 
 	char *newattr  = "7:2:1";

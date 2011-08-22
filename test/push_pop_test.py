@@ -83,12 +83,13 @@ def testq(m, key, t):
 def test():
     global home
 
-    key = 'haha'
+    name = "test"
+    key = name + '.haha'
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30);
    
-    ret = m.create_queue(key, 10)
+    ret = m.create_table_queue(name, 10)
     if ret != MEMLINK_OK:
-        print 'create queue error, ret:%d, key:%s' % (ret, key)
+        print 'create queue error, ret:%d, name:%s' % (ret, name)
         return -1
     
     ret = testq(m, key, 'l')

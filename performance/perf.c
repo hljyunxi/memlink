@@ -57,12 +57,12 @@ int test_ping(TestArgs *args)
 }
 
 
-int test_create(TestArgs *args)
+int test_create_node(TestArgs *args)
 {
     MemLink *m;
     int ret, i;
     char key[512] = {0};
-    
+    char name[512] = {0}; 
     DINFO("====== create ======\n");
 
     if (args->longconn) {
@@ -72,9 +72,31 @@ int test_create(TestArgs *args)
             exit(-1);
             return -1;
         }
+        char *sp = strchr(args->key, '.');
+        if (NULL == sp) {
+            DERROR("must set table name in key. eg: table_name.key_name\n"); 
+            exit(-1);
+            return -1;
+        }
+        char *start = args->key;
+        i = 0;
+        while (start != sp) {
+            name[i] = *start;
+            i++;
+            start++;
+        }
+        name[i] = 0;
+        
+        ret = memlink_cmd_create_table_list(m, name, args->valuesize, args->attrstr);
+        if (ret != MEMLINK_OK) {
+            DERROR("create table list error! ret:%d\n", ret);
+            exit(-1);
+            return -2;
+        }
+
         for (i = 0; i < args->testcount; i++) {
             sprintf(key, "%s%d", args->key, args->tid * args->testcount + i);
-            ret = memlink_cmd_create_list(m, key, args->valuesize, args->attrstr);
+            ret = memlink_cmd_create_node(m, name, key);
             if (ret != MEMLINK_OK) {
                 DERROR("create list error! ret:%d\n", ret);
                 return -2;
@@ -90,7 +112,7 @@ int test_create(TestArgs *args)
                 return -1;
             }
             sprintf(key, "%s%d", args->key, args->tid * args->testcount + i);
-            ret = memlink_cmd_create_list(m, key, args->valuesize, args->attrstr);
+            ret = memlink_cmd_create_table_list(m, key, args->valuesize, args->attrstr);
             if (ret != MEMLINK_OK) {
                 DERROR("create list error! ret:%d\n", ret);
                 return -2;
@@ -869,7 +891,7 @@ int test_start(TestConfig *cf)
 }
 
 TestFuncLink gfuncs[] = {{"ping", test_ping},
-                         {"create", test_create}, 
+                         {"create", test_create_node}, 
                          {"insert", test_insert},
                          {"range", test_range},
                          {"move", test_move},

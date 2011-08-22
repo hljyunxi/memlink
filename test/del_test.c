@@ -20,24 +20,24 @@ int range_check(MemLink *m, char *key, int from, int len)
         return -1;
     }
 
-    char buf[64] = {0};
+    //char key[64] = {0};
 
     //MemLinkItem *item = result.root;
     int n = from;
     /*while (item) {
-        sprintf(buf, "%06d", n);
+        sprintf(key, "%06d", n);
         //DINFO("value: %s\n", item->value);
-        if (strcmp(item->value, buf) != 0) {
-            DERROR("result error, value:%s, test:%s\n", item->value, buf);
+        if (strcmp(item->value, key) != 0) {
+            DERROR("result error, value:%s, test:%s\n", item->value, key);
             return -1;
         }
         n++;
         item = item->next;
     }*/
     for (i = 0; i < result.count; i++) {
-        sprintf(buf, "%06d", n);
-        if (strcmp(result.items[i].value, buf) != 0) {
-            DERROR("result error, value:%s, test:%s\n", result.items[i].value, buf);
+        sprintf(key, "%06d", n);
+        if (strcmp(result.items[i].value, key) != 0) {
+            DERROR("result error, value:%s, test:%s\n", result.items[i].value, key);
             return -1;
         }
         n++;
@@ -60,73 +60,85 @@ int main()
 	}
 	
 	int  ret;
-	char buf[64];
+	char key[64];
     int  valcount = 0;
+    char *name = "test";	
 	
-	sprintf(buf, "haha");
-	ret = memlink_cmd_create_list(m, buf, 6, "4:3:2");
+    ret = memlink_cmd_create_table_list(m, name, 6, "4:3:2");
 	if (ret != MEMLINK_OK) {
-		DERROR("memlink_cmd_create %s error: %d\n", buf, ret);
+		DERROR("memlink_cmd_create %s error: %d\n", name, ret);
 		return -2;
 	}
 
 	int i;
 	char *attrstr = "8:3:1";
 	char val[64];
+	sprintf(key, "%s.haha", name);
 
 	for (i = 0; i < 100; i++) {
 		sprintf(val, "%06d", i);
 
-		ret = memlink_cmd_insert(m, buf, val, strlen(val), attrstr, i);
+		ret = memlink_cmd_insert(m, key, val, strlen(val), attrstr, i);
 		if (ret != MEMLINK_OK) {
-			DERROR("insert error, ret:%d, key:%s, value:%s, attr:%s, i:%d\n", ret, buf, val, attrstr, i);
+			DERROR("insert error, ret:%d, key:%s, value:%s, attr:%s, i:%d\n", ret, key, val, attrstr, i);
 			return -3;
 		}
 	}
     valcount += 100;
 	//printf("insert 100!\n");
 
-	ret = memlink_cmd_del(m, buf, val, -1);
+	ret = memlink_cmd_del(m, key, val, -1);
 	if (ret == MEMLINK_OK) {
-		DERROR("del error, must novalue, key:%s, val:%s, ret:%d\n", buf, "xxxx", ret);
+		DERROR("del error, must novalue, key:%s, val:%s, ret:%d\n", key, "xxxx", ret);
 		return -4;
 	}
 
-	ret = memlink_cmd_del(m, buf, "xxxx", 4);
+	ret = memlink_cmd_del(m, key, "xxxx", 4);
 	if (ret != MEMLINK_ERR_NOVAL) {
-		DERROR("del error, must novalue, key:%s, val:%s, ret:%d\n", buf, "xxxx", ret);
+		DERROR("del error, must novalue, key:%s, val:%s, ret:%d\n", key, "xxxx", ret);
 		return -4;
 	}
 
     ret = memlink_cmd_del(m, "xxxxxx", "xxxx", 4);
-	if (ret != MEMLINK_ERR_NOKEY) {
-		DERROR("del error, must nokey, key:%s\n", buf);
+	if (ret != MEMLINK_ERR_PARAM) {
+		DERROR("del error, must nokey, key:%s, ret:%d\n", "xxxxxx", ret);
 		return -4;
 	}
+    ret = memlink_cmd_del(m, "test11.xxxxxx", "xxxx", 4);
+	if (ret != MEMLINK_ERR_NOTABLE) {
+		DERROR("del error, must nokey, key:%s, ret:%d\n", "xxxxxx", ret);
+		return -4;
+	}
+    ret = memlink_cmd_del(m, "test.xxxxxx", "xxxx", 4);
+	if (ret != MEMLINK_ERR_NOKEY) {
+		DERROR("del error, must nokey, key:%s, ret:%d\n", "xxxxxx", ret);
+		return -4;
+	}
+
 
     //goto memlink_over;
 	for (i = 0; i < 10; i++) {
 		sprintf(val, "%06d", i*2);
-		ret = memlink_cmd_del(m, buf, val, strlen(val));
+		ret = memlink_cmd_del(m, key, val, strlen(val));
 		if (ret != MEMLINK_OK) {
-			DERROR("del error, key:%s, val:%s\n", buf, val);
+			DERROR("del error, key:%s, val:%s\n", key, val);
 			return -5;
 		}
         valcount--;
 
 		MemLinkStat	stat;
-		ret = memlink_cmd_stat(m, buf, &stat);
+		ret = memlink_cmd_stat(m, key, &stat);
 		if (ret != MEMLINK_OK) {
-			DERROR("stat error, key:%s\n", buf);
+			DERROR("stat error, key:%s\n", key);
 		}
         
         //DINFO("stat.data_used:%d, i:%d, v:%d\n", stat.data_used, i, 100-i-1);
 		if (stat.data_used != 100 - i - 1) {
-			DERROR("del not remove item! key:%s, val:%s\n", buf, val);
+			DERROR("del not remove item! key:%s, val:%s\n", key, val);
 		}
 
 		MemLinkResult	result;
-		ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE,  "", 0, 100, &result);
+		ret = memlink_cmd_range(m, key, MEMLINK_VALUE_VISIBLE,  "", 0, 100, &result);
 		if (ret != MEMLINK_OK) {
 			DERROR("range error, ret:%d\n", ret);
 			return -6;
@@ -154,25 +166,26 @@ int main()
 
 	i = 99;
 	sprintf(val, "%06d", i);
-	ret = memlink_cmd_del(m, buf, val, strlen(val));	
+	ret = memlink_cmd_del(m, key, val, strlen(val));	
 	if (ret != MEMLINK_OK) {
-		DERROR("del error, key:%s, val:%s, ret: %d\n", buf, val, ret);
+		DERROR("del error, key:%s, val:%s, ret: %d\n", key, val, ret);
 		return -5;
 	}
     valcount--;
 
-	ret = memlink_cmd_del(m, buf, val, strlen(val));
+	ret = memlink_cmd_del(m, key, val, strlen(val));
 	//DINFO("ret:%d, val:%d \n", ret, i);
 	if (ret == MEMLINK_OK) {
-		DERROR("del error, key:%s, val:%s, ret: %d\n", buf, val, ret);
+		DERROR("del error, key:%s, val:%s, ret: %d\n", key, val, ret);
 		return -5;
 	}
 
     valcount = 0;
-	sprintf(buf, "hihi");
-	ret = memlink_cmd_create_list(m, buf, 255, "4:3:1");
+    name = "test2";
+	sprintf(key, "%s.hihi", name);
+	ret = memlink_cmd_create_table_list(m, name, 255, "4:3:1");
 	if (ret != MEMLINK_OK) {
-		DERROR("1 memlink_cmd_create %s error: %d\n", buf, ret);
+		DERROR("1 memlink_cmd_create %s error: %d\n", name, ret);
 		return -2;
 	}
 	char val2[64] = {0};
@@ -180,16 +193,16 @@ int main()
 	for (i = 0; i < insertnum; i++) {
 		sprintf(val2, "%06d", i);
         //DINFO("insert %s\n", val2);
-		ret = memlink_cmd_insert(m, buf, val2, strlen(val2), attrstr, i);	
+		ret = memlink_cmd_insert(m, key, val2, strlen(val2), attrstr, i);	
 		if (ret != MEMLINK_OK) {
-			DERROR("insert error, ret:%d, key:%s, val:%s, attr:%s, i:%d\n", ret, buf, val, attrstr, i);
+			DERROR("insert error, ret:%d, key:%s, val:%s, attr:%s, i:%d\n", ret, key, val, attrstr, i);
 			return -3;
 		}
 	}
     valcount += insertnum;
         
     MemLinkStat stat;
-    ret = memlink_cmd_stat(m, buf, &stat);
+    ret = memlink_cmd_stat(m, key, &stat);
     if (ret != MEMLINK_OK) {
         DERROR("stat error! %d\n", ret);
         return -3;
@@ -201,16 +214,16 @@ int main()
     }
 
 	//printf("insert %d!\n", insertnum);
-    if (range_check(m, buf, 0, insertnum) < 0) {
+    if (range_check(m, key, 0, insertnum) < 0) {
         DERROR("range check error!\n");
         return -3;
     }
 
 	/*for (i = 0; i < insertnum; i++) {
 		sprintf(val2, "%06d", i);
-		ret = memlink_cmd_del(m, buf, val2, strlen(val2));
+		ret = memlink_cmd_del(m, key, val2, strlen(val2));
 		if (ret != MEMLINK_OK) {
-			DERROR("del error, key:%s, val:%s, attr:%s, ret:%d\n", buf, val, attrstr, ret);
+			DERROR("del error, key:%s, val:%s, attr:%s, ret:%d\n", key, val, attrstr, ret);
 			return -3;
 		}
 	}*/
