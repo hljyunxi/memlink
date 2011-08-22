@@ -17,7 +17,7 @@ int main()
 	int attrnum = 3;
 	int ret;
 	int i = 0;
-
+    char *name = "test";
 	char *conffile;
 	conffile = "memlink.conf";
 	DINFO("config file: %s\n", conffile);
@@ -26,17 +26,23 @@ int main()
 	my_runtime_create_common("memlink");
 	ht = g_runtime->ht;
 
+	ret = hashtable_create_table(ht, name, valuesize, attrformat, attrnum, MEMLINK_LIST, 0);
+    if (ret != MEMLINK_OK) {
+        DERROR("create table error:%d\n", ret);
+        return -1;
+    }
+    Table *tb = hashtable_find_table(ht, name);
 	//test1 : hashtable_add_info_attr - create key
 	for (i = 0; i < num; i++) {
 		sprintf(key, "heihei%03d", i);
-		hashtable_key_create_attr(ht, key, valuesize, attrformat, attrnum, MEMLINK_LIST, 0);
+		table_create_node(tb, key);
 	}
 
 	for (i = 0; i < num; i++) {
 		sprintf(key, "heihei%03d", i);
-		HashNode* pNode = hashtable_find(ht, key);
+		HashNode* pNode = table_find(tb, key);
 		if (NULL == pNode) {
-			DERROR("hashtable_add_info_attr error. can not find %s\n", key);
+			DERROR("table_find error. can not find %s\n", key);
 			return -1;
 		}
 	}
@@ -51,12 +57,12 @@ int main()
 		sprintf(val, "value%03d", i);
 		pos = i;
         DINFO("add key:%s, val:%s pos:%d\n", key, val, pos);
-		ret = hashtable_add_attr(ht, key, val, attrarray[3], attrnum, pos); //{8, 3, 1}
+		ret = hashtable_insert(ht, name, key, val, attrarray[3], attrnum, pos); //{8, 3, 1}
 		if (ret < 0) {
 			DERROR("add value err: %d, %s\n", ret, val);
 			return ret;
 		}
-		ret = hashtable_find_value(ht, key, val, &node, &dbk, &item);
+		ret = table_find_value(tb, key, val, &node, &dbk, &item);
 		if (ret < 0) {
 			DERROR("not found value: %d, %s\n", ret, key);
 			return ret;
@@ -69,7 +75,7 @@ int main()
 		sprintf(val, "value%03d", i*2);
         DINFO("set attr, key:%s, val:%s, attr: %d:%d:%d\n", key, val, 
                 attrarray[2][0], attrarray[2][1], attrarray[2][2]);
-		ret = hashtable_attr(ht, key, val, attrarray[2], attrnum); //{ 4, 1, UINT_MAX}
+		ret = hashtable_attr(ht, name, key, val, attrarray[2], attrnum); //{ 4, 1, UINT_MAX}
 		if (MEMLINK_OK != ret) {
 			DINFO("err hashtable_attr val:%s, i:%d\n", val, i);
 			return ret;
@@ -103,7 +109,7 @@ int main()
 	
         Conn    conn;
         memset(&conn, 0, sizeof(Conn));
-		ret = hashtable_range(ht, key, MEMLINK_VALUE_VISIBLE, attrarray2[k], attrnum, 
+		ret = hashtable_range(ht, name, key, MEMLINK_VALUE_VISIBLE, attrarray2[k], attrnum, 
 			            frompos, len, &conn);
         
         if (len <= 0 && MEMLINK_ERR_RANGE_SIZE == ret) {

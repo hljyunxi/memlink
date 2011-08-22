@@ -1,15 +1,15 @@
 #include "hashtest.h"
 
 int
-find_value_in_block(HashNode *node, DataBlock *dbk, void *value)
+find_value_in_block(Table *tb, HashNode *node, DataBlock *dbk, void *value)
 {
     int pos = 0;
-    int datalen = node->valuesize + node->attrsize;
+    int datalen = tb->valuesize + tb->attrsize;
     char *data = dbk->data; 
     int i;
     
     for (i = 0; i < dbk->data_count; i++) {
-        if (dataitem_have_data(node, data, 0) && memcmp(value, data, node->valuesize) == 0) {
+        if (dataitem_have_data(tb, node, data, 0) && memcmp(value, data, tb->valuesize) == 0) {
             if (pos == 0)
                 return 1;
             return pos;
@@ -22,11 +22,12 @@ find_value_in_block(HashNode *node, DataBlock *dbk, void *value)
 }
 
 int
-build_data_model(HashTable *ht, char *key, int valuesize, unsigned int *attrformat, int attrnum, int num)
+build_data_model(HashTable *ht, char *name, char *key, int valuesize, 
+                unsigned int *attrformat, int attrnum, int num)
 {
     int ret;
 
-    ret = hashtable_key_create_attr(ht, key, valuesize, attrformat, attrnum, MEMLINK_LIST, MEMLINK_VALUE_STRING);
+    ret = hashtable_create_table(ht, name, valuesize, attrformat, attrnum, MEMLINK_LIST, MEMLINK_VALUE_STRING);
     if (ret != MEMLINK_OK) {
         DERROR("key create error, ret: %d, key: %s\n", ret, key);
         return ret;
@@ -36,10 +37,9 @@ build_data_model(HashTable *ht, char *key, int valuesize, unsigned int *attrform
     unsigned int attrarray[3] = {4, 4, 4}; 
     int i;
     char val[64];
-
     for (i = 0; i < num; i++) {
         snprintf(val, 64, "value%03d", i);
-        ret = hashtable_add_attr(ht, key, val, attrarray, 3, pos);
+        ret = hashtable_insert(ht, name, key, val, attrarray, 3, pos);
         if (ret != MEMLINK_OK) {
             DERROR("add value error: %d, %s\n", ret, val);
             return ret;
@@ -51,18 +51,21 @@ build_data_model(HashTable *ht, char *key, int valuesize, unsigned int *attrform
 
 //插入20条数据， 第一块第二块都是满的，每块10条，在第一块的任意位置插入一条数据
 int
-second_block_full_test(HashTable *ht, char *key, int valuesize, unsigned int *attrformat, int attrnum)
+second_block_full_test(HashTable *ht, char *name, char *key, int valuesize, 
+                        unsigned int *attrformat, int attrnum)
 {
     int ret;
     HashNode *node;
     char val[64];
     int pos;
 
-    ret = build_data_model(ht, key, valuesize, attrformat, attrnum, 20);
+    ret = build_data_model(ht, name, key, valuesize, attrformat, attrnum, 20);
     if (ret < 0)
         return ret;
     
-    node = hashtable_find(ht, key);
+    Table *tb = hashtable_find_table(ht, name);
+
+    node = table_find(tb, key);
     int blockmax = g_cf->block_data_count[g_cf->block_data_count_items - 1];
     DataBlock *dbk = node->data;
     DataBlock *nextdbk;
@@ -88,7 +91,7 @@ second_block_full_test(HashTable *ht, char *key, int valuesize, unsigned int *at
     pos = 3;
 
     unsigned int attrarray[3] = {1, 1, 1};
-    ret = hashtable_add_attr(ht, key, val, attrarray, 3,  pos);
+    ret = hashtable_insert(ht, name, key, val, attrarray, 3,  pos);
     if (ret != MEMLINK_OK) {
         DERROR("add value error: %d, %s\n", ret, val);
         return ret;
@@ -113,7 +116,7 @@ second_block_full_test(HashTable *ht, char *key, int valuesize, unsigned int *at
     DNOTE("second->data_count: %d\n", second->data_count);
     
     //插入的数据是否在第一块的pos=3的位置
-    pos = find_value_in_block(node, first, val);
+    pos = find_value_in_block(tb, node, first, val);
     DNOTE("pos: %d\n", pos);
     if (pos  != 3) {
         return -11;
@@ -121,7 +124,7 @@ second_block_full_test(HashTable *ht, char *key, int valuesize, unsigned int *at
 
     //原来第一块的最后一条数据是否移到了第二块中
     snprintf(val, 64, "value%03d", 9);
-    pos = find_value_in_block(node, second, val);
+    pos = find_value_in_block(tb, node, second, val);
     DNOTE("pos: %d\n", pos);
     if (pos != 1)
         return -12;
@@ -132,18 +135,19 @@ second_block_full_test(HashTable *ht, char *key, int valuesize, unsigned int *at
 
 //后一块block有空， 且是第一个位置有空
 int
-second_not_full_test1(HashTable *ht, char *key, int valuesize, unsigned int *attrformat, int attrnum)
+second_not_full_test1(HashTable *ht, char *name, char *key, int valuesize, unsigned int *attrformat, int attrnum)
 {
     int ret;
     HashNode *node;
     char val[64];
     int pos;
 
-    ret = build_data_model(ht, key, valuesize, attrformat, attrnum, 20);
+    ret = build_data_model(ht, name, key, valuesize, attrformat, attrnum, 20);
     if (ret < 0)
         return ret;
     
-    node = hashtable_find(ht, key);
+    Table *tb = hashtable_find_table(ht, name); 
+    node = table_find(tb, key);
     int blockmax = g_cf->block_data_count[g_cf->block_data_count_items - 1];
     DataBlock *dbk = node->data;
     DataBlock *nextdbk;
@@ -154,7 +158,7 @@ second_not_full_test1(HashTable *ht, char *key, int valuesize, unsigned int *att
     nextdbk = dbk->next;
     //删除第二个块中的第一个数据
     snprintf(val, 64, "value%03d", 10);
-    ret = hashtable_del(ht, key, val);
+    ret = hashtable_del(ht, name, key, val);
     if (ret != MEMLINK_OK) {
         DERROR("hashtable_del: %d\n", ret);
         return ret;
@@ -164,7 +168,7 @@ second_not_full_test1(HashTable *ht, char *key, int valuesize, unsigned int *att
     pos  = 3;
     unsigned int attrarray[3] = {2, 2, 2};
 
-    ret = hashtable_add_attr(ht, key, val, attrarray, 3, pos);
+    ret = hashtable_insert(ht, name, key, val, attrarray, 3, pos);
     if (ret != MEMLINK_OK) {
         DERROR("add value error: %d, %s\n", ret, val);
         return ret;
@@ -190,13 +194,13 @@ second_not_full_test1(HashTable *ht, char *key, int valuesize, unsigned int *att
         return -8;
     }
     snprintf(val, 64, "value%03d", 99);
-    pos = find_value_in_block(node, first, val);
+    pos = find_value_in_block(tb, node, first, val);
     DNOTE("pos: %d\n", pos);
     if (pos != 3)
         return -9;
 
     snprintf(val, 64, "value%03d", 9);
-    pos = find_value_in_block(node, second, val);
+    pos = find_value_in_block(tb, node, second, val);
     DNOTE("pos: %d\n", pos);
     if (pos != 1)
         return -10;
@@ -207,18 +211,19 @@ second_not_full_test1(HashTable *ht, char *key, int valuesize, unsigned int *att
 
 //第一块是满的，下一块有一个空缺，且不是第一个
 int
-second_not_full_test2(HashTable *ht, char *key, int valuesize, unsigned int *attrformat, int attrnum)
+second_not_full_test2(HashTable *ht, char *name, char *key, int valuesize, unsigned int *attrformat, int attrnum)
 {
     int ret;
     HashNode *node;
     char val[64];
     int pos;
 
-    ret = build_data_model(ht, key, valuesize, attrformat, attrnum, 20);
+    ret = build_data_model(ht, name, key, valuesize, attrformat, attrnum, 20);
     if (ret < 0)
         return ret;
 
-    node = hashtable_find(ht, key);
+    Table *tb = hashtable_find_table(ht, name); 
+    node = table_find(tb, key);
     int blockmax = g_cf->block_data_count[g_cf->block_data_count_items - 1];
     DataBlock *dbk = node->data;
     DataBlock *nextdbk;
@@ -230,7 +235,7 @@ second_not_full_test2(HashTable *ht, char *key, int valuesize, unsigned int *att
 
     //删除第二块中中间的某个数据
     snprintf(val, 64, "value%03d", 13);
-    ret = hashtable_del(ht, key, val);
+    ret = hashtable_del(ht, name, key, val);
     if (ret != MEMLINK_OK) {
         DERROR("hashtable_del: %d\n", ret);
         return ret;
@@ -239,7 +244,7 @@ second_not_full_test2(HashTable *ht, char *key, int valuesize, unsigned int *att
     snprintf(val, 64, "value%03d", 99);
     pos = 3;
     unsigned int attrarray[3] = {2, 2, 2};
-    ret = hashtable_add_attr(ht, key, val, attrarray, 3, pos);
+    ret = hashtable_insert(ht, name, key, val, attrarray, 3, pos);
     if  (ret != MEMLINK_OK) {
         DERROR("add value error: %d, %s\n", ret, val);
         return ret;
@@ -265,13 +270,13 @@ second_not_full_test2(HashTable *ht, char *key, int valuesize, unsigned int *att
     }
 
     snprintf(val, 64, "value%03d", 99);
-    pos = find_value_in_block(node, first, val);
+    pos = find_value_in_block(tb, node, first, val);
     DNOTE("pos: %d\n", pos);
     if (pos != 3)
         return -9;
     
     snprintf(val, 64, "value%03d", 9);
-    pos = find_value_in_block(node, second, val);
+    pos = find_value_in_block(tb, node, second, val);
     DNOTE("pos: %d\n", pos);
     if (pos != 1)
         return -10;
@@ -282,18 +287,19 @@ second_not_full_test2(HashTable *ht, char *key, int valuesize, unsigned int *att
 
 //第一块是满的， 但是能增大
 int
-first_is_full_test1(HashTable *ht, char *key, int valuesize, unsigned int *attrformat, int attrnum)
+first_is_full_test1(HashTable *ht, char *name, char *key, int valuesize, unsigned int *attrformat, int attrnum)
 {
     int ret;
     HashNode *node;
     char val[64];
     int pos;
 
-    ret = build_data_model(ht, key, valuesize, attrformat, attrnum, 5);
+    ret = build_data_model(ht, name, key, valuesize, attrformat, attrnum, 5);
     if (ret < 0)
         return ret;
 
-    node = hashtable_find(ht, key);
+    Table *tb = hashtable_find_table(ht, name); 
+    node = table_find(tb, key);
     int blockmax = g_cf->block_data_count[g_cf->block_data_count_items - 2];
     DataBlock *dbk = node->data;
     
@@ -306,7 +312,7 @@ first_is_full_test1(HashTable *ht, char *key, int valuesize, unsigned int *attrf
     pos = 3;
     unsigned int attrarray[3] = {2, 2, 2};
 
-    ret = hashtable_add_attr(ht, key, val, attrarray, 3, pos);
+    ret = hashtable_insert(ht, name, key, val, attrarray, 3, pos);
     if (ret != MEMLINK_OK) {
         DERROR("add value error: %d, %s\n", ret, val);
         return ret;
@@ -316,7 +322,7 @@ first_is_full_test1(HashTable *ht, char *key, int valuesize, unsigned int *attrf
     if (dbk->data_count != g_cf->block_data_count[g_cf->block_data_count_items - 1])
         return -5;
 
-    pos = find_value_in_block(node, dbk, val);
+    pos = find_value_in_block(tb, node, dbk, val);
     DNOTE("pos: %d\n", pos);
     if (pos != 3)
         return -6;
@@ -326,18 +332,19 @@ first_is_full_test1(HashTable *ht, char *key, int valuesize, unsigned int *attrf
 }
 
 int 
-second_block_full_test2(HashTable *ht, char *key, int valuesize, unsigned int *attrformat, int attrnum)
+second_block_full_test2(HashTable *ht, char *name, char *key, int valuesize, unsigned int *attrformat, int attrnum)
 {
     int ret;
     HashNode *node;
     char val[64];
     int pos;
 
-    ret = build_data_model(ht, key, valuesize, attrformat, attrnum, 15);
+    ret = build_data_model(ht, name, key, valuesize, attrformat, attrnum, 15);
     if (ret < 0)
         return ret;
-    
-    node = hashtable_find(ht, key);
+    Table *tb = hashtable_find_table(ht, name); 
+
+    node = table_find(tb, key);
     DataBlock *dbk = node->data;
     DataBlock *nextdbk;
 
@@ -354,7 +361,7 @@ second_block_full_test2(HashTable *ht, char *key, int valuesize, unsigned int *a
     snprintf(val, 64, "value%03d", 99);
     pos = 3;
     unsigned int attrarray[3] = {1, 1, 1}; 
-    ret = hashtable_add_attr(ht, key, val, attrarray, 3, pos);
+    ret = hashtable_insert(ht, name, key, val, attrarray, 3, pos);
     if (ret != MEMLINK_OK) {
         DERROR("add value error: %d, %s\n", ret, val);
         return ret;
@@ -372,13 +379,13 @@ second_block_full_test2(HashTable *ht, char *key, int valuesize, unsigned int *a
     if (nextdbk->data_count != g_cf->block_data_count[g_cf->block_data_count_items - 1])
         return -9;
 
-    pos = find_value_in_block(node, dbk, val);
+    pos = find_value_in_block(tb, node, dbk, val);
     DNOTE("pos: %d\n", pos);
     if (pos != 3)
         return -10;
 
     snprintf(val, 64, "value%03d", 9);
-    pos = find_value_in_block(node, nextdbk, val);
+    pos = find_value_in_block(tb, node, nextdbk, val);
     DNOTE("pos: %d\n", pos);
     if (pos != 1)
         return -11;
@@ -402,33 +409,33 @@ int main(int argc, char **argv)
     char key[64];
     int  valuesize = 8;
     unsigned int attrarray[3] = {4, 4, 4};
-
+    char *name = "test";
     snprintf(key, 64, "%s", "test");
 
-    int ret = second_block_full_test(ht, key, valuesize, attrarray, 3);
+    int ret = second_block_full_test(ht, name, key, valuesize, attrarray, 3);
     
     DNOTE("second_block_full_test: %d\n", ret);
     if (ret < 0)
         return ret;
 
-    ret = second_not_full_test1(ht, key, valuesize, attrarray, 3);
+    ret = second_not_full_test1(ht, name, key, valuesize, attrarray, 3);
     DNOTE("second_not_full_test1: %d\n", ret);
 
     if (ret < 0)
         return ret;
     
-    ret = second_not_full_test2(ht, key, valuesize, attrarray, 3);
+    ret = second_not_full_test2(ht, name, key, valuesize, attrarray, 3);
     DNOTE("second_not_full_test2: %d\n", ret);
 
     if (ret < 0)
         return ret;
 
-    ret = first_is_full_test1(ht, key, valuesize, attrarray, 3);
+    ret = first_is_full_test1(ht, name, key, valuesize, attrarray, 3);
     DNOTE("first_is_full_test1: %d\n", ret);
     if (ret < 0)
         return ret;
 
-    ret = second_block_full_test2(ht, key, valuesize, attrarray, 3);
+    ret = second_block_full_test2(ht, name, key, valuesize, attrarray, 3);
     DNOTE("second_block_full_test2: %d\n", ret);
     if (ret < 0)
         return ret;

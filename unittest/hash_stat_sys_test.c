@@ -41,6 +41,7 @@ int main(int argc, char **argv)
 {
 #ifdef DEBUG
     logfile_create("test.log", 3);
+    //logfile_create("stdout", 4);
 #endif
     char key[64];
     int  valuesize = 8;
@@ -52,6 +53,7 @@ int main(int argc, char **argv)
     int  keys = 100;
     int  ret;
     char *conffile = "memlink.conf";
+    char *name = "test";
     int  i;
     HashTable *ht;
 
@@ -61,10 +63,12 @@ int main(int argc, char **argv)
 
     ht = g_runtime->ht;
     
+    ret = hashtable_create_table(ht, name, valuesize, attrformat, attrnum, MEMLINK_LIST, 0);
+    Table *tb = hashtable_find_table(ht, name);
     //创建key
     for (i = 0; i < keys; i++) {
         sprintf(key, "test%03d", i);
-        hashtable_key_create_attr(ht, key, valuesize, attrformat, attrnum, MEMLINK_LIST, 0);
+        table_create_node(tb, key);
     }
 
     int pos = -1; 
@@ -74,7 +78,7 @@ int main(int argc, char **argv)
         sprintf(key, "test%03d", i);
         for (j = 0; j < num; j++) {
             sprintf(val, "value%03d", j);
-            ret = hashtable_add_attr(ht, key, val, attrarray, attrnum, pos);
+            ret = hashtable_insert(ht, name, key, val, attrarray, attrnum, pos);
             if (ret < 0) {
                 DERROR("add value error: %d, %s\n", ret, val);
                 return ret;
@@ -107,9 +111,9 @@ int main(int argc, char **argv)
     int size = 0;
     int blocks = 0;
     for (i = 0; i < HASHTABLE_BUNKNUM; i++) {
-        node = ht->bunks[i];
+        node = tb->nodes[i];
         if (node) {
-            size += strlen(node->key) + 1 + node->attrnum;
+            size += strlen(node->key) + 1 + tb->attrnum;
         }
         while (node) {
             DataBlock *dbk = node->data;
@@ -119,7 +123,7 @@ int main(int argc, char **argv)
                 //DNOTE("sizeof(DataBlock): %d\n", sizeof(DataBlock));
                 //DNOTE("data_count: %d\n", dbk->data_count);
                 //DNOTE("node->attrsize + node->valuesize: %d\n", node->attrsize + node->valuesize);
-                size += (node->attrsize + node->valuesize) * (dbk->data_count);
+                size += (tb->attrsize + tb->valuesize) * (dbk->data_count);
                 dbk = dbk->next;
                 blocks++;
             }

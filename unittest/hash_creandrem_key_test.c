@@ -24,7 +24,7 @@ int main()
 	int i = 0;
 	int ret;
 	char *conffile;
-
+    char *name = "test";
 	conffile = "memlink.conf";
 	DINFO("config file: %s\n", conffile);
     myconfig_create(conffile);
@@ -32,11 +32,17 @@ int main()
 	my_runtime_create_common("memlink");
 	ht = g_runtime->ht;
 
+	ret = hashtable_create_table(ht, name, valuesize, attrformat, attrnum, MEMLINK_LIST, 0);
+    if (ret < 0) {
+        DERROR("hashtable_add_info_attr error. %s\n", key);
+        return -1;
+    }
+    Table *tb = hashtable_find_table(ht, name);
 	///////////begin test;
 	//test1 : hashtable_add_info_attr - create key
 	for (i = 0; i < num; i++) {
 		sprintf(key, "heihei%03d", i);
-		ret = hashtable_key_create_attr(ht, key, valuesize, attrformat, attrnum, MEMLINK_LIST, 0);
+		ret = table_create_node(tb, key);
 		if (ret < 0) {
 			DERROR("hashtable_add_info_attr error. %s\n", key);
 			return -1;
@@ -44,16 +50,16 @@ int main()
 	}
 	for (i = 0; i < num; i++) {
 		sprintf(key, "heihei%03d", i);
-		HashNode* pNode = hashtable_find(ht, key);
+		HashNode* pNode = table_find(tb, key);
 		if (NULL == pNode) {
-			DERROR("hashtable_add_info_attr error. can not find %s\n", key);
+			DERROR("table_find error. can not find %s\n", key);
 			return -1;
 		}
 	}
 
 	for (i = 0; i < num; i++) {
 		sprintf(key, "heihei%03d", i);
-		ret = hashtable_remove_key(ht, key);
+		ret = hashtable_remove_key(ht, name, key);
 		if (ret < 0) {
 			DERROR("hashtable_remove_key error. %s\n", key);
 			return -1;
@@ -61,7 +67,7 @@ int main()
 	}
 	for (i = 0; i < num; i++) {
 		sprintf(key, "heihei%03d", i);
-		HashNode* pNode = hashtable_find(ht, key);
+		HashNode* pNode = table_find(tb, key);
 		if (NULL != pNode) {
 			DERROR("hashtable_remove_key error. should not find %s\n", key);
 			return -1;

@@ -21,6 +21,7 @@ int main()
 	int  ret;
 	int  i = 0;
 	char *conffile;
+    char *name = "test";
 
 	conffile = "memlink.conf";
 	DINFO("config file: %s\n", conffile);
@@ -29,24 +30,29 @@ int main()
 	my_runtime_create_common("memlink");
 	ht = g_runtime->ht;
 
+
+	ret = hashtable_create_table(ht, name, valuesize, attrformat, attrnum, MEMLINK_LIST, MEMLINK_VALUE_STRING);
+    
+    Table *tb = hashtable_find_table(ht, name);
 	///////////begin test;
 	//test1 : hashtable_add_info_attr - craete key
-	for (i = 0; i < 1; i++) {
+	/*for (i = 0; i < 1; i++) {
 		sprintf(key, "heihei%03d", i);
 		ret = hashtable_key_create_attr(ht, key, valuesize, attrformat, attrnum, MEMLINK_LIST, MEMLINK_VALUE_STRING);
         if (ret != MEMLINK_OK) {
             DERROR("key create error, ret:%d, key:%s\n", ret, key);
             return -1;
         }
-	}
+	}*/
+    /*
 	for (i = 0; i < 1; i++) {
 		sprintf(key, "heihei%03d", i);
-		HashNode* pNode = hashtable_find(ht, key);
+		HashNode* pNode = table_find(tb, key);
 		if(NULL == pNode) {
 			DERROR("hashtable_add_info_attr error. can not find %s\n", key);
 			return -1;
 		}
-	}
+	}*/
 
 	///////test : hashtable_add_attr - insert 'num' value
 	HashNode *node = NULL;
@@ -58,12 +64,12 @@ int main()
 	for (i = 0; i < num; i++) {
 		sprintf(val, "value%03d", i);
 		pos = i;
-		ret = hashtable_add_attr(ht, key, val, attrarray[i%4], attrnum, pos);
+		ret = hashtable_insert(ht, name, key, val, attrarray[i%4], attrnum, pos);
 		if (ret < 0) {
 			DERROR("add value err: %d, %s\n", ret, val);
 			return ret;
 		}
-		ret = hashtable_find_value(ht, key, val, &node, &dbk, &item);
+		ret = table_find_value(tb, key, val, &node, &dbk, &item);
 		if (ret < 0) {
 			DERROR("not found value: %d, %s\n", ret, key);
 			return ret;
@@ -71,11 +77,11 @@ int main()
 	}
 	DINFO("insert %d values ok!\n", num);
 
-    node = hashtable_find(ht, key);
+    node = table_find(tb, key);
     DINFO("node used:%d, all:%d\n", node->used, node->all);
 	//////////test 
 	HashTableStat stat;
-	ret = hashtable_stat(ht, key, &stat);
+	ret = hashtable_stat(ht, name, key, &stat);
     if (ret != MEMLINK_OK) {
         DERROR("stat error, ret:%d, key:%s\n", ret, key);
         return -1;
@@ -89,7 +95,7 @@ int main()
 	///del 500
 	for (i = 0; i < num/2; i++) {
 		sprintf(val, "value%03d", i*2);
-		ret = hashtable_del(ht, key, val);
+		ret = hashtable_del(ht, name, key, val);
 		if (ret < 0) {
 			DERROR("hashtable_del error, ret:%d value:%s\n", ret, val);
 			return ret;
@@ -97,7 +103,7 @@ int main()
 	}
     DINFO("del 500 node used:%d, all:%d\n", node->used, node->all);
 
-	ret = hashtable_clean(ht, key);
+	ret = hashtable_clean(ht, name, key);
 	if (ret < 0) {
 		DERROR("hashtable_clean error: %d\n", ret);
 		return ret;
@@ -105,7 +111,7 @@ int main()
     DINFO("del 500 clean node used:%d, all:%d\n", node->used, node->all);
 
 	HashTableStat stat1;
-	ret = hashtable_stat(ht, key, &stat1);
+	ret = hashtable_stat(ht, name, key, &stat1);
     if (ret != MEMLINK_OK) {
         DERROR("stat error, ret:%d, key:%s\n", ret, key);
         return -1;
@@ -121,7 +127,7 @@ int main()
 	///del all the rest
 	for(i = 0; i < num/2; i++) {
 		sprintf(val, "value%03d", i*2+1);
-		ret = hashtable_del(ht, key, val);
+		ret = hashtable_del(ht, name, key, val);
 		if (ret < 0) {
 			DERROR("hashtable_del error: %d  val:%s\n", ret, val);
 			return ret;
@@ -129,15 +135,15 @@ int main()
 	}
     DINFO("del 1000 node used:%d, all:%d\n", node->used, node->all);
 	
-	ret = hashtable_clean(ht, key);
+	ret = hashtable_clean(ht, name, key);
 	if (ret < 0) {
 		DERROR("hashtable_clean error: %d\n", ret);
 		return ret;
 	}
     DINFO("del 1000 clean node used:%d, all:%d\n", node->used, node->all);
     
-	hashtable_print(g_runtime->ht, key);
-	ret = hashtable_stat(ht, key, &stat1);
+	table_print(tb, key);
+	ret = hashtable_stat(ht, name, key, &stat1);
     if (ret != MEMLINK_OK) {
         DERROR("stat error, ret:%d, key:%s\n", ret, key);
         return -1;

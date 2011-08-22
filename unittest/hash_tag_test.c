@@ -4,6 +4,7 @@ int main()
 {
 #ifdef DEBUG
 	logfile_create("test.log", 3);
+	//logfile_create("stdout", 4);
 #endif
 	HashTable* ht;
 	char key[64];
@@ -16,7 +17,7 @@ int main()
 	int ret;
 	int i = 0;
 	char *conffile;
-
+    char *name = "test";
 	conffile = "memlink.conf";
 	DINFO("config file: %s\n", conffile);
 	myconfig_create(conffile);
@@ -24,15 +25,17 @@ int main()
 	my_runtime_create_common("memlink");
 	ht = g_runtime->ht;
 
+	hashtable_create_table(ht, name, valuesize, attrformat, attrnum, MEMLINK_LIST, 0);
+    Table *tb = hashtable_find_table(ht, name);
 	///////////begin test;
 	//test1 : hashtable_add_info_attr - create key
 	for (i = 0; i < num; i++) {
 		sprintf(key, "heihei%03d", i);
-		hashtable_key_create_attr(ht, key, valuesize, attrformat, attrnum, MEMLINK_LIST, 0);
+		table_create_node(tb, key);
 	}
 	for (i = 0; i < num; i++) {
 		sprintf(key, "heihei%03d", i);
-		HashNode* pNode = hashtable_find(ht, key);
+		HashNode* pNode = table_find(tb, key);
 		if (NULL == pNode) {
 			DERROR("hashtable_add_info_attr error. can not find %s\n", key);
 			return -1;
@@ -48,13 +51,13 @@ int main()
 	for (i = 0; i < num; i++) {
 		sprintf(val, "value%03d", i);
 		pos = i;
-		ret = hashtable_add_attr(ht, key, val, attrarray[i%3], attrnum, pos);
+		ret = hashtable_insert(ht, name, key, val, attrarray[i%3], attrnum, pos);
 		if (ret < 0) {
 			DERROR("add value err: %d, key:%s, value:%s, pos:%d\n", ret, key, val, pos);
 			return ret;
 		}
 		
-		ret = hashtable_find_value(ht, key, val, &node, &dbk, &item);
+		ret = table_find_value(tb, key, val, &node, &dbk, &item);
 		if (ret < 0) {
 			DERROR("not found value: %d, %s\n", ret, key);
 			return ret;
@@ -74,20 +77,20 @@ int main()
 		
 		//printf("val:%s, tag:%d \n", val, tag);
 		//hashtable_find_value(ht, key, val, &node, &dbk, &item);
-		int ret = hashtable_tag(ht, key, val, tag);
+		int ret = hashtable_tag(ht, name, key, val, tag);
 		if (MEMLINK_OK != ret) {
 			DERROR("err hashtable_tag val:%s, tag:%d\n", val, tag);
 			return ret;
 		}
 		
-		ret = hashtable_find_value(ht, key, val, &node, &dbk, &item);
+		ret = table_find_value(tb, key, val, &node, &dbk, &item);
 		if (ret < 0) {
 			DERROR("not found value: %d, %s\n", ret, key);
 			return ret;
 		}
-		char attr[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
-		char *mdata = item + node->valuesize;
-		memcpy(attr, mdata, node->attrsize); 
+		char attr[HASHTABLE_ATTR_MAX_ITEM * HASHTABLE_ATTR_MAX_BYTE] = {0};
+		char *mdata = item + tb->valuesize;
+		memcpy(attr, mdata, tb->attrsize); 
 
 		char flag = *(attr + 0) & 0x02;
 		flag = flag >> 1;

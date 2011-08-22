@@ -19,7 +19,7 @@ int main()
 	int ret;
 	int i = 0;
 	char *conffile;
-
+    char *name = "test";
 	conffile = "memlink.conf";
 	DINFO("config file: %s\n", conffile);
 	myconfig_create(conffile);
@@ -27,18 +27,24 @@ int main()
 	my_runtime_create_common("memlink");
 	ht = g_runtime->ht;
 
+	ret = hashtable_create_table(ht, name, valuesize, attrformat, attrnum, 
+                                MEMLINK_LIST, MEMLINK_VALUE_STRING);
+    if (ret != MEMLINK_OK) {
+        DERROR("create table error:%d\n", ret);
+        return -1;
+    }
+    Table *tb = hashtable_find_table(ht, name);
 	///////////begin test;
 	//test1 : hashtable_add_info_attr - create key
 	for (i = 0; i < num; i++) {
 		sprintf(key, "heihei%03d", i);
-		hashtable_key_create_attr(ht, key, valuesize, attrformat, attrnum, 
-                                MEMLINK_LIST, MEMLINK_VALUE_STRING);
+		table_create_node(tb, key);
 	}
 	for (i = 0; i < num; i++) {
 		sprintf(key, "heihei%03d", i);
-		HashNode* pNode = hashtable_find(ht, key);
+		HashNode* pNode = table_find(tb, key);
 		if (NULL == pNode) {
-			DERROR("hashtable_add_info_attr error. can not find %s\n", key);
+			DERROR("table_find error. can not find %s\n", key);
 			return -1;
 		}
 	}
@@ -52,16 +58,16 @@ int main()
 	for (i = 0; i < num; i++) {
 		sprintf(val, "value%03d", i);
 		pos = i;
-		ret = hashtable_add_attr(ht, key, val, attrarray[i%4], attrnum, pos);
+		ret = hashtable_insert(ht, name, key, val, attrarray[i%4], attrnum, pos);
         DNOTE("insert value:%s, pos:%d, attrnum:%d, ret:%d\n", val, pos, attrnum, ret);
 		if (ret < 0) {
 			DERROR("add value err: %d, %s\n", ret, val);
 			return ret;
 		}
 
-        hashtable_print(ht,  key);
+        table_print(tb, key);
 
-		ret = hashtable_find_value(ht, key, val, &node, &dbk, &item);
+		ret = table_find_value(tb, key, val, &node, &dbk, &item);
 		if (ret < 0) {
 			DERROR("not found value, ret:%d, key:%s, value:%s\n", ret, key, val);
 			return ret;
@@ -79,26 +85,26 @@ int main()
 		
 		int k = my_rand(4);
 		//hashtable_find_value(ht, key, val, &node, &dbk, &item);
-		ret = hashtable_attr(ht, key, val, attrarray[k], attrnum);
+		ret = hashtable_attr(ht, name, key, val, attrarray[k], attrnum);
 		if (MEMLINK_OK != ret) {
 			DERROR("err hashtable_attr val:%s, k:%d\n", val, k);
 			return ret;
 		}
 		
-		ret = hashtable_find_value(ht, key, val, &node, &dbk, &item);
+		ret = table_find_value(tb, key, val, &node, &dbk, &item);
 		if (ret < 0) {
 			DERROR("not found value: %d, %s\n", ret, val);
 			return ret;
 		}
-		char data[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
-		char flag[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
+		char data[HASHTABLE_ATTR_MAX_ITEM * HASHTABLE_ATTR_MAX_BYTE] = {0};
+		char flag[HASHTABLE_ATTR_MAX_ITEM * HASHTABLE_ATTR_MAX_BYTE] = {0};
 		ret = attr_array2binary(charattrformat, attrarray[k], attrnum, data); //to binary
 		attr_array2flag(charattrformat, attrarray[k], attrnum, flag);   //to flag
-		char attr[HASHTABLE_MASK_MAX_ITEM * HASHTABLE_MASK_MAX_BYTE] = {0};
-		char *mdata = item + node->valuesize;
+		char attr[HASHTABLE_ATTR_MAX_ITEM * HASHTABLE_ATTR_MAX_BYTE] = {0};
+		char *mdata = item + tb->valuesize;
 		int j = 0;
 
-		memcpy(attr, mdata, node->attrsize); 
+		memcpy(attr, mdata, tb->attrsize); 
 		attr[0] &= 0xfc;
 		data[0] &= 0xfc;
 
