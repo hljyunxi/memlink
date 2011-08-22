@@ -42,24 +42,29 @@ public class MemLinkClient
 		}
 	}
 
-	public int create(String key, int valuesize, String attrstr, short listtype, short valuetype)
+	public int createTable(String name, int valuesize, String attrstr, short listtype, short valuetype)
 	{
-		return cmemlink.memlink_cmd_create(client, key, valuesize, attrstr, listtype, valuetype);
+		return cmemlink.memlink_cmd_create_table(client, name, valuesize, attrstr, listtype, valuetype);
 	}
     
-    public int createList(String key, int valuesize, String attrstr)
+    public int createTableList(String name, int valuesize, String attrstr)
 	{
-		return cmemlink.memlink_cmd_create_list(client, key, valuesize, attrstr);
+		return cmemlink.memlink_cmd_create_table_list(client, name, valuesize, attrstr);
 	}
 
-    public int createQueue(String key, int valuesize, String attrstr)
+    public int createTableQueue(String name, int valuesize, String attrstr)
 	{
-		return cmemlink.memlink_cmd_create_queue(client, key, valuesize, attrstr);
+		return cmemlink.memlink_cmd_create_table_queue(client, name, valuesize, attrstr);
 	}
 
-    public int createSortList(String key, int valuesize, String attrstr, int valuetype)
+    public int createTableSortList(String name, int valuesize, String attrstr, int valuetype)
 	{
-		return cmemlink.memlink_cmd_create_sortlist(client, key, valuesize, attrstr, (short)valuetype);
+		return cmemlink.memlink_cmd_create_table_sortlist(client, name, valuesize, attrstr, (short)valuetype);
+	}
+
+	public int createNode(String name, String key) 
+	{
+		return cmemlink.memlink_cmd_create_node(client, name, key);
 	}
 
 	public int dump()
