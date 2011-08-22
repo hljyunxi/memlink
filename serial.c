@@ -38,7 +38,7 @@ attr_string2array(char *attrstr, unsigned int *result)
 
     while (m != NULL) {
         char *fi  = strchr(m, ':');
-        if (i >= HASHTABLE_MASK_MAX_ITEM)
+        if (i >= HASHTABLE_ATTR_MAX_ITEM)
             return -1;
         if (m[0] == ':' || m[0] == 0) {
             result[i] = UINT_MAX;
@@ -144,7 +144,7 @@ int
 attr_string2binary(unsigned char *attrformat, char *attrstr, char *attr)
 {
     int attrnum;
-    unsigned int attrarray[HASHTABLE_MASK_MAX_ITEM] = {0};
+    unsigned int attrarray[HASHTABLE_ATTR_MAX_ITEM] = {0};
 
     attrnum = attr_string2array(attrstr, attrarray);
     if (attrnum <= 0)
@@ -352,7 +352,17 @@ cmd_rmkey_unpack(char *data, char *key)
 {
     return unpack(data + CMD_REQ_HEAD_LEN, 0, "s", key);
 }
+int 
+cmd_rmtable_pack(char *data, char *key)
+{
+    return pack(data, 0, "$4cs", CMD_RMTABLE, key);
+}
 
+int 
+cmd_rmtable_unpack(char *data, char *key)
+{
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "s", key);
+}
 
 int 
 cmd_count_pack(char *data, char *key, unsigned char attrnum, unsigned int *attrarray)
@@ -425,21 +435,33 @@ cmd_stat_sys_unpack(char *data)
  * @param return the length of the whole command.
  */
 int 
-cmd_create_pack(char *data, char *key, unsigned char valuelen, 
+cmd_create_table_pack(char *data, char *name, unsigned char valuelen, 
                 unsigned char attrnum, unsigned int *attrarray,
                 unsigned char listtype, unsigned char valuetype)
 {
-    return pack(data, 0, "$4cscIcc", CMD_CREATE, key, valuelen, 
+    return pack(data, 0, "$4cscIcc", CMD_CREATE_TABLE, name, valuelen, 
                 attrnum, attrarray, listtype, valuetype);
 }
 
 int 
-cmd_create_unpack(char *data, char *key, unsigned char *valuelen, 
+cmd_create_table_unpack(char *data, char *name, unsigned char *valuelen, 
                   unsigned char *attrnum, unsigned int *attrarray,
                   unsigned char *listtype, unsigned char *valuetype)
 {
-    return unpack(data + CMD_REQ_HEAD_LEN, 0, "scIcc", key, valuelen, 
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "scIcc", name, valuelen, 
                 attrnum, attrarray, listtype, valuetype);
+}
+
+int 
+cmd_create_node_pack(char *data, char *name, char *key)
+{
+    return pack(data, 0, "$4css", CMD_CREATE_NODE, name, key);
+}
+
+int 
+cmd_create_node_unpack(char *data, char *name, char *key)
+{
+    return unpack(data+CMD_REQ_HEAD_LEN, 0, "ss", name, key);
 }
 
 int 
@@ -503,7 +525,7 @@ int
 cmd_attr_pack(char *data, char *key, char *value, unsigned char valuelen, 
               unsigned char attrnum, unsigned int *attrarray)
 {
-    return pack(data, 0, "$4csCI", CMD_MASK, key, valuelen, value, attrnum, attrarray);
+    return pack(data, 0, "$4csCI", CMD_ATTR, key, valuelen, value, attrnum, attrarray);
 }
 
 int 
@@ -651,7 +673,7 @@ cmd_getdump_unpack(char *data, unsigned int *dumpver, uint64_t *size)
 int
 cmd_del_by_attr_pack(char *data, char *key, unsigned int *attrarray, unsigned char attrnum)
 {
-    return pack(data, 0, "$4csI", CMD_DEL_BY_MASK, key, attrnum, attrarray);
+    return pack(data, 0, "$4csI", CMD_DEL_BY_ATTR, key, attrnum, attrarray);
 }
 
 int

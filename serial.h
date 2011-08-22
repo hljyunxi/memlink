@@ -9,28 +9,28 @@
 #define CMD_DUMP		    1
 #define CMD_CLEAN		    2
 #define CMD_STAT		    3
-#define CMD_CREATE		    4
-#define CMD_DEL			    5
-#define CMD_INSERT		    6
-#define CMD_MOVE		    7
-#define CMD_MASK		    8
-#define CMD_TAG			    9
-#define CMD_RANGE		    10
-#define CMD_RMKEY           11
-#define CMD_COUNT		    12
-#define CMD_LPUSH		    13
-#define CMD_LPOP		    14
-#define CMD_RPUSH		    15
-#define CMD_RPOP		    16
-//#define CMD_INSERT_MVALUE   17
-//#define CMD_INSERT_MKEY     18
+#define CMD_CREATE_TABLE    4
+#define CMD_CREATE_NODE     5
+#define CMD_RMTABLE			6
+#define CMD_DEL			    7
+#define CMD_INSERT		    8
+#define CMD_MOVE		    9
+#define CMD_ATTR		    10
+#define CMD_TAG			    11
+#define CMD_RANGE		    12
+#define CMD_RMKEY           13
+#define CMD_COUNT		    14
+#define CMD_LPUSH		    15
+#define CMD_LPOP		    16
+#define CMD_RPUSH		    17
+#define CMD_RPOP		    18
 
-	//add by lanwenhong
-#define CMD_DEL_BY_MASK     19
+//add by lanwenhong
+#define CMD_DEL_BY_ATTR     19
 
 #define CMD_PING			20
 #define CMD_STAT_SYS		21
-	// for sorted list
+// for sorted list
 #define CMD_SL_INSERT       22
 #define CMD_SL_DEL          23
 #define CMD_SL_COUNT        24
@@ -87,6 +87,9 @@ int cmd_clean_unpack(char *data, char *key);
 int cmd_rmkey_pack(char *data, char *key);
 int cmd_rmkey_unpack(char *data, char *key);
 
+int cmd_rmtable_pack(char *data, char *key);
+int cmd_rmtable_unpack(char *data, char *key);
+
 int cmd_count_pack(char *data, char *key, unsigned char attrnum, unsigned int *attrarray);
 int cmd_count_unpack(char *data, char *key, unsigned char *attrnum, unsigned int *attrarray);
 
@@ -96,12 +99,15 @@ int cmd_stat_unpack(char *data, char *key);
 int cmd_stat_sys_pack(char *data);
 int cmd_stat_sys_unpack(char *data);
 
-int cmd_create_pack(char *data, char *key, unsigned char valuelen, 
+int cmd_create_table_pack(char *data, char *name, unsigned char valuelen, 
                     unsigned char attrnum, unsigned int *attrformat,
                     unsigned char listtype, unsigned char valuetype);
-int cmd_create_unpack(char *data, char *key, unsigned char *valuelen, 
+int cmd_create_table_unpack(char *data, char *name, unsigned char *valuelen, 
                       unsigned char *attrnum, unsigned int *attrformat,
                       unsigned char *listtype, unsigned char *valuetype);
+
+int cmd_create_node_pack(char *data, char *name, char *key);
+int cmd_create_node_unpack(char *data, char *name, char *key);
 
 int cmd_del_pack(char *data, char *key, char *value, unsigned char valuelen);
 int cmd_del_unpack(char *data, char *key, char *value, unsigned char *valuelen);

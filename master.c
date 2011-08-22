@@ -107,7 +107,7 @@ mb_data_ready(Conn *conn, char *data, int datalen)
             wt->clog->state = ROLLBACKED;
         }
         if (ret != MEMLINK_REPLIED) {
-            data_reply(ctlconn, ret, NULL, 0);
+            conn_send_buffer_reply(ctlconn, ret, NULL, 0);
         }
         event_del(&binfo->timer_check_evt);
         //} else {
@@ -119,7 +119,7 @@ mb_data_ready(Conn *conn, char *data, int datalen)
     else if (binfo->done == g_runtime->servernums - 1) {
         //不满足条件
         wt->state = STATE_NOCONN;
-        data_reply(ctlconn, MEMLINK_ERR_NOWRITE, NULL, 0);
+        conn_send_buffer_reply(ctlconn, MEMLINK_ERR_NOWRITE, NULL, 0);
     }
     */
     return 0;
@@ -142,7 +142,7 @@ mb_data_timeout(int fd, short event, void *arg)
         }
         if (alive + 1 < g_runtime->servernums / 2 + 1) {
             Conn *conn = (Conn *)arg;
-            data_reply(conn, MEMLINK_ERR_NOWRITE, NULL, 0);
+            conn_send_buffer_reply(conn, MEMLINK_ERR_NOWRITE, NULL, 0);
             wt->state = STATE_NOCONN;
         }
     }
@@ -267,7 +267,7 @@ master_ready(Conn *conn, char *data, int datalen)
     DINFO("state: %d, succ: %d\n", wt->state, binfo->succ);
     //系统不可用
     if (wt->state == STATE_NOCONN) {
-        data_reply(conn, MEMLINK_ERR_NOWRITE, NULL, 0); 
+        conn_send_buffer_reply(conn, MEMLINK_ERR_NOWRITE, NULL, 0); 
         return 0;
     }
     

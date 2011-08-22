@@ -149,7 +149,7 @@ vote_ready(Conn *conn, char *buf, int datalen)
     memcpy(&cmd, buf+count, sizeof(cmd));
     count += sizeof(cmd);
     if (g_cf->sync_mode == MODE_MASTER_SLAVE) {
-        data_reply(conn, MEMLINK_ERR_SLAVE, NULL, 0);
+        conn_send_buffer_reply(conn, MEMLINK_ERR_SLAVE, NULL, 0);
         return 0;
     }
     switch (cmd) {
@@ -228,7 +228,7 @@ vote_ready(Conn *conn, char *buf, int datalen)
                         *hostp = NULL;
                     }
 */
-                    data_reply(conn, MEMLINK_OK, NULL, 0);
+                    conn_send_buffer_reply(conn, MEMLINK_OK, NULL, 0);
 
                     break;
                 case CMD_VOTE_BACKUP:
@@ -282,7 +282,7 @@ vote_ready(Conn *conn, char *buf, int datalen)
                         host->next = NULL;
                     }
 */
-                    data_reply(conn, MEMLINK_OK, NULL, 0);
+                    conn_send_buffer_reply(conn, MEMLINK_OK, NULL, 0);
 
                     break;
                 case CMD_VOTE_NONEED:
@@ -318,7 +318,7 @@ vote_ready(Conn *conn, char *buf, int datalen)
         case CMD_VOTE_UPDATE:
             DINFO("*** VOTE UPDATING\n");
             if (g_cf->role != ROLE_MASTER) {
-                data_reply(conn, MEMLINK_ERR_NOT_MASTER, NULL, 0);
+                conn_send_buffer_reply(conn, MEMLINK_ERR_NOT_MASTER, NULL, 0);
                 break;
             }
             //DINFO("*** VOTE MASTER\n");
@@ -364,7 +364,7 @@ vote_ready(Conn *conn, char *buf, int datalen)
                 *hostp = NULL;
             }
 */
-            data_reply(conn, MEMLINK_OK, NULL, 0);
+            conn_send_buffer_reply(conn, MEMLINK_OK, NULL, 0);
 
             break;
         case CMD_VOTE_DETECT:
@@ -376,7 +376,7 @@ vote_ready(Conn *conn, char *buf, int datalen)
             } else {
                 retcode = MEMLINK_ERR_NO_ROLE;
             }
-            data_reply(conn, retcode, (char *)&g_runtime->voteid, sizeof(g_runtime->voteid));
+            conn_send_buffer_reply(conn, retcode, (char *)&g_runtime->voteid, sizeof(g_runtime->voteid));
 
             break;
         default:

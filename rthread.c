@@ -30,21 +30,23 @@
 int
 rdata_ready(Conn *conn, char *data, int datalen)
 {
-    char key[512] = {0}; 
+    char keybuf[512] = {0}; 
+    char *tbname = NULL;
+    char *key = NULL; 
+
     //char value[512] = {0};
     char cmd;
     int  ret = 0;
     //char *msg = NULL;
     char *retdata = NULL;
     int  retlen = 0;
-    //unsigned char   valuelen;
-    unsigned char   attrnum;
-    unsigned int    attrarray[HASHTABLE_MASK_MAX_ITEM] = {0};
+    //uint8_t   valuelen;
+    uint8_t   attrnum;
+    uint32_t  attrarray[HASHTABLE_ATTR_MAX_ITEM] = {0};
     int    frompos, len;
     struct timeval start, end;
     ThreadServer *st = (ThreadServer *)conn->thread;
     RwConnInfo *conninfo = NULL; 
-
 
     int i;
     for (i = 0; i < g_cf->max_conn; i++) {
@@ -52,6 +54,7 @@ rdata_ready(Conn *conn, char *data, int datalen)
         if (conninfo->fd == conn->sock)
             break;
     }
+    if (conninfo) conninfo->cmd_count++;
 
     gettimeofday(&start, NULL);
     memcpy(&cmd, data + sizeof(int), sizeof(char));
@@ -61,16 +64,15 @@ rdata_ready(Conn *conn, char *data, int datalen)
     switch(cmd) {
         case CMD_PING: {
             ret = MEMLINK_OK;
-            if (conninfo)
-                conninfo->cmd_count++;
             goto rdata_ready_error;
             break;
         }
         case CMD_RANGE: {
             DINFO("<<< cmd RANGE >>>\n");
-            unsigned char kind;
-            ret = cmd_range_unpack(data, key, &kind, &attrnum, attrarray, &frompos, &len);
-            DINFO("unpack range return:%d, key:%s, attrnum:%d, frompos:%d, len:%d\n", ret, key, attrnum, frompos, len);
+            uint8_t kind;
+            ret = cmd_range_unpack(data, keybuf, &kind, &attrnum, attrarray, &frompos, &len);
+            DINFO("unpack range return:%d, key:%s, attrnum:%d, frompos:%d, len:%d\n", 
+                    ret, keybuf, attrnum, frompos, len);
 
             if (frompos < 0 || len <= 0) {
                 DERROR("from or len small than 0. from:%d, len:%d\n", frompos, len);
@@ -78,117 +80,90 @@ rdata_ready(Conn *conn, char *data, int datalen)
                 goto rdata_ready_error;
             }
 
-            if (key[0] == 0) {
-                ret = MEMLINK_ERR_PARAM;
+            ret = table_name(keybuf, &tbname, &key);
+            if (ret < 0) {
                 goto rdata_ready_error;
             }
-            // len(4B) + retcode(2B) + valuesize(1B) + attrsize(1B) + attrnum(1B) + attrformat(attrnum B) + value.attr * len
-            //int wlen = sizeof(int) + sizeof(short) + sizeof(char) + sizeof(char) + sizeof(char) + 
-            //           attrnum * sizeof(int) + (HASHTABLE_VALUE_MAX + (HASHTABLE_MASK_MAX_BIT/8 + 2) * attrnum) * len;
-            ret = hashtable_range(g_runtime->ht, key, kind, attrarray, attrnum, frompos, len, conn); 
-            DINFO("hashtable_range return: %d\n", ret);
-            //ret = data_reply(conn, ret, retrec, retlen);
+            
+            ret = hashtable_range(g_runtime->ht, tbname, key, kind, attrarray, attrnum, 
+                                frompos, len, conn); 
+            DINFO("table_range return: %d\n", ret);
             ret = conn_send_buffer(conn);
-            DINFO("data_reply return: %d\n", ret);
-            if (conninfo)
-                conninfo->cmd_count++;
-
-            //hashtable_print(g_runtime->ht, key);
+            DINFO("send return: %d\n", ret);
 
             break;
         }
         case CMD_SL_RANGE: {
             DINFO("<<< cmd SL_RANGE >>>\n");
-            unsigned char kind;
+            uint8_t kind;
             char valmin[512] = {0};
             char valmax[512] = {0};
-            unsigned char vminlen = 0, vmaxlen = 0;
+            uint8_t vminlen = 0, vmaxlen = 0;
 
-            ret = cmd_sortlist_range_unpack(data, key, &kind, &attrnum, attrarray, 
+            ret = cmd_sortlist_range_unpack(data, keybuf, &kind, &attrnum, attrarray, 
                                             valmin, &vminlen, valmax, &vmaxlen);
             DINFO("unpack range return:%d, key:%s, attrnum:%d, vmin:%s,%d, vmax:%s,%d, len:%d\n", 
-                            ret, key, attrnum, valmin, vminlen, valmax, vmaxlen, len);
+                            ret, keybuf, attrnum, valmin, vminlen, valmax, vmaxlen, len);
 
-            /*
-            if (frompos < 0 || len <= 0) {
-                DERROR("from or len small than 0. from:%d, len:%d\n", frompos, len);
-                ret = MEMLINK_ERR_RANGE_SIZE;
-                goto rdata_ready_error;
-            }*/
-
-            if (key[0] == 0) {
-                ret = MEMLINK_ERR_PARAM;
+            ret = table_name(keybuf, &tbname, &key);
+            if (ret < 0) {
                 goto rdata_ready_error;
             }
-            // len(4B) + retcode(2B) + valuesize(1B) + attrsize(1B) + attrnum(1B) + attrformat(attrnum B) + value.attr * len
-            //int wlen = sizeof(int) + sizeof(short) + sizeof(char) + sizeof(char) + sizeof(char) + 
-            //           attrnum * sizeof(int) + (HASHTABLE_VALUE_MAX + (HASHTABLE_MASK_MAX_BIT/8 + 2) * attrnum) * len;
 
-            //hashtable_print(g_runtime->ht, key);
-
-            ret = hashtable_sortlist_range(g_runtime->ht, key, kind, attrarray, attrnum, 
-                                            valmin, valmax, conn); 
-            DINFO("hashtable_range return: %d\n", ret);
-            //ret = data_reply(conn, ret, retrec, retlen);
+            ret = hashtable_sortlist_range(g_runtime->ht, tbname, key, kind, 
+                                attrarray, attrnum, valmin, valmax, conn); 
+            DINFO("table_range return: %d\n", ret);
             ret = conn_send_buffer(conn);
-            DINFO("data_reply return: %d\n", ret);
-            if (conninfo)
-                conninfo->cmd_count++;
+            DINFO("send return: %d\n", ret);
             break;
         }
         case CMD_STAT: {
             DINFO("<<< cmd STAT >>>\n");
             HashTableStat   stat;
-            ret = cmd_stat_unpack(data, key);
-            DINFO("unpack stat return: %d, key: %s\n", ret, key);
+            ret = cmd_stat_unpack(data, keybuf);
+            DINFO("unpack stat return: %d, key: %s\n", ret, keybuf);
 
-            if (key[0] == 0) {
-                ret = MEMLINK_ERR_PARAM;
+            ret = table_name(keybuf, &tbname, &key);
+            if (ret < 0) {
                 goto rdata_ready_error;
             }
 
-            ret = hashtable_stat(g_runtime->ht, key, &stat);
-            DINFO("hashtable stat: %d\n", ret);
+            ret = hashtable_stat(g_runtime->ht, tbname, key, &stat);
+            DINFO("table stat: %d\n", ret);
             DINFO("stat blocks: %d\n", stat.blocks);
     
             //hashtable_print(g_runtime->ht, key); 
             retdata = (char*)&stat;
             retlen  = sizeof(HashTableStat);
 
-            ret = data_reply(conn, ret, retdata, retlen);
-            DINFO("data_reply return: %d\n", ret);
-            if (conninfo)
-                conninfo->cmd_count++;
+            ret = conn_send_buffer_reply(conn, ret, retdata, retlen);
+            DINFO("send return: %d\n", ret);
             break;
         }
         case CMD_STAT_SYS: {
             DINFO("<<< cmd STAT_SYS >>>\n");
-            //HashTableStatSys   stat;
             MemLinkStatSys stat;
 
-            //ret = hashtable_stat_sys(g_runtime->ht, &stat);
             ret = info_sys_stat(&stat);
-            DINFO("hashtable stat sys: %d\n", ret);
+            DINFO("table stat sys: %d\n", ret);
     
             retdata = (char*)&stat;
             retlen  = sizeof(HashTableStatSys);
 
-            ret = data_reply(conn, ret, retdata, retlen);
-            DINFO("data_reply return: %d\n", ret);
-            if (conninfo)
-                conninfo->cmd_count++;
+            ret = conn_send_buffer_reply(conn, ret, retdata, retlen);
+            DINFO("send return: %d\n", ret);
             break;
         }
         case CMD_COUNT: {
             DINFO("<<< cmd COUNT >>>\n");
-            unsigned char attrnum;
-            //unsigned int  attrarray[HASHTABLE_MASK_MAX_ITEM * sizeof(int)];
+            uint8_t attrnum;
 
-            ret = cmd_count_unpack(data, key, &attrnum, attrarray);
-            DINFO("unpack count return: %d, key: %s, attr:%d:%d:%d\n", ret, key, attrarray[0], attrarray[1], attrarray[2]);
-           
-            if (key[0] == 0) {
-                ret = MEMLINK_ERR_PARAM;
+            ret = cmd_count_unpack(data, keybuf, &attrnum, attrarray);
+            DINFO("unpack count return: %d, key: %s, attr:%d:%d:%d\n", 
+                        ret, keybuf, attrarray[0], attrarray[1], attrarray[2]);
+        
+            ret = table_name(keybuf, &tbname, &key);
+            if (ret < 0) {
                 goto rdata_ready_error;
             }
 
@@ -196,92 +171,81 @@ rdata_ready(Conn *conn, char *data, int datalen)
             retlen = sizeof(int) * 2;
             char retrec[retlen];
 
-            ret = hashtable_count(g_runtime->ht, key, attrarray, attrnum, &vcount, &mcount);
-            DINFO("hashtable count, ret:%d, visible_count:%d, tagdel_count:%d\n", ret, vcount, mcount);
+            ret = hashtable_count(g_runtime->ht, tbname, key, attrarray, attrnum, &vcount, &mcount);
+            DINFO("table count, ret:%d, visible_count:%d, tagdel_count:%d\n", ret, vcount, mcount);
             memcpy(retrec, &vcount, sizeof(int));
             memcpy(retrec + sizeof(int), &mcount, sizeof(int));
             //retlen = sizeof(int) + sizeof(int);
 
-            ret = data_reply(conn, ret, retrec, retlen);
-            DINFO("data_reply return: %d\n", ret);
-            if (conninfo)
-                conninfo->cmd_count++;
+            ret = conn_send_buffer_reply(conn, ret, retrec, retlen);
+            DINFO("send return: %d\n", ret);
             break;
         }
         case CMD_SL_COUNT: {
             DINFO("<<< cmd SL_COUNT >>>\n");
             char valmin[512] = {0};
             char valmax[512] = {0};
-            unsigned char vminlen = 0, vmaxlen = 0;
+            uint8_t vminlen = 0, vmaxlen = 0;
 
-            ret = cmd_sortlist_count_unpack(data, key, &attrnum, attrarray, 
+            ret = cmd_sortlist_count_unpack(data, keybuf, &attrnum, attrarray, 
                                             valmin, &vminlen, valmax, &vmaxlen);
             DINFO("unpack range return:%d, key:%s, attrnum:%d, vmin:%s,%d, vmax:%s,%d, len:%d\n", 
-                            ret, key, attrnum, valmin, vminlen, valmax, vmaxlen, len);
+                            ret, keybuf, attrnum, valmin, vminlen, valmax, vmaxlen, len);
 
-            if (key[0] == 0) {
-                ret = MEMLINK_ERR_PARAM;
+            ret = table_name(keybuf, &tbname, &key);
+            if (ret < 0) {
                 goto rdata_ready_error;
             }
+
             int vcount = 0, mcount = 0;
             retlen = sizeof(int) * 2;
             char retrec[retlen];
 
-            ret = hashtable_sortlist_count(g_runtime->ht, key, attrarray, attrnum, 
-                                            valmin, valmax, &vcount, &mcount); 
-            DINFO("hashtable sortlist count, ret:%d, visible_count:%d, tagdel_count:%d\n", ret, vcount, mcount);
+            ret = hashtable_sortlist_count(g_runtime->ht, tbname, key, attrarray, attrnum, 
+                                       valmin, valmax, &vcount, &mcount); 
+            DINFO("table sortlist count, ret:%d, visible_count:%d, tagdel_count:%d\n", ret, vcount, mcount);
             memcpy(retrec, &vcount, sizeof(int));
             memcpy(retrec + sizeof(int), &mcount, sizeof(int));
             //retlen = sizeof(int) + sizeof(int);
-            ret = data_reply(conn, ret, retrec, retlen);
-            DINFO("data_reply return: %d\n", ret);
-            if (conninfo)
-                conninfo->cmd_count++;
+            ret = conn_send_buffer_reply(conn, ret, retrec, retlen);
+            DINFO("send return: %d\n", ret);
             break;
         }
         case CMD_READ_CONN_INFO: {
             DINFO("<<< cmd READ_CONN_INFO >>>\n");
-            if (conninfo)
-                conninfo->cmd_count++;
             ret = info_read_conn(conn);
             ret = conn_send_buffer(conn);
-            DINFO("data_reply return: %d\n", ret);
+            DINFO("send return: %d\n", ret);
             break;
 
         }
         case CMD_WRITE_CONN_INFO: {
             DINFO("<<< cmd WRITE_CONN_INFO >>>\n");
-            if (conninfo)
-                conninfo->cmd_count++;
             ret = info_write_conn(conn);
             DINFO("write_conn_info return: %d\n", ret);
             ret = conn_send_buffer(conn);
-            DINFO("data_reply return: %d\n", ret);
+            DINFO("send return: %d\n", ret);
             break;
         }
         case CMD_SYNC_CONN_INFO: {
             DINFO("<<< cmd SYNC_CONN_INFO >>>\n");
-            if (conninfo)
-                conninfo->cmd_count++;
             ret = info_sync_conn(conn);
             DINFO("sync_conn_info return: %d\n", ret);
             ret = conn_send_buffer(conn);
-            DINFO("data_reply return: %d\n", ret);
+            DINFO("send return: %d\n", ret);
             break;
         }
         case CMD_CONFIG_INFO: {
             DINFO("<<< cmd CMD_CONFIG_INFO >>>\n");
             ret = info_sys_config(conn);
             ret = conn_send_buffer(conn);
-            DINFO("data_reply return: %d\n", ret);
+            DINFO("send return: %d\n", ret);
             break;
         }
         default: {
             ret = MEMLINK_ERR_CLIENT_CMD;
-
-            ret = data_reply(conn, ret, retdata, retlen);
-            DINFO("data_reply return: %d\n", ret);
-
+            ret = conn_send_buffer_reply(conn, ret, retdata, retlen);
+            DINFO("send return: %d\n", ret);
         }
     }
 
@@ -291,10 +255,10 @@ rdata_ready(Conn *conn, char *data, int datalen)
     return 0;
 
 rdata_ready_error:
-    ret = data_reply(conn, ret, NULL, 0);
+    ret = conn_send_buffer_reply(conn, ret, NULL, 0);
     gettimeofday(&end, NULL);
     DNOTE("%s:%d cmd:%d use %u us\n", conn->client_ip, conn->client_port, cmd, timediff(&start, &end));
-    DINFO("data_reply return: %d\n", ret);
+    DINFO("send return: %d\n", ret);
 
     return 0;
 }
