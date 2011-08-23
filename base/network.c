@@ -364,7 +364,7 @@ readn(int fd, void *vptr, size_t n, int timeout)
             break;
         }
         nread = read(fd, ptr, nleft);
-        DINFO("read return:%d\n", nread);
+        //DINFO("read return:%d\n", nread);
         if (nread < 0) {
             char errbuf[1024];
             strerror_r(errno, errbuf, 1024);
@@ -404,14 +404,14 @@ writen(int fd, const void *vptr, size_t n, int timeout)
     nleft = n;
 
     while (nleft > 0) {
-        DINFO("try write %d via fd %d\n", (int)nleft, fd);
+        //DINFO("try write %d via fd %d\n", (int)nleft, fd);
         if (timeout_wait_write(fd, timeout) != TRUE) {
             DINFO("write check timeout error!\n");
             //break;
             return -1;
         }
         nwritten = write(fd, ptr, nleft);
-        DINFO("write: %d\n", (int)nwritten);
+        //DINFO("write: %d\n", (int)nwritten);
         if (nwritten <= 0) {
             if (nwritten < 0 && errno == EINTR){
                 nwritten = 0;
