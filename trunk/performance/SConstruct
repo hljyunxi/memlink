@@ -5,8 +5,8 @@ cflags    = '-ggdb -DDEBUG -O2 -pthread'
 includes  = ['../client/c', '../', '../base']
 ldflags   = ['']
 libpath   = ['../client/c', '../base']
-libs	  = ['m', 'pthread', 'base', 'stdc++', 'memlink']
-perffiles = ['perf.c']
+libs	  = ['m', 'pthread', 'base', 'stdc++']
+perffiles = ['perf.c', '../client/c/libmemlink.a']
 
 env = Environment(CCFLAGS=cflags, CPPPATH=includes, LINKFLAGS=ldflags, LIBPATH=libpath, LIBS=libs)
 env.Program("perf", perffiles)
