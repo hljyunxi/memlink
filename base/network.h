@@ -16,5 +16,6 @@ int timeout_wait_write(int fd, int timeout);
 
 ssize_t readn(int fd, void *vptr, size_t n, int timeout);
 ssize_t writen(int fd, const void *vptr, size_t n, int timeout);
+int is_connected(int fd);
 
 #endif

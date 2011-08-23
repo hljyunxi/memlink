@@ -5,5 +5,6 @@
 #define FALSE	0
 #define OK		0
 #define FAILED  -1
+#define ERROR	-1
 
 #endif

@@ -274,8 +274,10 @@ set_block(int fd)
 int
 timeout_wait(int fd, int timeout, int writing)
 {
-    if (timeout <= 0)
-        return TRUE; // true
+    if (timeout <= 0) {
+    //    return TRUE; // true
+        timeout = 0;
+    }
 
     if (fd < 0) {
         DERROR("timeout_wait fd error: %d\n", fd);
@@ -322,8 +324,11 @@ timeout_wait(int fd, int timeout, int writing)
 
     if ((fds[0].revents & POLLIN) && !writing)
         return TRUE;
+ 
+    if ((fds[0].revents & POLLHUP) | (fds[0].revents & POLLERR))
+        return ERROR;
     
-    return FALSE;
+    return ERROR;
 }
 
 int
@@ -354,11 +359,13 @@ readn(int fd, void *vptr, size_t n, int timeout)
     nleft = n;
 
     while (nleft > 0) {
-        if (timeout > 0 && timeout_wait_read(fd, timeout) != TRUE) {
+        if (timeout_wait_read(fd, timeout) == FALSE) {
             DWARNING("read timeout.\n");
             break;
         }
-        if ((nread = read(fd, ptr, nleft)) < 0) {
+        nread = read(fd, ptr, nleft);
+        DINFO("read return:%d\n", nread);
+        if (nread < 0) {
             char errbuf[1024];
             strerror_r(errno, errbuf, 1024);
             //DERROR("nread: %d, error: %s\n", nread,  errbuf);
@@ -397,12 +404,15 @@ writen(int fd, const void *vptr, size_t n, int timeout)
     nleft = n;
 
     while (nleft > 0) {
-        //DINFO("try write %d via fd %d\n", (int)nleft, fd);
-        if (timeout > 0 && timeout_wait_write(fd, timeout) != TRUE) {
-            break;
+        DINFO("try write %d via fd %d\n", (int)nleft, fd);
+        if (timeout_wait_write(fd, timeout) != TRUE) {
+            DINFO("write check timeout error!\n");
+            //break;
+            return -1;
         }
-
-        if ((nwritten = write(fd, ptr, nleft)) <= 0) {
+        nwritten = write(fd, ptr, nleft);
+        DINFO("write: %d\n", (int)nwritten);
+        if (nwritten <= 0) {
             if (nwritten < 0 && errno == EINTR){
                 nwritten = 0;
             }else{
@@ -421,7 +431,20 @@ writen(int fd, const void *vptr, size_t n, int timeout)
     return n;
 }
 
+int is_connected(int fd)
+{
+    int error, ret; 
+    socklen_t   len; 
 
+    if (fd <= 0)
+        return FALSE;
+    len = sizeof(error);
+
+    ret = getsockopt(fd, SOL_SOCKET,SO_ERROR, (char*)&error, &len);
+    if (0 != ret || 0 != error)
+        return FALSE;
+    return TRUE;
+}
 
 /**
  * @}
