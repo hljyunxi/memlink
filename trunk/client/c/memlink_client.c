@@ -196,9 +196,9 @@ memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
         close(fd);
 
         if (fd == m->readfd) {
-            m->readfd = 0;
+            m->readfd = -1;
         }else{
-            m->writefd = 0;
+            m->writefd = -1;
         }
         if (ret <= 0) {
             return MEMLINK_ERR_CONN_LOST;
@@ -223,9 +223,9 @@ memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
         close(fd);
 
         if (fd == m->readfd) {
-            m->readfd = 0;
+            m->readfd = -1;
         }else{
-            m->writefd = 0;
+            m->writefd = -1;
         }
         return MEMLINK_ERR_RECV;
     }
@@ -1306,11 +1306,11 @@ memlink_close(MemLink *m)
 {
     if (m->readfd > 0) {
         close(m->readfd);
-        m->readfd = 0;
+        m->readfd = -1;
     }
     if (m->writefd > 0) {
         close(m->writefd);
-        m->writefd = 0;
+        m->writefd = -1;
     }
 }
 
