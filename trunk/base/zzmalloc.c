@@ -74,9 +74,10 @@ zz_check_dbg(void *ptr, char *file, int line)
     int  size = *((int*)b);
 
     if (*((int*)(b + 4)) != 0x55555555 || *((int*)(b + 8 + size)) != 0x55555555) {
+#ifndef NOLOG
         char buf1[128] = {0};
         char buf2[128] = {0};
-
+#endif
         DERROR("check error! %p, size:%d, file:%s, line:%d, %s, %s\n", ptr, size, file, line, 
                     formatb(ptr-4, 4, buf1, 128), formatb(ptr+size+8, 4, buf2, 128));
         //exit(EXIT_FAILURE);
