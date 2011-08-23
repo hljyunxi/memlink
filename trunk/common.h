@@ -74,7 +74,6 @@
 #define MEMLINK_ERR_NOVAL_ALL		-40
 // 连接太多
 #define MEMLINK_ERR_CONN_TOO_MANY	-41
-
 // 不能写入
 #define MEMLINK_ERR_NOWRITE			-42
 // 同步错误

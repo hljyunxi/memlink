@@ -43,6 +43,7 @@ memlink_create(char *host, int readport, int writeport, int timeout)
     m->read_port  = readport;
     m->write_port = writeport;
     m->timeout    = timeout;
+    m->auto_reconn= 1;
 
     return m;
 }
@@ -106,7 +107,9 @@ memlink_connect(MemLink *m, int fdtype)
     } while (ret == -1 && errno == EINTR);  
 
     if (ret == -1 && (errno == EINPROGRESS ||errno == EALREADY)) {
-        if (timeout_wait_write(sock, m->timeout) == TRUE) {
+        int retv;
+        retv = timeout_wait_write(sock, m->timeout);
+        if (retv == TRUE) {
             int error = 0;
             socklen_t slen = sizeof(int);
             int retv = getsockopt(sock, SOL_SOCKET, SO_ERROR, &error, &slen);
@@ -116,10 +119,14 @@ memlink_connect(MemLink *m, int fdtype)
                 DERROR("connect error: %s\n", errbuf);
                 return MEMLINK_ERR_CONNECT;
             }
-        }else{
+        }else if (retv == FALSE){
             DERROR("connect timeout.\n");
             close(sock);
-            return MEMLINK_ERR_TIMEOUT;
+            return MEMLINK_ERR_CONNECT;
+        }else if (retv == ERROR) {
+            DERROR("connect error.\n");
+            close(sock);
+            return MEMLINK_ERR_CONNECT;
         }
     }else if (ret == -1 && errno != EISCONN) {
         char errbuf[1024];
@@ -193,7 +200,11 @@ memlink_read(MemLink *m, int fdtype, char *rbuf, int rlen)
         }else{
             m->writefd = 0;
         }
-        return MEMLINK_ERR_RECV_HEADER;
+        if (ret <= 0) {
+            return MEMLINK_ERR_CONN_LOST;
+        }else{
+            return MEMLINK_ERR_RECV_HEADER;
+        }
     }
     memcpy(&datalen, rbuf, RECV_PKG_SIZE_LEN);
     //char buf[64];
@@ -239,32 +250,117 @@ memlink_write(MemLink *m, int fdtype, char *wbuf, int wlen)
         return MEMLINK_ERR_CLIENT;
     }
     //DINFO("fd: %d\n", fd);
-    if (fd <= 0) {
-        //DINFO("write fd connect ...\n");
-        ret = memlink_connect(m, fdtype);
-        //DINFO("memlink_connect return: %d\n", ret);
+
+    int reconn = m->auto_reconn;
+    while (1) {
+        if (fd <= 0) {
+            //DINFO("write fd connect ...\n");
+            ret = memlink_connect(m, fdtype);
+            //DINFO("memlink_connect return: %d\n", ret);
+            if (ret < 0) {
+                return ret;
+            }
+
+            if (fdtype == MEMLINK_READER) {
+                fd = m->readfd;
+            }else{
+                fd = m->writefd;
+            }
+        }
+      
+        // write 1
+        int wret = 0;
+#ifdef WRITE2
+        do {
+            wret = write(fd, wbuf, 1);
+        }while (wret == -1 && errno == EINTR);
+        DINFO("wret:%d\n", wret);
+        if (wret < 0) {
+            if (fdtype == MEMLINK_READER) {
+                m->readfd = -1;
+            }else{
+                m->writefd = -1;
+            }
+            close(fd);
+            fd = -1;
+
+            if (reconn > 0) {
+                DINFO("conn lost, reconnect.\n");
+                reconn--;
+                continue;
+            }
+            ret = MEMLINK_ERR_CONN_LOST;
+        }
+#endif
+//#ifdef PEEK
+        char buf[4];
+        set_noblock(fd);
+        wret = recv(fd, buf, 1, MSG_PEEK);  
+        set_block(fd);
+        if (wret == 0) {
+            if (fdtype == MEMLINK_READER) {
+                m->readfd = -1;
+            }else{
+                m->writefd = -1;
+            }
+            close(fd);
+            fd = -1;
+
+            if (reconn > 0) {
+                DINFO("conn lost, reconnect.\n");
+                reconn--;
+                continue;
+            }
+
+            ret = MEMLINK_ERR_CONN_LOST;
+        }
+        
+        wret = 0;
+//#endif
+
+        //wret = write(fd, wbuf, 1);
+        //DINFO("wret:%d\n", wret);
+
+        ret = writen(fd, (char*)wbuf+wret, wlen-wret, m->timeout);
+        DINFO("writen: %d\n", ret);
+        //if (ret <= 0) {
         if (ret < 0) {
-            return ret;
-        }
+            if (fdtype == MEMLINK_READER) {
+                m->readfd = -1;
+            }else{
+                m->writefd = -1;
+            }
+            close(fd);
+            fd = -1;
 
-        if (fdtype == MEMLINK_READER) {
-            fd = m->readfd;
-        }else{
-            fd = m->writefd;
-        }
-    }
+            if (reconn > 0) {
+                DINFO("conn lost, reconnect.\n");
+                reconn--;
+                continue;
+            }
 
-    ret = writen(fd, wbuf, wlen, m->timeout);
-    //DINFO("writen: %d\n", ret);
-    if (ret < 0) {
-        DERROR("write data error, ret: %d\n", ret);
-        close(fd);
-        if (fd == m->readfd) {
-            m->readfd = 0;
+            ret = MEMLINK_ERR_CONN_LOST;
+        }else if (ret < wlen - wret) {
+            DERROR("write data error, ret: %d\n", ret);
+            if (fdtype == MEMLINK_READER) {
+                m->readfd = -1;
+            }else{
+                m->writefd = -1;
+            }
+            close(fd);
+            fd = -1;
+
+            if (reconn > 0) {
+                DINFO("conn lost, reconnect.\n");
+                reconn--;
+                continue;
+            }
+
+            ret = MEMLINK_ERR_SEND;
         }else{
-            m->writefd = 0;
+            ret += wret; // add first send 1b
         }
-        ret = MEMLINK_ERR_SEND;
+        break;
     }
 
     return ret;
