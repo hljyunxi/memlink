@@ -62,6 +62,11 @@ public class MemLinkClient
 		return cmemlink.memlink_cmd_create_table_sortlist(client, name, valuesize, attrstr, (short)valuetype);
 	}
 
+	public int removeTable(String name) 
+	{	
+		return cmemlink.memlink_cmd_remove_table(client, name);
+	}
+
 	public int createNode(String name, String key) 
 	{
 		return cmemlink.memlink_cmd_create_node(client, name, key);

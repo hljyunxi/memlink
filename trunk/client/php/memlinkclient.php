@@ -66,7 +66,16 @@ class MemLinkClient
     	
 		return memlink_cmd_create_sortlist($this->client, $key, $valuesize, $maskformat, $valuetype);
 	}
+	
+	function remove_table($name)
+	{
+		if (false == is_string($name)) {
+			return -1;
+		}
+		return memlink_cmd_remove_table($this->client, $name);
+	}
 
+	
 	function create_node($name, $key)
 	{
 		if (false == is_string($name) or false == is_string($key)) {
