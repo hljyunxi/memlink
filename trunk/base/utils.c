@@ -473,7 +473,7 @@ int
 change_group_user(char *user)
 {
     if (user == NULL || user[0] == 0) {
-        DNOTE("not set user/group.\n");
+        //DNOTE("not set user/group.\n");
         return 0;
     }
     

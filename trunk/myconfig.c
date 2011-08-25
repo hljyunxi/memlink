@@ -81,6 +81,7 @@ conf_parse_vote_ipport(void *f, char *value, int i)
 int
 myconfig_print(MyConfig *conf)
 {
+    DINFO("====== config ======\n");
     int i;
     for (i = 0; i < BLOCK_DATA_COUNT_MAX; i++) {
         if (conf->block_data_count[i] <= 0)
@@ -123,6 +124,8 @@ myconfig_print(MyConfig *conf)
     DINFO("sync_mode: %d\n", conf->sync_mode);
     DINFO("user: %s\n", conf->user);
     DINFO("dumpfile_num_max: %d\n", conf->dumpfile_num_max);
+
+    DINFO("====== end ======\n");
 
     return 0;
 }

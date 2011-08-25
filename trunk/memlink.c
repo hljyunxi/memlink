@@ -22,7 +22,7 @@
 #include "myconfig.h"
 #include "sslave.h"
 
-#define MEMLINK_VERSION "memlink-0.4.1"
+#define MEMLINK_VERSION "memlink-0.5.0"
 
 static void 
 sig_handler(const int sig) {
@@ -228,12 +228,12 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    DINFO("%s\n", MEMLINK_VERSION);
-    DINFO("config file: %s\n", conffile);
+    //DINFO("%s\n", MEMLINK_VERSION);
+    //DINFO("config file: %s\n", conffile);
     myconfig_create(conffile);
     DNOTE("====== %s ======\n", MEMLINK_VERSION);
-    DNOTE("config file: %s\n", conffile);
-    DNOTE("data dir: %s\n", g_cf->datadir);
+    //DNOTE("config file: %s\n", conffile);
+    //DNOTE("data dir: %s\n", g_cf->datadir);
     
     if (g_cf->max_core) {
         struct rlimit rlim_new;
