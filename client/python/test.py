@@ -6,9 +6,12 @@ from memlinkclient import *
 READ_PORT  = 11001
 WRITE_PORT = 11002
 
-key = 'haha'
+tbname = 'test'
+lstkey = 'haha'
+key = tbname + '.' + lstkey
 
 def insert(*args):
+    '''insert tbname.key '''
     try:
         start = int(args[0])
         num   = int(args[1])
@@ -24,8 +27,7 @@ def insert(*args):
     print 'insert:', start, num, val
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
-   
-    ret = m.create_list(key, 12, "32:32:2")
+    ret = m.create_table_list(tbname, 12, "32:32:2")
     if ret != MEMLINK_OK:
         print 'create haha error!', ret
         #return
@@ -35,7 +37,7 @@ def insert(*args):
             val2 = '%012d' % i
         else:
             val2 = val
-        print 'insert:', val2
+        print 'insert:', val2, i
         mstr = '%d:%d:1' % (i, i)
         ret = m.insert(key, val2, i, mstr)
         if ret != MEMLINK_OK:
@@ -45,6 +47,7 @@ def insert(*args):
     m.destroy()
 
 def delete(*args):
+    '''delete tbname.key'''
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
     val = '%012d' % int(args[0]) 
     print 'delete:', val
@@ -106,7 +109,7 @@ def range(*args):
     try:
         attr = args[3]
     except:
-        attr    = ''
+        attr = ''
     
     print 'ALL:%d, VISIBLE:%d, TAGDEL:%d' % (MEMLINK_VALUE_ALL, MEMLINK_VALUE_VISIBLE, MEMLINK_VALUE_TAGDEL)
     print 'range kind:%d, from:%d, len:%d, attr:%s' % (kind, frompos, slen, attr)
@@ -119,10 +122,16 @@ def range(*args):
         return
 
     print recs.count
+
+    #for x in recs.list():
+    #    print x, type(x[0]), type(x[1])
+
+    print '-' * 60
     items = recs.items
     while items:
-        print items.value, repr(items.attr)
+        print items.value, items.attr
         items = items.next
+
     recs.close()
 
     m.destroy()
@@ -199,7 +208,7 @@ def lpush(*args):
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
    
-    ret = m.create_list(key, 12, "1")
+    ret = m.create_table_queue(tbname, 12, "1")
     if ret != MEMLINK_OK:
         print 'create haha error!', ret
         #return
@@ -234,7 +243,7 @@ def rpush(*args):
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
    
-    ret = m.create_list(key, 12, "1")
+    ret = m.create_table_queue(tbname, 12, "1")
     if ret != MEMLINK_OK:
         print 'create haha error!', ret
         #return
@@ -307,7 +316,7 @@ def sortlistinsert(*args):
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 10)
    
-    ret = m.create_sortlist(key, 12, "1", MEMLINK_VALUE_STRING)
+    ret = m.create_table_sortlist(tbname, 12, "1", MEMLINK_VALUE_STRING)
     if ret != MEMLINK_OK:
         print 'create haha error!', ret
         #return
@@ -386,17 +395,17 @@ def sortlist_count(*args):
 
 def create_list(*args):
     try:
-        akey = args[0]
+        name = args[0]
         vallen = int(args[1])
         attr = args[2]
     except:
-        akey = key;
+        name = tbname;
         vallen = 20;
         attr = '20:1:1'
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30)
 
-    ret = m.create_list(akey, vallen, attr)
+    ret = m.create_table_list(name, vallen, attr)
 
     if ret != MEMLINK_OK:
         print 'create_list error: ', ret
@@ -407,17 +416,17 @@ def create_list(*args):
 
 def create_queue(*args):
     try:
-        akey = args[0]
+        name = args[0]
         vallen = int(args[1])
         attr = args[2]
     except:
-        akey = key;
+        name = tbname; 
         vallen = 20;
         attr = '20:1:1'
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30)
 
-    ret = m.create_queue(akey, vallen, attr)
+    ret = m.create_table_queue(name, vallen, attr)
 
     if ret != MEMLINK_OK:
         print 'create_queue error: ', ret
@@ -428,18 +437,17 @@ def create_queue(*args):
 
 def create_sortlist(*args):
     try:
-        akey = args[0]
+        name = args[0]
         vallen = int(args[1])
         attr = args[2]
     except:
-        akey = key;
+        name = tbname;
         vallen = 20;
         attr = '20:1:1'
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30)
 
-    ret = m.create_sortlist(akey, vallen, MEMLINK_SORTLIST, attr)
-
+    ret = m.create_table_sortlist(name, vallen, MEMLINK_SORTLIST, attr)
     if ret != MEMLINK_OK:
         print 'create_sortlist error: ', ret
     else:
@@ -495,7 +503,6 @@ def tag(*args):
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30)
 
     ret = m.tag(key, val, tag)
-
     if ret != MEMLINK_OK:
         print 'tag error: ', ret
 
@@ -512,7 +519,6 @@ def count(*args):
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30)
 
     ret, count = m.count(key, attr)
-
     if ret != MEMLINK_OK:
         print 'count error: ', ret
 
@@ -540,7 +546,6 @@ def read_conn_info():
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30)
 
     ret, info = m.read_conn_info()
-
     if ret != MEMLINK_OK:
         print 'read_conn_info error: ', ret
     if info:
@@ -554,7 +559,6 @@ def write_conn_info():
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30)
 
     ret, info = m.write_conn_info()
-
     if ret != MEMLINK_OK:
         print 'write_conn_info error: ', ret
     if info:
@@ -569,7 +573,6 @@ def sync_conn_info():
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30)
 
     ret, info = m.sync_conn_info()
-
     if ret != MEMLINK_OK:
         print 'sync_conn_info error: ', ret
     if info:
@@ -592,9 +595,7 @@ def insert_mkv(*args):
         i = i + 4;
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30)
-
     ret, mkv = m.insert_mkv(tuple(imkv))
-
     if ret != MEMLINK_OK:
         print 'insert mkv error: ', ret
 
