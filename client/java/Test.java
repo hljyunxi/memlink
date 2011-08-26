@@ -20,13 +20,14 @@ public class Test
     {
 		MemLinkClient m = new MemLinkClient("127.0.0.1", 11001, 11002, 10);
         int i;
-        String key = "haha";
+		String name = "table1";
+        String key = name + ".haha";
         
         m.rmkey(key);
 
         int ret;
 
-        ret = m.createQueue(key, 10, "4:3:1");
+        ret = m.createTableQueue(name, 10, "4:3:1");
         if (ret != cmemlink.MEMLINK_OK) {
             System.out.println("create queue error!" + ret);
             return;
@@ -91,7 +92,8 @@ public class Test
     {
         MemLinkClient m = new MemLinkClient("127.0.0.1", 11001, 11002, 10);
         int i;
-        String key = "haha";
+		String name = "table2";
+        String key = name + ".haha";
         
         m.rmkey(key);
 
@@ -99,7 +101,7 @@ public class Test
 		int num = 100;
 
         //ret = m.createSortList(key, 10, "4:3:1", cmemlink.MEMLINK_VALUE_STRING);
-        ret = m.createSortList(key, 4, "4:3:1", cmemlink.MEMLINK_VALUE_INT);
+        ret = m.createTableSortList(name, 4, "4:3:1", cmemlink.MEMLINK_VALUE_INT);
         if (ret != cmemlink.MEMLINK_OK) {
             System.out.println("create queue error!" + ret);
             return;
@@ -201,7 +203,8 @@ public class Test
         int num = 100;
         int valuelen = 12;
         String attrformat = "4:3:1";
-		String key = "haha";
+		String name = "table3";
+		String key = name + ".haha";
 
         ret = m.rmkey(key);
         if (ret != cmemlink.MEMLINK_OK) {
@@ -209,7 +212,7 @@ public class Test
             return;
         }
 
-	    ret = m.createList(key, valuelen, attrformat);
+	    ret = m.createTableList(key, valuelen, attrformat);
         if (cmemlink.MEMLINK_OK != ret) {
             System.out.println("create error:" + ret);
             return;
@@ -454,7 +457,8 @@ public class Test
 
         int valuelen = 12;
         String attrformat = "4:3:1";
-		String keyname = "haha";
+		String name = "table4";
+		String keyname = name + ".haha";
 		int ret;
 
         ret = m.rmkey(keyname);
@@ -462,7 +466,7 @@ public class Test
             System.out.println("rmkey error: " + ret);
         }
 
-	    ret = m.createList(keyname, valuelen, attrformat);
+	    ret = m.createTableList(name, valuelen, attrformat);
         if (cmemlink.MEMLINK_OK != ret) {
             System.out.println("create error:" + ret);
             return;
@@ -516,7 +520,8 @@ public class Test
 
         int valuelen = 4;
         String attrformat = "4:3:1";
-		String keyname = "haha";
+		String name = "table5";
+		String keyname = name + ".haha";
 		int ret;
 
         ret = m.rmkey(keyname);
@@ -524,7 +529,7 @@ public class Test
             System.out.println("rmkey error: " + ret);
         }
 
-	    ret = m.createList(keyname, valuelen, attrformat);
+	    ret = m.createTableList(name, valuelen, attrformat);
         if (cmemlink.MEMLINK_OK != ret) {
             System.out.println("create error:" + ret);
             return;
