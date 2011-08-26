@@ -53,15 +53,15 @@ def result_check(client2master, client2slave, key):
         print 'error ', rs1.count, rs2.count
         return -1
         
-    it1 = rs1.root
-    it2 = rs2.root
+    it1 = rs1.items
+    it2 = rs2.items
 
     while it1 and it2:
         if it1.value != it2.value:
             print 'error ', it1.value, it2.value
             return -1
-        if it1.mask != it2.mask:
-            print 'error', it1.mask, it2.mask
+        if it1.attr != it2.attr:
+            print 'error', it1.attr, it2.attr
             return -1
         it1 = it1.next
         it2 = it2.next
