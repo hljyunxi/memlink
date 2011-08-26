@@ -20,8 +20,15 @@
 %apply(char *BYTE,int LENGTH){(char *valmax,int vmaxlen)};
 
 %typemap(out) char BYTE[256]{
-   jresult = JCALL1(NewByteArray,jenv,256);
-   JCALL4(SetByteArrayRegion,jenv,jresult,0,256,$1);
+    // haha
+    if (offsetof(MemLinkItem, value) == ((unsigned long)$1 - (unsigned long)arg1)) {
+        jresult = JCALL1(NewByteArray,jenv,arg1->valuesize);
+        JCALL4(SetByteArrayRegion,jenv,jresult,0,arg1->valuesize,$1);
+    }else{
+        int attrlen=strlen(arg1->attr);
+        jresult = JCALL1(NewByteArray,jenv,attrlen);
+        JCALL4(SetByteArrayRegion,jenv,jresult,0,attrlen,$1);
+    }
 }
 
 %typemap(jni) (char BYTE[256]) "jbyteArray"
