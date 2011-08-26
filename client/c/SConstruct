@@ -43,7 +43,7 @@ else:
     env.SharedLibrary("memlink", shared_libfiles)
 
 
-env2 = Environment(CCFLAGS=cflags, CPPPATH=includes, LIBPATH=libpath, LIBS=libs + ['base'])
+env2 = Environment(CCFLAGS=cflags, CPPPATH=includes, LIBPATH=libpath, LIBS=libs)
 env2.Program("test", ['test.c', 'libmemlink.a'])
 env2.Program("pingtest", ['pingtest.c', 'libmemlink.a'])
 
