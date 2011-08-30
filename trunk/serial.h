@@ -84,13 +84,13 @@ int cmd_dump_unpack(char *data);
 int cmd_clean_pack(char *data, char *key);
 int cmd_clean_unpack(char *data, char *key);
 
-int cmd_rmkey_pack(char *data, char *key);
+int cmd_rmkey_pack(char *data, char *table, char *key);
 int cmd_rmkey_unpack(char *data, char *key);
 
-int cmd_rmtable_pack(char *data, char *key);
-int cmd_rmtable_unpack(char *data, char *key);
+int cmd_rmtable_pack(char *data, char *table);
+int cmd_rmtable_unpack(char *data, char *table);
 
-int cmd_count_pack(char *data, char *key, unsigned char attrnum, unsigned int *attrarray);
+int cmd_count_pack(char *data, char *table, char *key, unsigned char attrnum, unsigned int *attrarray);
 int cmd_count_unpack(char *data, char *key, unsigned char *attrnum, unsigned int *attrarray);
 
 int cmd_stat_pack(char *data, char *key);
@@ -109,26 +109,26 @@ int cmd_create_table_unpack(char *data, char *name, unsigned char *valuelen,
 int cmd_create_node_pack(char *data, char *name, char *key);
 int cmd_create_node_unpack(char *data, char *name, char *key);
 
-int cmd_del_pack(char *data, char *key, char *value, unsigned char valuelen);
+int cmd_del_pack(char *data, char *table, char *key, char *value, unsigned char valuelen);
 int cmd_del_unpack(char *data, char *key, char *value, unsigned char *valuelen);
 
-int cmd_insert_pack(char *data, char *key, char *value, unsigned char valuelen, 
+int cmd_insert_pack(char *data, char *table, char *key, char *value, unsigned char valuelen, 
                     unsigned char attrnum, unsigned int *attrarray, int pos);  
 int cmd_insert_unpack(char *data, char *key, char *value, unsigned char *valuelen,
                       unsigned char *attrnum, unsigned int *attrarray, int *pos);
 
-int cmd_move_pack(char *data, char *key, char *value, unsigned char valuelen, int pos);
+int cmd_move_pack(char *data, char *table, char *key, char *value, unsigned char valuelen, int pos);
 int cmd_move_unpack(char *data, char *key, char *value, unsigned char *valuelen, int *pos);
 
-int cmd_attr_pack(char *data, char *key, char *value, unsigned char valuelen, 
+int cmd_attr_pack(char *data, char *table, char *key, char *value, unsigned char valuelen, 
                   unsigned char attrnum, unsigned int *attrarray);
 int cmd_attr_unpack(char *data, char *key, char *value, unsigned char *valuelen, 
                     unsigned char *attrnum, unsigned int *attrarray);
 
-int cmd_tag_pack(char *data, char *key, char *value, unsigned char valuelen, unsigned char tag);
+int cmd_tag_pack(char *data, char *table, char *key, char *value, unsigned char valuelen, unsigned char tag);
 int cmd_tag_unpack(char *data, char *key, char *value, unsigned char *valuelen, unsigned char *tag);
 
-int cmd_range_pack(char *data, char *key, unsigned char kind, unsigned char attrnum, unsigned int *attrarray, 
+int cmd_range_pack(char *data, char *table, char *key, unsigned char kind, unsigned char attrnum, unsigned int *attrarray, 
                    int frompos, int len);
 int cmd_range_unpack(char *data, char *key, unsigned char *kind, unsigned char *attrnum, unsigned int*attrarray, 
                      int *frompos, int *len);
@@ -136,18 +136,18 @@ int cmd_range_unpack(char *data, char *key, unsigned char *kind, unsigned char *
 int cmd_ping_pack(char *data);
 int cmd_ping_unpack(char *data);
 
-int cmd_push_pack(char *data, unsigned char cmd, char *key, char *value, unsigned char valuelen, 
+int cmd_push_pack(char *data, unsigned char cmd, char *table, char *key, char *value, unsigned char valuelen, 
                     unsigned char attrnum, unsigned int *attrarray);
-int cmd_lpush_pack(char *data, char *key, char *value, unsigned char valuelen, 
+int cmd_lpush_pack(char *data, char *table, char *key, char *value, unsigned char valuelen, 
                     unsigned char attrnum, unsigned int *attrarray);
-int cmd_rpush_pack(char *data, char *key, char *value, unsigned char valuelen, 
+int cmd_rpush_pack(char *data, char *table, char *key, char *value, unsigned char valuelen, 
                     unsigned char attrnum, unsigned int *attrarray);
 int cmd_push_unpack(char *data, char *key, char *value, unsigned char *valuelen,
                     unsigned char *attrnum, unsigned int *attrarray);
 
-int cmd_pop_pack(char *data, unsigned char cmd, char *key, int num);
-int cmd_lpop_pack(char *data, char *key, int num);
-int cmd_rpop_pack(char *data, char *key, int num);
+int cmd_pop_pack(char *data, unsigned char cmd, char *table, char *key, int num);
+int cmd_lpop_pack(char *data, char *table, char *key, int num);
+int cmd_rpop_pack(char *data, char *table, char *key, int num);
 int cmd_pop_unpack(char *data, char *key, int *num);
 
 // for sync client
@@ -161,19 +161,19 @@ int cmd_getdump_unpack(char *data, unsigned int *dumpver, uint64_t *size);
 //int cmd_insert_mvalue_unpack(char *data, char *key, MemLinkInsertVal **items, int *num);
 
 //add by lanwenhong
-int cmd_del_by_attr_pack(char *data, char *key, unsigned int *attrarray, unsigned char attrnum);
+int cmd_del_by_attr_pack(char *data, char *table,char *key, unsigned int *attrarray, unsigned char attrnum);
 int cmd_del_by_attr_unpack(char *data, char *key, unsigned int *attrarray, unsigned char *attrnum);
 
-int cmd_sortlist_count_pack(char *data, char *key, unsigned char attrnum, unsigned int *attrarray,
+int cmd_sortlist_count_pack(char *data, char * table, char *key, unsigned char attrnum, unsigned int *attrarray,
                         void *valmin, unsigned char vminlen, void *valmax, unsigned char vmaxlen);
 int cmd_sortlist_count_unpack(char *data, char *key, unsigned char *attrnum, unsigned int *attrarray,
                         void *valmin, unsigned char *vminlen, void *valmax, unsigned char *vmaxlen);
-int cmd_sortlist_del_pack(char *data, char *key, unsigned char kind, char *valmin, unsigned char vminlen, 
+int cmd_sortlist_del_pack(char *data, char *table, char *key, unsigned char kind, char *valmin, unsigned char vminlen, 
                         char *valmax, unsigned char vmaxlen, unsigned char attrnum, unsigned int *attrarray);
 int cmd_sortlist_del_unpack(char *data, char *key, unsigned char *kind, char *valmin, unsigned char *vminlen,
                         char *valmax, unsigned char *vmaxlen, unsigned char *attrnum, unsigned int *attrarray);
 
-int cmd_sortlist_range_pack(char *data, char *key, unsigned char kind, 
+int cmd_sortlist_range_pack(char *data, char *table, char *key, unsigned char kind, 
                         unsigned char attrnum, unsigned int *attrarray, 
                         void *valmin, unsigned char vminlen, void *valmax, unsigned char vmaxlen);
 int cmd_sortlist_range_unpack(char *data, char *key, unsigned char *kind, 

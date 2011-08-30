@@ -15,6 +15,8 @@
 #include "base/utils.h"
 #include "base/zzmalloc.h"
 #include "base/pack.h"
+#define SEP '.'
+
 /**
  * 把字符串形式的attr转换为数组形式
  */
@@ -342,9 +344,9 @@ cmd_clean_unpack(char *data, char *key)
 }
 
 int 
-cmd_rmkey_pack(char *data, char *key)
+cmd_rmkey_pack(char *data, char *table, char *key)
 {
-    return pack(data, 0, "$4cs", CMD_RMKEY, key);
+    return pack(data, 0, "$4cscs", CMD_RMKEY, table, SEP, key);
 }
 
 int 
@@ -365,9 +367,9 @@ cmd_rmtable_unpack(char *data, char *key)
 }
 
 int 
-cmd_count_pack(char *data, char *key, unsigned char attrnum, unsigned int *attrarray)
+cmd_count_pack(char *data, char *table, char *key, unsigned char attrnum, unsigned int *attrarray)
 {
-    return pack(data, 0, "$4csI", CMD_COUNT, key, attrnum, attrarray);
+    return pack(data, 0, "$4cscsI", CMD_COUNT, table, SEP, key, attrnum, attrarray);
 }
 
 int 
@@ -377,10 +379,10 @@ cmd_count_unpack(char *data, char *key, unsigned char *attrnum, unsigned int *at
 }
 
 int 
-cmd_sortlist_count_pack(char *data, char *key, unsigned char attrnum, unsigned int *attrarray,
+cmd_sortlist_count_pack(char *data, char *table, char *key, unsigned char attrnum, unsigned int *attrarray,
                         void *valmin, unsigned char vminlen, void *valmax, unsigned char vmaxlen)
 {
-    return pack(data, 0, "$4csICC", CMD_SL_COUNT, key, attrnum, attrarray, 
+    return pack(data, 0, "$4cscsICC", CMD_SL_COUNT, table, SEP, key, attrnum, attrarray, 
                 vminlen, valmin, vmaxlen, valmax);
 }
 
@@ -465,9 +467,9 @@ cmd_create_node_unpack(char *data, char *name, char *key)
 }
 
 int 
-cmd_del_pack(char *data, char *key, char *value, unsigned char valuelen)
+cmd_del_pack(char *data, char *table,char *key, char *value, unsigned char valuelen)
 {
-    return pack(data, 0, "$4csC", CMD_DEL, key, valuelen, value);
+    return pack(data, 0, "$4cscsC", CMD_DEL, table,SEP,key, valuelen, value);
 }
 
 int 
@@ -477,10 +479,10 @@ cmd_del_unpack(char *data, char *key, char *value, unsigned char *valuelen)
 }
 
 int 
-cmd_sortlist_del_pack(char *data, char *key, unsigned char kind, char *valmin, unsigned char vminlen, 
+cmd_sortlist_del_pack(char *data, char *table, char *key, unsigned char kind, char *valmin, unsigned char vminlen, 
             char *valmax, unsigned char vmaxlen, unsigned char attrnum, unsigned int *attrarray)
 {
-    return pack(data, 0, "$4ccsCCI", CMD_SL_DEL, kind, key, vminlen, valmin,
+    return pack(data, 0, "$4ccscsCCI", CMD_SL_DEL, kind,table,SEP,key, vminlen, valmin,
                     vmaxlen, valmax, attrnum, attrarray);
 }
 
@@ -495,10 +497,10 @@ cmd_sortlist_del_unpack(char *data, char *key, unsigned char *kind,
 }
 
 int 
-cmd_insert_pack(char *data, char *key, char *value, unsigned char valuelen, 
+cmd_insert_pack(char *data, char *table,char *key, char *value, unsigned char valuelen, 
                 unsigned char attrnum, unsigned int *attrarray, int pos)
 {
-    return pack(data, 0, "$4csCIi", CMD_INSERT, key, valuelen, value, attrnum, attrarray, pos);
+    return pack(data, 0, "$4cscsCIi", CMD_INSERT, table,SEP,key, valuelen, value, attrnum, attrarray, pos);
 }
 
 int 
@@ -510,9 +512,9 @@ cmd_insert_unpack(char *data, char *key, char *value, unsigned char *valuelen,
 
 
 int 
-cmd_move_pack(char *data, char *key, char *value, unsigned char valuelen, int pos)
+cmd_move_pack(char *data, char *table,char *key, char *value, unsigned char valuelen, int pos)
 {
-    return pack(data, 0, "$4csCi", CMD_MOVE, key, valuelen, value, pos);
+    return pack(data, 0, "$4cscsCi", CMD_MOVE, table,SEP,key, valuelen, value, pos);
 }
 
 int 
@@ -522,10 +524,10 @@ cmd_move_unpack(char *data, char *key, char *value, unsigned char *valuelen, int
 }
 
 int 
-cmd_attr_pack(char *data, char *key, char *value, unsigned char valuelen, 
+cmd_attr_pack(char *data, char *table,char *key, char *value, unsigned char valuelen, 
               unsigned char attrnum, unsigned int *attrarray)
 {
-    return pack(data, 0, "$4csCI", CMD_ATTR, key, valuelen, value, attrnum, attrarray);
+    return pack(data, 0, "$4cscsCI", CMD_ATTR, table,SEP,key, valuelen, value, attrnum, attrarray);
 }
 
 int 
@@ -536,9 +538,9 @@ cmd_attr_unpack(char *data, char *key, char *value, unsigned char *valuelen,
 }
 
 int 
-cmd_tag_pack(char *data, char *key, char *value, unsigned char valuelen, unsigned char tag)
+cmd_tag_pack(char *data, char *table,char *key, char *value, unsigned char valuelen, unsigned char tag)
 {
-    return pack(data, 0, "$4csCc", CMD_TAG, key, valuelen, value, tag);
+    return pack(data, 0, "$4cscsCc", CMD_TAG, table,SEP,key, valuelen, value, tag);
 }
 
 int 
@@ -548,11 +550,11 @@ cmd_tag_unpack(char *data, char *key, char *value, unsigned char *valuelen, unsi
 }
 
 int 
-cmd_range_pack(char *data, char *key, unsigned char kind, 
+cmd_range_pack(char *data, char *table,char *key, unsigned char kind, 
                unsigned char attrnum, unsigned int *attrarray, 
                int frompos, int rlen)
 {
-    return pack(data, 0, "$4cscIii", CMD_RANGE, key, kind, attrnum, attrarray, frompos, rlen);
+    return pack(data, 0, "$4cscscIii", CMD_RANGE, table,key, kind, attrnum, attrarray, frompos, rlen);
 }
 
 int 
@@ -563,11 +565,11 @@ cmd_range_unpack(char *data, char *key, unsigned char *kind, unsigned char *attr
 }
 
 int 
-cmd_sortlist_range_pack(char *data, char *key, unsigned char kind, 
+cmd_sortlist_range_pack(char *data, char *table,char *key, unsigned char kind, 
                 unsigned char attrnum, unsigned int *attrarray, 
                 void *valmin, unsigned char vminlen, void *valmax, unsigned char vmaxlen)
 {
-    return pack(data, 0, "$4cscICC", CMD_SL_RANGE, key, kind, attrnum, attrarray,
+    return pack(data, 0, "$4cscscICC", CMD_SL_RANGE, table,SEP,key, kind, attrnum, attrarray,
                     vminlen, valmin, vmaxlen, valmax);
 }
 
@@ -592,10 +594,10 @@ cmd_ping_unpack(char *data)
 }
 
 int 
-cmd_push_pack(char *data, unsigned char cmd, char *key, char *value, unsigned char valuelen, 
+cmd_push_pack(char *data, unsigned char cmd, char *table, char *key, char *value, unsigned char valuelen, 
                 unsigned char attrnum, unsigned *attrarray)
 {
-    return pack(data, 0, "$4csCI", cmd, key, valuelen, value, attrnum, attrarray);
+    return pack(data, 0, "$4cscsCI", cmd, table,SEP,key, valuelen, value, attrnum, attrarray);
 }
 
 
@@ -607,36 +609,36 @@ cmd_push_unpack(char *data, char *key, char *value, unsigned char *valuelen,
 }
 
 int 
-cmd_lpush_pack(char *data, char *key, char *value, unsigned char valuelen, 
+cmd_lpush_pack(char *data, char *table, char *key, char *value, unsigned char valuelen, 
                 unsigned char attrnum, unsigned *attrarray)
 {
-    return cmd_push_pack(data, CMD_LPUSH, key, value, valuelen, attrnum, attrarray);
+    return cmd_push_pack(data, CMD_LPUSH, table, key, value, valuelen, attrnum, attrarray);
 }
 
 int 
-cmd_rpush_pack(char *data, char *key, char *value, unsigned char valuelen, 
+cmd_rpush_pack(char *data, char *table, char *key, char *value, unsigned char valuelen, 
                 unsigned char attrnum, unsigned *attrarray)
 {
-    return cmd_push_pack(data, CMD_RPUSH, key, value, valuelen, attrnum, attrarray);
+    return cmd_push_pack(data, CMD_RPUSH, table, key, value, valuelen, attrnum, attrarray);
 }
 
 
 int
-cmd_pop_pack(char *data, unsigned char cmd, char *key, int num)
+cmd_pop_pack(char *data, unsigned char cmd, char *table, char *key, int num)
 {
-    return pack(data, 0, "$4csi", cmd, key, num);
+    return pack(data, 0, "$4csi", cmd, table,key, num);
 }
 
 int
-cmd_lpop_pack(char *data, char *key, int num)
+cmd_lpop_pack(char *data, char *table, char *key, int num)
 {
-    return cmd_pop_pack(data, CMD_LPOP, key, num);
+    return cmd_pop_pack(data, CMD_LPOP, table, key, num);
 }
 
 int
-cmd_rpop_pack(char *data, char *key, int num)
+cmd_rpop_pack(char *data, char *table, char *key, int num)
 {
-    return cmd_pop_pack(data, CMD_RPOP, key, num);
+    return cmd_pop_pack(data, CMD_RPOP, table, key, num);
 }
 
 int 
@@ -671,7 +673,7 @@ cmd_getdump_unpack(char *data, unsigned int *dumpver, uint64_t *size)
 
 //add by lanwenhong
 int
-cmd_del_by_attr_pack(char *data, char *key, unsigned int *attrarray, unsigned char attrnum)
+cmd_del_by_attr_pack(char *data, char *table, char *key, unsigned int *attrarray, unsigned char attrnum)
 {
     return pack(data, 0, "$4csI", CMD_DEL_BY_ATTR, key, attrnum, attrarray);
 }
