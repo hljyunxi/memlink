@@ -554,10 +554,10 @@ memlink_cmd_stat_sys(MemLink *m, MemLinkStatSys *stat)
 }
 
 int
-memlink_cmd_create_table(MemLink *m, char *name, int valuelen, char *attrstr,
+memlink_cmd_create_table(MemLink *m, char *table, int valuelen, char *attrstr,
                    uint8_t listtype, uint8_t valuetype)
 {
-    if (NULL == name || strlen(name) > HASHTABLE_KEY_MAX)
+    if (NULL == table || strlen(table) > HASHTABLE_KEY_MAX)
         return MEMLINK_ERR_PARAM;
     if (valuelen <= 0 || valuelen > HASHTABLE_VALUE_MAX)
         return MEMLINK_ERR_PARAM;
@@ -580,7 +580,7 @@ memlink_cmd_create_table(MemLink *m, char *name, int valuelen, char *attrstr,
         }
     }
    
-    len = cmd_create_table_pack(data, name, valuelen, attrnum, attrarray, listtype, valuetype);
+    len = cmd_create_table_pack(data, table, valuelen, attrnum, attrarray, listtype, valuetype);
     //DINFO("pack create len: %d\n", len);
 
     char retdata[1024] = {0};
@@ -592,27 +592,27 @@ memlink_cmd_create_table(MemLink *m, char *name, int valuelen, char *attrstr,
 }
 
 int 
-memlink_cmd_create_table_list(MemLink *m, char *name, int valuelen, char *attrstr)
+memlink_cmd_create_table_list(MemLink *m, char *table, int valuelen, char *attrstr)
 {
-    return memlink_cmd_create_table(m, name, valuelen, attrstr, MEMLINK_LIST, MEMLINK_VALUE_OBJ);
+    return memlink_cmd_create_table(m, table, valuelen, attrstr, MEMLINK_LIST, MEMLINK_VALUE_OBJ);
 }
 
 int 
-memlink_cmd_create_table_queue(MemLink *m, char *name, int valuelen, char *attrstr)
+memlink_cmd_create_table_queue(MemLink *m, char *table, int valuelen, char *attrstr)
 {
-    return memlink_cmd_create_table(m, name, valuelen, attrstr, MEMLINK_QUEUE, MEMLINK_VALUE_OBJ);
+    return memlink_cmd_create_table(m, table, valuelen, attrstr, MEMLINK_QUEUE, MEMLINK_VALUE_OBJ);
 }
 
 int 
-memlink_cmd_create_table_sortlist(MemLink *m, char *name, int valuelen, char *attrstr, uint8_t valuetype)
+memlink_cmd_create_table_sortlist(MemLink *m, char *table, int valuelen, char *attrstr, uint8_t valuetype)
 {
-    return memlink_cmd_create_table(m, name, valuelen, attrstr, MEMLINK_SORTLIST, valuetype);
+    return memlink_cmd_create_table(m, table, valuelen, attrstr, MEMLINK_SORTLIST, valuetype);
 }
 
 int
-memlink_cmd_create_node(MemLink *m, char *name, char *key)
+memlink_cmd_create_node(MemLink *m, char *table, char *key)
 {
-    if (NULL == name || strlen(name) > HASHTABLE_KEY_MAX)
+    if (NULL == table || strlen(table) > HASHTABLE_KEY_MAX)
         return MEMLINK_ERR_PARAM;
     
     if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX) {
@@ -621,7 +621,7 @@ memlink_cmd_create_node(MemLink *m, char *name, char *key)
     char data[1024] = {0};
     int  len;
 
-    len = cmd_create_node_pack(data, name, key);
+    len = cmd_create_node_pack(data, table, key);
     //DINFO("pack del len: %d\n", len);
     char retdata[1024] = {0};
     int ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
@@ -632,15 +632,15 @@ memlink_cmd_create_node(MemLink *m, char *name, char *key)
 
 
 int
-memlink_cmd_remove_table(MemLink *m, char *name)
+memlink_cmd_remove_table(MemLink *m, char *table)
 {
-    if (NULL == name || name[0] == 0 || strlen(name) > HASHTABLE_KEY_MAX)
+    if (NULL == table || table[0] == 0 || strlen(table) > HASHTABLE_KEY_MAX)
         return MEMLINK_ERR_PARAM;
 
     char data[1024] = {0};
     int  len;
 
-    len = cmd_rmtable_pack(data, name);
+    len = cmd_rmtable_pack(data, table);
     //DINFO("pack del len: %d\n", len);
     char retdata[1024] = {0};
     int ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
@@ -651,7 +651,7 @@ memlink_cmd_remove_table(MemLink *m, char *name)
 }
 
 int
-memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen)
+memlink_cmd_del(MemLink *m, char *table,char *key, char *value, int valuelen)
 {
     if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
         return MEMLINK_ERR_PARAM;
@@ -661,7 +661,7 @@ memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen)
     char data[1024] = {0};
     int  len;
 
-    len = cmd_del_pack(data, key, value, valuelen);
+    len = cmd_del_pack(data, table, key, value, valuelen);
     //DINFO("pack del len: %d\n", len);
     
     /*unsigned short pkglen;
@@ -679,7 +679,7 @@ memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen)
 }
 
 int
-memlink_cmd_sortlist_del(MemLink *m, char *key, int kind, char *attrstr, 
+memlink_cmd_sortlist_del(MemLink *m, char *table,char *key, int kind, char *attrstr, 
                         char *valmin, int vminlen, 
                         char *valmax, int vmaxlen)
 {
@@ -702,7 +702,7 @@ memlink_cmd_sortlist_del(MemLink *m, char *key, int kind, char *attrstr,
     char data[1024] = {0};
     int  len;
 
-    len = cmd_sortlist_del_pack(data, key, kind, valmin, vminlen, valmax, vmaxlen, attrn, attrarray);
+    len = cmd_sortlist_del_pack(data, table,key, kind, valmin, vminlen, valmax, vmaxlen, attrn, attrarray);
     //DINFO("pack sortlist_del len: %d\n", len);
     
     /*unsigned short pkglen;
@@ -721,7 +721,7 @@ memlink_cmd_sortlist_del(MemLink *m, char *key, int kind, char *attrstr,
 
 
 int
-memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen, char *attrstr, int pos)
+memlink_cmd_insert(MemLink *m, char *table, char *key, char *value, int valuelen, char *attrstr, int pos)
 {
     if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
         return MEMLINK_ERR_PARAM;
@@ -740,7 +740,7 @@ memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen, char *attrs
     if (attrnum < 0 || attrnum > HASHTABLE_ATTR_MAX_ITEM)
         return MEMLINK_ERR_PARAM;
 
-    len = cmd_insert_pack(data, key, value, valuelen, attrnum, attrarray, pos);
+    len = cmd_insert_pack(data, table,key, value, valuelen, attrnum, attrarray, pos);
     //DINFO("pack del len: %d\n", len);
 
     char retdata[1024] = {0};
@@ -752,13 +752,13 @@ memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen, char *attrs
 }
 
 int
-memlink_cmd_sortlist_insert(MemLink *m, char *key, char *value, int valuelen, char *attrstr)
+memlink_cmd_sortlist_insert(MemLink *m, char *table,char *key, char *value, int valuelen, char *attrstr)
 {
-    return memlink_cmd_insert(m, key, value, valuelen, attrstr, -1);
+    return memlink_cmd_insert(m, table,key, value, valuelen, attrstr, -1);
 }
 
 int 
-memlink_cmd_move(MemLink *m, char *key, char *value, int valuelen, int pos)
+memlink_cmd_move(MemLink *m, char *table,char *key, char *value, int valuelen, int pos)
 {
     if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
         return MEMLINK_ERR_PARAM;
@@ -770,7 +770,7 @@ memlink_cmd_move(MemLink *m, char *key, char *value, int valuelen, int pos)
     char data[1024] = {0};
     int  len;
 
-    len = cmd_move_pack(data, key, value, valuelen, pos);
+    len = cmd_move_pack(data, table,key, value, valuelen, pos);
     //DINFO("pack move len: %d\n", len);
     char retdata[1024] = {0};
     int ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
@@ -781,7 +781,7 @@ memlink_cmd_move(MemLink *m, char *key, char *value, int valuelen, int pos)
 }
 
 int
-memlink_cmd_attr(MemLink *m, char *key, char *value, int valuelen, char *attrstr)
+memlink_cmd_attr(MemLink *m, char *table,char *key, char *value, int valuelen, char *attrstr)
 {
     if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX) {
         DNOTE("key error:%s, allow max len:%d\n", key, HASHTABLE_KEY_MAX);
@@ -805,7 +805,7 @@ memlink_cmd_attr(MemLink *m, char *key, char *value, int valuelen, char *attrstr
     }
     
     //DINFO("key: %s, valuelen: %d\n", key, valuelen);
-    len = cmd_attr_pack(data, key, value, valuelen, attrnum, attrarray);
+    len = cmd_attr_pack(data, table,key, value, valuelen, attrnum, attrarray);
     //DINFO("pack attr len: %d\n", len);
     //printh(data, len);
     char retdata[1024] = {0};
@@ -817,7 +817,7 @@ memlink_cmd_attr(MemLink *m, char *key, char *value, int valuelen, char *attrstr
 }
 
 int
-memlink_cmd_tag(MemLink *m, char *key, char *value, int valuelen, int tag)
+memlink_cmd_tag(MemLink *m, char *table,char *key, char *value, int valuelen, int tag)
 {
     if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
         return MEMLINK_ERR_PARAM;
@@ -830,7 +830,7 @@ memlink_cmd_tag(MemLink *m, char *key, char *value, int valuelen, int tag)
     char data[1024] = {0};
     int  len;
     
-    len = cmd_tag_pack(data, key, value, valuelen, tag);
+    len = cmd_tag_pack(data, table,key, value, valuelen, tag);
     //DINFO("pack tag len: %d\n", len);
     char retdata[1024] = {0};
     int ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
@@ -840,7 +840,7 @@ memlink_cmd_tag(MemLink *m, char *key, char *value, int valuelen, int tag)
 }
 
 int
-memlink_cmd_rmkey(MemLink *m, char *key)
+memlink_cmd_rmkey(MemLink *m, char *table,char *key)
 {
     if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
         return MEMLINK_ERR_PARAM;
@@ -848,7 +848,7 @@ memlink_cmd_rmkey(MemLink *m, char *key)
     char data[1024] = {0};
     int  len;
 
-    len = cmd_rmkey_pack(data, key);
+    len = cmd_rmkey_pack(data, table,key);
     //DINFO("pack rmkey len: %d\n", len);
     char retdata[1024] = {0};
     int ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
@@ -858,7 +858,7 @@ memlink_cmd_rmkey(MemLink *m, char *key)
 }
 
 int 
-memlink_cmd_count(MemLink *m, char *key, char *attrstr, MemLinkCount *count)
+memlink_cmd_count(MemLink *m, char *table,char *key, char *attrstr, MemLinkCount *count)
 {
     if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
         return MEMLINK_ERR_PARAM;
@@ -874,7 +874,7 @@ memlink_cmd_count(MemLink *m, char *key, char *attrstr, MemLinkCount *count)
     char data[1024] = {0};
     int  len;
 
-    len = cmd_count_pack(data, key, attrnum, attrarray);
+    len = cmd_count_pack(data, table, key, attrnum, attrarray);
     //DINFO("pack rmkey len: %d\n", len);
     char retdata[1024] = {0};
     int ret = memlink_do_cmd(m, MEMLINK_READER, data, len, retdata, 1024);
@@ -889,7 +889,7 @@ memlink_cmd_count(MemLink *m, char *key, char *attrstr, MemLinkCount *count)
 }
 
 int 
-memlink_cmd_sortlist_count(MemLink *m, char *key, char *attrstr, char *valmin, int vminlen, 
+memlink_cmd_sortlist_count(MemLink *m, char *table, char *key, char *attrstr, char *valmin, int vminlen, 
                 char *valmax, int vmaxlen, MemLinkCount *count)
 {
     if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
@@ -906,7 +906,7 @@ memlink_cmd_sortlist_count(MemLink *m, char *key, char *attrstr, char *valmin, i
     char data[1024] = {0};
     int  len;
 
-    len = cmd_sortlist_count_pack(data, key, attrnum, attrarray, valmin, vminlen, valmax, vmaxlen);
+    len = cmd_sortlist_count_pack(data, table, key, attrnum, attrarray, valmin, vminlen, valmax, vmaxlen);
     //DINFO("pack rmkey len: %d\n", len);
     char retdata[1024] = {0};
     int ret = memlink_do_cmd(m, MEMLINK_READER, data, len, retdata, 1024);
@@ -1037,7 +1037,7 @@ memlink_result_parse(char *retdata, MemLinkResult *result)
 
 // kind: short to int  modified by wyx at 1.4
 int 
-memlink_cmd_range(MemLink *m, char *key, int kind,  char *attrstr, 
+memlink_cmd_range(MemLink *m, char *table,char *key, int kind,  char *attrstr, 
                   int frompos, int len, MemLinkResult *result)
 {
     if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
@@ -1057,7 +1057,7 @@ memlink_cmd_range(MemLink *m, char *key, int kind,  char *attrstr,
     if (attrn < 0 || attrn > HASHTABLE_ATTR_MAX_ITEM)
         return MEMLINK_ERR_PARAM;
     
-    plen = cmd_range_pack(data, key, kind, attrn, attrarray, frompos, len);
+    plen = cmd_range_pack(data, table,key, kind, attrn, attrarray, frompos, len);
     //DINFO("pack range len: %d\n", plen);
 
     // len(4B) + retcode(2B) + valuesize(1B) + attrsize(1B) + attrnum(1B) + attrformat(attrnum B) + value.attr * len
@@ -1086,7 +1086,7 @@ memlink_cmd_range(MemLink *m, char *key, int kind,  char *attrstr,
 }
 
 int 
-memlink_cmd_sortlist_range(MemLink *m, char *key, int kind,  char *attrstr, 
+memlink_cmd_sortlist_range(MemLink *m, char *table, char *key, int kind,  char *attrstr, 
                   char *valmin, int vminlen, 
                   char *valmax, int vmaxlen, MemLinkResult *result)
 {
@@ -1105,7 +1105,7 @@ memlink_cmd_sortlist_range(MemLink *m, char *key, int kind,  char *attrstr,
     if (attrn < 0 || attrn > HASHTABLE_ATTR_MAX_ITEM)
         return MEMLINK_ERR_PARAM;
 
-    plen = cmd_sortlist_range_pack(data, key, kind, attrn, attrarray, valmin, vminlen, valmax, vmaxlen);
+    plen = cmd_sortlist_range_pack(data, table, key, kind, attrn, attrarray, valmin, vminlen, valmax, vmaxlen);
     //DINFO("pack range len: %d\n", plen);
 
     // len(4B) + retcode(2B) + valuesize(1B) + attrsize(1B) + attrnum(1B) + attrformat(attrnum B) + value.attr * len
@@ -1180,7 +1180,7 @@ memlink_cmd_insert_mvalue(MemLink *m, char *key, MemLinkInsertVal *values, int n
 }*/
 
 int 
-memlink_cmd_lpush(MemLink *m, char *key, char *value, int valuelen, char *attrstr)
+memlink_cmd_lpush(MemLink *m, char *table,char *key, char *value, int valuelen, char *attrstr)
 {
     if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
         return MEMLINK_ERR_PARAM;
@@ -1197,7 +1197,7 @@ memlink_cmd_lpush(MemLink *m, char *key, char *value, int valuelen, char *attrst
     if (attrnum < 0 || attrnum > HASHTABLE_ATTR_MAX_ITEM)
         return MEMLINK_ERR_PARAM;
 
-    len = cmd_lpush_pack(data, key, value, valuelen, attrnum, attrarray);
+    len = cmd_lpush_pack(data, table, key, value, valuelen, attrnum, attrarray);
     //DINFO("pack lpush len: %d\n", len);
 
     char retdata[1024] = {0};
@@ -1209,7 +1209,7 @@ memlink_cmd_lpush(MemLink *m, char *key, char *value, int valuelen, char *attrst
 }
 
 int 
-memlink_cmd_rpush(MemLink *m, char *key, char *value, int valuelen, char *attrstr)
+memlink_cmd_rpush(MemLink *m, char *table, char *key, char *value, int valuelen, char *attrstr)
 {
     if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
         return MEMLINK_ERR_PARAM;
@@ -1226,7 +1226,7 @@ memlink_cmd_rpush(MemLink *m, char *key, char *value, int valuelen, char *attrst
     if (attrnum < 0 || attrnum > HASHTABLE_ATTR_MAX_ITEM)
         return MEMLINK_ERR_PARAM;
 
-    len = cmd_rpush_pack(data, key, value, valuelen, attrnum, attrarray);
+    len = cmd_rpush_pack(data, table, key, value, valuelen, attrnum, attrarray);
     //DINFO("pack rpush len: %d\n", len);
 
     char retdata[1024] = {0};
@@ -1239,7 +1239,7 @@ memlink_cmd_rpush(MemLink *m, char *key, char *value, int valuelen, char *attrst
 }
 
 int 
-memlink_cmd_lpop(MemLink *m, char *key, int num, MemLinkResult *result)
+memlink_cmd_lpop(MemLink *m, char *table, char *key, int num, MemLinkResult *result)
 {
     if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
         return MEMLINK_ERR_PARAM;
@@ -1247,7 +1247,7 @@ memlink_cmd_lpop(MemLink *m, char *key, int num, MemLinkResult *result)
     char data[1024] = {0};
     int  len;
 
-    len = cmd_lpop_pack(data, key, num);
+    len = cmd_lpop_pack(data, table, key, num);
     //DINFO("pack lpop len: %d\n", len);
 
     // len(4B) + retcode(2B) + valuesize(1B) + attrsize(1B) + attrnum(1B) + attrformat(attrnum B) + value.attr * len
@@ -1270,7 +1270,7 @@ memlink_cmd_lpop(MemLink *m, char *key, int num, MemLinkResult *result)
 }
 
 int 
-memlink_cmd_rpop(MemLink *m, char *key, int num, MemLinkResult *result)
+memlink_cmd_rpop(MemLink *m, char *table, char *key, int num, MemLinkResult *result)
 {
     if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
         return MEMLINK_ERR_PARAM;
@@ -1278,7 +1278,7 @@ memlink_cmd_rpop(MemLink *m, char *key, int num, MemLinkResult *result)
     char data[1024] = {0};
     int  len;
 
-    len = cmd_rpop_pack(data, key, num);
+    len = cmd_rpop_pack(data, table, key, num);
     //DINFO("pack rpop len: %d\n", len);
 
     // len(4B) + retcode(2B) + valuesize(1B) + attrsize(1B) + attrnum(1B) + attrformat(attrnum B) + value.attr * len
@@ -1349,7 +1349,7 @@ memlink_result_free(MemLinkResult *result)
 
 //add by lanwenhong
 int
-memlink_cmd_del_by_attr(MemLink *m, char *key, char *attrstr)
+memlink_cmd_del_by_attr(MemLink *m, char *table, char *key, char *attrstr)
 {
     if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX)
         return MEMLINK_ERR_PARAM;
@@ -1366,7 +1366,7 @@ memlink_cmd_del_by_attr(MemLink *m, char *key, char *attrstr)
     if (attrnum < 0 || attrnum > HASHTABLE_ATTR_MAX_ITEM)
         return MEMLINK_ERR_PARAM;
     
-    len = cmd_del_by_attr_pack(data, key, attrarray, attrnum);
+    len = cmd_del_by_attr_pack(data, table,key, attrarray, attrnum);
     //DINFO("pack del by attr len: %d\n", len);
 
     ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);
@@ -1396,7 +1396,7 @@ memlink_imkv_create()
 }
 
 MemLinkInsertKey*
-memlink_ikey_create(char *key, int keylen)
+memlink_ikey_create(char *table,char *key, int keylen)
 {
     MemLinkInsertKey *kobj = NULL;
 
@@ -1410,7 +1410,8 @@ memlink_ikey_create(char *key, int keylen)
         return NULL;
     }
     memset(kobj, 0x0, sizeof(MemLinkInsertKey));
-     memcpy(kobj->key, key, keylen);
+    snprintf(kobj->key,255,"%s.%s",table,key);
+    //memcpy(kobj->key, key, keylen);
     kobj->keylen = keylen;
 
     return kobj;
