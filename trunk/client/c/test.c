@@ -18,17 +18,27 @@ void* test(void *arg)
     int ret, i;
     char *name = "test";
     DINFO("============== create ===============\n");
+    ret = memlink_cmd_remove_table(m,name);
+    if(ret != MEMLINK_OK){
+        printf("memlink_cmd_remove_table error:%d table:%s\n",ret,name);
+    }
     for (i = 0; i < 1; i++) {
         //sprintf(buf, "%s.haha%d", name, i);
         ret = memlink_cmd_create_table_list(m, name, 6, "4:3:1");
         if (ret != MEMLINK_OK) {
-            DERROR("memlink_cmd_xx: %d, key:%s\n", ret, buf);
+            DERROR("memlink_cmd_xx: %d, key:%s\n", ret, name);
+            printf("memlink_cmd_create: %d key:%s\n",ret,name);
+            return 0;
         }
     }
 
     //ret = memlink_cmd_del(m, "haha", "gogo", 4);
-
     char *key = "haha0";
+    ret = memlink_cmd_create_node(m,name,key);
+    if(ret != MEMLINK_OK){
+        printf("memlink_cmd_create_node error:%d key:%s\n",ret,key);
+        return 0;
+    }
     while (1) {
         for (i = 0; i < 200; i++) {
             //DINFO("============== insert ===============\n");
@@ -37,6 +47,7 @@ void* test(void *arg)
             ret = memlink_cmd_insert(m, name, key, buf, strlen(buf), "1:2:0", 0);
             if (ret != MEMLINK_OK) {
                 DERROR("memlink_cmd_insert error:%d, key:%s, val:%s\n", ret, key, buf);
+                printf("memlink_cmd_insert error:%d, key:%s, val:%s\n", ret, key, buf);
             }
         }
         for (i = 0; i < 200; i+=3) {
@@ -44,6 +55,7 @@ void* test(void *arg)
             ret = memlink_cmd_del(m, name,key, buf, strlen(buf)); 
             if (ret != MEMLINK_OK) {
                 DERROR("del error:%d, key:%s, val:%s\n", ret, key, buf);
+                printf("del error:%d, key:%s, val:%s\n", ret, key, buf);
             }
         }
         for (i = 1; i < 200; i+=3) {
@@ -51,6 +63,7 @@ void* test(void *arg)
             ret = memlink_cmd_del(m, name,key, buf, strlen(buf)); 
             if (ret != MEMLINK_OK) {
                 DERROR("del error:%d, key:%s, val:%s\n", ret, key, buf);
+                printf("del error:%d, key:%s, val:%s\n", ret, key, buf);
             }
         }
         for (i = 2; i < 200; i+=3) {
@@ -58,6 +71,7 @@ void* test(void *arg)
             ret = memlink_cmd_del(m, name,key, buf, strlen(buf)); 
             if (ret != MEMLINK_OK) {
                 DERROR("del error:%d, key:%s, val:%s\n", ret, key, buf);
+                printf("del error:%d, key:%s, val:%s\n", ret, key, buf);
             }
         }
     }
@@ -77,7 +91,7 @@ void* test(void *arg)
 
 int main(int argc, char *argv[])
 {
-    int threadnum = 10;
+    int threadnum = 1;
     pthread_t threads[threadnum];
     int i;
 

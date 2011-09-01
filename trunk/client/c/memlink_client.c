@@ -740,7 +740,7 @@ memlink_cmd_insert(MemLink *m, char *table, char *key, char *value, int valuelen
     if (attrnum < 0 || attrnum > HASHTABLE_ATTR_MAX_ITEM)
         return MEMLINK_ERR_PARAM;
 
-    len = cmd_insert_pack(data, table,key, value, valuelen, attrnum, attrarray, pos);
+    len = cmd_insert_pack(data,table,key, value, valuelen, attrnum, attrarray, pos);
     //DINFO("pack del len: %d\n", len);
 
     char retdata[1024] = {0};
