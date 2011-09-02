@@ -294,9 +294,13 @@ memlink_write(MemLink *m, int fdtype, char *wbuf, int wlen)
 #endif
 //#ifdef PEEK
         char buf[4];
+#ifdef __linux
+        wret = recv(fd, buf, 1, MSG_PEEK|MSG_DONTWAIT);  
+#else
         set_noblock(fd);
         wret = recv(fd, buf, 1, MSG_PEEK);  
         set_block(fd);
+#endif
         if (wret == 0) {
             if (fdtype == MEMLINK_READER) {
                 m->readfd = -1;
