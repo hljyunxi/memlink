@@ -70,6 +70,7 @@ def testone(fn, wait=2):
         print 'remove dump:', bf
         os.remove(bf)
 
+    time.sleep(1)
     print 'open memlink:', memlinkstart
     x = subprocess.Popen(memlinkstart, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
                          shell=True, env=os.environ, universal_newlines=True) 

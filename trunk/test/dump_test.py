@@ -15,10 +15,10 @@ name = 'test'
 def test_result():
     global home
     
-    key = name + '.haha000'
+    key = 'haha000'
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30);
     
-    ret, stat = m.stat(key)
+    ret, stat = m.stat(name, key)
     if stat:
         if stat.data_used != 500:
             print 'stat data_used error!', stat
@@ -27,7 +27,7 @@ def test_result():
         print 'test_result stat error:', stat, ret
         return -3
 
-    ret, result = m.range(key, MEMLINK_VALUE_VISIBLE, 0, 1000)
+    ret, result = m.range(name, key, MEMLINK_VALUE_VISIBLE, 0, 1000)
     if not result or result.count != 250:
         print 'range error!', result, ret
         return -4
@@ -56,7 +56,7 @@ def test():
 
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30);
     vnum = 0   
-    key = name + '.haha000'
+    key = 'haha000'
     ret = m.create_table_list(name, 10, "4:3:1")
     if ret != MEMLINK_OK:
         print 'create error:', ret, name
@@ -67,9 +67,9 @@ def test():
     for i in xrange(0, num):
         val = '%010d' % i
         attrstr = "8:1:1"
-        ret = m.insert(key, val, 0, attrstr)
+        ret = m.insert(name, key, val, 0, attrstr)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, attrstr, ret
+            print 'insert error!', name, key, val, attrstr, ret
             return -2
     vnum += 200
 
@@ -80,9 +80,9 @@ def test():
     for i in range(200, num):
         val = '%010d' % i
         attrstr = "8:1:1"
-        ret = m.insert(key, val, i, attrstr)
+        ret = m.insert(name, key, val, i, attrstr)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, attrstr, ret
+            print 'insert error!', name, key, val, attrstr, ret
             return -2
     vnum += num - 200
     
@@ -97,19 +97,19 @@ def test():
 
     print 'rmkey 100-200 %03d'
     for i in range(100, 200):
-        key = '%s.haha%03d' % (name, i)
-        ret = m.rmkey(key)
+        key = 'haha%03d' % (i)
+        ret = m.rmkey(name, key)
     	if ret != MEMLINK_OK:
-        	print 'rmkey error:', ret, key
+        	print 'rmkey error:', ret, name, key
         	return -1
 	
 	# delete 500
     num2 = num/2
-    key = name + '.haha000'
+    key = 'haha000'
     print 'delete 0-%d %%010d' % num2
     for i in range(0, num2):
         val = '%010d' % (i * 2)
-        ret = m.delete(key, val)
+        ret = m.delete(name, key, val)
         if ret != MEMLINK_OK:
         	print 'delete val error:', ret, val
         	return -1
@@ -118,7 +118,7 @@ def test():
     # move 500
     for i in range(0, num2):
         val = '%010d' % (i * 2 + 1)
-        ret = m.move(key, val, 0)
+        ret = m.move(name, key, val, 0)
         if ret != MEMLINK_OK:
             print 'move val error:', ret, val
             return -1
@@ -126,7 +126,7 @@ def test():
     # set all the values' attr = 4:4:1
     for i in range(0, 500):
         val = '%010d' % (i*2 + 1)
-        ret = m.attr(key, val, "4:4:1")
+        ret = m.attr(name, key, val, "4:4:1")
         if ret != MEMLINK_OK:
             print 'attr val error:', ret, val
             return -1
@@ -134,16 +134,16 @@ def test():
     #tag del 250 - 499
     for i in range(250, 500):
         val = '%010d' % (i*2 + 1)
-        ret = m.tag(key, val, 1)
+        ret = m.tag(name, key, val, 1)
         if ret != MEMLINK_OK:
             print 'tag val error:', ret, val
             return -1
 
-    """ret = m.clean(key)
+    """ret = m.clean(name, key)
     if ret != MEMLINK_OK:
         print 'clean error:', ret"""
         
-    ret, stat = m.stat(key)
+    ret, stat = m.stat(name, key)
     if ret != MEMLINK_OK:
         print 'stat error:', ret
 
