@@ -35,7 +35,7 @@ def test():
     time.sleep(5)
 
     name = 'test'
-    key = name + '.haha'
+    key = 'haha'
     attrstr = "8:1:1"
     ret = client2master.create_table_list(name , 12, "4:3:1")
     if ret != MEMLINK_OK:
@@ -47,9 +47,9 @@ def test():
     num = 3000
     for i in xrange(0, num):
         val = '%012d' % i
-        ret = client2master.insert(key, val, i, attrstr)
+        ret = client2master.insert(name, key, val, i, attrstr)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, attrstr, ret
+            print 'insert error!', name, key, val, attrstr, ret
             return -2;
     print 'insert %d val' % num
 
@@ -64,7 +64,7 @@ def test():
     num2 = 1000
     for i in range(0, num2):
         val = '%012d' % i
-        ret = client2master.delete(key, val)
+        ret = client2master.delete(name, key, val)
         if ret != MEMLINK_OK:
         	print 'delete val error:', ret, val
         	return -1
@@ -104,9 +104,9 @@ def test():
     num = 1000
     for i in xrange(0, num):
         val = '%012d' % i
-        ret = client2master.insert(key, val, i, attrstr)
+        ret = client2master.insert(name, key, val, i, attrstr)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, attrstr, ret
+            print 'insert error!', name, key, val, attrstr, ret
             return -2;
     print 'insert %d val' % num
 
@@ -117,9 +117,9 @@ def test():
     num2 = 3000
     for i in xrange(num, num2):
         val = '%012d' % i
-        ret = client2master.insert(key, val, i, attrstr)
+        ret = client2master.insert(name, key, val, i, attrstr)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, attrstr, ret
+            print 'insert error!', name, key, val, attrstr, ret
             return -2;
     print 'insert %d val' % (num2 - num)
     
@@ -131,7 +131,7 @@ def test():
     num2 = 1000
     for i in range(0, num2):
         val = '%012d' % i
-        ret = client2master.delete(key, val)
+        ret = client2master.delete(name, key, val)
         if ret != MEMLINK_OK:
         	print 'delete val error:', ret, val
         	return -1

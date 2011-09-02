@@ -17,13 +17,15 @@ int main()
 	}
 
 	int  ret;
-	char buf[32];
+	char key[32];
     char *name = "test";
-	sprintf(buf, "%s.haha", name);
+	//sprintf(key, "%s.haha", name);
+    strcpy(key, "haha");
+
 	ret = memlink_cmd_create_table_list(m, name, 6, "4:3:1");
 	
 	if (ret != MEMLINK_OK) {
-		DERROR("1 memlink_cmd_create %s error: %d\n", buf, ret);
+		DERROR("1 memlink_cmd_create %s error: %d\n", key, ret);
 		return -2;
 	}
 	
@@ -34,9 +36,9 @@ int main()
 
 	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
-		ret = memlink_cmd_insert(m, buf, val, strlen(val), attrstr, i);
+		ret = memlink_cmd_insert(m, name, key, val, strlen(val), attrstr, i);
 		if (ret != MEMLINK_OK) {
-			DERROR("insert error, key:%s, val:%s, ret:%d\n", buf, val, ret);
+			DERROR("insert error, key:%s, val:%s, ret:%d\n", key, val, ret);
 			return -3;
 		}
 	}
@@ -46,50 +48,50 @@ int main()
 	int				range_start = 50;
 	int				range_count = 50;
 
-	ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_REMOVED, "7:1:1", range_start, range_count, &result);
+	ret = memlink_cmd_range(m, name, key, MEMLINK_VALUE_REMOVED, "7:1:1", range_start, range_count, &result);
 	if (ret == MEMLINK_OK) {
-		DERROR("range error MEMLINK_VALUE_REMOVED key:%s, ret:%d\n", buf, ret);
+		DERROR("range error MEMLINK_VALUE_REMOVED key:%s, ret:%d\n", key, ret);
 		return -4;
 	}
 
-	ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE, "7:1:1", -1, 0, &result);
+	ret = memlink_cmd_range(m, name, key, MEMLINK_VALUE_VISIBLE, "7:1:1", -1, 0, &result);
 	if (ret == MEMLINK_OK) {
-		DERROR("range error, key:%s, ret:%d\n", buf, ret);
+		DERROR("range error, key:%s, ret:%d\n", key, ret);
 		return -4;
 	}
 
-	ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE, "7:1:1", range_start, range_count, &result);
+	ret = memlink_cmd_range(m, name, key, MEMLINK_VALUE_VISIBLE, "7:1:1", range_start, range_count, &result);
 	if (ret != MEMLINK_OK) {
-		DERROR("range error, key:%s, ret:%d\n", buf, ret);
+		DERROR("range error, key:%s, ret:%d\n", key, ret);
 		return -4;
 	}
 
 	//DINFO("range return count: %d\n", result.count);
 	if (result.count != range_count) {
-		DERROR("range count error, count:%d, key:%s\n", result.count, buf);
+		DERROR("range count error, count:%d, key:%s\n", result.count, key);
 		reterr++;
 	}
 
 	if (result.valuesize != 6) {
-		DERROR("range valuesize error, valuesize:%d, key:%s\n", result.valuesize, buf);
+		DERROR("range valuesize error, valuesize:%d, key:%s\n", result.valuesize, key);
 		reterr++;
 	}
 
 	if (result.attrsize != 2) {
-		DERROR("range attrsize erro, attrsize:%d, key:%s\n", result.attrsize, buf);
+		DERROR("range attrsize erro, attrsize:%d, key:%s\n", result.attrsize, key);
 		reterr++;
 	}
 		
 	MemLinkItem	*item = result.items;
-	char testbuf[64];
+	char testkey[64];
 	int  testi = range_start;
     
     i = 0;
 	while (item) {
-		sprintf(testbuf, "%06d", testi);
+		sprintf(testkey, "%06d", testi);
 		//DINFO("range item, %d value:%s, attr:%s\n", i, item->value, item->attr);
-		if (strcmp(item->value, testbuf) != 0) {
-			DERROR("range value error, %d value:%s, testvalue:%s\n", i, item->value, testbuf);
+		if (strcmp(item->value, testkey) != 0) {
+			DERROR("range value error, %d value:%s, testvalue:%s\n", i, item->value, testkey);
 		}
 		if (strcmp(item->attr, attrstr) != 0) {
 			DERROR("range attr error, attr:%s\n", item->attr);
@@ -108,7 +110,7 @@ int main()
 	for (i = 0; i < 6; i++) {
 		MemLinkResult	result2;
 
-		ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE, attrtest[i], 0, insertnum, &result2);
+		ret = memlink_cmd_range(m, name, key, MEMLINK_VALUE_VISIBLE, attrtest[i], 0, insertnum, &result2);
 		if (ret != MEMLINK_OK) {
 			DERROR("range error, ret:%d\n", ret);
 			return -8;
@@ -128,7 +130,7 @@ int main()
 	for (i = 0; i < 2; i++) {
 		MemLinkResult	result2;
 
-		ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE, attrtest2[i], 0, insertnum, &result2);
+		ret = memlink_cmd_range(m, name, key, MEMLINK_VALUE_VISIBLE, attrtest2[i], 0, insertnum, &result2);
 		if (ret != MEMLINK_OK) {
 			DERROR("range error, ret:%d\n", ret);
 			return -8;
@@ -147,24 +149,26 @@ int main()
 //test :下面是删除20个条目(50--70)，再遍历
 	int del_start = 50; 
 	int del_count = 20;
-	sprintf(buf, "%s.haha", name);
+	//sprintf(key, "%s.haha", name);
+    strcpy(key, "haha");
+
 	for (i = del_start; i < del_start + del_count; i++) {
 		sprintf(val, "%06d", i);
-		ret = memlink_cmd_del(m, buf, val, strlen(val));
+		ret = memlink_cmd_del(m, name, key, val, strlen(val));
 		if (ret != MEMLINK_OK) {
-			DERROR("del error, key:%s, val:%s\n", buf, val);
+			DERROR("del error, key:%s, val:%s\n", key, val);
 			return -5;
 		}
 	}
 	
 	MemLinkResult	result5;
-	ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE, "::", 0, insertnum, &result5);
+	ret = memlink_cmd_range(m, name, key, MEMLINK_VALUE_VISIBLE, "::", 0, insertnum, &result5);
 	if (ret != MEMLINK_OK) {
-		DERROR("range error, key:%s, ret:%d\n", buf, ret);
+		DERROR("range error, key:%s, ret:%d\n", key, ret);
 		return -4;
 	}
 	if (result5.count != insertnum - del_count) {
-		DERROR("range count error, count:%d, key:%s\n", result5.count, buf);
+		DERROR("range count error, count:%d, key:%s\n", result5.count, key);
 		reterr++;
 	}
 	
@@ -176,9 +180,9 @@ int main()
         //DINFO("item->value:%d, testi:%d \n", item->value, testi);
 		if( testi == 50 )
 			testi += 20;
-		sprintf(testbuf, "%06d", testi);
-		if (strcmp(item->value, testbuf) != 0) {
-			DERROR("range value error, value:%s, testvalue:%s\n", item->value, testbuf);
+		sprintf(testkey, "%06d", testi);
+		if (strcmp(item->value, testkey) != 0) {
+			DERROR("range value error, value:%s, testvalue:%s\n", item->value, testkey);
 		}
 		if (strcmp(item->attr, attrstr) != 0) {
 			DERROR("range attr error, attr:%s\n", item->attr);
@@ -194,7 +198,7 @@ int main()
 	char *newattr = "8:2:0";
 	for (i = 0; i < 3; i++) {
 		sprintf(val, "%06d", i);
-		ret = memlink_cmd_attr(m, buf, val, strlen(val), newattr);
+		ret = memlink_cmd_attr(m, name, key, val, strlen(val), newattr);
 		if (ret != MEMLINK_OK) {
 			DERROR("change attr error, i:%d, ret:%d\n", i, ret);	
 			return -9;
@@ -204,7 +208,7 @@ int main()
 	for (i = 0; i < 2; i++) {
 		MemLinkResult	result2;
 
-		ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE, attrtest3[i], 0, insertnum, &result2);
+		ret = memlink_cmd_range(m, name, key, MEMLINK_VALUE_VISIBLE, attrtest3[i], 0, insertnum, &result2);
 		if (ret != MEMLINK_OK) {
 			DERROR("range error, ret:%d\n", ret);
 			return -8;

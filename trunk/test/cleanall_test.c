@@ -42,10 +42,10 @@ int main(int argc, char **argv)
     
     for (i = 0; i < 3; i++) {
         int j = 0;
-        sprintf(key, "%s.test%d", name, i);
+        sprintf(key, "test%d", i);
         for (j = 0; j < insertnum; j++) {
             sprintf(val, "%06d", j);
-            ret = memlink_cmd_insert(m, key, val, strlen(val), maskstr, j); 
+            ret = memlink_cmd_insert(m, name, key, val, strlen(val), maskstr, j); 
             if (ret != MEMLINK_OK) {
                 DERROR("insert error, key:%s, val:%s, mask:%s, i:%d, ret:%d\n", key, val, maskstr, j, ret);
                 return -3;
@@ -54,11 +54,11 @@ int main(int argc, char **argv)
     }
     
     for (i = 0; i < 3; i++) {
-        sprintf(key, "%s.test%d", name, i);
+        sprintf(key, "test%d", i);
         int j;
         for (j = 0; j < insertnum / 2; j++) {
             sprintf(val, "%06d", j);
-            ret = memlink_cmd_del(m, key, val, strlen(val));
+            ret = memlink_cmd_del(m, name, key, val, strlen(val));
             if (ret != MEMLINK_OK) {
                 DERROR("del error, key:%s, val:%s,i%d,ret:%d\n", key, val, i, ret);
                 return -3;
@@ -68,8 +68,8 @@ int main(int argc, char **argv)
     
     MemLinkStat stat[3];
     for (i = 0; i  < 3; i++) {
-        sprintf(key, "%s.test%d", name, i);
-        ret = memlink_cmd_stat(m, key, &stat[i]);
+        sprintf(key, "test%d", i);
+        ret = memlink_cmd_stat(m, name, key, &stat[i]);
         if (ret != MEMLINK_OK) {
             DERROR("stat error, key:%s, ret:%d\n", key, ret);
             return -4;
@@ -84,8 +84,8 @@ int main(int argc, char **argv)
 
     MemLinkStat stat1[3];
     for (i = 0; i < 3; i++) {
-        sprintf(key, "%s.test%d", name, i);
-        ret = memlink_cmd_stat(m, key, &stat1[i]);
+        sprintf(key, "test%d", i);
+        ret = memlink_cmd_stat(m, name, key, &stat1[i]);
         if (ret != MEMLINK_OK) {
             DERROR("stat error, key: %s, ret: %d\n", key, ret);
             return -6;

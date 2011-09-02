@@ -1,11 +1,11 @@
 #include "testutil.h"
 #include "logfile.h"
 
-int check_result_real(MemLink *m, char *key, char **maskstrs, 
+int check_result_real(MemLink *m, char *name, char *key, char **maskstrs, 
                 int from, int len, int retcount, int *retval, char *file, int line)
 {
     MemLinkResult result;
-    int ret = memlink_cmd_range(m, key, MEMLINK_VALUE_ALL, "", from, len, &result);
+    int ret = memlink_cmd_range(m, name, key, MEMLINK_VALUE_ALL, "", from, len, &result);
     if (ret != MEMLINK_OK) {
         DERROR("range error, ret:%d, key:%s, from:%d, len:%d, file:%s:%d\n", 
                     ret, key, from, len, file, line);

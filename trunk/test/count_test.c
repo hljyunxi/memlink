@@ -26,8 +26,8 @@ int main()
 		DERROR("memlink_cmd_create %s error: %d\n", name, ret);
 		return -2;
 	}
-
-	sprintf(key, "%s.haha", name);
+    strcpy(key, "haha");
+	//sprintf(key, "%s.haha", name);
 	int i;
 	//char* maskstr[] = {"8:3:1", "7:3:1"};
 	char* maskstr = "8:3:1";
@@ -38,7 +38,7 @@ int main()
 		sprintf(val, "%06d", i);
 
 		int k = i%2;
-		ret = memlink_cmd_insert(m, key, val, strlen(val), maskstr, i);
+		ret = memlink_cmd_insert(m, name, key, val, strlen(val), maskstr, i);
 		if (ret != MEMLINK_OK) {
 			DERROR("insert error, key:%s, value:%s, mask:%s, i:%d\n", key, val, maskstr, i);
 			return -3;
@@ -46,13 +46,13 @@ int main()
 	}
 
 	MemLinkCount    count;
-	ret = memlink_cmd_count(m, "kkkk", "", &count); //count不存在的key
+	ret = memlink_cmd_count(m, name, "kkkk", "", &count); //count不存在的key
     if (ret == MEMLINK_OK) {
         DERROR("must not count not exist key, ret:%d\n", ret);
         return -4;
     }
 
-    ret = memlink_cmd_count(m, key, "", &count);  //count key的所有条目
+    ret = memlink_cmd_count(m, name, key, "", &count);  //count key的所有条目
     if (ret != MEMLINK_OK) {
         DERROR("count error, ret:%d\n", ret);
         return -4;
@@ -67,7 +67,7 @@ int main()
     }
 /////////////////////added by wyx
     MemLinkCount    count1; //count key 的 mask 为 "8:3:1" 条目数
-	ret = memlink_cmd_count(m, key, "8:3:1", &count1); 
+	ret = memlink_cmd_count(m, name, key, "8:3:1", &count1); 
     if (ret != MEMLINK_OK) { //err: memlink 挂掉
         DERROR("count error, ret:%d\n", ret);
         return -4;
@@ -83,7 +83,7 @@ int main()
 	for (i = 0; i < tagcount; i++) {
 		sprintf(val, "%06d", i*2);
 		
-		ret = memlink_cmd_tag(m, key, val, strlen(val), MEMLINK_TAG_DEL);		
+		ret = memlink_cmd_tag(m, name, key, val, strlen(val), MEMLINK_TAG_DEL);		
 		//DINFO("DEL  key:%s, val:%s\n", key, val);
 		if (ret != MEMLINK_OK) {
 			DERROR("del error, key:%s, val:%s\n", key, val);
@@ -91,7 +91,7 @@ int main()
 		}
 
         MemLinkCount    count2;
-        ret = memlink_cmd_count(m, key, "", &count2);
+        ret = memlink_cmd_count(m, name, key, "", &count2);
         if (ret != MEMLINK_OK) {
             DERROR("count error, ret:%d\n", ret);
             return -4;
@@ -109,7 +109,7 @@ int main()
 	for (i = 0; i < tagcount; i++) {
 		sprintf(val, "%06d", i*2);
 		
-		ret = memlink_cmd_tag(m, key, val, strlen(val), MEMLINK_TAG_RESTORE);		
+		ret = memlink_cmd_tag(m, name, key, val, strlen(val), MEMLINK_TAG_RESTORE);		
 		//DINFO("RESTORE  key:%s, val:%s\n", key, val);
 		if (ret != MEMLINK_OK) {
 			DERROR("del error, key:%s, val:%s\n", key, val);
@@ -117,7 +117,7 @@ int main()
 		}
 	
 	    MemLinkCount    count3;
-	    ret = memlink_cmd_count(m, key, "", &count3);
+	    ret = memlink_cmd_count(m, name, key, "", &count3);
 	    if (ret != MEMLINK_OK) {
 	        DERROR("count error, ret:%d\n", ret);
 	        return -4;
@@ -137,7 +137,7 @@ int main()
 	for (i = 0; i < tagcount; i++) {
 		sprintf(val, "%06d", i*2);
 		
-		ret = memlink_cmd_tag(m, key, val, strlen(val), MEMLINK_TAG_DEL);
+		ret = memlink_cmd_tag(m, name, key, val, strlen(val), MEMLINK_TAG_DEL);
 		if (ret != MEMLINK_OK) {
 			DERROR("del error, key:%s, val:%s\n", key, val);
 			return -5;
@@ -147,14 +147,14 @@ int main()
 	for (i = 50; i < 60; i++) {
 		sprintf(val, "%06d", i);
 		
-		ret = memlink_cmd_del(m, key, val, strlen(val));
+		ret = memlink_cmd_del(m, name, key, val, strlen(val));
 		if (ret != MEMLINK_OK) {
 			DERROR("del error, key:%s, val:%s\n", key, val);
 			return -5;
 		}
 
         MemLinkCount    count2;
-        ret = memlink_cmd_count(m, key, "", &count2);
+        ret = memlink_cmd_count(m, name, key, "", &count2);
         if (ret != MEMLINK_OK) {
             DERROR("count error, ret:%d\n", ret);
             return -4;
