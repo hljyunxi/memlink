@@ -38,7 +38,7 @@ typedef struct _memlink_hashtable
 	int		table_count;
 }HashTable;
 
-int			table_name(char *keybuf, char **name, char **key);
+int			check_table_key(char *name, char *key);
 
 Table*		table_create(char *name, int valuesize, uint32_t *attrarray, uint8_t attrnum,
 						 uint8_t listtype, uint8_t valuetype);
@@ -59,7 +59,7 @@ int         hashnode_check(Table*, HashNode *node);
 HashTable*  hashtable_create();
 void        hashtable_destroy(HashTable *ht);
 Table*		hashtable_find_table(HashTable *ht, char *name);
-Table*		hashtable_get_table(HashTable *ht, char *keybuf, char **name, char **key);
+//Table*		hashtable_get_table(HashTable *ht, char *keybuf, char **name, char **key);
 int			hashtable_create_table(HashTable *ht, char *name, int valuesize, 
 								uint32_t *attrarray, uint8_t attrnum,
 								uint8_t listtype, uint8_t valuetype);

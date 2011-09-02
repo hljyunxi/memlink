@@ -8,7 +8,7 @@
 #ifndef MEMLINK_COMMON_H
 #define MEMLINK_COMMON_H
 
-#include "defines.h"
+#include "base/defines.h"
 
 // 客户端错误
 #define MEMLINK_ERR_CLIENT          -10

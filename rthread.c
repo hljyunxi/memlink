@@ -30,9 +30,9 @@
 int
 rdata_ready(Conn *conn, char *data, int datalen)
 {
-    char keybuf[512] = {0}; 
-    char *tbname = NULL;
-    char *key = NULL; 
+    //char keybuf[512] = {0}; 
+    char tbname[256] = {0};
+    char key[256] = {0}; 
 
     //char value[512] = {0};
     char cmd;
@@ -70,9 +70,9 @@ rdata_ready(Conn *conn, char *data, int datalen)
         case CMD_RANGE: {
             DINFO("<<< cmd RANGE >>>\n");
             uint8_t kind;
-            ret = cmd_range_unpack(data, keybuf, &kind, &attrnum, attrarray, &frompos, &len);
+            ret = cmd_range_unpack(data, tbname, key, &kind, &attrnum, attrarray, &frompos, &len);
             DINFO("unpack range return:%d, key:%s, attrnum:%d, frompos:%d, len:%d\n", 
-                    ret, keybuf, attrnum, frompos, len);
+                    ret, key, attrnum, frompos, len);
 
             if (frompos < 0 || len <= 0) {
                 DERROR("from or len small than 0. from:%d, len:%d\n", frompos, len);
@@ -80,7 +80,7 @@ rdata_ready(Conn *conn, char *data, int datalen)
                 goto rdata_ready_error;
             }
 
-            ret = table_name(keybuf, &tbname, &key);
+            ret = check_table_key(tbname, key);
             if (ret < 0) {
                 goto rdata_ready_error;
             }
@@ -100,12 +100,12 @@ rdata_ready(Conn *conn, char *data, int datalen)
             char valmax[512] = {0};
             uint8_t vminlen = 0, vmaxlen = 0;
 
-            ret = cmd_sortlist_range_unpack(data, keybuf, &kind, &attrnum, attrarray, 
+            ret = cmd_sortlist_range_unpack(data, tbname, key, &kind, &attrnum, attrarray, 
                                             valmin, &vminlen, valmax, &vmaxlen);
             DINFO("unpack range return:%d, key:%s, attrnum:%d, vmin:%s,%d, vmax:%s,%d, len:%d\n", 
-                            ret, keybuf, attrnum, valmin, vminlen, valmax, vmaxlen, len);
+                            ret, key, attrnum, valmin, vminlen, valmax, vmaxlen, len);
 
-            ret = table_name(keybuf, &tbname, &key);
+            ret = check_table_key(tbname, key);
             if (ret < 0) {
                 goto rdata_ready_error;
             }
@@ -120,10 +120,10 @@ rdata_ready(Conn *conn, char *data, int datalen)
         case CMD_STAT: {
             DINFO("<<< cmd STAT >>>\n");
             HashTableStat   stat;
-            ret = cmd_stat_unpack(data, keybuf);
-            DINFO("unpack stat return: %d, key: %s\n", ret, keybuf);
+            ret = cmd_stat_unpack(data, tbname, key);
+            DINFO("unpack stat return: %d, key: %s\n", ret, key);
 
-            ret = table_name(keybuf, &tbname, &key);
+            ret = check_table_key(tbname, key);
             if (ret < 0) {
                 goto rdata_ready_error;
             }
@@ -158,11 +158,11 @@ rdata_ready(Conn *conn, char *data, int datalen)
             DINFO("<<< cmd COUNT >>>\n");
             uint8_t attrnum;
 
-            ret = cmd_count_unpack(data, keybuf, &attrnum, attrarray);
+            ret = cmd_count_unpack(data, tbname, key, &attrnum, attrarray);
             DINFO("unpack count return: %d, key: %s, attr:%d:%d:%d\n", 
-                        ret, keybuf, attrarray[0], attrarray[1], attrarray[2]);
+                        ret, key, attrarray[0], attrarray[1], attrarray[2]);
         
-            ret = table_name(keybuf, &tbname, &key);
+            ret = check_table_key(tbname, key);
             if (ret < 0) {
                 goto rdata_ready_error;
             }
@@ -187,12 +187,12 @@ rdata_ready(Conn *conn, char *data, int datalen)
             char valmax[512] = {0};
             uint8_t vminlen = 0, vmaxlen = 0;
 
-            ret = cmd_sortlist_count_unpack(data, keybuf, &attrnum, attrarray, 
+            ret = cmd_sortlist_count_unpack(data, tbname, key, &attrnum, attrarray, 
                                             valmin, &vminlen, valmax, &vmaxlen);
             DINFO("unpack range return:%d, key:%s, attrnum:%d, vmin:%s,%d, vmax:%s,%d, len:%d\n", 
-                            ret, keybuf, attrnum, valmin, vminlen, valmax, vmaxlen, len);
+                            ret, key, attrnum, valmin, vminlen, valmax, vmaxlen, len);
 
-            ret = table_name(keybuf, &tbname, &key);
+            ret = check_table_key(tbname, key);
             if (ret < 0) {
                 goto rdata_ready_error;
             }

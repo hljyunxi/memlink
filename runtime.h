@@ -55,6 +55,10 @@ extern Runtime  *g_runtime;
 Runtime*    runtime_create_master(char *pgname, char *conffile);
 Runtime*    runtime_create_slave(char *pgname, char *conffile);
 void        runtime_destroy(Runtime *rt);
+int         conn_check_max(Conn *conn);
+int			mem_used_inc(long long size);	
+int			mem_used_dec(long long size);
+
 
 
 #endif

@@ -29,7 +29,7 @@
  * @return the count of the converted integers
  */
 int
-attr_string2array(char *attrstr, unsigned int *result)
+attr_string2array(char *attrstr, uint32_t *result)
 {
     char *m = attrstr;
     int  i = 0;
@@ -67,13 +67,13 @@ attr_string2array(char *attrstr, unsigned int *result)
  * attr必须先初始化为0
  */
 int
-attr_array2binary(unsigned char *attrformat, unsigned int *attrarray, char attrnum, char *attr)
+attr_array2binary(uint8_t *attrformat, uint32_t *attrarray, char attrnum, char *attr)
 {
     int i;
     int b   = 0; // 已经处理的bit
     int idx = 0;
     int n;
-    unsigned int v, flow = 0;
+    uint32_t v, flow = 0;
     char    mf;
     // 前两位分别表示真实删除和标记删除，跳过
     // attr[idx] = attr[idx] & 0xfc;
@@ -95,14 +95,14 @@ attr_array2binary(unsigned char *attrformat, unsigned int *attrarray, char attrn
             v = 0;
         }
         
-        unsigned char y = (b + mf) % 8;
+        uint8_t y = (b + mf) % 8;
         n = (b + mf) / 8 + (y>0 ? 1: 0);
         if (n > 4) {
             flow = v >> (32 - b);
         }
         v = v << b;
-        unsigned char m = 0xffffffff >> (32 - b);
-        unsigned char x = attr[idx] & m;
+        uint8_t m = 0xffffffff >> (32 - b);
+        uint8_t x = attr[idx] & m;
 
         v = v | x;
         if (n > 4) {
@@ -143,10 +143,10 @@ attr_array2binary(unsigned char *attrformat, unsigned int *attrarray, char attrn
  * attr必须先初始化为0
  */
 int
-attr_string2binary(unsigned char *attrformat, char *attrstr, char *attr)
+attr_string2binary(uint8_t *attrformat, char *attrstr, char *attr)
 {
     int attrnum;
-    unsigned int attrarray[HASHTABLE_ATTR_MAX_ITEM] = {0};
+    uint32_t attrarray[HASHTABLE_ATTR_MAX_ITEM] = {0};
 
     attrnum = attr_string2array(attrstr, attrarray);
     if (attrnum <= 0)
@@ -158,11 +158,11 @@ attr_string2binary(unsigned char *attrformat, char *attrstr, char *attr)
 }
 
 int 
-attr_binary2string(unsigned char *attrformat, int attrnum, char *attr, int attrlen, char *attrstr)
+attr_binary2string(uint8_t *attrformat, int attrnum, char *attr, int attrlen, char *attrstr)
 {
     int n    = 2;
     int idx = 0;
-    unsigned int val;
+    uint32_t val;
     int i;
     int widx = 0;
    
@@ -183,7 +183,7 @@ attr_binary2string(unsigned char *attrformat, int attrnum, char *attr, int attrl
             //DINFO("copy:%d\n", sizeof(int));
             memcpy(&val, &attr[idx], sizeof(int));
             val >>= n;
-            unsigned int val2 = 0;
+            uint32_t val2 = 0;
             
             //DINFO("copy:%d\n", cs - sizeof(int));
             memcpy(&val2, &attr[idx + sizeof(int)], cs - sizeof(int));
@@ -210,11 +210,11 @@ attr_binary2string(unsigned char *attrformat, int attrnum, char *attr, int attrl
 }
 
 int 
-attr_binary2array(unsigned char *attrformat, int attrnum, char *attr, unsigned int *attrarray)
+attr_binary2array(uint8_t *attrformat, int attrnum, char *attr, uint32_t *attrarray)
 {
     int n    = 2;
     int idx = 0;
-    unsigned int val;
+    uint32_t val;
     int i;
     int widx = 0;
    
@@ -235,7 +235,7 @@ attr_binary2array(unsigned char *attrformat, int attrnum, char *attr, unsigned i
             //DINFO("copy:%d\n", sizeof(int));
             memcpy(&val, &attr[idx], sizeof(int));
             val >>= n;
-            unsigned int val2 = 0;
+            uint32_t val2 = 0;
             
             //DINFO("copy:%d\n", cs - sizeof(int));
             memcpy(&val2, &attr[idx + sizeof(int)], cs - sizeof(int));
@@ -262,7 +262,7 @@ attr_binary2array(unsigned char *attrformat, int attrnum, char *attr, unsigned i
  * attr必须先初始化为0
  */
 int 
-attr_array2flag(unsigned char *attrformat, unsigned int *attrarray, char attrnum, char *attr)
+attr_array2flag(uint8_t *attrformat, uint32_t *attrarray, char attrnum, char *attr)
 {
     int i, j;
     int idx = 0;
@@ -270,7 +270,7 @@ attr_array2flag(unsigned char *attrformat, unsigned int *attrarray, char attrnum
     int m;  // attrarray item value
     int b = 0;
     int xlen;
-    unsigned int v;
+    uint32_t v;
 
     attr[0] = 0x03;
     b = 2;
@@ -294,7 +294,7 @@ attr_array2flag(unsigned char *attrformat, unsigned int *attrarray, char attrnum
                 for (j = 0; j < 4; j++) {
                     attr[idx + j] |= cpdata[j];
                 }
-                unsigned char v2 = 0xff >> (8 - (mf + b) - 32);
+                uint8_t v2 = 0xff >> (8 - (mf + b) - 32);
                 attr[idx + j] |= v2;
             }
             //idx += xlen - 1;
@@ -332,27 +332,27 @@ cmd_dump_unpack(char *data)
 }
 
 int 
-cmd_clean_pack(char *data, char *key)
+cmd_clean_pack(char *data, char *table, char *key)
 {
-    return pack(data, 0, "$4cs", CMD_CLEAN, key);
+    return pack(data, 0, "$4css", CMD_CLEAN, table, key);
 }
 
 int 
-cmd_clean_unpack(char *data, char *key)
+cmd_clean_unpack(char *data, char *table, char *key)
 {
-    return unpack(data + CMD_REQ_HEAD_LEN, 0, "s", key);
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "ss", table, key);
 }
 
 int 
 cmd_rmkey_pack(char *data, char *table, char *key)
 {
-    return pack(data, 0, "$4cscs", CMD_RMKEY, table, SEP, key);
+    return pack(data, 0, "$4css", CMD_RMKEY, table, key);
 }
 
 int 
-cmd_rmkey_unpack(char *data, char *key)
+cmd_rmkey_unpack(char *data, char *table, char *key)
 {
-    return unpack(data + CMD_REQ_HEAD_LEN, 0, "s", key);
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "ss", table, key);
 }
 int 
 cmd_rmtable_pack(char *data, char *key)
@@ -367,43 +367,43 @@ cmd_rmtable_unpack(char *data, char *key)
 }
 
 int 
-cmd_count_pack(char *data, char *table, char *key, unsigned char attrnum, unsigned int *attrarray)
+cmd_count_pack(char *data, char *table, char *key, uint8_t attrnum, uint32_t *attrarray)
 {
-    return pack(data, 0, "$4cscsI", CMD_COUNT, table, SEP, key, attrnum, attrarray);
+    return pack(data, 0, "$4cssI", CMD_COUNT, table, key, attrnum, attrarray);
 }
 
 int 
-cmd_count_unpack(char *data, char *key, unsigned char *attrnum, unsigned int *attrarray)
+cmd_count_unpack(char *data, char *table, char *key, uint8_t *attrnum, uint32_t *attrarray)
 {
-    return unpack(data + CMD_REQ_HEAD_LEN, 0, "sI", key, attrnum, attrarray);
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "ssI", table, key, attrnum, attrarray);
 }
 
 int 
-cmd_sortlist_count_pack(char *data, char *table, char *key, unsigned char attrnum, unsigned int *attrarray,
-                        void *valmin, unsigned char vminlen, void *valmax, unsigned char vmaxlen)
+cmd_sortlist_count_pack(char *data, char *table, char *key, uint8_t attrnum, uint32_t *attrarray,
+                        void *valmin, uint8_t vminlen, void *valmax, uint8_t vmaxlen)
 {
-    return pack(data, 0, "$4cscsICC", CMD_SL_COUNT, table, SEP, key, attrnum, attrarray, 
+    return pack(data, 0, "$4cssICC", CMD_SL_COUNT, table, key, attrnum, attrarray, 
                 vminlen, valmin, vmaxlen, valmax);
 }
 
 int 
-cmd_sortlist_count_unpack(char *data, char *key, unsigned char *attrnum, unsigned int *attrarray,
-                    void *valmin, unsigned char *vminlen, void *valmax, unsigned char *vmaxlen)
+cmd_sortlist_count_unpack(char *data, char *table, char *key, uint8_t *attrnum, uint32_t *attrarray,
+                    void *valmin, uint8_t *vminlen, void *valmax, uint8_t *vmaxlen)
 {
-    return unpack(data + CMD_REQ_HEAD_LEN, 0, "sICC", key, attrnum, attrarray, 
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "ssICC", table, key, attrnum, attrarray, 
             vminlen, valmin, vmaxlen, valmax);
 }
 
 int 
-cmd_stat_pack(char *data, char *key)  //, HashTableStat  *stat)
+cmd_stat_pack(char *data, char *table, char *key)  //, HashTableStat  *stat)
 {
-    return pack(data, 0, "$4cs", CMD_STAT, key);
+    return pack(data, 0, "$4css", CMD_STAT, table, key);
 }
 
 int 
-cmd_stat_unpack(char *data, char *key)  //, HashTableStat *stat)
+cmd_stat_unpack(char *data, char *table, char *key)  //, HashTableStat *stat)
 {
-    return unpack(data + CMD_REQ_HEAD_LEN, 0, "s", key);
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "ss", table, key);
 }
 
 int 
@@ -437,18 +437,18 @@ cmd_stat_sys_unpack(char *data)
  * @param return the length of the whole command.
  */
 int 
-cmd_create_table_pack(char *data, char *name, unsigned char valuelen, 
-                unsigned char attrnum, unsigned int *attrarray,
-                unsigned char listtype, unsigned char valuetype)
+cmd_create_table_pack(char *data, char *name, uint8_t valuelen, 
+                uint8_t attrnum, uint32_t *attrarray,
+                uint8_t listtype, uint8_t valuetype)
 {
     return pack(data, 0, "$4cscIcc", CMD_CREATE_TABLE, name, valuelen, 
                 attrnum, attrarray, listtype, valuetype);
 }
 
 int 
-cmd_create_table_unpack(char *data, char *name, unsigned char *valuelen, 
-                  unsigned char *attrnum, unsigned int *attrarray,
-                  unsigned char *listtype, unsigned char *valuetype)
+cmd_create_table_unpack(char *data, char *name, uint8_t *valuelen, 
+                  uint8_t *attrnum, uint32_t *attrarray,
+                  uint8_t *listtype, uint8_t *valuetype)
 {
     return unpack(data + CMD_REQ_HEAD_LEN, 0, "scIcc", name, valuelen, 
                 attrnum, attrarray, listtype, valuetype);
@@ -467,118 +467,118 @@ cmd_create_node_unpack(char *data, char *name, char *key)
 }
 
 int 
-cmd_del_pack(char *data, char *table,char *key, char *value, unsigned char valuelen)
+cmd_del_pack(char *data, char *table,char *key, char *value, uint8_t valuelen)
 {
-    return pack(data, 0, "$4cscsC", CMD_DEL, table,SEP,key, valuelen, value);
+    return pack(data, 0, "$4cssC", CMD_DEL, table, key, valuelen, value);
 }
 
 int 
-cmd_del_unpack(char *data, char *key, char *value, unsigned char *valuelen)
+cmd_del_unpack(char *data, char *table, char *key, char *value, uint8_t *valuelen)
 {
-    return unpack(data + CMD_REQ_HEAD_LEN, 0, "sC", key, valuelen, value);
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "ssC", table, key, valuelen, value);
 }
 
 int 
-cmd_sortlist_del_pack(char *data, char *table, char *key, unsigned char kind, char *valmin, unsigned char vminlen, 
-            char *valmax, unsigned char vmaxlen, unsigned char attrnum, unsigned int *attrarray)
+cmd_sortlist_del_pack(char *data, char *table, char *key, uint8_t kind, char *valmin, uint8_t vminlen, 
+            char *valmax, uint8_t vmaxlen, uint8_t attrnum, uint32_t *attrarray)
 {
-    return pack(data, 0, "$4ccscsCCI", CMD_SL_DEL, kind,table,SEP,key, vminlen, valmin,
+    return pack(data, 0, "$4ccssCCI", CMD_SL_DEL, kind, table, key, vminlen, valmin,
                     vmaxlen, valmax, attrnum, attrarray);
 }
 
 int 
-cmd_sortlist_del_unpack(char *data, char *key, unsigned char *kind, 
-                        char *valmin, unsigned char *vminlen,
-                        char *valmax, unsigned char *vmaxlen, 
-                        unsigned char *attrnum, unsigned int *attrarray)
+cmd_sortlist_del_unpack(char *data, char *table, char *key, uint8_t *kind, 
+                        char *valmin, uint8_t *vminlen,
+                        char *valmax, uint8_t *vmaxlen, 
+                        uint8_t *attrnum, uint32_t *attrarray)
 {
-    return unpack(data+CMD_REQ_HEAD_LEN, 0, "csCCI", kind, key, vminlen, valmin, vmaxlen, valmax, 
+    return unpack(data+CMD_REQ_HEAD_LEN, 0, "cssCCI", kind, table, key, vminlen, valmin, vmaxlen, valmax, 
                 attrnum, attrarray);
 }
 
 int 
-cmd_insert_pack(char *data, char *table,char *key, char *value, unsigned char valuelen, 
-                unsigned char attrnum, unsigned int *attrarray, int pos)
+cmd_insert_pack(char *data, char *table, char *key, char *value, uint8_t valuelen, 
+                uint8_t attrnum, uint32_t *attrarray, int pos)
 {
-    return pack(data, 0, "$4cscsCIi", CMD_INSERT, table,SEP,key, valuelen, value, attrnum, attrarray, pos);
+    return pack(data, 0, "$4cssCIi", CMD_INSERT, table, key, valuelen, value, attrnum, attrarray, pos);
 }
 
 int 
-cmd_insert_unpack(char *data, char *key, char *value, unsigned char *valuelen,
-                  unsigned char *attrnum, unsigned int *attrarray, int *pos)
+cmd_insert_unpack(char *data, char *table, char *key, char *value, uint8_t *valuelen,
+                  uint8_t *attrnum, uint32_t *attrarray, int *pos)
 {
-    return unpack(data+CMD_REQ_HEAD_LEN, 0, "sCIi", key, valuelen, value, attrnum, attrarray, pos);
+    return unpack(data+CMD_REQ_HEAD_LEN, 0, "ssCIi", table, key, valuelen, value, attrnum, attrarray, pos);
 }
 
 
 int 
-cmd_move_pack(char *data, char *table,char *key, char *value, unsigned char valuelen, int pos)
+cmd_move_pack(char *data, char *table, char *key, char *value, uint8_t valuelen, int pos)
 {
-    return pack(data, 0, "$4cscsCi", CMD_MOVE, table,SEP,key, valuelen, value, pos);
+    return pack(data, 0, "$4cssCi", CMD_MOVE, table, key, valuelen, value, pos);
 }
 
 int 
-cmd_move_unpack(char *data, char *key, char *value, unsigned char *valuelen, int *pos)
+cmd_move_unpack(char *data, char *table, char *key, char *value, uint8_t *valuelen, int *pos)
 {
-    return unpack(data+CMD_REQ_HEAD_LEN, 0, "sCi", key, valuelen, value, pos);
+    return unpack(data+CMD_REQ_HEAD_LEN, 0, "ssCi", table, key, valuelen, value, pos);
 }
 
 int 
-cmd_attr_pack(char *data, char *table,char *key, char *value, unsigned char valuelen, 
-              unsigned char attrnum, unsigned int *attrarray)
+cmd_attr_pack(char *data, char *table,char *key, char *value, uint8_t valuelen, 
+              uint8_t attrnum, uint32_t *attrarray)
 {
-    return pack(data, 0, "$4cscsCI", CMD_ATTR, table,SEP,key, valuelen, value, attrnum, attrarray);
+    return pack(data, 0, "$4cssCI", CMD_ATTR, table, key, valuelen, value, attrnum, attrarray);
 }
 
 int 
-cmd_attr_unpack(char *data, char *key, char *value, unsigned char *valuelen, 
-                unsigned char *attrnum, unsigned int *attrarray)
+cmd_attr_unpack(char *data, char *table, char *key, char *value, uint8_t *valuelen, 
+                uint8_t *attrnum, uint32_t *attrarray)
 {
-    return unpack(data + CMD_REQ_HEAD_LEN, 0, "sCI", key, valuelen, value, attrnum, attrarray);
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "ssCI", table, key, valuelen, value, attrnum, attrarray);
 }
 
 int 
-cmd_tag_pack(char *data, char *table,char *key, char *value, unsigned char valuelen, unsigned char tag)
+cmd_tag_pack(char *data, char *table, char *key, char *value, uint8_t valuelen, uint8_t tag)
 {
-    return pack(data, 0, "$4cscsCc", CMD_TAG, table,SEP,key, valuelen, value, tag);
+    return pack(data, 0, "$4cssCc", CMD_TAG, table, key, valuelen, value, tag);
 }
 
 int 
-cmd_tag_unpack(char *data, char *key, char *value, unsigned char *valuelen, unsigned char *tag)
+cmd_tag_unpack(char *data, char *table, char *key, char *value, uint8_t *valuelen, uint8_t *tag)
 {
-    return unpack(data + CMD_REQ_HEAD_LEN, 0, "sCc", key, valuelen, value, tag);
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "ssCc", table, key, valuelen, value, tag);
 }
 
 int 
-cmd_range_pack(char *data, char *table,char *key, unsigned char kind, 
-               unsigned char attrnum, unsigned int *attrarray, 
+cmd_range_pack(char *data, char *table, char *key, uint8_t kind, 
+               uint8_t attrnum, uint32_t *attrarray, 
                int frompos, int rlen)
 {
-    return pack(data, 0, "$4cscscIii", CMD_RANGE, table,key, kind, attrnum, attrarray, frompos, rlen);
+    return pack(data, 0, "$4csscIii", CMD_RANGE, table, key, kind, attrnum, attrarray, frompos, rlen);
 }
 
 int 
-cmd_range_unpack(char *data, char *key, unsigned char *kind, unsigned char *attrnum, unsigned int *attrarray, 
+cmd_range_unpack(char *data, char *table, char *key, uint8_t *kind, uint8_t *attrnum, uint32_t *attrarray, 
                  int *frompos, int *len)
 {
-    return unpack(data + CMD_REQ_HEAD_LEN, 0, "scIii", key, kind, attrnum, attrarray, frompos, len);
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "sscIii", table, key, kind, attrnum, attrarray, frompos, len);
 }
 
 int 
-cmd_sortlist_range_pack(char *data, char *table,char *key, unsigned char kind, 
-                unsigned char attrnum, unsigned int *attrarray, 
-                void *valmin, unsigned char vminlen, void *valmax, unsigned char vmaxlen)
+cmd_sortlist_range_pack(char *data, char *table, char *key, uint8_t kind, 
+                uint8_t attrnum, uint32_t *attrarray, 
+                void *valmin, uint8_t vminlen, void *valmax, uint8_t vmaxlen)
 {
-    return pack(data, 0, "$4cscscICC", CMD_SL_RANGE, table,SEP,key, kind, attrnum, attrarray,
+    return pack(data, 0, "$4csscICC", CMD_SL_RANGE, table, key, kind, attrnum, attrarray,
                     vminlen, valmin, vmaxlen, valmax);
 }
 
 int 
-cmd_sortlist_range_unpack(char *data, char *key, unsigned char *kind, 
-                    unsigned char *attrnum, unsigned int *attrarray, 
-                    void *valmin, unsigned char *vminlen, void *valmax, unsigned char *vmaxlen)
+cmd_sortlist_range_unpack(char *data, char *table, char *key, uint8_t *kind, 
+                    uint8_t *attrnum, uint32_t *attrarray, 
+                    void *valmin, uint8_t *vminlen, void *valmax, uint8_t *vmaxlen)
 {
-    return unpack(data + CMD_REQ_HEAD_LEN, 0, "scICC", key, kind, attrnum, attrarray,
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "sscICC", table, key, kind, attrnum, attrarray,
                 vminlen, valmin, vmaxlen, valmax);
 }
 
@@ -594,39 +594,39 @@ cmd_ping_unpack(char *data)
 }
 
 int 
-cmd_push_pack(char *data, unsigned char cmd, char *table, char *key, char *value, unsigned char valuelen, 
-                unsigned char attrnum, unsigned *attrarray)
+cmd_push_pack(char *data, uint8_t cmd, char *table, char *key, char *value, uint8_t valuelen, 
+                uint8_t attrnum, unsigned *attrarray)
 {
-    return pack(data, 0, "$4cscsCI", cmd, table,SEP,key, valuelen, value, attrnum, attrarray);
+    return pack(data, 0, "$4cssCI", cmd, table, key, valuelen, value, attrnum, attrarray);
 }
 
 
 int
-cmd_push_unpack(char *data, char *key, char *value, unsigned char *valuelen,
-            unsigned char *attrnum, unsigned int *attrarray)
+cmd_push_unpack(char *data, char *table, char *key, char *value, uint8_t *valuelen,
+            uint8_t *attrnum, uint32_t *attrarray)
 {
-    return unpack(data + CMD_REQ_HEAD_LEN, 0, "sCI", key, valuelen, value, attrnum, attrarray);
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "ssCI", table, key, valuelen, value, attrnum, attrarray);
 }
 
 int 
-cmd_lpush_pack(char *data, char *table, char *key, char *value, unsigned char valuelen, 
-                unsigned char attrnum, unsigned *attrarray)
+cmd_lpush_pack(char *data, char *table, char *key, char *value, uint8_t valuelen, 
+                uint8_t attrnum, unsigned *attrarray)
 {
     return cmd_push_pack(data, CMD_LPUSH, table, key, value, valuelen, attrnum, attrarray);
 }
 
 int 
-cmd_rpush_pack(char *data, char *table, char *key, char *value, unsigned char valuelen, 
-                unsigned char attrnum, unsigned *attrarray)
+cmd_rpush_pack(char *data, char *table, char *key, char *value, uint8_t valuelen, 
+                uint8_t attrnum, unsigned *attrarray)
 {
     return cmd_push_pack(data, CMD_RPUSH, table, key, value, valuelen, attrnum, attrarray);
 }
 
 
 int
-cmd_pop_pack(char *data, unsigned char cmd, char *table, char *key, int num)
+cmd_pop_pack(char *data, uint8_t cmd, char *table, char *key, int num)
 {
-    return pack(data, 0, "$4csi", cmd, table,key, num);
+    return pack(data, 0, "$4cssi", cmd, table, key, num);
 }
 
 int
@@ -642,53 +642,53 @@ cmd_rpop_pack(char *data, char *table, char *key, int num)
 }
 
 int 
-cmd_pop_unpack(char *data, char *key, int *num)
+cmd_pop_unpack(char *data, char *table, char *key, int *num)
 {
-    return unpack(data + CMD_REQ_HEAD_LEN, 0, "si", key, num);
+    return unpack(data + CMD_REQ_HEAD_LEN, 0, "ssi", table, key, num);
 }
 
 int 
-cmd_sync_pack(char *data, unsigned int logver, unsigned int logpos, int bcount, char *md5)
+cmd_sync_pack(char *data, uint32_t logver, uint32_t logpos, int bcount, char *md5)
 {
     return pack(data, 0, "$4ciiis", CMD_SYNC, logver, logpos, bcount, md5);
 }
 
 int 
-cmd_sync_unpack(char *data, unsigned int *logver, unsigned int *logpos, int *bcount, char *md5)
+cmd_sync_unpack(char *data, uint32_t *logver, uint32_t *logpos, int *bcount, char *md5)
 {
     return unpack(data +CMD_REQ_HEAD_LEN, 0, "iiis", logver, logpos, bcount, md5);
 }
 
 int 
-cmd_getdump_pack(char *data, unsigned int dumpver, uint64_t size)
+cmd_getdump_pack(char *data, uint32_t dumpver, uint64_t size)
 {
     return pack(data, 0, "$4cil", CMD_GETDUMP, dumpver, size);
 }
 
 int 
-cmd_getdump_unpack(char *data, unsigned int *dumpver, uint64_t *size)
+cmd_getdump_unpack(char *data, uint32_t *dumpver, uint64_t *size)
 {
     return unpack(data+CMD_REQ_HEAD_LEN, 0, "il", dumpver, size);
 }
 
 //add by lanwenhong
 int
-cmd_del_by_attr_pack(char *data, char *table, char *key, unsigned int *attrarray, unsigned char attrnum)
+cmd_del_by_attr_pack(char *data, char *table, char *key, uint32_t *attrarray, uint8_t attrnum)
 {
-    return pack(data, 0, "$4csI", CMD_DEL_BY_ATTR, key, attrnum, attrarray);
+    return pack(data, 0, "$4cssI", CMD_DEL_BY_ATTR, table, key, attrnum, attrarray);
 }
 
 int
-cmd_del_by_attr_unpack(char *data, char *key, unsigned int *attrarray, unsigned char *attrnum)
+cmd_del_by_attr_unpack(char *data, char *table, char *key, uint32_t *attrarray, uint8_t *attrnum)
 {
-    return unpack(data+CMD_REQ_HEAD_LEN, 0, "sI", key, attrnum, attrarray);
+    return unpack(data+CMD_REQ_HEAD_LEN, 0, "ssI", table, key, attrnum, attrarray);
 }
 
 int
 cmd_insert_mkv_pack(char *data, MemLinkInsertMkv *mkv)
 {
-    unsigned char cmd = CMD_INSERT_MKV;
-    unsigned int len;
+    uint8_t cmd = CMD_INSERT_MKV;
+    uint32_t len;
     int ret;
     int count = CMD_REQ_SIZE_LEN;
     MemLinkInsertKey *keyitem;
@@ -717,28 +717,28 @@ cmd_insert_mkv_pack(char *data, MemLinkInsertMkv *mkv)
 }
 
 int
-cmd_insert_mkv_unpack_packagelen(char *data, unsigned int *package_len)
+cmd_insert_mkv_unpack_packagelen(char *data, uint32_t *package_len)
 {
     return unpack(data, 0, "i", package_len);
 }
 
 int
-cmd_insert_mkv_unpack_keycount(char *data, unsigned int *keycount)
+cmd_insert_mkv_unpack_keycount(char *data, uint32_t *keycount)
 {
     return unpack(data, 0, "i", keycount);
 }
 
 int
-cmd_insert_mkv_unpack_key(char *data, char *key, unsigned int *valcount, char **countstart)
+cmd_insert_mkv_unpack_key(char *data, char *table, char *key, uint32_t *valcount, char **countstart)
 {
-    int ret = unpack(data, 0, "si", key, valcount);
+    int ret = unpack(data, 0, "ssi", table, key, valcount);
     *countstart = data + ret;
     return ret;
 }
 
 int
-cmd_insert_mkv_unpack_val(char *data, char *value, unsigned char *valuelen,
-    unsigned char *attrnum, unsigned int *attrarray, int *pos)
+cmd_insert_mkv_unpack_val(char *data, char *value, uint8_t *valuelen,
+    uint8_t *attrnum, uint32_t *attrarray, int *pos)
 {
     return unpack(data, 0, "CIi", valuelen, value, attrnum, attrarray, pos);
 }
@@ -880,31 +880,11 @@ cmd_clean_all_unpack(char *data)
 int
 cmd_heartbeat_pack(char *data, int port)
 {
-    /*
-    unsigned char cmd = CMD_HEARTBEAT;
-    int count = CMD_REQ_SIZE_LEN;
-
-    memcpy(data + count, &cmd, sizeof(char));
-    count += sizeof(char);
-    memcpy(data + count, &port, sizeof(int));
-    count += sizeof(int);
-    int len = count - CMD_REQ_SIZE_LEN;
-
-    memcpy(data,&len, sizeof(int));
-    return count;
-    */
     return pack(data, 0, "$4ci", CMD_HEARTBEAT, port);
 }
 int
 cmd_heartbeat_unpack(char *data, int *port)
 {
-    /*
-    char *ptr = data + CMD_REQ_SIZE_LEN + sizeof(char);
-
-    memcpy(port, ptr, sizeof(int));
-
-    return 0;
-    */
     return unpack(data + CMD_REQ_HEAD_LEN, 0, "i", port);
 }
 
@@ -915,13 +895,13 @@ cmd_backup_ack_pack(char *data, char state)
 }
 
 int
-cmd_backup_ack_unpack(char *data, unsigned char *cmd, short *ret, int *logver, int *logline)
+cmd_backup_ack_unpack(char *data, uint8_t *cmd, short *ret, int *logver, int *logline)
 {
     return unpack(data + CMD_REQ_SIZE_LEN, 0, "chii", cmd, ret, logver, logline);
 }
 
 int
-cmd_vote_pack(char *data, uint64_t id, unsigned char result, uint64_t voteid, unsigned short port)
+cmd_vote_pack(char *data, uint64_t id, uint8_t result, uint64_t voteid, unsigned short port)
 {
     return pack(data, 0, "$4clclh", CMD_VOTE, id, result, voteid, port);
 }
