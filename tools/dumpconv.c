@@ -231,6 +231,11 @@ int main(int argc, char *argv[])
         newdump_write_table_end(newf);
     }
 
+    uint64_t fsize = ftell();
+        
+    fseek(newf, 2+4+4+4, SEEK_SET);
+    fwrite(&fsize, 1, sizeof(uint64_t), newf);
+
     fclose(oldf);
     fclose(newf);
 
