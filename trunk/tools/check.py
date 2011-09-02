@@ -114,7 +114,7 @@ def dumpfile(filename):
         while True: 
             # flag
             flag = struct.unpack('B', f.read(1))[0]
-            print 'flag:', flag
+            #print 'flag:', flag
             if flag == 0:
                 break
             # key len (1B)
@@ -124,7 +124,7 @@ def dumpfile(filename):
 
             itemnum  = struct.unpack('I', f.read(4))[0] 
             
-            print 'key:%s, num%d' % (key, itemnum)
+            print 'key:%s, num:%d' % (key, itemnum)
 
             datalen  = valuesize + attrsize
 
