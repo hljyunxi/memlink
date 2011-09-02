@@ -110,9 +110,9 @@ void		memlink_close(MemLink *m);
 
 int         memlink_cmd_ping(MemLink *m);
 int         memlink_cmd_dump(MemLink *m);
-int			memlink_cmd_clean(MemLink *m, char *key);
+int			memlink_cmd_clean(MemLink *m, char *table, char *key);
 int         memlink_cmd_clean_all(MemLink *m);
-int			memlink_cmd_stat(MemLink *m, char *key, MemLinkStat *stat);
+int			memlink_cmd_stat(MemLink *m, char *table, char *key, MemLinkStat *stat);
 int			memlink_cmd_stat_sys(MemLink *m, MemLinkStatSys *stat);
 int			memlink_cmd_create_table(MemLink *m, char *table, int valuelen, char *attrstr, 
                                 unsigned char listtype, unsigned char valuetype);
@@ -162,7 +162,7 @@ int         memlink_imkv_destroy(MemLinkInsertMkv *mkv);
 int         memlink_imkv_add_key(MemLinkInsertMkv *mkv, MemLinkInsertKey *keyobj);
 int         memlink_ikey_add_value(MemLinkInsertKey *keyobj, MemLinkInsertVal *valobj);
 MemLinkInsertMkv*         memlink_imkv_create(); 
-MemLinkInsertKey*         memlink_ikey_create(char *table,char *key, int keylen);
+MemLinkInsertKey*         memlink_ikey_create(char *table, char *key, int keylen);
 MemLinkInsertVal*         memlink_ival_create(char *value, int valuelen, char *attrstr, int pos);
 
 int memlink_cmd_read_conn_info(MemLink *m, MemLinkRcInfo *rcinfo);

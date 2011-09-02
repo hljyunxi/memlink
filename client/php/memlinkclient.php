@@ -27,61 +27,61 @@ class MemLinkClient
         $this->client = null;
     }
 
-	function create_table($key, $valuesize, $maskformat, $listtype, $valuetype)
+	function create_table($table, $valuesize, $attrformat, $listtype, $valuetype)
 	{
-    	if( False == is_int($valuesize) or False == is_string($key) or False == is_string($maskformat) )
+    	if( false == is_int($valuesize) or false == is_string($table) or false == is_string($attrformat) )
     	{
     		return -1;
     	}
     	
-		return memlink_cmd_create($this->client, $key, $valuesize, $maskformat, $listtype, $valuetype);
+		return memlink_cmd_create($this->client, $table, $valuesize, $attrformat, $listtype, $valuetype);
 	}
 
-	function create_table_list($key, $valuesize, $maskformat)
+	function create_table_list($table, $valuesize, $attrformat)
 	{
-    	if( False == is_int($valuesize) or False == is_string($key) or False == is_string($maskformat) )
+    	if( false == is_int($valuesize) or false == is_string($table) or false == is_string($attrformat) )
     	{
     		return -1;
     	}
     	
-		return memlink_cmd_create_list($this->client, $key, $valuesize, $maskformat);
+		return memlink_cmd_create_list($this->client, $table, $valuesize, $attrformat);
 	}
 
-	function create_table_queue($key, $valuesize, $maskformat)
+	function create_table_queue($table, $valuesize, $attrformat)
 	{
-    	if( False == is_int($valuesize) or False == is_string($key) or False == is_string($maskformat) )
+    	if( false == is_int($valuesize) or false == is_string($table) or false == is_string($attrformat) )
     	{
     		return -1;
     	}
     	
-		return memlink_cmd_create_queue($this->client, $key, $valuesize, $maskformat);
+		return memlink_cmd_create_queue($this->client, $table, $valuesize, $attrformat);
 	}
 
-    function create_table_sortlist($key, $valuesize, $maskformat, $valuetype)
+    function create_table_sortlist($table, $valuesize, $attrformat, $valuetype)
 	{
-    	if( False == is_int($valuesize) or False == is_string($key) or False == is_string($maskformat) )
+    	if( false == is_int($valuesize) or false == is_string($table) or false == is_string($attrformat) )
     	{
     		return -1;
     	}
     	
-		return memlink_cmd_create_sortlist($this->client, $key, $valuesize, $maskformat, $valuetype);
+		return memlink_cmd_create_sortlist($this->client, $table, $valuesize, $attrformat, $valuetype);
 	}
 	
-	function remove_table($name)
+	function remove_table($table)
 	{
-		if (false == is_string($name)) {
+		if (false == is_string($table)) {
 			return -1;
 		}
-		return memlink_cmd_remove_table($this->client, $name);
+		return memlink_cmd_remove_table($this->client, $table);
 	}
 
 	
-	function create_node($name, $key)
+	function create_node($table, $key)
 	{
-		if (false == is_string($name) or false == is_string($key)) {
+		if (false == is_string($table) or false == is_string($key)) {
 			return -1;
 		}
-		return memlink_cmd_create_node($this->client, $name, $key);
+		return memlink_cmd_create_node($this->client, $table, $key);
 	}
 
 	function ping()
@@ -94,39 +94,37 @@ class MemLinkClient
         return memlink_cmd_dump($this->client);
     }
 
-    function clean($key)
+    function clean($table, $key)
     {
-    	if( False == is_string($key))
-    	{
+    	if(false == is_string($table) || false == is_string($key)) {
     		return -1;
     	}
-        return memlink_cmd_clean($this->client, $key);
+        return memlink_cmd_clean($this->client, $table, $key);
     }
 
-    function stat($key)
+    function stat($table, $key)
     {
-    	if( False == is_string($key))
+    	if( false == is_string($table) || false == is_string($key))
     	{
     		return NULL;
     	}
     
         $mstat = new MemLinkStat();
 
-        $ret = memlink_cmd_stat($this->client, $key, $mstat);
+        $ret = memlink_cmd_stat($this->client, $table, $key, $mstat);
 		if ($ret == MEMLINK_OK) {
 			return $mstat;
 		}
 		return NULL;
     }
 
-	function stat2($key, $mstat)
+	function stat2($table, $key, $mstat)
 	{
-    	if( False == is_string($key))
-    	{
+    	if( false == is_string($table) || false == is_string($key)) {
     		return -1;
     	}
 	
-        return memlink_cmd_stat($this->client, $key, $mstat);
+        return memlink_cmd_stat($this->client, $table, $key, $mstat);
 	}
 
     function stat_sys()
@@ -144,233 +142,233 @@ class MemLinkClient
         return memlink_cmd_stat_sys($this->client, $stat);
     }
 
-    function delete($key, $value, $valuelen)
+    function delete($table, $key, $value, $valuelen)
     {
-    	if( False == is_string($key) or False == is_int($valuelen) )
+    	if( false == is_string($table) || false == is_string($key) or false == is_int($valuelen) )
     	{
     		return -1;
     	}
     	
-        return memlink_cmd_del($this->client, $key, $value, $valuelen);
+        return memlink_cmd_del($this->client, $table, $key, $value, $valuelen);
     }
 
-    function insert($key, $value, $valuelen, $maskstr, $pos)
+    function insert($table, $key, $value, $valuelen, $attrstr, $pos)
     {
-    	if( False == is_string($key) or False == is_int($valuelen) or
-    		False == is_int($pos) or False == is_string($maskstr) )
+    	if( false == is_string($table) || false == is_string($key) or false == is_int($valuelen) or
+    		false == is_int($pos) or false == is_string($attrstr) )
     	{
     		return -1;
     	}
 		
-        return memlink_cmd_insert($this->client, $key, $value, $valuelen, $maskstr, $pos);
+        return memlink_cmd_insert($this->client, $table, $key, $value, $valuelen, $attrstr, $pos);
     }
 
-    function move($key, $value, $valuelen, $pos)
+    function move($table, $key, $value, $valuelen, $pos)
     {
-    	if( False == is_string($key) or False == is_int($valuelen) or False == is_int($pos) )
+    	if( false == is_string($table) || false == is_string($key) or false == is_int($valuelen) or false == is_int($pos) )
     	{
     		return -1;
     	}
 			
-        return memlink_cmd_move($this->client, $key, $value, $valuelen, $pos);
+        return memlink_cmd_move($this->client, $table, $key, $value, $valuelen, $pos);
     }
 
-    function mask($key, $value, $valuelen, $maskstr)
+    function attr($table, $key, $value, $valuelen, $attrstr)
     {
-    	if( False == is_string($key) or False == is_int($valuelen) or False == is_string($maskstr) )
+    	if( false == is_string($table) || false == is_string($key) or false == is_int($valuelen) or false == is_string($attrstr) )
     	{
     		return -1;
     	}
     
-        return memlink_cmd_mask($this->client, $key, $value, $valuelen, $maskstr);
+        return memlink_cmd_attr($this->client, $table, $key, $value, $valuelen, $attrstr);
     }
 
-    function tag($key, $value, $valuelen, $tag)
+    function tag($table, $key, $value, $valuelen, $tag)
     {
-    	if( False == is_string($key) or False == is_int($valuelen) or False == is_int($tag) )
+    	if( false == is_string($table) || false == is_string($key) or false == is_int($valuelen) or false == is_int($tag) )
     	{
     		return -1;
     	}
     	
-        return memlink_cmd_tag($this->client, $key, $value, $valuelen, $tag);
+        return memlink_cmd_tag($this->client, $table, $key, $value, $valuelen, $tag);
     }
 
-    function range($key, $kind, $maskstr, $frompos, $len)
+    function range($table, $key, $kind, $attrstr, $frompos, $len)
     {
-    	if( False == is_string($key) or False == is_int($frompos) or
-    		False == is_int($len) or False == is_string($maskstr) )
+    	if( false == is_string($table) || false == is_string($key) or false == is_int($frompos) or
+    		false == is_int($len) or false == is_string($attrstr) )
     	{
     		return NULL;
     	}
     	
         $result = new MemLinkResult();
         
-        $ret = memlink_cmd_range($this->client, $key, $kind, $maskstr, $frompos, $len, $result);
+        $ret = memlink_cmd_range($this->client, $table, $key, $kind, $attrstr, $frompos, $len, $result);
 		if ($ret == MEMLINK_OK) {
 			return $result;
 		}
 		return NULL;
     }
 
-	function range_visible($key, $maskstr, $frompos, $len) 
+	function range_visible($table, $key, $attrstr, $frompos, $len) 
 	{
-		return $this->range($key, MEMLINK_VALUE_VISIBLE, $maskstr, $frompos, $len);
+		return $this->range($table, $key, MEMLINK_VALUE_VISIBLE, $attrstr, $frompos, $len);
 	}
 	
-	function range_tagdel($key, $maskstr, $frompos, $len) 
+	function range_tagdel($table, $key, $attrstr, $frompos, $len) 
 	{
-		return $this->range($key, MEMLINK_VALUE_TAGDEL, $maskstr, $frompos, $len);
+		return $this->range($table, $key, MEMLINK_VALUE_TAGDEL, $attrstr, $frompos, $len);
 	}
 
-	function range_all($key, $maskstr, $frompos, $len) 
+	function range_all($table, $key, $attrstr, $frompos, $len) 
 	{
-		return $this->range($key, MEMLINK_VALUE_ALL, $maskstr, $frompos, $len);
+		return $this->range($table, $key, MEMLINK_VALUE_ALL, $attrstr, $frompos, $len);
 	}
 
-	function range2($key, $kind, $maskstr, $frompos, $len, $result)
+	function range2($table, $key, $kind, $attrstr, $frompos, $len, $result)
 	{
-    	if( False == is_string($key) or False == is_int($frompos) or False == is_int($len) or False == is_string($maskstr) )
+    	if( false == is_string($table) || false == is_string($key) or false == is_int($frompos) or false == is_int($len) or false == is_string($attrstr) )
     	{
     		return -1;
     	}
 	
-		return memlink_cmd_range($this->client, $key, $kind, $maskstr, $frompos, $len, $result);
+		return memlink_cmd_range($this->client, $table, $key, $kind, $attrstr, $frompos, $len, $result);
 	}
 
-	function range2_visible($key, $maskstr, $frompos, $len, $result)
+	function range2_visible($table, $key, $attrstr, $frompos, $len, $result)
 	{
-		return $this->range2($key, MEMLINK_VALUIE_VISIBLE, $maskstr, $frompos, $len, $result);
+		return $this->range2($table, $key, MEMLINK_VALUIE_VISIBLE, $attrstr, $frompos, $len, $result);
 	}
 
-	function range2_tagdel($key, $maskstr, $frompos, $len, $result)
+	function range2_tagdel($table, $key, $attrstr, $frompos, $len, $result)
 	{
-		return $this->range2($key, MEMLINK_VALUIE_TAGDEL, $maskstr, $frompos, $len, $result);
+		return $this->range2($table, $key, MEMLINK_VALUIE_TAGDEL, $attrstr, $frompos, $len, $result);
 	}
 
-	function range2_all($key, $maskstr, $frompos, $len, $result)
+	function range2_all($table, $key, $attrstr, $frompos, $len, $result)
 	{
-		return $this->range2($key, MEMLINK_VALUIE_ALL, $maskstr, $frompos, $len, $result);
+		return $this->range2($table, $key, MEMLINK_VALUIE_ALL, $attrstr, $frompos, $len, $result);
 	}
 
-	function rmkey($key)
+	function rmkey($table, $key)
 	{
-    	if( False == is_string($key) ) {
+    	if( false == is_string($table) || false == is_string($key) ) {
     		return -1;
     	}
 	
-		return memlink_cmd_rmkey($this->client, $key);
+		return memlink_cmd_rmkey($this->client, $table, $key);
 	}
 
-	function count($key, $maskstr)
+	function count($table, $key, $attrstr)
 	{
-    	if( False == is_string($key) or False == is_string($maskstr) ) {
+    	if( false == $table || false == is_string($key) or false == is_string($attrstr) ) {
     		return NULL;
     	}
 	
 		$count = new MemLinkCount();
-		$ret = memlink_cmd_count($this->client, $key, $maskstr, $count);
+		$ret = memlink_cmd_count($this->client, $table, $key, $attrstr, $count);
 		if ($ret == MEMLINK_OK) {
 			return $count;
 		}
 		return NULL;
 	}
 
-	function count2($key, $maskstr, $count)
+	function count2($table, $key, $attrstr, $count)
 	{
-    	if( False == is_string($key) or False == is_string($maskstr) ) {
+    	if( false == is_string($table) || false == is_string($key) or false == is_string($attrstr) ) {
     		return -1;
     	}
 	
-		return memlink_cmd_count($this->client, $key, $maskstr, $count);
+		return memlink_cmd_count($this->client, $table, $key, $attrstr, $count);
 	}
 
-    function lpush($key, $value, $valuelen, $maskstr="")
+    function lpush($table, $key, $value, $valuelen, $attrstr="")
     {
-    	if( False == is_string($key) or False == is_string($maskstr) ) {
+    	if( false == is_string($table) || false == is_string($key) or false == is_string($attrstr) ) {
     		return -1;
     	}
 	
-        return memlink_cmd_lpush($this->client, $key, $value, $valuelen, $maskstr);
+        return memlink_cmd_lpush($this->client, $table, $key, $value, $valuelen, $attrstr);
     }
 
-    function rpush($key, $value, $valuelen, $maskstr="")
+    function rpush($table, $key, $value, $valuelen, $attrstr="")
     {
-    	if( False == is_string($key) or False == is_string($maskstr) ) {
+    	if( false == is_string($table) || false == is_string($key) or false == is_string($attrstr) ) {
     		return -1;
     	}
 	
-        return memlink_cmd_rpush($this->client, $key, $value, $valuelen, $maskstr);
+        return memlink_cmd_rpush($this->client, $table, $key, $value, $valuelen, $attrstr);
     }
 
-    function lpop($key, $num=1)
+    function lpop($table, $key, $num=1)
     {
         $result = new MemLinkResult();
-        $ret = memlink_cmd_lpop($this->client, $key, $num, $result);
+        $ret = memlink_cmd_lpop($this->client, $table, $key, $num, $result);
 		if ($ret == MEMLINK_OK) {
 			return $result;
 		}
 		return NULL;
     }
 
-    function lpop2($key, $num, $result)
+    function lpop2($table, $key, $num, $result)
     {
-        return memlink_cmd_lpop($this->client, $key, $num, $result);
+        return memlink_cmd_lpop($this->client, $table, $key, $num, $result);
     }
 
 
-    function rpop($key, $num=1)
+    function rpop($table, $key, $num=1)
     {
         $result = new MemLinkResult();
-        $ret = memlink_cmd_lpop($this->client, $key, $num, $result);
+        $ret = memlink_cmd_lpop($this->client, $table, $key, $num, $result);
 		if ($ret == MEMLINK_OK) {
 			return $result;
 		}
 		return NULL;
     }
     
-    function rpop2($key, $num, $result)
+    function rpop2($table, $key, $num, $result)
     {
-        return memlink_cmd_rpop($this->client, $key, $num, $result);
+        return memlink_cmd_rpop($this->client, $table, $key, $num, $result);
     }
     
-    function sortlist_insert($key, $value, $valuelen, $maskstr="")
+    function sortlist_insert($table, $key, $value, $valuelen, $attrstr="")
     {
-        return memlink_cmd_sortlist_insert($this->client, $key, $value, $valuelen, $maskstr);
+        return memlink_cmd_sortlist_insert($this->client, $table, $key, $value, $valuelen, $attrstr);
     }
 
-    function sortlist_range($key, $kind, $vmin, $vminlen, $vmax, $vmaxlen, $maskstr='')
+    function sortlist_range($table, $key, $kind, $vmin, $vminlen, $vmax, $vmaxlen, $attrstr='')
     {
         $result = new MemLinkResult();
-        $ret = memlink_cmd_sortlist_range($this->client, $key, $kind, $maskstr, $vmin, $vminlen, $vmax, $vmaxlen, $result);
+        $ret = memlink_cmd_sortlist_range($this->client, $table, $key, $kind, $attrstr, $vmin, $vminlen, $vmax, $vmaxlen, $result);
 		if ($ret == MEMLINK_OK) {
 			return $result;
 		}
 		return NULL;
     }
 
-    function sortlist_range2($key, $kind, $vmin, $vminlen, $vmax, $vmaxlen, $maskstr, $result)
+    function sortlist_range2($table, $key, $kind, $vmin, $vminlen, $vmax, $vmaxlen, $attrstr, $result)
     {
-        return memlink_cmd_sortlist_range($this->client, $key, $kind, $maskstr, $vmin, $vminlen, $vmax, $vmaxlen, $result);
+        return memlink_cmd_sortlist_range($this->client, $table, $key, $kind, $attrstr, $vmin, $vminlen, $vmax, $vmaxlen, $result);
     }
 
-    function sortlist_del($key, $kind, $vmin, $vminlen, $vmax, $vmaxlen, $maskstr='')
+    function sortlist_del($table, $key, $kind, $vmin, $vminlen, $vmax, $vmaxlen, $attrstr='')
     {
-        return memlink_cmd_sortlist_del($this->client, $key, $kind, $maskstr, $vmin, $vminlen, $vmax, $vmaxlen);
+        return memlink_cmd_sortlist_del($this->client, $table, $key, $kind, $attrstr, $vmin, $vminlen, $vmax, $vmaxlen);
     }
 
-    function sortlist_count($key, $vmin, $vminlen, $vmax, $vmaxlen, $maskstr='')
+    function sortlist_count($table, $key, $vmin, $vminlen, $vmax, $vmaxlen, $attrstr='')
     {
         $result = new MemLinkCount();
-        $ret = memlink_cmd_sortlist_count($this->client, $key, $maskstr, $vmin, $vminlen, $vmax, $vmaxlen, $result);
+        $ret = memlink_cmd_sortlist_count($this->client, $table, $key, $attrstr, $vmin, $vminlen, $vmax, $vmaxlen, $result);
         if ($ret == MEMLINK_OK) {
             return $result;
         }
         return NULL;
     }
 
-    function sortlist_count2($key, $vmin, $vminlen, $vmax, $vmaxlen, $maskstr, $result)
+    function sortlist_count2($table, $key, $vmin, $vminlen, $vmax, $vmaxlen, $attrstr, $result)
     {
-        return memlink_cmd_sortlist_count($this->client, $key, $maskstr, $vmin, $vminlen, $vmax, $vmaxlen, $result);
+        return memlink_cmd_sortlist_count($this->client, $table, $key, $attrstr, $vmin, $vminlen, $vmax, $vmaxlen, $result);
     }
 
     function read_conn_info()
@@ -411,8 +409,8 @@ class MemLinkClient
         }
         return $r;
     }
-    static function memlink_ikey_create($key,$keylen) {
-        $r=memlink_ikey_create($key,$keylen);
+    static function memlink_ikey_create($table, $key,$keylen) {
+        $r=memlink_ikey_create($table, $key,$keylen);
         if (is_resource($r)) {
             $c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
             if (!class_exists($c)) {
@@ -422,8 +420,8 @@ class MemLinkClient
         }
         return $r;
     }
-    static function memlink_ival_create($value,$valuelen,$maskstr,$pos) {
-        $r=memlink_ival_create($value,$valuelen,$maskstr,$pos);
+    static function memlink_ival_create($value,$valuelen,$attrstr,$pos) {
+        $r=memlink_ival_create($value,$valuelen,$attrstr,$pos);
         if (is_resource($r)) {
             $c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
             if (!class_exists($c)) {
@@ -440,11 +438,11 @@ class MemLinkClient
         foreach ($array as $item) {
             if (is_array($item) && count($item) == 4) {
                 if (is_null($item["key"]) || is_null($item["value"]) || 
-                    is_null($item["mask"]) || is_null($item["pos"])) {
+                    is_null($item["attr"]) || is_null($item["pos"])) {
                     return $mkv;
                 }
                 $keyobj = $this->memlink_ikey_create($item["key"], strlen($item["key"]));
-                $valobj = $this->memlink_ival_create($item["value"], strlen($item["value"]), $item["mask"], $item["pos"]);
+                $valobj = $this->memlink_ival_create($item["value"], strlen($item["value"]), $item["attr"], $item["pos"]);
                 $ret = memlink_ikey_add_value($keyobj, $valobj); 
                 if ($ret != MEMLINK_OK) {
                     return $mkv;
