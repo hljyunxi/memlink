@@ -10,8 +10,9 @@ import testbase
 READ_PORT, WRITE_PORT = testbase.memlink_addr()
 
 def test_int(m):
+    name = 'test1'
     key = 'haha1'
-    ret = m.create_sortlist(key, 4, MEMLINK_VALUE_INT)
+    ret = m.create_sortlist(name, key, 4, MEMLINK_VALUE_INT)
     if ret != MEMLINK_OK:
         print 'create queue error, ret:%d, key:%s' % (ret, key)
         return -1
@@ -23,12 +24,12 @@ def test_int(m):
 
     for v in vs:
         vv = struct.pack('I', v)
-        ret = m.sortlist_insert(key, vv)
+        ret = m.sortlist_insert(name, key, vv)
         if ret != MEMLINK_OK:
             print 'sortlist insert error, ret:%d, value:%s' % (ret, vv)
             return -1
     
-    ret, result = m.range(key, MEMLINK_VALUE_ALL, 0, num) 
+    ret, result = m.range(name, key, MEMLINK_VALUE_ALL, 0, num) 
     if ret != MEMLINK_OK:
         print 'sortlist range error, ret:%d' % (ret)
         return -1
@@ -44,7 +45,7 @@ def test_int(m):
 
 def test_string(m):
     name = 'test'
-    key = name + '.haha2'
+    key = 'haha2'
     ret = m.create_table_sortlist(name, 10, MEMLINK_VALUE_STRING)
     if ret != MEMLINK_OK:
         print 'create queue error, ret:%d, name:%s' % (ret, name)
@@ -57,7 +58,7 @@ def test_string(m):
     count = 0
     for v in vs:
         vv = '%010d' % v 
-        ret = m.sortlist_insert(key, vv)
+        ret = m.sortlist_insert(name, key, vv)
         if ret != MEMLINK_OK:
             print 'sortlist insert error, ret:%d, value:%s' % (ret, vv)
             return -1
@@ -66,7 +67,7 @@ def test_string(m):
             print count
     
     for i in range(0, num/1000):
-        ret, result = m.range(key, MEMLINK_VALUE_ALL, i*1000, 1000) 
+        ret, result = m.range(name, key, MEMLINK_VALUE_ALL, i*1000, 1000) 
         if ret != MEMLINK_OK:
             print 'range error, ret:%d' % (ret)
             return -1
@@ -80,12 +81,12 @@ def test_string(m):
             item = item.next
             start += 1
         
-    test_string_range(m, key, num)
-    test_string_count(m, key, num)
-    test_string_del(m, key, num)
+    test_string_range(m, name, key, num)
+    test_string_count(m, name, key, num)
+    test_string_del(m, name, key, num)
 
 
-def test_string_range(m, key, count):
+def test_string_range(m, name, key, count):
     # test range
     for i in xrange(0, 1000):
         v1, v2 = random.randint(0, 1000), random.randint(0, 1000)
@@ -95,7 +96,7 @@ def test_string_range(m, key, count):
         vmax = max(v1, v2)
         vminstr = '%010d' % vmin
         vmaxstr = '%010d' % vmax
-        ret, result = m.sortlist_range(key, MEMLINK_VALUE_ALL, vminstr, vmaxstr)
+        ret, result = m.sortlist_range(name, key, MEMLINK_VALUE_ALL, vminstr, vmaxstr)
         if ret != MEMLINK_OK:
             print 'sortlist range:', vmin, vmax
             print 'sortlist range error:', ret, vmin, vmax
@@ -113,7 +114,7 @@ def test_string_range(m, key, count):
             item = item.next
             i += 1
 
-def test_string_count(m, key, count):
+def test_string_count(m, name, key, count):
     # test count
     for i in xrange(0, 1000):
         v1, v2 = random.randint(0, 1000), random.randint(0, 1000)
@@ -124,7 +125,7 @@ def test_string_count(m, key, count):
         vminstr = '%010d' % vmin
         vmaxstr = '%010d' % vmax
         #print 'count:', vminstr, vmaxstr
-        ret, result = m.sortlist_count(key, vminstr, vmaxstr)
+        ret, result = m.sortlist_count(name, key, vminstr, vmaxstr)
         if ret != MEMLINK_OK:
             print 'sortlist range:', vmin, vmax
             print 'sortlist range error:', ret, vmin, vmax
@@ -136,7 +137,7 @@ def test_string_count(m, key, count):
 
 
 
-def test_string_del(m, key, num):
+def test_string_del(m, name, key, num):
     # test del
     #num = 1000
     resultck = range(0, num)
@@ -162,13 +163,13 @@ def test_string_del(m, key, num):
         vmin = '%010d' % x[0]
         vmax = '%010d' % x[1]
         #print 'del:', vmin, vmax
-        ret = m.sortlist_del(key, MEMLINK_VALUE_ALL, vmin, vmax)
+        ret = m.sortlist_del(name, key, MEMLINK_VALUE_ALL, vmin, vmax)
         #print 'del ret:', ret
         if ret != MEMLINK_OK:
             print 'sortlist del error:', ret #, vmin, vmax
             return -1
 
-        ret, result = m.range(key, MEMLINK_VALUE_ALL, 0, 1000)
+        ret, result = m.range(name, key, MEMLINK_VALUE_ALL, 0, 1000)
         if ret != MEMLINK_OK:
             print 'range error:', ret
             return -1
