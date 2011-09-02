@@ -26,27 +26,27 @@ class MemLinkClient:
     def dump(self):
         return memlink_cmd_dump(self.client)
 
-    def clean(self, key):
-        return memlink_cmd_clean(self.client, key)
+    def clean(self, table, key):
+        return memlink_cmd_clean(self.client, table, key)
 
-    def create_table(self, key, valuesize, listtype, valuetype, attrstr=''):
-        return memlink_cmd_create_table(self.client, key, valuesize, attrstr, listtype, valuetype)
+    def create_table(self, table, valuesize, listtype, valuetype, attrstr=''):
+        return memlink_cmd_create_table(self.client, table, valuesize, attrstr, listtype, valuetype)
 
-    def create_table_list(self, key, valuesize, attrstr=''):
-        return memlink_cmd_create_table_list(self.client, key, valuesize, attrstr);
+    def create_table_list(self, table, valuesize, attrstr=''):
+        return memlink_cmd_create_table_list(self.client, table, valuesize, attrstr);
     
-    def create_table_queue(self, key, valuesize, attrstr=''):
-        return memlink_cmd_create_table_queue(self.client, key, valuesize, attrstr);
+    def create_table_queue(self, table, valuesize, attrstr=''):
+        return memlink_cmd_create_table_queue(self.client, table, valuesize, attrstr);
 
-    def create_table_sortlist(self, key, valuesize, valuetype, attrstr=''):
-        return memlink_cmd_create_table_sortlist(self.client, key, valuesize, attrstr, valuetype);
+    def create_table_sortlist(self, table, valuesize, valuetype, attrstr=''):
+        return memlink_cmd_create_table_sortlist(self.client, table, valuesize, attrstr, valuetype);
 
-    def create_node(self, name, key):
-        return memlink_cmd_create_node(self.client, name, key)
+    def create_node(self, table, key):
+        return memlink_cmd_create_node(self.client, table, key)
 
-    def stat(self, key):
+    def stat(self, table, key):
         mstat = MemLinkStat()
-        ret = memlink_cmd_stat(self.client, key, mstat)
+        ret = memlink_cmd_stat(self.client, table, key, mstat)
         if ret != MEMLINK_OK:
             mstat = None
         return ret, mstat
@@ -58,79 +58,79 @@ class MemLinkClient:
             mstat = None
         return ret, mstat
 
-    def delete(self, key, value):
-        return memlink_cmd_del(self.client, key, value, len(value))
+    def delete(self, table, key, value):
+        return memlink_cmd_del(self.client, table, key, value, len(value))
 
-    def delete_by_attr(self, key, attr):
-        return memlink_cmd_del_by_attr(self.client, key, attr)
+    def delete_by_attr(self, table, key, attr):
+        return memlink_cmd_del_by_attr(self.client, table, key, attr)
 
-    def insert(self, key, value, pos, attrstr=''):
-        return memlink_cmd_insert(self.client, key, value, len(value), attrstr, pos)
+    def insert(self, table, key, value, pos, attrstr=''):
+        return memlink_cmd_insert(self.client, table, key, value, len(value), attrstr, pos)
 
-    def sortlist_insert(self, key, value, attrstr=''):
-        return memlink_cmd_sortlist_insert(self.client, key, value, len(value), attrstr)
+    def sortlist_insert(self, table, key, value, attrstr=''):
+        return memlink_cmd_sortlist_insert(self.client, table, key, value, len(value), attrstr)
 
-    def sortlist_range(self, key, kind, valmin, valmax, attrstr=''):
+    def sortlist_range(self, table, key, kind, valmin, valmax, attrstr=''):
         result = MemLinkResult()
-        ret = memlink_cmd_sortlist_range(self.client, key, kind, attrstr, 
+        ret = memlink_cmd_sortlist_range(self.client, table, key, kind, attrstr, 
                                 valmin, len(valmin), valmax, len(valmax), result)
         if ret != MEMLINK_OK:
             result = None
         return ret, result
     
-    def sortlist_del(self, key, kind, valmin, valmax, attrstr=''):
-        return memlink_cmd_sortlist_del(self.client, key, kind, attrstr, valmin, len(valmin), valmax, len(valmax))
+    def sortlist_del(self, table, key, kind, valmin, valmax, attrstr=''):
+        return memlink_cmd_sortlist_del(self.client, table, key, kind, attrstr, valmin, len(valmin), valmax, len(valmax))
 
-    def sortlist_count(self, key, valmin, valmax, attrstr=''):
+    def sortlist_count(self, table, key, valmin, valmax, attrstr=''):
         result = MemLinkCount()
-        ret = memlink_cmd_sortlist_count(self.client, key, attrstr, 
+        ret = memlink_cmd_sortlist_count(self.client, table, key, attrstr, 
                                 valmin, len(valmin), valmax, len(valmax), result)
         if ret != MEMLINK_OK:
             result = None
         return ret, result
 
-    def move(self, key, value, pos):
-        return memlink_cmd_move(self.client, key, value, len(value), pos)
+    def move(self, table, key, value, pos):
+        return memlink_cmd_move(self.client, table, key, value, len(value), pos)
 
-    def attr(self, key, value, attrstr):
-        return memlink_cmd_attr(self.client, key, value, len(value), attrstr)
+    def attr(self, table, key, value, attrstr):
+        return memlink_cmd_attr(self.client, table, key, value, len(value), attrstr)
 
-    def tag(self, key, value, tag):
-        return memlink_cmd_tag(self.client, key, value, len(value), tag)
+    def tag(self, table, key, value, tag):
+        return memlink_cmd_tag(self.client, table, key, value, len(value), tag)
 
-    def range(self, key, kind, frompos, rlen, attrstr=''):
+    def range(self, table, key, kind, frompos, rlen, attrstr=''):
         result = MemLinkResult()
-        ret = memlink_cmd_range(self.client, key, kind, attrstr, frompos, rlen, result)
+        ret = memlink_cmd_range(self.client, table, key, kind, attrstr, frompos, rlen, result)
         if ret != MEMLINK_OK:
             result = None
         return ret, result
 
-    def rmkey(self, key):
-        return memlink_cmd_rmkey(self.client, key)
+    def rmkey(self, table, key):
+        return memlink_cmd_rmkey(self.client, table, key)
 
-    def count(self, key, attrstr=''):
+    def count(self, table, key, attrstr=''):
         result = MemLinkCount()
-        ret = memlink_cmd_count(self.client, key, attrstr, result)
+        ret = memlink_cmd_count(self.client, table, key, attrstr, result)
         if ret != MEMLINK_OK:
             result = None
         return ret, result
 
-    def lpush(self, key, value, attrstr=''):
-        return memlink_cmd_lpush(self.client, key, value, len(value), attrstr)
+    def lpush(self, table, key, value, attrstr=''):
+        return memlink_cmd_lpush(self.client, table, key, value, len(value), attrstr)
 
-    def rpush(self, key, value, attrstr=''):
-        return memlink_cmd_rpush(self.client, key, value, len(value), attrstr)
+    def rpush(self, table, key, value, attrstr=''):
+        return memlink_cmd_rpush(self.client, table, key, value, len(value), attrstr)
 
-    def lpop(self, key, num=1):
+    def lpop(self, table, key, num=1):
         result = MemLinkResult()
-        ret = memlink_cmd_lpop(self.client, key, num, result)
+        ret = memlink_cmd_lpop(self.client, table, key, num, result)
         if ret != MEMLINK_OK:
             result = None
         return ret, result
 
-    def rpop(self, key, num=1):
+    def rpop(self, table, key, num=1):
         result = MemLinkResult()
-        ret = memlink_cmd_rpop(self.client, key, num, result)
+        ret = memlink_cmd_rpop(self.client, table, key, num, result)
         if ret != MEMLINK_OK:
             result = None
         return ret, result
