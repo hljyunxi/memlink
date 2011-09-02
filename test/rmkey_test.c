@@ -20,14 +20,16 @@ int main()
 	int  ret;
 	char key[32];
     char *name = "test";
-	sprintf(key, "%s.haha", name);
+	//sprintf(key, "%s.haha", name);
+    strcpy(key, "haha");
+
 	ret = memlink_cmd_create_table_list(m, name, 6, "4:3:1");
 	if (ret != MEMLINK_OK) {
 		DERROR("create %s error: %d\n", key, ret);
 		return -2;
 	}
 
-    ret = memlink_cmd_rmkey(m, key);
+    ret = memlink_cmd_rmkey(m, name, key);
     if (ret != MEMLINK_ERR_NOKEY) {
         DERROR("rmkey error, key:%s, ret:%d\n", key, ret);
         return -3;
@@ -39,7 +41,7 @@ int main()
         return -1;
     }
 
-    ret = memlink_cmd_rmkey(m, key);
+    ret = memlink_cmd_rmkey(m, name, key);
     if (ret != MEMLINK_OK) {
         DERROR("rmkey error, key:%s, ret:%d\n", key, ret);
         return -3;

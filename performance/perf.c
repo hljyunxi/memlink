@@ -62,7 +62,7 @@ int test_create_node(TestArgs *args)
     MemLink *m;
     int ret, i;
     char key[512] = {0};
-    char name[512] = {0}; 
+    //char name[512] = {0}; 
     DINFO("====== create ======\n");
 
     if (args->longconn) {
@@ -72,7 +72,7 @@ int test_create_node(TestArgs *args)
             exit(-1);
             return -1;
         }
-        char *sp = strchr(args->key, '.');
+        /*char *sp = strchr(args->key, '.');
         if (NULL == sp) {
             DERROR("must set table name in key. eg: table_name.key_name\n"); 
             exit(-1);
@@ -86,8 +86,8 @@ int test_create_node(TestArgs *args)
             start++;
         }
         name[i] = 0;
-        
-        ret = memlink_cmd_create_table_list(m, name, args->valuesize, args->attrstr);
+        */
+        ret = memlink_cmd_create_table_list(m, args->table, args->valuesize, args->attrstr);
         if (ret != MEMLINK_OK) {
             DERROR("create table list error! ret:%d\n", ret);
             exit(-1);
@@ -96,7 +96,7 @@ int test_create_node(TestArgs *args)
 
         for (i = 0; i < args->testcount; i++) {
             sprintf(key, "%s%d", args->key, args->tid * args->testcount + i);
-            ret = memlink_cmd_create_node(m, name, key);
+            ret = memlink_cmd_create_node(m, args->table, key);
             if (ret != MEMLINK_OK) {
                 DERROR("create list error! ret:%d\n", ret);
                 return -2;
@@ -134,8 +134,8 @@ int test_insert(TestArgs *args)
     char attrstr[64] = {0};
     
     DINFO("====== insert ======\n");
-    if (args->key[0] == 0 || args->valuesize == 0) {
-        DERROR("key and valuesize must not null!\n");
+    if (args->table[0] == 0 || args->key[0] == 0 || args->valuesize == 0) {
+        DERROR("table, key and valuesize must not null!\n");
         return -1;
     }
     pos = args->pos;
@@ -154,10 +154,10 @@ int test_insert(TestArgs *args)
                 pos = random();
             }
             //sprintf(attrstr, "%d:%d", args->tid * args->testcount + i, 1);
-            ret = memlink_cmd_insert(m, args->key, value, args->valuesize, args->attrstr, pos);
+            ret = memlink_cmd_insert(m, args->table, args->key, value, args->valuesize, args->attrstr, pos);
             if (ret != MEMLINK_OK) {
-                DERROR("insert error! ret:%d, key:%s,value:%s,attr:%s,pos:%d\n", 
-                        ret, args->key, value, args->attrstr, args->pos);
+                DERROR("insert error! ret:%d, table:%s key:%s,value:%s,attr:%s,pos:%d\n", 
+                        ret, args->table, args->key, value, args->attrstr, args->pos);
                 return -2;
             }
         }
@@ -172,11 +172,11 @@ int test_insert(TestArgs *args)
             }
             sprintf(value, format, i);
             //sprintf(attrstr, "%d:%d", args->tid * args->testcount + i, 1);
-            ret = memlink_cmd_insert(m, args->key, value, args->valuesize, args->attrstr, args->pos);
+            ret = memlink_cmd_insert(m, args->table, args->key, value, args->valuesize, args->attrstr, args->pos);
             //ret = memlink_cmd_insert(m, args->key, value, args->valuesize, attrstr, args->pos);
             if (ret != MEMLINK_OK) {
-                DERROR("insert error! ret:%d, key:%s,value:%s,attr:%s,pos:%d\n", 
-                        ret, args->key, value, args->attrstr, args->pos);
+                DERROR("insert error! ret:%d, table:%s key:%s,value:%s,attr:%s,pos:%d\n", 
+                        ret, args->table, args->key, value, args->attrstr, args->pos);
                 return -2;
             }
             memlink_destroy(m); 
@@ -201,7 +201,7 @@ int test_range(TestArgs *args)
         }
         for (i = 0; i < args->testcount; i++) {
             MemLinkResult   result;
-            ret = memlink_cmd_range(m, args->key, args->kind, args->attrstr, args->from, args->len, &result);
+            ret = memlink_cmd_range(m, args->table, args->key, args->kind, args->attrstr, args->from, args->len, &result);
             if (ret != MEMLINK_OK) {
                 DERROR("range error! ret:%d, kind:%d,attr:%s,from:%d,len:%d\n", 
                         ret, args->kind, args->attrstr, args->from, args->len);
@@ -222,7 +222,7 @@ int test_range(TestArgs *args)
                 return -1;
             }
             MemLinkResult result;
-            ret = memlink_cmd_range(m, args->key, args->kind, args->attrstr, args->from, args->len, &result);
+            ret = memlink_cmd_range(m, args->table, args->key, args->kind, args->attrstr, args->from, args->len, &result);
             if (ret != MEMLINK_OK) {
                 DERROR("range error! ret:%d, kind:%d,attr:%s,from:%d,len:%d\n", 
                         ret, args->kind, args->attrstr, args->from, args->len);
@@ -259,9 +259,10 @@ int test_move(TestArgs *args)
         }
         for (i = 0; i < args->testcount; i++) {
             sprintf(value, format, valint);
-            ret = memlink_cmd_move(m, args->key, value, args->valuesize, args->pos);
+            ret = memlink_cmd_move(m, args->table, args->key, value, args->valuesize, args->pos);
             if (ret != MEMLINK_OK) {
-                DERROR("move error! ret:%d, key:%s,value:%s,pos:%d\n", ret, args->key, value, args->pos);
+                DERROR("move error! ret:%d, table:%s key:%s,value:%s,pos:%d\n", 
+                        ret, args->table, args->key, value, args->pos);
                 return -2;
             }
             valint++;
@@ -276,9 +277,10 @@ int test_move(TestArgs *args)
                 return -1;
             }
             sprintf(value, format, valint);
-            ret = memlink_cmd_move(m, args->key, value, args->valuesize, args->pos);
+            ret = memlink_cmd_move(m, args->table, args->key, value, args->valuesize, args->pos);
             if (ret != MEMLINK_OK) {
-                DERROR("move error! ret:%d, key:%s,value:%s,pos:%d\n", ret, args->key, value, args->pos);
+                DERROR("move error! ret:%d, table:%s key:%s,value:%s,pos:%d\n", 
+                    ret, args->table, args->key, value, args->pos);
                 return -2;
             }
             valint++;
@@ -302,9 +304,10 @@ int test_del(TestArgs *args)
             return -1;
         }
         for (i = 0; i < args->testcount; i++) {
-            ret = memlink_cmd_del(m, args->key, args->value, args->valuelen);
+            ret = memlink_cmd_del(m, args->table, args->key, args->value, args->valuelen);
             if (ret != MEMLINK_OK) {
-                DERROR("del error! ret:%d, key:%s, value:%s\n", ret, args->key, args->value);
+                DERROR("del error! ret:%d, table:%s key:%s, value:%s\n", 
+                        ret, args->table, args->key, args->value);
                 return -2;
             }
         }
@@ -317,9 +320,10 @@ int test_del(TestArgs *args)
                 exit(-1);
                 return -1;
             }
-            ret = memlink_cmd_del(m, args->key, args->value, args->valuelen);
+            ret = memlink_cmd_del(m, args->table, args->key, args->value, args->valuelen);
             if (ret != MEMLINK_OK) {
-                DERROR("del error! ret:%d, key:%s, value:%s\n", ret, args->key, args->value);
+                DERROR("del error! ret:%d, table:%s key:%s, value:%s\n", 
+                    ret, args->table, args->key, args->value);
                 return -2;
             }
             memlink_destroy(m); 
@@ -342,9 +346,9 @@ int test_attr(TestArgs *args)
             return -1;
         }
         for (i = 0; i < args->testcount; i++) {
-            ret = memlink_cmd_attr(m, args->key, args->value, args->valuelen, args->attrstr);
+            ret = memlink_cmd_attr(m, args->table, args->key, args->value, args->valuelen, args->attrstr);
             if (ret != MEMLINK_OK) {
-                DERROR("attr error! ret:%d, key:%s, value:%s, attr:%s\n", ret, args->key, args->value, args->attrstr);
+                DERROR("attr error! ret:%d, table:%s key:%s, value:%s, attr:%s\n", ret, args->table, args->key, args->value, args->attrstr);
                 return -2;
             }
         }
@@ -357,9 +361,9 @@ int test_attr(TestArgs *args)
                 exit(-1);
                 return -1;
             }
-            ret = memlink_cmd_attr(m, args->key, args->value, args->valuelen, args->attrstr);
+            ret = memlink_cmd_attr(m, args->table, args->key, args->value, args->valuelen, args->attrstr);
             if (ret != MEMLINK_OK) {
-                DERROR("attr error! ret:%d, key:%s, value:%s, attr:%s\n", ret, args->key, args->value, args->attrstr);
+                DERROR("attr error! ret:%d, table:%s key:%s, value:%s, attr:%s\n", ret, args->table, args->key, args->value, args->attrstr);
                 return -2;
             }
             memlink_destroy(m); 
@@ -382,9 +386,9 @@ int test_tag(TestArgs *args)
             return -1;
         }
         for (i = 0; i < args->testcount; i++) {
-            ret = memlink_cmd_tag(m, args->key, args->value, args->valuelen, args->tag);
+            ret = memlink_cmd_tag(m, args->table, args->key, args->value, args->valuelen, args->tag);
             if (ret != MEMLINK_OK) {
-                DERROR("tag error! ret:%d, key:%s, value:%s, tag:%d\n", ret, args->key, args->value, args->tag);
+                DERROR("tag error! ret:%d, table:%s key:%s, value:%s, tag:%d\n", ret, args->table, args->key, args->value, args->tag);
                 return -2;
             }
         }
@@ -397,9 +401,9 @@ int test_tag(TestArgs *args)
                 exit(-1);
                 return -1;
             }
-            ret = memlink_cmd_tag(m, args->key, args->value, args->valuelen, args->tag);
+            ret = memlink_cmd_tag(m, args->table, args->key, args->value, args->valuelen, args->tag);
             if (ret != MEMLINK_OK) {
-                DERROR("tag error! ret:%d, key:%s, value:%s, tag:%d\n", ret, args->key, args->value, args->tag);
+                DERROR("tag error! ret:%d, table:%s key:%s, value:%s, tag:%d\n", ret, args->table, args->key, args->value, args->tag);
                 return -2;
             }
             memlink_destroy(m); 
@@ -423,9 +427,10 @@ int test_count(TestArgs *args)
         }
         for (i = 0; i < args->testcount; i++) {
             MemLinkCount result;
-            ret = memlink_cmd_count(m, args->key, args->attrstr, &result);
+            ret = memlink_cmd_count(m, args->table, args->key, args->attrstr, &result);
             if (ret != MEMLINK_OK) {
-                DERROR("count error! ret:%d, key:%s, attr:%s\n", ret, args->key, args->attrstr);
+                DERROR("count error! ret:%d, table:%s key:%s, attr:%s\n", 
+                    ret, args->table, args->key, args->attrstr);
                 return -2;
             }
         }
@@ -439,9 +444,9 @@ int test_count(TestArgs *args)
                 return -1;
             }
             MemLinkCount result;
-            ret = memlink_cmd_count(m, args->key, args->attrstr, &result);
+            ret = memlink_cmd_count(m, args->table, args->key, args->attrstr, &result);
             if (ret != MEMLINK_OK) {
-                DERROR("count error! ret:%d, key:%s, attr:%s\n", ret, args->key, args->attrstr);
+                DERROR("count error! ret:%d, table:%s key:%s, attr:%s\n", ret, args->table, args->key, args->attrstr);
                 return -2;
             }
             memlink_destroy(m); 
@@ -460,8 +465,8 @@ int test_lpush(TestArgs *args)
     char attrstr[64] = {0};
     
     DINFO("====== lpush ======\n");
-    if (args->key[0] == 0 || args->valuesize == 0) {
-        DERROR("key and valuesize must not null!\n");
+    if (args->table[0] == 0 || args->key[0] == 0 || args->valuesize == 0) {
+        DERROR("table, key and valuesize must not null!\n");
         return -1;
     }
     pos = args->pos;
@@ -480,10 +485,10 @@ int test_lpush(TestArgs *args)
                 pos = random();
             }
             //sprintf(attrstr, "%d:%d", args->tid * args->testcount + i, 1);
-            ret = memlink_cmd_lpush(m, args->key, value, args->valuesize, args->attrstr);
+            ret = memlink_cmd_lpush(m, args->table, args->key, value, args->valuesize, args->attrstr);
             if (ret != MEMLINK_OK) {
-                DERROR("lpush error! ret:%d, key:%s,value:%s,attr:%s,pos:%d\n", 
-                        ret, args->key, value, args->attrstr, args->pos);
+                DERROR("lpush error! ret:%d, table:%s key:%s,value:%s,attr:%s,pos:%d\n", 
+                        ret, args->table, args->key, value, args->attrstr, args->pos);
                 return -2;
             }
         }
@@ -498,11 +503,11 @@ int test_lpush(TestArgs *args)
             }
             sprintf(value, format, i);
             //sprintf(attrstr, "%d:%d", args->tid * args->testcount + i, 1);
-            ret = memlink_cmd_lpush(m, args->key, value, args->valuesize, args->attrstr);
+            ret = memlink_cmd_lpush(m, args->table, args->key, value, args->valuesize, args->attrstr);
             //ret = memlink_cmd_insert(m, args->key, value, args->valuesize, attrstr, args->pos);
             if (ret != MEMLINK_OK) {
-                DERROR("lpush error! ret:%d, key:%s,value:%s,attr:%s,pos:%d\n", 
-                        ret, args->key, value, args->attrstr, args->pos);
+                DERROR("lpush error! ret:%d, table:%s key:%s,value:%s,attr:%s,pos:%d\n", 
+                        ret, args->table, args->key, value, args->attrstr, args->pos);
                 return -2;
             }
             memlink_destroy(m); 
@@ -522,7 +527,7 @@ int test_rpush(TestArgs *args)
     char attrstr[64] = {0};
     
     DINFO("====== rpush ======\n");
-    if (args->key[0] == 0 || args->valuesize == 0) {
+    if (args->table[0] == 0 || args->key[0] == 0 || args->valuesize == 0) {
         DERROR("key and valuesize must not null!\n");
         return -1;
     }
@@ -542,10 +547,10 @@ int test_rpush(TestArgs *args)
                 pos = random();
             }
             //sprintf(attrstr, "%d:%d", args->tid * args->testcount + i, 1);
-            ret = memlink_cmd_rpush(m, args->key, value, args->valuesize, args->attrstr);
+            ret = memlink_cmd_rpush(m, args->table, args->key, value, args->valuesize, args->attrstr);
             if (ret != MEMLINK_OK) {
-                DERROR("rpush error! ret:%d, key:%s,value:%s,attr:%s,pos:%d\n", 
-                        ret, args->key, value, args->attrstr, args->pos);
+                DERROR("rpush error! ret:%d, table:%s key:%s,value:%s,attr:%s,pos:%d\n", 
+                        ret, args->table, args->key, value, args->attrstr, args->pos);
                 return -2;
             }
         }
@@ -560,11 +565,11 @@ int test_rpush(TestArgs *args)
             }
             sprintf(value, format, i);
             //sprintf(attrstr, "%d:%d", args->tid * args->testcount + i, 1);
-            ret = memlink_cmd_rpush(m, args->key, value, args->valuesize, args->attrstr);
+            ret = memlink_cmd_rpush(m, args->table, args->key, value, args->valuesize, args->attrstr);
             //ret = memlink_cmd_insert(m, args->key, value, args->valuesize, attrstr, args->pos);
             if (ret != MEMLINK_OK) {
-                DERROR("rpush error! ret:%d, key:%s,value:%s,attr:%s,pos:%d\n", 
-                        ret, args->key, value, args->attrstr, args->pos);
+                DERROR("rpush error! ret:%d, table:%s key:%s,value:%s,attr:%s,pos:%d\n", 
+                        ret, args->table, args->key, value, args->attrstr, args->pos);
                 return -2;
             }
             memlink_destroy(m); 
@@ -589,7 +594,7 @@ int test_lpop(TestArgs *args)
         }
         for (i = 0; i < args->testcount; i++) {
             MemLinkResult   result;
-            ret = memlink_cmd_lpop(m, args->key, args->len, &result);
+            ret = memlink_cmd_lpop(m, args->table, args->key, args->len, &result);
             if (ret != MEMLINK_OK) {
                 DERROR("lpop error! ret:%d\n", ret);
                 return -2;
@@ -609,7 +614,7 @@ int test_lpop(TestArgs *args)
                 return -1;
             }
             MemLinkResult result;
-            ret = memlink_cmd_lpop(m, args->key, args->len, &result);
+            ret = memlink_cmd_lpop(m, args->table, args->key, args->len, &result);
             if (ret != MEMLINK_OK) {
                 DERROR("lpop error! ret:%d\n", ret);
                 return -2;
@@ -640,7 +645,7 @@ int test_rpop(TestArgs *args)
         }
         for (i = 0; i < args->testcount; i++) {
             MemLinkResult   result;
-            ret = memlink_cmd_rpop(m, args->key, args->len, &result);
+            ret = memlink_cmd_rpop(m, args->table, args->key, args->len, &result);
             if (ret != MEMLINK_OK) {
                 DERROR("range error! ret:%d\n", ret);
                 return -2;
@@ -660,7 +665,7 @@ int test_rpop(TestArgs *args)
                 return -1;
             }
             MemLinkResult result;
-            ret = memlink_cmd_rpop(m, args->key, args->len, &result);
+            ret = memlink_cmd_rpop(m, args->table, args->key, args->len, &result);
             if (ret != MEMLINK_OK) {
                 DERROR("rpop error! ret:%d\n", ret);
                 return -2;
@@ -691,7 +696,7 @@ int test_sl_insert(TestArgs *args)
         }
         for (i = 0; i < args->testcount; i++) {
             MemLinkResult   result;
-            ret = memlink_cmd_rpop(m, args->key, args->len, &result);
+            ret = memlink_cmd_rpop(m, args->table, args->key, args->len, &result);
             if (ret != MEMLINK_OK) {
                 DERROR("range error! ret:%d\n", ret);
                 return -2;
@@ -723,7 +728,7 @@ int test_sl_range(TestArgs *args)
         }
         for (i = 0; i < args->testcount; i++) {
             MemLinkResult   result;
-            ret = memlink_cmd_rpop(m, args->key, args->len, &result);
+            ret = memlink_cmd_rpop(m, args->table, args->key, args->len, &result);
             if (ret != MEMLINK_OK) {
                 DERROR("range error! ret:%d\n", ret);
                 return -2;
@@ -966,6 +971,7 @@ int main(int argc, char *argv[])
                                  {"count", 0, NULL, 'n'},
                                  {"frompos", 0, NULL, 'f'},
                                  {"len", 0, NULL, 'l'},
+                                 {"table", 0, NULL, 'b'},
                                  {"key", 0, NULL, 'k'},
                                  {"value", 0, NULL, 'v'},
                                  {"valuesize", 0, NULL, 's'},
@@ -1021,6 +1027,10 @@ int main(int argc, char *argv[])
                 exit(0);
             }
             break;
+        case 'b':
+            snprintf(tcf.args.table, 255, "%s", optarg);
+            break;
+
         case 'k':
             snprintf(tcf.args.key, 255, "%s", optarg);
             break;

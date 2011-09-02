@@ -29,7 +29,7 @@ def test():
     time.sleep(5)
 
     name = 'test'
-    key = name + '.haha'
+    key = '.haha'
     attrstr = "8:1:1"
     ret = client2master.create_table_list(name , 12, "4:3:1")
     if ret != MEMLINK_OK:
@@ -41,9 +41,9 @@ def test():
     num = 999
     for i in xrange(0, num):
         val = '%012d' % i
-        ret = client2master.insert(key, val, i, attrstr)
+        ret = client2master.insert(name, key, val, i, attrstr)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, attrstr, ret
+            print 'insert error!', name, key, val, attrstr, ret
             return -2;
     print 'insert %d val' % num
 
@@ -57,9 +57,9 @@ def test():
     num2 = 1999
     for i in xrange(num, num2):
         val = '%012d' % i
-        ret = client2master.insert(key, val, i, attrstr)
+        ret = client2master.insert(name, key, val, i, attrstr)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, attrstr, ret
+            print 'insert error!', name, key, val, attrstr, ret
             return -2;
     print 'insert %d val' % (num2 - num)
 
@@ -86,7 +86,7 @@ def test():
     x1 = start_a_new_master()   
     time.sleep(1)
     
-    key = name + '.haha'
+    key = 'haha'
     attrstr = "8:1:1"
     ret = client2master.create_table_list(name, 12, "4:3:1")
     if ret != MEMLINK_OK:
@@ -98,9 +98,9 @@ def test():
     num = 999
     for i in xrange(0, num):
         val = '%012d' % i
-        ret = client2master.insert(key, val, i, attrstr)
+        ret = client2master.insert(name, key, val, i, attrstr)
         if ret != MEMLINK_OK:
-            print 'insert error!', key, val, attrstr, ret
+            print 'insert error!', name, key, val, attrstr, ret
             return -2;
     print 'insert %d val' % num
 

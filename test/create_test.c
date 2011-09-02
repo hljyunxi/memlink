@@ -37,28 +37,28 @@ int main()
 	
 	ret = memlink_cmd_create_table_list(m, name, 6, "4:3:1");
 	if (ret == MEMLINK_OK) {
-		DERROR("memlink_cmd_create %s error: %d\n", key, ret);
+		DERROR("memlink_cmd_create %s error: %d\n", name, ret);
 		return -3;
 	}
 
 	strcpy(name, "haha1111");
 	ret = memlink_cmd_create_table_list(m, name, -1, "4:3:1");
 	if (ret == MEMLINK_OK) {
-		DERROR("memlink_cmd_create %s error: %d\n", key, ret);
+		DERROR("memlink_cmd_create %s error: %d\n", name, ret);
 		return -3;
 	}
 
 	strcpy(name, "haha2222");
 	ret = memlink_cmd_create_table_list(m, name, 12, "4:3:21474");
 	if (ret == MEMLINK_OK) {
-		DERROR("memlink_cmd_create %s error: %d, mask=%s\n", key, ret, "4:3:21474");
+		DERROR("memlink_cmd_create %s error: %d, mask=%s\n", name, ret, "4:3:21474");
 		return -3;
 	}
 
 	strcpy(name, "haha3333");
 	ret = memlink_cmd_create_table_list(m, name, 12, "");
 	if (ret != MEMLINK_OK) {
-		DERROR("memlink_cmd_create %s error: %d, mask=%s\n", key, ret, "");
+		DERROR("memlink_cmd_create %s error: %d, mask=%s\n", name, ret, "");
 		return -3;
 	}
 
