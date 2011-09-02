@@ -198,9 +198,9 @@ wdata_check_clean(char *tbname, char *key)
 int 
 wdata_apply(char *data, int datalen, int writelog, Conn *conn)
 {
-    char keybuf[512] = {0}; 
-    char *tbname = NULL;;
-    char *key = NULL;
+    //char keybuf[512] = {0}; 
+    char tbname[256] = {0};
+    char key[256] = {0};
     char value[512] = {0};
     char cmd;
     int  ret = 0;
@@ -239,13 +239,13 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             break;
         case CMD_CLEAN: {
             DINFO("<<< cmd CLEAN >>>\n");
-            ret = cmd_clean_unpack(data, keybuf);
+            ret = cmd_clean_unpack(data, tbname, key);
             if (ret <= 0) {
-                DINFO("unpack clean error! ret: %d\n", ret);
+                DINFO("unpack clean error! ret: %d, key:%s\n", ret, key);
                 goto wdata_apply_over;
             }
 
-            ret = table_name(keybuf, &tbname, &key);
+            ret = check_table_key(tbname, key);
             if (ret < 0) {
                 goto wdata_apply_over;
             }  
@@ -267,14 +267,14 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             break;
         case CMD_CREATE_TABLE:
             DINFO("<<< cmd CREATE TABLE >>>\n");
-            ret = cmd_create_table_unpack(data, keybuf, &valuelen, &attrnum, attrformat, &listtype, &valuetype);
+            ret = cmd_create_table_unpack(data, tbname, &valuelen, &attrnum, attrformat, 
+                                         &listtype, &valuetype);
             if (ret <= 0) {
                 DINFO("unpack create error! ret: %d\n", ret);
                 goto wdata_apply_over;
             }
-            tbname = keybuf;
             DINFO("unpack key:%s, valuelen:%d, listtype:%d attrnum:%d, attrarray:%d,%d,%d\n", 
-                    keybuf, valuelen, listtype, attrnum, attrformat[0], attrformat[1], attrformat[2]);
+                    tbname, valuelen, listtype, attrnum, attrformat[0], attrformat[1], attrformat[2]);
 
             if (tbname[0] == 0 || valuelen <= 0 || listtype <= 0 || listtype > MEMLINK_SORTLIST) {
                 DINFO("param error!\n");
@@ -295,41 +295,38 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             break; 
         case CMD_RMTABLE:
             DINFO("<<< cmd RMTABLE >>>\n");
-            ret = cmd_rmtable_unpack(data, keybuf);
+            ret = cmd_rmtable_unpack(data, tbname);
             if (ret <= 0) {
-                DINFO("unpack tag error! ret: %d\n", ret);
+                DINFO("unpack tag error! ret: %d, table:%s\n", ret, tbname);
                 goto wdata_apply_over;
             }
-            DINFO("unpack rmkey, name:%s\n", keybuf);
-            tbname = keybuf;
             if (tbname[0] == 0) {
                 ret = MEMLINK_ERR_PARAM;
                 goto wdata_apply_over;
             }
                 
             ret = hashtable_remove_table(g_runtime->ht, tbname);
-            DINFO("hashtable_remove_key ret: %d\n", ret);
+            DINFO("hashtable_remove_table ret: %d\n", ret);
             break;
 
         case CMD_CREATE_NODE: {
             DINFO("<<< cmd CREATE_NODE >>>\n");
-            char name[256] = {0};
-            ret = cmd_create_node_unpack(data, name, keybuf);
+            ret = cmd_create_node_unpack(data, tbname, key);
             if (ret <= 0) {
                 DINFO("unpack create node error! ret:%d\n", ret);
                 goto wdata_apply_over;
             }
-            if (name[0] == 0 || keybuf[0] == 0) {
+            if (tbname[0] == 0 || key[0] == 0) {
                 ret = MEMLINK_ERR_PARAM;
                 goto wdata_apply_over;
             }
-            ret = hashtable_create_node(g_runtime->ht, name, keybuf);
+            ret = hashtable_create_node(g_runtime->ht, tbname, key);
             DINFO("hashtable_create_node ret:%d\n", ret);
             break;
         }
         case CMD_DEL: {
             DINFO("<<< cmd DEL >>>\n");
-            ret = cmd_del_unpack(data, keybuf, value, &valuelen);
+            ret = cmd_del_unpack(data, tbname, key, value, &valuelen);
             if (ret <= 0) {
                 DINFO("unpack del error! ret: %d\n", ret);
                 goto wdata_apply_over;
@@ -337,7 +334,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
 
             DINFO("unpack del, key: %s, value: %s, valuelen: %d\n", key, value, valuelen);
             
-            ret = table_name(keybuf, &tbname, &key);
+            ret = check_table_key(tbname, key);
             if (ret < 0) {
                 goto wdata_apply_over;
             }  
@@ -353,7 +350,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             uint8_t kind;
             uint8_t vminlen = 0, vmaxlen = 0;
 
-            ret = cmd_sortlist_del_unpack(data, keybuf, &kind, valmin, &vminlen, 
+            ret = cmd_sortlist_del_unpack(data, tbname, key, &kind, valmin, &vminlen, 
                                 valmax, &vmaxlen, &attrnum, attrarray);
             if (ret <= 0) {
                 DINFO("unpack sortlist_del error! ret: %d\n", ret);
@@ -361,7 +358,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             }
 
             DINFO("unpack del, key: %s, valmin:%s, valmax:%s\n", key, valmin, valmax);
-            ret = table_name(keybuf, &tbname, &key);
+            ret = check_table_key(tbname, key);
             if (ret < 0) {
                 goto wdata_apply_over;
             }  
@@ -374,7 +371,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
         }
         case CMD_INSERT: {
             DINFO("<<< cmd INSERT >>>\n");
-            ret = cmd_insert_unpack(data, keybuf, value, &valuelen, &attrnum, attrarray, &pos);
+            ret = cmd_insert_unpack(data, tbname, key, value, &valuelen, &attrnum, attrarray, &pos);
             if (ret <= 0) {
                 DINFO("unpack insert error! ret: %d\n", ret);
                 goto wdata_apply_over;
@@ -390,12 +387,11 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
                 goto wdata_apply_over;
             }
 
-            ret = table_name(keybuf, &tbname, &key);
+            ret = check_table_key(tbname, key);
             if (ret < 0) {
                 goto wdata_apply_over;
             }  
 
-            
             ret = hashtable_insert(g_runtime->ht, tbname, key, value, attrarray, attrnum, pos);
             DINFO("hashtable_insert: %d\n", ret);
 
@@ -404,12 +400,12 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
         }
         case CMD_MOVE: {
             DINFO("<<< cmd MOVE >>>\n");
-            ret = cmd_move_unpack(data, keybuf, value, &valuelen, &pos);
+            ret = cmd_move_unpack(data, tbname, key, value, &valuelen, &pos);
             if (ret <= 0) {
                 DINFO("unpack move error! ret: %d\n", ret);
                 goto wdata_apply_over;
             }
-            DINFO("unpack move, key:%s, value:%s, pos:%d\n", keybuf, value, pos);
+            DINFO("unpack move, table:%s key:%s, value:%s, pos:%d\n", tbname, key, value, pos);
     
             if (pos == -1) {
                 pos = INT_MAX;
@@ -418,7 +414,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
                 DINFO("move pos < 0, %d", pos);
                 goto wdata_apply_over;
             }
-            ret = table_name(keybuf, &tbname, &key);
+            ret = check_table_key(tbname, key);
             if (ret < 0) {
                 goto wdata_apply_over;
             }  
@@ -429,16 +425,16 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
         }
         case CMD_ATTR: {
             DINFO("<<< cmd ATTR >>>\n");
-            ret = cmd_attr_unpack(data, keybuf, value, &valuelen, &attrnum, attrarray);
+            ret = cmd_attr_unpack(data, tbname, key, value, &valuelen, &attrnum, attrarray);
             if (ret <= 0) {
                 DINFO("unpack attr error! ret: %d\n", ret);
                 goto wdata_apply_over;
             }
 
-            DINFO("unpack attr key: %s, valuelen: %d, attrnum: %d, attrarray: %d,%d,%d\n", 
-                    keybuf, valuelen, 
+            DINFO("unpack attr table:%s key: %s, valuelen: %d, attrnum: %d, attrarray: %d,%d,%d\n", 
+                    tbname, key, valuelen, 
                     attrnum, attrarray[0], attrarray[1], attrarray[2]);
-            ret = table_name(keybuf, &tbname, &key);
+            ret = check_table_key(tbname, key);
             if (ret < 0) {
                 goto wdata_apply_over;
             }  
@@ -449,7 +445,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
         }
         case CMD_TAG: {
             DINFO("<<< cmd TAG >>>\n");
-            ret = cmd_tag_unpack(data, keybuf, value, &valuelen, &tag);
+            ret = cmd_tag_unpack(data, tbname, key, value, &valuelen, &tag);
             if (ret <= 0) {
                 DINFO("unpack tag error! ret: %d\n", ret);
                 /*char ebuf[256];
@@ -457,8 +453,8 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
                 goto wdata_apply_over;
             }
 
-            DINFO("unpack tag, key:%s, value:%s, tag:%d\n", keybuf, value, tag);
-            ret = table_name(keybuf, &tbname, &key);
+            DINFO("unpack tag, table:%s key:%s, value:%s, tag:%d\n", tbname, key, value, tag);
+            ret = check_table_key(tbname, key);
             if (ret < 0) {
                 goto wdata_apply_over;
             }  
@@ -469,32 +465,31 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
         }
         case CMD_RMKEY:
             DINFO("<<< cmd RMKEY >>>\n");
-            ret = cmd_rmkey_unpack(data, keybuf);
+            ret = cmd_rmkey_unpack(data, tbname, key);
             if (ret <= 0) {
                 DINFO("unpack tag error! ret: %d\n", ret);
                 goto wdata_apply_over;
             }
 
-            DINFO("unpack rmkey, key:%s\n", keybuf);
-            ret = table_name(keybuf, &tbname, &key);
+            DINFO("unpack rmkey, table:%s key:%s\n", tbname, key);
+            ret = check_table_key(tbname, key);
             if (ret < 0) {
                 goto wdata_apply_over;
             }  
-
 
             ret = hashtable_remove_key(g_runtime->ht, tbname, key);
             DINFO("hashtable_remove_key ret: %d\n", ret);
             break;
         case CMD_DEL_BY_ATTR:
             DINFO("<<< cmd DEL_BY_ATTR >>>\n");
-            ret = cmd_del_by_attr_unpack(data, keybuf, attrarray, &attrnum);
+            ret = cmd_del_by_attr_unpack(data, tbname, key, attrarray, &attrnum);
             if (ret <= 0) {
                 DINFO("unpack del_by_attr error! ret: %d\n", ret);
                 goto wdata_apply_over;
             }
-            DINFO("unpack key: %s, attrnum: %d, attrarray: %d,%d,%d\n", 
-                    keybuf, attrnum, attrarray[0], attrarray[1],attrarray[2]);
-            ret = table_name(keybuf, &tbname, &key);
+            DINFO("unpack table:%s key: %s, attrnum: %d, attrarray: %d,%d,%d\n", 
+                    tbname, key, attrnum, attrarray[0], attrarray[1],attrarray[2]);
+            ret = check_table_key(tbname, key);
             if (ret < 0) {
                 goto wdata_apply_over;
             }  
@@ -516,14 +511,14 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             break;
         case CMD_LPUSH:
             DINFO("<<< cmd LPUSH >>>\n");
-            ret = cmd_lpush_unpack(data, keybuf, value, &valuelen, &attrnum, attrarray);
+            ret = cmd_lpush_unpack(data, tbname, key, value, &valuelen, &attrnum, attrarray);
             if (ret <= 0) {
                 DINFO("unpack lpush error! ret: %d\n", ret);
                 goto wdata_apply_over;
             }
-            DINFO("unpack key: %s, attrnum: %d, attrarray: %d,%d,%d\n", 
-                    keybuf, attrnum, attrarray[0], attrarray[1],attrarray[2]);
-            ret = table_name(keybuf, &tbname, &key);
+            DINFO("unpack table:%s key: %s, attrnum: %d, attrarray: %d,%d,%d\n", 
+                    tbname, key, attrnum, attrarray[0], attrarray[1],attrarray[2]);
+            ret = check_table_key(tbname, key);
             if (ret < 0) {
                 goto wdata_apply_over;
             }  
@@ -533,14 +528,14 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             break;
         case CMD_RPUSH:
             DINFO("<<< cmd RPUSH >>>\n");
-            ret = cmd_rpush_unpack(data, keybuf, value, &valuelen, &attrnum, attrarray);
+            ret = cmd_rpush_unpack(data, tbname, key, value, &valuelen, &attrnum, attrarray);
             if (ret <= 0) {
                 DINFO("unpack rpush error! ret: %d\n", ret);
                 goto wdata_apply_over;
             }
-            DINFO("unpack key: %s, attrnum: %d, attrarray: %d,%d,%d\n", 
-                    keybuf, attrnum, attrarray[0], attrarray[1],attrarray[2]);
-            ret = table_name(keybuf, &tbname, &key);
+            DINFO("unpack table:%s key: %s, attrnum: %d, attrarray: %d,%d,%d\n", 
+                    tbname, key, attrnum, attrarray[0], attrarray[1],attrarray[2]);
+            ret = check_table_key(tbname, key);
             if (ret < 0) {
                 goto wdata_apply_over;
             }  
@@ -550,16 +545,15 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             break;
         case CMD_LPOP:
             DINFO("<<< cmd LPOP >>>\n");
-            ret = cmd_pop_unpack(data, keybuf, &num);
+            ret = cmd_pop_unpack(data, tbname, key, &num);
             if (ret <= 0) {
                 DINFO("unpack rpush error! ret: %d\n", ret);
                 goto wdata_apply_over;
             }
-            ret = table_name(keybuf, &tbname, &key);
+            ret = check_table_key(tbname, key);
             if (ret < 0) {
                 goto wdata_apply_over;
             }  
-
 
             if (num <= 0) {
                 DINFO("num:%d, key:%s\n", num, key);
@@ -569,7 +563,7 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
 
             //hashtable_print(g_runtime->ht, key);
             ret = hashtable_lpop(g_runtime->ht, tbname, key, num, conn); 
-            DINFO("hashtable_range return: %d\n", ret);
+            DINFO("hashtable_lpop return: %d\n", ret);
             //hashtable_print(g_runtime->ht, key);
 
             if (conn && ret >= 0 && writelog) {
@@ -586,16 +580,15 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             break;
         case CMD_RPOP:
             DINFO("<<< cmd RPOP >>>\n");
-            ret = cmd_pop_unpack(data, keybuf, &num);
+            ret = cmd_pop_unpack(data, tbname, key, &num);
             if (ret <= 0) {
                 DINFO("unpack rpush error! ret: %d\n", ret);
                 goto wdata_apply_over;
             }
-            ret = table_name(keybuf, &tbname, &key);
+            ret = check_table_key(tbname, key);
             if (ret < 0) {
                 goto wdata_apply_over;
             }  
-
 
             if (num <= 0) {
                 DINFO("num:%d, key:%s\n", num, key);
@@ -642,20 +635,19 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
                 while (count < package_len && skip == 1) {
                     char *countstart;
                     //解析key    
-                    memset(key, 0x0, 512);    
-                    psize = cmd_insert_mkv_unpack_key(data + count, keybuf, &valcount, &countstart);
+                    memset(key, 0, sizeof(key));    
+                    memset(tbname, 0, sizeof(tbname));
+                    psize = cmd_insert_mkv_unpack_key(data + count, tbname, key, &valcount, &countstart);
                     keysize = psize;
                     DINFO("key: %s, valcount: %d\n", key, valcount);
                     count += psize;    
 
-                    ret = table_name(keybuf, &tbname, &key);
+                    ret = check_table_key(tbname, key);
                     if (ret < 0) {
                         //当前key的第一个value就出错了
                         count -= keysize;
                         break;
                     }  
-
-
                     //解析value
                     j = 0;
                     while (j < valcount) {

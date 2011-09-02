@@ -6,12 +6,6 @@
 #include <string.h>
 #include <ctype.h>
 #include <pthread.h>
-#include "synclog.h"
-#include "mem.h"
-#include "wthread.h"
-#include "server.h"
-#include "sslave.h"
-#include "sthread.h"
 
 // TODO is there a pre-defined const for this?
 #define IP_ADDR_MAX_LEN         16
@@ -73,9 +67,5 @@ int         myconfig_change();
 int			myconfig_print(MyConfig *cf);
 
 int			myconfig_parser_create(MyConfig *cf, char *filepath, int loadflag);
-
-int			mem_used_inc(long long size);	
-int			mem_used_dec(long long size);
-int         conn_check_max(Conn *conn);
 
 #endif
