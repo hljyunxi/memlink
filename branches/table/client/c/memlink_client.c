@@ -610,18 +610,15 @@ memlink_cmd_create_table_sortlist(MemLink *m, char *name, int valuelen, char *at
 }
 
 int
-memlink_cmd_create_node(MemLink *m, char *name, char *key)
+memlink_cmd_create_node(MemLink *m, char *key)
 {
-    if (NULL == name || strlen(name) > HASHTABLE_KEY_MAX)
-        return MEMLINK_ERR_PARAM;
-    
     if (NULL == key || strlen(key) > HASHTABLE_KEY_MAX) {
         return MEMLINK_ERR_PARAM;
     }
     char data[1024] = {0};
     int  len;
 
-    len = cmd_create_node_pack(data, name, key);
+    len = cmd_create_node_pack(data, key);
     //DINFO("pack del len: %d\n", len);
     char retdata[1024] = {0};
     int ret = memlink_do_cmd(m, MEMLINK_WRITER, data, len, retdata, 1024);

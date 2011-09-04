@@ -76,12 +76,12 @@ class MemLinkClient
 	}
 
 	
-	function create_node($name, $key)
+	function create_node($key)
 	{
-		if (false == is_string($name) or false == is_string($key)) {
+		if (false == is_string($key)) {
 			return -1;
 		}
-		return memlink_cmd_create_node($this->client, $name, $key);
+		return memlink_cmd_create_node($this->client, $key);
 	}
 
 	function ping()

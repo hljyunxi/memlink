@@ -63,35 +63,35 @@ int main()
 	}
 
     // test create node
-    sprintf(key, "haha");
+    sprintf(key, "%s.haha", name);
     
-    ret = memlink_cmd_create_node(m, name, key);
+    ret = memlink_cmd_create_node(m, key);
     if (ret != MEMLINK_OK) {
         DERROR("create node error:%d\n", ret);
         return -1;
     }
-    ret = memlink_cmd_create_node(m, NULL, key);
+    ret = memlink_cmd_create_node(m, NULL);
     if (ret == MEMLINK_OK) {
         DERROR("create node error:%d\n", ret);
         return -1;
     }
-    ret = memlink_cmd_create_node(m, name, NULL);
+    ret = memlink_cmd_create_node(m, ".haha");
     if (ret == MEMLINK_OK) {
         DERROR("create node error:%d\n", ret);
         return -1;
     }
-    ret = memlink_cmd_create_node(m, "", key);
+    ret = memlink_cmd_create_node(m, "");
     if (ret == MEMLINK_OK) {
         DERROR("create node error:%d\n", ret);
         return -1;
     }
-    ret = memlink_cmd_create_node(m, name, "");
+    ret = memlink_cmd_create_node(m, "haha");
     if (ret == MEMLINK_OK) {
         DERROR("create node error:%d\n", ret);
         return -1;
     }
 
-    ret = memlink_cmd_create_node(m, name, key);
+    ret = memlink_cmd_create_node(m, key);
     if (ret == MEMLINK_OK) {
         DERROR("create node error:%d\n", ret);
         return -1;

@@ -96,7 +96,7 @@ int test_create_node(TestArgs *args)
 
         for (i = 0; i < args->testcount; i++) {
             sprintf(key, "%s%d", args->key, args->tid * args->testcount + i);
-            ret = memlink_cmd_create_node(m, name, key);
+            ret = memlink_cmd_create_node(m, key);
             if (ret != MEMLINK_OK) {
                 DERROR("create list error! ret:%d\n", ret);
                 return -2;

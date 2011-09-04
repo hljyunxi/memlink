@@ -41,8 +41,8 @@ class MemLinkClient:
     def create_table_sortlist(self, key, valuesize, valuetype, attrstr=''):
         return memlink_cmd_create_table_sortlist(self.client, key, valuesize, attrstr, valuetype);
 
-    def create_node(self, name, key):
-        return memlink_cmd_create_node(self.client, name, key)
+    def create_node(self, key):
+        return memlink_cmd_create_node(self.client, key)
 
     def stat(self, key):
         mstat = MemLinkStat()
