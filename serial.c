@@ -453,15 +453,15 @@ cmd_create_table_unpack(char *data, char *name, unsigned char *valuelen,
 }
 
 int 
-cmd_create_node_pack(char *data, char *name, char *key)
+cmd_create_node_pack(char *data, char *key)
 {
-    return pack(data, 0, "$4css", CMD_CREATE_NODE, name, key);
+    return pack(data, 0, "$4cs", CMD_CREATE_NODE, key);
 }
 
 int 
-cmd_create_node_unpack(char *data, char *name, char *key)
+cmd_create_node_unpack(char *data, char *key)
 {
-    return unpack(data+CMD_REQ_HEAD_LEN, 0, "ss", name, key);
+    return unpack(data+CMD_REQ_HEAD_LEN, 0, "s", key);
 }
 
 int 

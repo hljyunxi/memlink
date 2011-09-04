@@ -121,7 +121,7 @@ int			memlink_cmd_create_table_list(MemLink *m, char *name, int valuelen, char *
 int			memlink_cmd_create_table_queue(MemLink *m, char *name, int valuelen, char *attrstr);
 int			memlink_cmd_create_table_sortlist(MemLink *m, char *name, int valuelen, char *attrstr, 
                                         unsigned char valuetype);
-int			memlink_cmd_create_node(MemLink *m, char *name, char *key);
+int			memlink_cmd_create_node(MemLink *m, char *key);
 int			memlink_cmd_remove_table(MemLink *m, char *name);
 int			memlink_cmd_del(MemLink *m, char *key, char *value, int valuelen);
 int			memlink_cmd_insert(MemLink *m, char *key, char *value, int valuelen, 

@@ -106,8 +106,8 @@ int cmd_create_table_unpack(char *data, char *name, unsigned char *valuelen,
                       unsigned char *attrnum, unsigned int *attrformat,
                       unsigned char *listtype, unsigned char *valuetype);
 
-int cmd_create_node_pack(char *data, char *name, char *key);
-int cmd_create_node_unpack(char *data, char *name, char *key);
+int cmd_create_node_pack(char *data, char *key);
+int cmd_create_node_unpack(char *data, char *key);
 
 int cmd_del_pack(char *data, char *key, char *value, unsigned char valuelen);
 int cmd_del_unpack(char *data, char *key, char *value, unsigned char *valuelen);

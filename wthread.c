@@ -313,17 +313,18 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
 
         case CMD_CREATE_NODE: {
             DINFO("<<< cmd CREATE_NODE >>>\n");
-            char name[256] = {0};
-            ret = cmd_create_node_unpack(data, name, keybuf);
+            //char name[256] = {0};
+            ret = cmd_create_node_unpack(data, keybuf);
             if (ret <= 0) {
                 DINFO("unpack create node error! ret:%d\n", ret);
                 goto wdata_apply_over;
             }
-            if (name[0] == 0 || keybuf[0] == 0) {
-                ret = MEMLINK_ERR_PARAM;
+            ret = table_name(keybuf, &tbname, &key);
+            if (ret < 0) {
                 goto wdata_apply_over;
-            }
-            ret = hashtable_create_node(g_runtime->ht, name, keybuf);
+            }  
+
+            ret = hashtable_create_node(g_runtime->ht, tbname, key);
             DINFO("hashtable_create_node ret:%d\n", ret);
             break;
         }

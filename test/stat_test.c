@@ -68,7 +68,7 @@ int main()
 		return -2;
 	}
 
-    ret = memlink_cmd_create_node(m, name, "haha");
+    ret = memlink_cmd_create_node(m, key);
     if (ret != MEMLINK_OK) {
         DERROR("create node error:%d\n", ret);
         return -1;
