@@ -43,46 +43,45 @@ int check_exception_parameter(MemLink *m)
 		return -2;
 	}
 
-    //sprintf(key, "%s.haha1", name);
-    strcpy(key, "haha");
+    sprintf(key, "%s.haha1", name);
 
     sprintf(val, "%06d", 2);
-    ret = memlink_cmd_insert(m, name, key, val, strlen(val), "14294967295:3:1", 0); 
+    ret = memlink_cmd_insert(m, key, val, strlen(val), "14294967295:3:1", 0); 
 	if (ret == MEMLINK_OK) {
 		DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", key, val, "14294967295:3:1", 0);
 		return -3;
 	}
 
     char *attrstr = "7:2:1";
-	ret = memlink_cmd_insert(m, name, key, val, -1, attrstr, -10); 
+	ret = memlink_cmd_insert(m, key, val, -1, attrstr, -10); 
 	if (ret == MEMLINK_OK) {
 		DERROR("insert error, key:%s, val:%s, attr:%s, pos:%d\n", key, val, attrstr, -10);
 		return -3;
 	}
 	
 	strcpy(val, "0610");
-	ret = memlink_cmd_insert(m, name, key, val, strlen(val), "4:3:2:1", 0); 
+	ret = memlink_cmd_insert(m, key, val, strlen(val), "4:3:2:1", 0); 
 	if (ret == MEMLINK_OK) {
 		DERROR("insert error, key:%s, val:%s, attr=4:3:2:1, ret:%d\n", key, val, ret);
 		return -3;
 	}
 
 	strcpy(val, "0610");
-	ret = memlink_cmd_insert(m, name, key, val, strlen(val), "2:1", 0); 
+	ret = memlink_cmd_insert(m, key, val, strlen(val), "2:1", 0); 
 	if (ret == MEMLINK_OK) {
 		DERROR("insert error, key:%s, val:%s, attr=2:1, ret:%d\n", key, val, ret);
 		return -3;
 	}
 
     // attr截断, 20:9:4 => binary 10100: 1001: 100
-    ret = memlink_cmd_insert(m, name, key, val, strlen(val), "20:9:4", 0); 
+    ret = memlink_cmd_insert(m, key, val, strlen(val), "20:9:4", 0); 
 	if (ret != MEMLINK_OK) {
 		DERROR("insert error, key:%s, val:%s, attr=20:9:4, ret:%d\n", key, val, ret);
 		return -3;
 	}
     
     MemLinkResult result;
-    ret = memlink_cmd_range(m, name, key, MEMLINK_VALUE_ALL, "", 0, 1, &result);
+    ret = memlink_cmd_range(m, key, MEMLINK_VALUE_ALL, "", 0, 1, &result);
     if (ret != MEMLINK_OK) {
         DERROR("range error, ret:%d\n", ret);
         return -1;
@@ -100,13 +99,13 @@ int check_exception_parameter(MemLink *m)
     return 0;
 }
 
-#define check_result(m,n,k,attr,f,l,c,v)  check_result_real(m,n,k,attr,f,l,c,v,__FILE__,__LINE__)
+#define check_result(m,k,attr,f,l,c,v)  check_result_real(m,k,attr,f,l,c,v,__FILE__,__LINE__)
 
-int check_result_real(MemLink *m, char *name, char *key, char **attrstrs, 
+int check_result_real(MemLink *m, char *key, char **attrstrs, 
                 int from, int len, int retcount, int *retval, char *file, int line)
 {
     MemLinkResult result;
-    int ret = memlink_cmd_range(m, name, key, MEMLINK_VALUE_ALL, "", from, len, &result);
+    int ret = memlink_cmd_range(m, key, MEMLINK_VALUE_ALL, "", from, len, &result);
     if (ret != MEMLINK_OK) {
         DERROR("range error, ret:%d, key:%s, from:%d, len:%d, file:%s:%d\n", 
                     ret, key, from, len, file, line);
@@ -160,20 +159,18 @@ int check_insert(MemLink *m)
     int valnum = 0;
     int i;
 
-    //sprintf(key, "%s.haha2", name);
-    strcpy(key, "haha2");
-
+    sprintf(key, "%s.haha2", name);
     for (i = 0; i < 10; i++) {
         sprintf(val, "%06d", i);
         //DINFO("insert key:%s val:%s attr:%s\n", key, val, attrstrs[i%3]);
-        ret = memlink_cmd_insert(m, name, key, val, strlen(val), attrstrs[i%3], 0);	
+        ret = memlink_cmd_insert(m, key, val, strlen(val), attrstrs[i%3], 0);	
 		if (ret != MEMLINK_OK) {
 			DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", key, val, attrstrs[i%3], i);
 			return -1;
 		}
         
         MemLinkStat stat; 
-        ret = memlink_cmd_stat(m, name, key, &stat);
+        ret = memlink_cmd_stat(m, key, &stat);
         if (ret != MEMLINK_OK) {
             DERROR("stat error, ret:%d key:%s\n", ret, key);
             return -1;
@@ -218,13 +215,13 @@ int check_insert(MemLink *m)
         retval[k] = i;
         k++;
     }
-    ret = check_result(m, name, key, attrstrs_in, 0, 20, valnum, retval);
+    ret = check_result(m, key, attrstrs_in, 0, 20, valnum, retval);
     if (ret < 0)
         return ret;
 
     for (i = 10; i < 50; i++) {
         sprintf(val, "%06d", i);
-        ret = memlink_cmd_insert(m, name, key, val, strlen(val), attrstrs[i % 3], 0);	
+        ret = memlink_cmd_insert(m, key, val, strlen(val), attrstrs[i % 3], 0);	
 		if (ret != MEMLINK_OK) {
 			DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", key, val, attrstrs[i % 3], i);
 			return -1;
@@ -237,13 +234,13 @@ int check_insert(MemLink *m)
         retval[k] = i;
         k++;
     }
-    ret = check_result(m, name, key, attrstrs_in, 0, 100, valnum, retval);
+    ret = check_result(m, key, attrstrs_in, 0, 100, valnum, retval);
     if (ret < 0)
         return ret;
     
     i = 45;
     sprintf(val, "%06d", i);
-    ret = memlink_cmd_del(m, name, key, val, strlen(val));
+    ret = memlink_cmd_del(m, key, val, strlen(val));
     if (ret != MEMLINK_OK) {
         DERROR("del error, key:%s, val:%s\n", key, val);
         return -1;
@@ -252,14 +249,14 @@ int check_insert(MemLink *m)
     
     int pos = 4;
     retval[0] = i - 1;
-    ret = check_result(m, name, key, attrstrs_in, pos, 1, 1, retval);
+    ret = check_result(m, key, attrstrs_in, pos, 1, 1, retval);
     if (ret < 0)
         return ret;
 
     // 在空位置插入
     i = 100;
     sprintf(val, "%06d", i);
-    ret = memlink_cmd_insert(m, name, key, val, strlen(val), attrstrs[i%3], pos);
+    ret = memlink_cmd_insert(m, key, val, strlen(val), attrstrs[i%3], pos);
     if (ret != MEMLINK_OK) {
         DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", key, val, attrstrs[i%3], i);
         return -1;
@@ -267,27 +264,27 @@ int check_insert(MemLink *m)
     valnum++;
 
     retval[0] = i;
-    ret = check_result(m, name, key, attrstrs_in, pos, 1, 1, retval);
+    ret = check_result(m, key, attrstrs_in, pos, 1, 1, retval);
     if (ret < 0)
         return ret;
    
     // block有空，但当前位置不为空
     sprintf(val, "%06d", 100);
-    ret = memlink_cmd_del(m, name, key, val, strlen(val));  
+    ret = memlink_cmd_del(m, key, val, strlen(val));  
     if (ret != MEMLINK_OK) {
         DERROR("del error, ret:%d, val:%s\n", ret, val);
         return -1;
     }
     valnum--;
     sprintf(val, "%06d", 49);
-    ret = memlink_cmd_del(m, name, key, val, strlen(val));  
+    ret = memlink_cmd_del(m, key, val, strlen(val));  
     if (ret != MEMLINK_OK) {
         DERROR("del error, ret:%d, val:%s\n", ret, val);
         return -1;
     }
     valnum--;
     sprintf(val, "%06d", 47);
-    ret = memlink_cmd_del(m, name, key, val, strlen(val));  
+    ret = memlink_cmd_del(m, key, val, strlen(val));  
     if (ret != MEMLINK_OK) {
         DERROR("del error, ret:%d, val:%s\n", ret, val);
         return -1;
@@ -297,7 +294,7 @@ int check_insert(MemLink *m)
     pos = 3;
     i = 200;
     sprintf(val, "%06d", i);
-    ret = memlink_cmd_insert(m, name, key, val, strlen(val), attrstrs[i%3], pos);
+    ret = memlink_cmd_insert(m, key, val, strlen(val), attrstrs[i%3], pos);
     if (ret != MEMLINK_OK) {
         DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", key, val, attrstrs[i%3], i);
         return -1;
@@ -313,13 +310,13 @@ int check_insert(MemLink *m)
         retval[k] = i;
         k++;
     }
-    ret = check_result(m, name, key, attrstrs_in, 0, 100, valnum, retval);
+    ret = check_result(m, key, attrstrs_in, 0, 100, valnum, retval);
     if (ret < 0)
         return ret;
    
     // 在满的block中插入，此block的下一个block的第一个位置是空
     sprintf(val, "%06d", 29);
-    ret = memlink_cmd_del(m, name, key, val, strlen(val));  
+    ret = memlink_cmd_del(m, key, val, strlen(val));  
     if (ret != MEMLINK_OK) {
         DERROR("del error, ret:%d, val:%s\n", ret, val);
         return -1;
@@ -329,7 +326,7 @@ int check_insert(MemLink *m)
     pos = 10;
     i = 300;
     sprintf(val, "%06d", i);
-    ret = memlink_cmd_insert(m, name, key, val, strlen(val), attrstrs[i%3], pos);
+    ret = memlink_cmd_insert(m, key, val, strlen(val), attrstrs[i%3], pos);
     if (ret != MEMLINK_OK) {
         DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", key, val, attrstrs[i%3], i);
         return -1;
@@ -348,13 +345,13 @@ int check_insert(MemLink *m)
         retval[k] = i;
         k++;
     }
-    ret = check_result(m, name, key, attrstrs_in, 8, 100, valnum - 8, retval);
+    ret = check_result(m, key, attrstrs_in, 8, 100, valnum - 8, retval);
     if (ret < 0)
         return ret;
  
     // 在满的block中插入，此block的下一个block有空，但不是第一个位置
     sprintf(val, "%06d", 28);
-    ret = memlink_cmd_del(m, name, key, val, strlen(val));  
+    ret = memlink_cmd_del(m, key, val, strlen(val));  
     if (ret != MEMLINK_OK) {
         DERROR("del error, ret:%d, val:%s\n", ret, val);
         return -1;
@@ -364,7 +361,7 @@ int check_insert(MemLink *m)
     pos = 10;
     i = 400;
     sprintf(val, "%06d", i);
-    ret = memlink_cmd_insert(m, name, key, val, strlen(val), attrstrs[i%3], pos);
+    ret = memlink_cmd_insert(m, key, val, strlen(val), attrstrs[i%3], pos);
     if (ret != MEMLINK_OK) {
         DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", key, val, attrstrs[i%3], i);
         return -1;
@@ -384,7 +381,7 @@ int check_insert(MemLink *m)
         retval[k] = i;
         k++;
     }
-    ret = check_result(m, name, key, attrstrs_in, 8, 100, valnum - 8, retval);
+    ret = check_result(m, key, attrstrs_in, 8, 100, valnum - 8, retval);
     if (ret < 0)
         return ret;
  
@@ -392,7 +389,7 @@ int check_insert(MemLink *m)
     pos = 10;
     i = 500;
     sprintf(val, "%06d", i);
-    ret = memlink_cmd_insert(m, name, key, val, strlen(val), attrstrs[i%3], pos);
+    ret = memlink_cmd_insert(m, key, val, strlen(val), attrstrs[i%3], pos);
     if (ret != MEMLINK_OK) {
         DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", key, val, attrstrs[i%3], i);
         return -1;
@@ -413,7 +410,7 @@ int check_insert(MemLink *m)
         retval[k] = i;
         k++;
     }
-    ret = check_result(m, name, key, attrstrs_in, 8, 100, valnum - 8, retval);
+    ret = check_result(m, key, attrstrs_in, 8, 100, valnum - 8, retval);
     if (ret < 0)
         return ret;
 
@@ -421,7 +418,7 @@ int check_insert(MemLink *m)
     pos = 18;
     i = 100;
     sprintf(val, "%06d", i);
-    ret = memlink_cmd_insert(m, name, key, val, strlen(val), attrstrs[i%3], pos);
+    ret = memlink_cmd_insert(m, key, val, strlen(val), attrstrs[i%3], pos);
     if (ret != MEMLINK_OK) {
         DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", key, val, attrstrs[i%3], i);
         return -1;
@@ -437,7 +434,7 @@ int check_insert(MemLink *m)
         retval[k] = i;
         k++;
     }
-    ret = check_result(m, name, key, attrstrs_in, pos, 100, valnum - pos, retval);
+    ret = check_result(m, key, attrstrs_in, pos, 100, valnum - pos, retval);
     if (ret < 0)
         return ret;
 
@@ -445,7 +442,7 @@ int check_insert(MemLink *m)
     pos = 16;
     i = 600;
     sprintf(val, "%06d", i);
-    ret = memlink_cmd_insert(m, name, key, val, strlen(val), attrstrs[i%3], pos);
+    ret = memlink_cmd_insert(m, key, val, strlen(val), attrstrs[i%3], pos);
     if (ret != MEMLINK_OK) {
         DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", key, val, attrstrs[i%3], i);
         return -1;
@@ -464,7 +461,7 @@ int check_insert(MemLink *m)
         retval[k] = i;
         k++;
     }
-    ret = check_result(m, name, key, attrstrs_in, pos, 100, valnum - pos, retval);
+    ret = check_result(m, key, attrstrs_in, pos, 100, valnum - pos, retval);
     if (ret < 0)
         return ret;
 
@@ -473,7 +470,7 @@ int check_insert(MemLink *m)
     k = 0;
     for (i = 700; i < 720; i++) {
         sprintf(val, "%06d", i);
-        ret = memlink_cmd_insert(m, name, key, val, strlen(val), attrstrs[i%3], valnum);
+        ret = memlink_cmd_insert(m, key, val, strlen(val), attrstrs[i%3], valnum);
         if (ret != MEMLINK_OK) {
             DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", key, val, attrstrs[i%3], i);
             return -1;
@@ -482,7 +479,7 @@ int check_insert(MemLink *m)
         k++;
         valnum++;
     }
-    ret = check_result(m, name, key, attrstrs_in, pos, 100, valnum - pos, retval);
+    ret = check_result(m, key, attrstrs_in, pos, 100, valnum - pos, retval);
     if (ret < 0)
         return ret;
 
@@ -491,7 +488,7 @@ int check_insert(MemLink *m)
     k = 0;
     for (i = 800; i < 820; i++) {
         sprintf(val, "%06d", i);
-        ret = memlink_cmd_insert(m, name, key, val, strlen(val), attrstrs[i%3], -1);
+        ret = memlink_cmd_insert(m, key, val, strlen(val), attrstrs[i%3], -1);
         if (ret != MEMLINK_OK) {
             DERROR("insert error, key:%s, val:%s, attr:%s, i:%d\n", key, val, attrstrs[i%3], i);
             return -1;
@@ -500,7 +497,7 @@ int check_insert(MemLink *m)
         k++;
         valnum++;
     }
-    ret = check_result(m, name, key, attrstrs_in, pos, 100, valnum - pos, retval);
+    ret = check_result(m, key, attrstrs_in, pos, 100, valnum - pos, retval);
     if (ret < 0)
         return ret;
 

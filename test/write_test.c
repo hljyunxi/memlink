@@ -7,7 +7,6 @@
 
 static MemLink *m;
 static char key[32];
-static char table[256];
 
 typedef struct linkNode
 {
@@ -50,7 +49,6 @@ int link_node_insert(LinkNode* l, char* key, char* val, char* attr, int pos)
 {
 	LinkNode* node = (LinkNode*)malloc(sizeof(LinkNode));
 	memset(node, 0, sizeof(node));
-    //strcpy(node->table, name);
 	strcpy(node->key, key);	
 	strcpy(node->val, val);
 	strcpy(node->attr, attr);
@@ -170,13 +168,13 @@ int check_result(LinkNode* l)
 	int ret = -1;
 	int i = 0;
 	
-	DINFO("table:%s key: %s\n", table, p->key);
+	DINFO("key: %s\n", p->key);
 	
 	MemLinkResult	result;
 	int				range_start = 0;
 	int				range_count = 2000;
 	
-	ret = memlink_cmd_range(m, table, key, MEMLINK_VALUE_VISIBLE, "", range_start, range_count, &result);
+	ret = memlink_cmd_range(m, key, MEMLINK_VALUE_VISIBLE, "", range_start, range_count, &result);
 	if (ret != MEMLINK_OK) {
 		DERROR("range error, key:%s, ret:%d\n", key, ret);
 		return -4;
@@ -248,7 +246,7 @@ int del_val()
 	char val[64];
 	int num = my_rand(200);
 	sprintf(val, "%06d", num);
-	ret = memlink_cmd_del(m, table, key, val, strlen(val));
+	ret = memlink_cmd_del(m, key, val, strlen(val));
 	
 	linkNodeDel(list, key, val);
 	if (ret != MEMLINK_OK && ret != MEMLINK_ERR_NOVAL) {
@@ -266,7 +264,7 @@ int insert_val()
 	
 	char *attr  = "7:2:1";
 	sprintf(val, "%06d", num);
-	ret = memlink_cmd_insert(m, table, key, val, strlen(val), attr, 0);
+	ret = memlink_cmd_insert(m, key, val, strlen(val), attr, 0);
 	
 	link_node_insert(list, key, val, attr, 0);
 	if (ret != MEMLINK_OK) {
@@ -283,7 +281,7 @@ int move_val()
 	int num = my_rand(200);
 	sprintf(val, "%06d", num);
     //DINFO("====== insert i:%d\n", i);
-	ret = memlink_cmd_move(m, table, key, val, strlen(val), 0);
+	ret = memlink_cmd_move(m, key, val, strlen(val), 0);
 	
 	linkNodeUpdate(list, key, val, 0);
 	if (ret != MEMLINK_OK && ret != MEMLINK_ERR_NOVAL) {
@@ -304,7 +302,7 @@ int tag_val()
 	
 	int tag;
 	(my_rand(2))?(tag = MEMLINK_TAG_DEL):(tag = MEMLINK_TAG_RESTORE);
-	ret = memlink_cmd_tag(m, table, key, val, strlen(val), tag);
+	ret = memlink_cmd_tag(m, key, val, strlen(val), tag);
 	linkNodeTag(list, key, val, tag);
 	if (ret != MEMLINK_OK && ret != MEMLINK_ERR_NOVAL) {
 		DERROR("tag_val error, ret:%d\n", ret);
@@ -323,7 +321,7 @@ int attr_val()
 	sprintf(val, "%06d", num);
 	
 	char *newattr  = "7:2:1";
-	ret = memlink_cmd_attr(m, table, key, val, strlen(val), newattr);
+	ret = memlink_cmd_attr(m, key, val, strlen(val), newattr);
 	linkNodeMask(list, key, val, newattr);
 	if (ret != MEMLINK_OK && ret != MEMLINK_ERR_NOVAL) {
 		DERROR("attr_val error, key:%s, val:%s, attr:%s, ret:%d\n", key, val, newattr, ret);
@@ -335,7 +333,7 @@ int attr_val()
 int clean_key()
 {
 	int ret;
-	ret = memlink_cmd_clean(m, table, key);
+	ret = memlink_cmd_clean(m, key);
 	if (ret != MEMLINK_OK) {
 		DERROR("clean error, key:%s, ret:%d\n", key, ret);
 		return -5;
@@ -361,10 +359,7 @@ int main()
 
 	int  ret;
     char *name = "test";
-    strcpy(table, name);
-	//sprintf(key, "%s.haha", name);
-    strcpy(key, "haha");
-
+	sprintf(key, "%s.haha", name);
 	ret = memlink_cmd_create_table_list(m, name, 6, "4:3:1");
 	create_list(list, key);
 	if (ret != MEMLINK_OK) {
@@ -379,7 +374,7 @@ int main()
 	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
 		int k = i%3;
-		ret = memlink_cmd_insert(m, name, key, val, strlen(val), attrstr1[k], 0);
+		ret = memlink_cmd_insert(m, key, val, strlen(val), attrstr1[k], 0);
 		////////////////////////////////
 		link_node_insert(list, key, val, attrstr1[k], 0);
 

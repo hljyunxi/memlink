@@ -17,14 +17,13 @@ int main()
 	}
 
 	int  ret;
-	char key[32];
+	char buf[32];
     char *name = "test";
-	//sprintf(key, "%s.haha", name);
-    strcpy(key, "haha");
-
+	sprintf(buf, "%s.haha", name);
 	ret = memlink_cmd_create_table_list(m, name, 6, "4:3:1");
+	
 	if (ret != MEMLINK_OK) {
-		DERROR("1 memlink_cmd_create %s error: %d\n", key, ret);
+		DERROR("1 memlink_cmd_create %s error: %d\n", buf, ret);
 		return -2;
 	}
 	
@@ -36,15 +35,15 @@ int main()
 	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
         //DINFO("====== insert:%s ======\n", val);
-		ret = memlink_cmd_insert(m, name, key, val, strlen(val), attrstr, 0);
+		ret = memlink_cmd_insert(m, buf, val, strlen(val), attrstr, 0);
 		if (ret != MEMLINK_OK) {
-			DERROR("insert error, key:%s,val:%s, ret:%d\n", key, val, ret);
+			DERROR("insert error, key:%s,val:%s, ret:%d\n", buf, val, ret);
 			return -3;
 		}
 	}
 
 	sprintf(val, "%06d", insertnum / 2);
-	ret = memlink_cmd_tag(m, name, key, val, strlen(val), MEMLINK_TAG_DEL);
+	ret = memlink_cmd_tag(m, buf, val, strlen(val), MEMLINK_TAG_DEL);
 	if (ret != MEMLINK_OK) {
 		DERROR("tag error, ret:%d\n", ret);
 		return -4;
@@ -52,7 +51,7 @@ int main()
 	
 	{
 		MemLinkCount	count2;
-		ret = memlink_cmd_count(m, name, key, "", &count2);
+		ret = memlink_cmd_count(m, buf, "", &count2);
 		if (ret != MEMLINK_OK) {
 			DERROR("count error, ret:%d\n", ret);
 			return -4;
@@ -64,7 +63,7 @@ int main()
 	}
 	
 	MemLinkResult	result;
-	ret = memlink_cmd_range(m, name, key, MEMLINK_VALUE_VISIBLE, "", 0, 200, &result);
+	ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE, "", 0, 200, &result);
 	if (ret != MEMLINK_OK) {
 		DERROR("range error, ret:%d\n", ret);
 		return -5;
@@ -82,7 +81,7 @@ int main()
 	
 	memlink_result_free(&result);
 
-	ret = memlink_cmd_tag(m, name, key, val, strlen(val), MEMLINK_TAG_RESTORE);
+	ret = memlink_cmd_tag(m, buf, val, strlen(val), MEMLINK_TAG_RESTORE);
 	if (ret != MEMLINK_OK) {
 		DERROR("tag error, ret:%d\n", ret);
 		return -7;
@@ -90,7 +89,7 @@ int main()
 	
 	{
 		MemLinkCount	count2;
-		ret = memlink_cmd_count(m, name, key, "", &count2);
+		ret = memlink_cmd_count(m, buf, "", &count2);
 		if (ret != MEMLINK_OK) {
 			DERROR("count error, ret:%d\n", ret);
 			return -4;
@@ -101,7 +100,7 @@ int main()
 		}
 	}
 
-	ret = memlink_cmd_range(m, name, key, MEMLINK_VALUE_VISIBLE, "::", 0, 200, &result);
+	ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE, "::", 0, 200, &result);
 	if (ret != MEMLINK_OK) {
 		DERROR("range error, ret:%d\n", ret);
 		return -8;

@@ -17,14 +17,13 @@ int main()
 	}
 
 	int  ret;
-	char key[32];
+	char buf[32];
     char *name = "test";
-	//sprintf(key, "%s.haha", name);
-    strcpy(key, "haha");
-
+	sprintf(buf, "%s.haha", name);
 	ret = memlink_cmd_create_table_list(m, name, 6, "4:3:1");
+	
 	if (ret != MEMLINK_OK) {
-		DERROR("1 memlink_cmd_create %s error: %d\n", name, ret);
+		DERROR("1 memlink_cmd_create %s error: %d\n", buf, ret);
 		return -2;
 	}
 
@@ -35,53 +34,53 @@ int main()
 
 	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
-		ret = memlink_cmd_insert(m, name, key, val, strlen(val), attrstr, i);
+		ret = memlink_cmd_insert(m, buf, val, strlen(val), attrstr, i);
 		if (ret != MEMLINK_OK) {
-			DERROR("insert error, key:%s,val:%s, ret:%d\n", key, val, ret);
+			DERROR("insert error, key:%s,val:%s, ret:%d\n", buf, val, ret);
 			return -3;
 		}
 	}
 
 //add by wyx
-	ret = memlink_cmd_move(m, name, key, val, -1, -10);
+	ret = memlink_cmd_move(m, buf, val, -1, -10);
 	if (ret == MEMLINK_OK) {
-		DERROR("move error, must novalue, key:%s, val:%s, ret:%d\n", key, "xxxx", ret);
+		DERROR("move error, must novalue, key:%s, val:%s, ret:%d\n", buf, "xxxx", ret);
 		return -4;
 	}
 
-	ret = memlink_cmd_move(m, name, key, "xxxx", 4, 0);
+	ret = memlink_cmd_move(m, buf, "xxxx", 4, 0);
 	if (ret != MEMLINK_ERR_NOVAL) {
-		DERROR("move error, must novalue, key:%s, val:%s, ret:%d\n", key, "xxxx", ret);
+		DERROR("move error, must novalue, key:%s, val:%s, ret:%d\n", buf, "xxxx", ret);
 		return -4;
 	}
-    ret = memlink_cmd_move(m, "test", "xxxxxx", "xxxx", 4, 0);
+    ret = memlink_cmd_move(m, "test.xxxxxx", "xxxx", 4, 0);
 	if (ret != MEMLINK_ERR_NOKEY) {
-		DERROR("move error, must nokey, key:%s\n", key);
+		DERROR("move error, must nokey, key:%s\n", buf);
 		return -4;
 	}
 //end
 	for (i = 0; i < insertnum; i++) {
 		sprintf(val, "%06d", i);
         //DINFO("====== insert i:%d\n", i);
-		ret = memlink_cmd_move(m, name, key, val, strlen(val), 0);
+		ret = memlink_cmd_move(m, buf, val, strlen(val), 0);
 		if (ret != MEMLINK_OK) {
-			DERROR("move error, key:%s, val:%s, ret:%d, i:%d\n", key, val, ret, i);
+			DERROR("move error, key:%s, val:%s, ret:%d, i:%d\n", buf, val, ret, i);
 			return -4;
 		}
 		else
-			DINFO("move ok, key:%s, val:%s, ret:%d, i:%d\n", key, val, ret, i);
+			DINFO("move ok, key:%s, val:%s, ret:%d, i:%d\n", buf, val, ret, i);
 
 		MemLinkResult result;
 
-		ret = memlink_cmd_range(m, name, key, MEMLINK_VALUE_VISIBLE, "", 0, 1, &result);
+		ret = memlink_cmd_range(m, buf, MEMLINK_VALUE_VISIBLE, "", 0, 1, &result);
 		if (ret != MEMLINK_OK) {
-			DERROR("range error, key:%s, ret:%d\n", key, ret);
+			DERROR("range error, key:%s, ret:%d\n", buf, ret);
 			return -5;
 		}
 		MemLinkItem *item = result.items;
 			
 		if (item == NULL) {
-			DERROR("item is null, key:%s\n", key);
+			DERROR("item is null, key:%s\n", buf);
 			return -6;
 		}
         //DINFO("item value: %s\n", item->value);
@@ -95,9 +94,9 @@ int main()
 
     MemLinkStat     stat;
 
-    ret = memlink_cmd_stat(m, name, key, &stat);
+    ret = memlink_cmd_stat(m, buf, &stat);
     if (ret != MEMLINK_OK) {
-        DERROR("stat error, key:%s, ret:%d\n", key, ret);
+        DERROR("stat error, key:%s, ret:%d\n", buf, ret);
         return -8;
     }
 

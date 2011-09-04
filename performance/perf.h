@@ -11,7 +11,6 @@ typedef struct
     int     rport;
     int     wport;
     int     timeout;
-    char    table[255];
     char    key[255];
     char    value[255];
     int     valuelen;

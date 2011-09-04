@@ -24,7 +24,7 @@ def test():
     time.sleep(1)
 
     name = 'test'
-    key = 'haha'
+    key = name + '.haha'
     attrstr = "8:1:1"
     ret = client2master.create_table_list(name , 12, "4:3:1")
     if ret != MEMLINK_OK:
@@ -36,7 +36,7 @@ def test():
     num = 1000
     for i in xrange(0, num):
         val = '%012d' % i
-        ret = client2master.insert(name, key, val, i, attrstr)
+        ret = client2master.insert(key, val, i, attrstr)
         if ret != MEMLINK_OK:
             print 'insert error!', key, val, attrstr, ret
             return -2;
@@ -51,7 +51,7 @@ def test():
     num2 = 1500
     for i in xrange(num, num2):
         val = '%012d' % i
-        ret = client2master.insert(name, key, val, i, attrstr)
+        ret = client2master.insert(key, val, i, attrstr)
         if ret != MEMLINK_OK:
             print 'insert error!', key, val, attrstr, ret
             return -2;
@@ -62,7 +62,7 @@ def test():
     num3 = 3000
     for i in xrange(num2, num3):
         val = '%012d' % i
-        ret = client2master.insert(name, key, val, i, attrstr)
+        ret = client2master.insert(key, val, i, attrstr)
         if ret != MEMLINK_OK:
             print 'insert error!', key, val, attrstr, ret
             return -2;
@@ -72,7 +72,7 @@ def test():
     num = 1500
     for i in range(0, num):
         val = '%012d' % (i*2)
-        ret = client2master.move(name, key, val, 0)
+        ret = client2master.move(key, val, 0)
         if ret != MEMLINK_OK:
         	print 'move error:', val, ret
         	return -1
@@ -84,7 +84,7 @@ def test():
     attrstr1 = '6:2:1'
     for i in xrange(0, num):
         val = '%012d' % (i*3) 
-        ret = client2master.attr(name, key, val, attrstr1)
+        ret = client2master.attr(key, val, attrstr1)
         if ret != MEMLINK_OK:
             print 'attr error!', val, attrstr, ret
             return -2;
@@ -96,7 +96,7 @@ def test():
     num = 300
     for i in xrange(0, num):
         val = '%012d' % (i*10) 
-        ret = client2master.tag(name, key, val, 1)
+        ret = client2master.tag(key, val, 1)
         if ret != MEMLINK_OK:
             print 'tag error!', val, ret
             return -2;
@@ -104,11 +104,11 @@ def test():
 
     #del 1000
     num = 1000
-    ret, result = client2master.range(name, key, MEMLINK_VALUE_VISIBLE, 0, num)
+    ret, result = client2master.range(key, MEMLINK_VALUE_VISIBLE, 0, num)
     #print 'count:', result.count
     item = result.items;
     while item:
-        ret = client2master.delete(name, key, item.value)
+        ret = client2master.delete(key, item.value)
         if ret != MEMLINK_OK:
             print 'del error! ', item.value, ret
             return -1
@@ -123,7 +123,7 @@ def test():
         return -1
     print 'stat ok'
 
-    if 0 != result_check(client2master, client2slave, name, key):
+    if 0 != result_check(client2master, client2slave, key):
         print 'test f error!'
         return -1
     print 'result ok'

@@ -654,6 +654,62 @@ myconfig_change()
     return 1;
 }
 
+int    
+mem_used_inc(long long size)
+{
+    pthread_mutex_lock(&g_runtime->mutex_mem);
+    g_runtime->mem_used += size;
+    pthread_mutex_unlock(&g_runtime->mutex_mem);
+    return 0;
+}
+
+int    
+mem_used_dec(long long size)
+{
+    pthread_mutex_lock(&g_runtime->mutex_mem);
+    g_runtime->mem_used -= size;
+    pthread_mutex_unlock(&g_runtime->mutex_mem);
+    return 0;
+}
+
+int
+conn_check_max(Conn *conn)
+{
+    int rconn = 0;
+    int i;
+    for (i = 0; i < g_cf->thread_num; i++) {
+        rconn += g_runtime->server->threads[i].conns;
+    }
+    rconn++; // add self
+   
+    int allconn = rconn + g_runtime->wthread->conns + g_runtime->sthread->conns;
+    DINFO("check conn: %d, %d\n", allconn, g_cf->max_conn);
+
+    if (allconn > g_cf->max_conn) {
+        return MEMLINK_ERR_CONN_TOO_MANY;
+    }
+    
+    if (conn->port == g_cf->read_port) {
+        DINFO("check read conn: %d, %d\n", rconn, g_cf->max_read_conn);
+        if (g_cf->max_read_conn > 0 && rconn > g_cf->max_read_conn) {
+            return MEMLINK_ERR_CONN_TOO_MANY;
+        }
+    }else if (conn->port == g_cf->write_port) {
+        DINFO("check write conn: %d, %d\n", g_runtime->wthread->conns, g_cf->max_write_conn);
+        if (g_cf->max_write_conn > 0 && g_runtime->wthread->conns > g_cf->max_write_conn) {
+            return MEMLINK_ERR_CONN_TOO_MANY;
+        }
+    }else if (conn->port == g_cf->sync_port) {
+        DINFO("check sync conn: %d, %d\n", g_runtime->sthread->conns, g_cf->max_write_conn);
+        if (g_cf->max_sync_conn > 0 && g_runtime->sthread->conns > g_cf->max_sync_conn) {
+            return MEMLINK_ERR_CONN_TOO_MANY;
+        }
+    }
+
+    return MEMLINK_OK;
+}
+
+
 
 /**
  * @}

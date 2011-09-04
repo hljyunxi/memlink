@@ -207,8 +207,8 @@ class ChangeMemLinkInsertKey (ChangeSourceItem):
         #cond.s = 'this(cmemlinkJNI.new_MemLinkInsertKey(), true);'
         #self.add_action(Action('repstat', cond, '    this(cmemlinkJNI.memlink_ikey_create(key, key.length()), true);\n'))
 
-        s = '''  public MemLinkInsertKey(String table, String key) {
-    this(cmemlinkJNI.memlink_ikey_create(table, key, key.length()), true);
+        s = '''  public MemLinkInsertKey(String key) {
+    this(cmemlinkJNI.memlink_ikey_create(key, key.length()), true);
   }'''
         self.add_action(Action('addfunc', None, s))
 

@@ -34,14 +34,14 @@ def stat_check(client2master, client2slave):
 
     return 0
 
-def result_check(client2master, client2slave, name, key):
-    ret, st1 = client2master.stat(name, key)
+def result_check(client2master, client2slave, key):
+    ret, st1 = client2master.stat(key)
     num1 = st1.data_used
-    ret1, rs1 = client2master.range(name, key, MEMLINK_VALUE_VISIBLE, 0, num1)
+    ret1, rs1 = client2master.range(key, MEMLINK_VALUE_VISIBLE, 0, num1)
 
-    ret, st2 = client2master.stat(name, key)
+    ret, st2 = client2master.stat(key)
     num2 = st2.data_used
-    ret2, rs2 = client2master.range(name, key, MEMLINK_VALUE_VISIBLE, 0, num2)
+    ret2, rs2 = client2master.range(key, MEMLINK_VALUE_VISIBLE, 0, num2)
 
     if rs1 and rs2:
         pass
@@ -131,7 +131,7 @@ def data_produce1():
     num = 0
     maskstr = '4:2:2'
     name = 'test'
-    key = 'haha'
+    key = name + '.haha'
     ret = client2master.create_table_list(name, 12, '3:3:3')
     if ret != MEMLINK_OK:
         print 'create error: %d' % ret
@@ -139,7 +139,7 @@ def data_produce1():
     
     for i in xrange(num, num2):
         val = '%012d' % i
-        ret = client2master.insert(name, key, val, i, maskstr)
+        ret = client2master.insert(key, val, i, maskstr)
         if ret != MEMLINK_OK:
             print 'insert error!', key, val, maskstr, ret
             return -2;
@@ -172,7 +172,7 @@ def data_produce2():
     num = 0
     maskstr = '4:2:2'
     name = 'test'
-    key = 'haha'
+    key = name + '.haha'
     ret = client2master.create_table_list(name, 12, '3:3:3')
     if ret != MEMLINK_OK:
         print 'create error: %d' % ret
@@ -180,7 +180,7 @@ def data_produce2():
     
     for i in xrange(num, num2):
         val = '%012d' % i
-        ret = client2master.insert(name, key, val, maskstr, i)
+        ret = client2master.insert(key, val, maskstr, i)
         if ret != MEMLINK_OK:
             print 'insert error!', key, val, maskstr, ret
             return -2;
@@ -213,7 +213,7 @@ def data_produce3():
     num = 0
     maskstr = '4:2:2'
     name = 'test'
-    key = 'haha'
+    key = name + '.haha'
     ret = client2master.create_table_list(name, 12, '3:3:3')
     if ret != MEMLINK_OK:
         print 'create error: %d' % ret
@@ -221,7 +221,7 @@ def data_produce3():
     
     for i in xrange(num, num2):
         val = '%012d' % i
-        ret = client2master.insert(name, key, val, maskstr, i)
+        ret = client2master.insert(key, val, maskstr, i)
         if ret != MEMLINK_OK:
             print 'insert error!', key, val, maskstr, ret
             return -2;

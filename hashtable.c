@@ -121,7 +121,7 @@ hashtable_table_hash(char *str, int len)
     return (hash & 0x7FFFFFFF) % HASHTABLE_MAX_TABLE;
 }
 
-/*int
+int
 table_name(char *keybuf, char **name, char **key)
 {
     char *sp = strchr(keybuf, '.');
@@ -143,30 +143,15 @@ table_name(char *keybuf, char **name, char **key)
     }   
  
     return MEMLINK_OK;
-}*/
-
-int
-check_table_key(char *name, char *key)
-{
-    if (name == NULL || name[0] == 0) {
-        DNOTE("name error! table:%s\n", name);
-        return MEMLINK_ERR_PARAM;
-    }   
-    if (key == NULL || key[0] == 0) {
-        DNOTE("key error! key:%s\n", key);
-        return MEMLINK_ERR_PARAM;
-    }   
-    return MEMLINK_OK;
 }
 
-
-/*Table*
+Table*
 hashtable_get_table(HashTable *ht, char *keybuf, char **name, char **key)
 {
     if (table_name(keybuf, name, key) < 0) 
         return NULL;
     return  hashtable_find_table(g_runtime->ht, *name);
-}*/
+}
 
 int 
 hashtable_create_table(HashTable *ht, char *name, int valuesize, 
@@ -507,20 +492,6 @@ hashtable_remove_table(HashTable *ht, char *tbname)
     ht->table_count--;
 
     return MEMLINK_OK;
-}
-
-int 
-hashtable_tables(HashTable *ht, char **data)
-{
-    int len = 0;
-    int i;
-    for (i=0; i<HASHTABLE_MAX_TABLE; i++) {
-        Table *t = ht->tables[i];
-        while (t) {
-            t = t->next;
-        }
-    }
-    return len;
 }
  
 int

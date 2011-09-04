@@ -8,8 +8,8 @@ from memlinkclient import *
 import string
 #print dir(memlink)
 
-READ_PORT  = 11001
-WRITE_PORT = 11002
+READ_PORT  = 11011
+WRITE_PORT = 11012
 
 class ShortInputException (Exception):
     def __init__(self, length, atleast):

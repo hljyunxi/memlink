@@ -91,8 +91,7 @@ dumpfile(HashTable *ht)
     unsigned char keylen;
     int datalen;
     int n, k;
-    int dump_count = 0,node_count=0;
-    long fp_pos1 = 0,fp_pos2 = 0;
+    int dump_count = 0;
     char nodeflag = 1;
     
     for (k = 0; k < HASHTABLE_MAX_TABLE; k++) {
@@ -117,9 +116,6 @@ dumpfile(HashTable *ht)
                 node = tb->nodes[i];
                 nodeflag = 1; 
                 while (NULL != node) {
-                    node_count=0;
-                    fp_pos1=0;
-                    fp_pos2=0;
                     ffwrite(&nodeflag, sizeof(char), 1, fp);
                     DINFO("start dump key:%s, len:%d, used:%u, datalen:%d\n", 
                             node->key, (uint32_t)strlen(node->key), node->used, datalen);
@@ -127,7 +123,6 @@ dumpfile(HashTable *ht)
                     ffwrite(&keylen, sizeof(char), 1, fp);
                     //DINFO("dump keylen: %d\n", keylen);
                     ffwrite(node->key, keylen, 1, fp);
-                    fp_pos1 = ftell(fp);
                     ffwrite(&node->used, sizeof(int), 1, fp);
 
                     DataBlock *dbk = node->data;
@@ -138,20 +133,10 @@ dumpfile(HashTable *ht)
                             if (dataitem_have_data(tb, node, itemdata, 0)) {    
                                 ffwrite(itemdata, datalen, 1, fp);
                                 dump_count += 1;
-                                node_count += 1;
                             }
                             itemdata += datalen;
                         }
                         dbk = dbk->next;
-                    }
-                    //issue 19 fixed by brightman
-                    if(node_count != node->used){
-                        DWARNING("dump list which stat used [%d] != real use [%d],and fix it\n",node->used,node_count);
-                        fp_pos2 = ftell(fp);
-                        fseek(fp,fp_pos1,SEEK_SET);
-                        ffwrite(&node_count,sizeof(int),1,fp);
-                        fseek(fp,fp_pos2,SEEK_SET);
-                        node->used = node_count;
                     }
                     node = node->next;
                 }

@@ -12,7 +12,7 @@ READ_PORT  = 21011
 WRITE_PORT = 21012
 
  
-def testq(m, name, key, t):
+def testq(m, key, t):
     pushfunc = getattr(m, t + 'push')
     popfunc  = getattr(m, t + 'pop')
 
@@ -20,12 +20,12 @@ def testq(m, name, key, t):
     for i in xrange(0, num):
         v = '%010d' % i
         
-        ret = pushfunc(name, key, v)
+        ret = pushfunc(key, v)
         if ret != MEMLINK_OK:
             print 'lpush error, ret:%d, v:%s' % (ret, v)
             return -1
 
-    ret, stat = m.stat(name, key)
+    ret, stat = m.stat(key)
     if stat:
         if stat.data_used != num:
             print 'stat data_used error!', stat
@@ -34,7 +34,7 @@ def testq(m, name, key, t):
         print 'test_result stat error:', stat, ret
         return -1
     
-    ret, result = m.range(name, key, MEMLINK_VALUE_ALL, 0, num)
+    ret, result = m.range(key, MEMLINK_VALUE_ALL, 0, num)
     if ret != MEMLINK_OK:
         print 'range error, ret:%d, key:%s' % (ret, key)
         return -1
@@ -57,7 +57,7 @@ def testq(m, name, key, t):
             item = item.next
 
     for i in xrange(num-1, -1, -1):
-        ret, result = popfunc(name, key)        
+        ret, result = popfunc(key)        
         if ret != MEMLINK_OK:
             print 'lpop error, ret:%d' % ret
             return -1
@@ -69,7 +69,7 @@ def testq(m, name, key, t):
             print 'pop value error, pop value:%s, test value:%s' % (result.items.value, v)
             return -1
 
-    ret, result = popfunc(name, key)        
+    ret, result = popfunc(key)        
     if ret != MEMLINK_OK:
         print 'lpop error, ret:%d' % ret
         return -1
@@ -84,7 +84,7 @@ def test():
     global home
 
     name = "test"
-    key = 'haha'
+    key = name + '.haha'
     m = MemLinkClient('127.0.0.1', READ_PORT, WRITE_PORT, 30);
    
     ret = m.create_table_queue(name, 10)
@@ -92,10 +92,10 @@ def test():
         print 'create queue error, ret:%d, name:%s' % (ret, name)
         return -1
     
-    ret = testq(m, name, key, 'l')
+    ret = testq(m, key, 'l')
     if ret < 0:
         return ret
-    ret = testq(m, name, key, 'r')
+    ret = testq(m, key, 'r')
     if ret < 0:
         return ret
 

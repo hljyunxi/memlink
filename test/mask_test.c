@@ -4,12 +4,12 @@
 #include "logfile.h"
 #include "test.h"
 
-int check_attr(MemLink *m, char *name, char *key, char *newattr)
+int check_attr(MemLink *m, char *key, char *newattr)
 {
 	MemLinkResult	result;
 	int				ret;
 
-	ret = memlink_cmd_range(m, name, key, MEMLINK_VALUE_VISIBLE, "::", 0, 1, &result);
+	ret = memlink_cmd_range(m, key, MEMLINK_VALUE_VISIBLE, "::", 0, 1, &result);
 	if (ret != MEMLINK_OK) {
 		DERROR("range error, key:%s, ret:%d\n", key, ret);
 		return -5;
@@ -51,13 +51,11 @@ int main()
 
 	ret = memlink_cmd_create_table_list(m, name, 6, "4:3:1");
 	if (ret != MEMLINK_OK) {
-		DERROR("1 memlink_cmd_create %s error: %d\n", name, ret);
+		DERROR("1 memlink_cmd_create %s error: %d\n", key, ret);
 		return -2;
 	}
 
-	//sprintf(key, "%s.haha", name);
-    strcpy(key, "haha");
-
+	sprintf(key, "%s.haha", name);
 	char *val	  = "111111";
 	char *attrstr = "8:3:1";
 	int i;
@@ -65,7 +63,7 @@ int main()
 	for (i = 0; i < 20; i++)
 	{
 		sprintf(value, "%06d", i);
-		ret = memlink_cmd_insert(m, name, key, val, strlen(val), attrstr, 0);
+		ret = memlink_cmd_insert(m, key, val, strlen(val), attrstr, 0);
 		if (ret != MEMLINK_OK) {
 			DERROR("insert error, key:%s, val:%s, attr:%s, i:%d, ret:%d\n", key, val, attrstr, 1, ret);
 			return -3;
@@ -77,24 +75,24 @@ int main()
 	for (i = 0; i < 20; i++)
 	{
 		sprintf(value, "%06d", i);
-		ret = memlink_cmd_attr(m, name, key, "xxxx", 4, attrstr);
+		ret = memlink_cmd_attr(m, key, "xxxx", 4, attrstr);
 		if (ret != MEMLINK_ERR_NOVAL) {
 			DERROR("attr error, must novalue, key:%s, val:%s, ret:%d\n", key, "xxxx", ret);
 			return -4;
 		}
 	}
 
-	ret = memlink_cmd_attr(m, name, key, "xxxx", 4, attrstr);
+	ret = memlink_cmd_attr(m, key, "xxxx", 4, attrstr);
 	if (ret != MEMLINK_ERR_NOVAL) {
 		DERROR("attr error, must novalue, key:%s, val:%s, ret:%d\n", key, "xxxx", ret);
 		return -4;
 	}
-    ret = memlink_cmd_attr(m, "", "xxxxxx", "xxxx", 4, attrstr);
+    ret = memlink_cmd_attr(m, "xxxxxx", "xxxx", 4, attrstr);
 	if (ret != MEMLINK_ERR_PARAM) {
 		DERROR("attr error, must nokey, ret:%d\n", ret);
 		return -4;
 	}
-    ret = memlink_cmd_attr(m, "test", "xxxxxx", "xxxx", 4, attrstr);
+    ret = memlink_cmd_attr(m, "test.xxxxxx", "xxxx", 4, attrstr);
 	if (ret != MEMLINK_ERR_NOKEY) {
 		DERROR("attr error, must nokey, ret:%d\n", ret);
 		return -4;
@@ -103,20 +101,20 @@ int main()
     // end
 
 	char *newattr  = "7:2:1";
-	ret = memlink_cmd_attr(m, name, key, val, strlen(val), newattr);
+	ret = memlink_cmd_attr(m, key, val, strlen(val), newattr);
 	if (ret != MEMLINK_OK) {
 		DERROR("attr error, key:%s, val:%s, attr:%s, ret:%d\n", key, val, newattr, ret);
 		return -4;
 	}
-	check_attr(m, name, key, newattr);
+	check_attr(m, key, newattr);
 
 	newattr  = "7:2:0";
-	ret = memlink_cmd_attr(m, name, key, val, strlen(val), newattr);
+	ret = memlink_cmd_attr(m, key, val, strlen(val), newattr);
 	if (ret != MEMLINK_OK) {
 		DERROR("attr error, key:%s, val:%s, attr:%s, ret:%d\n", key, val, newattr, ret);
 		return -4;
 	}
-	check_attr(m, name, key, newattr);
+	check_attr(m, key, newattr);
 
 	memlink_destroy(m);
 

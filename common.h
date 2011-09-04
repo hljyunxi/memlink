@@ -8,7 +8,7 @@
 #ifndef MEMLINK_COMMON_H
 #define MEMLINK_COMMON_H
 
-#include "base/defines.h"
+#include "defines.h"
 
 // 客户端错误
 #define MEMLINK_ERR_CLIENT          -10
@@ -173,7 +173,7 @@
 // key最大长度
 #define HASHTABLE_KEY_MAX           255
 // value最大长度
-#define HASHTABLE_VALUE_MAX         65535
+#define HASHTABLE_VALUE_MAX         255
 
 // 可见和标记删除
 #define MEMLINK_VALUE_ALL            0

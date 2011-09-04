@@ -21,7 +21,7 @@ typedef struct _memlink_table
 	char	 name[HASHTABLE_TABLE_NAME_SIZE];
 	uint8_t	 listtype;	// list type: list/queue/sortlist
 	uint8_t	 valuetype;  // value type for sortlist
-	uint16_t valuesize;
+	uint8_t	 valuesize;
 	uint8_t	 sortfield;  // which sort? 0:value, 1-255:attr[0-254]
 	uint8_t	 attrnum;    // number of attribute format
 	uint8_t	 attrsize;   // byte of attribute
@@ -38,7 +38,7 @@ typedef struct _memlink_hashtable
 	int		table_count;
 }HashTable;
 
-int			check_table_key(char *name, char *key);
+int			table_name(char *keybuf, char **name, char **key);
 
 Table*		table_create(char *name, int valuesize, uint32_t *attrarray, uint8_t attrnum,
 						 uint8_t listtype, uint8_t valuetype);
@@ -59,7 +59,7 @@ int         hashnode_check(Table*, HashNode *node);
 HashTable*  hashtable_create();
 void        hashtable_destroy(HashTable *ht);
 Table*		hashtable_find_table(HashTable *ht, char *name);
-//Table*		hashtable_get_table(HashTable *ht, char *keybuf, char **name, char **key);
+Table*		hashtable_get_table(HashTable *ht, char *keybuf, char **name, char **key);
 int			hashtable_create_table(HashTable *ht, char *name, int valuesize, 
 								uint32_t *attrarray, uint8_t attrnum,
 								uint8_t listtype, uint8_t valuetype);
@@ -69,7 +69,6 @@ uint32_t	hashtable_node_hash(char *key, int len);
 uint32_t	hashtable_table_hash(char *key, int len);
 
 
-int			hashtable_tables(HashTable *ht, char **data);
 int			hashtable_remove_table(HashTable *ht, char *tbname);
 int			hashtable_remove_key(HashTable *ht, char *tbname, char *key);
 int			hashtable_clear_key(HashTable *ht, char *tbname, char *key);

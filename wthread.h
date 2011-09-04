@@ -92,7 +92,6 @@ typedef struct _wthread
 	int                 conn_write;
     uint64_t            vote_id;
 	int					wait_port; // backup waitport
-	pthread_mutex_t		rmlock; // lock for remove
 }WThread;
 
 typedef void (* CallBackFunc)(int fd, short event, void *arg);
