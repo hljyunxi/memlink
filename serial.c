@@ -365,6 +365,17 @@ cmd_rmtable_unpack(char *data, char *key)
 {
     return unpack(data + CMD_REQ_HEAD_LEN, 0, "s", key);
 }
+int 
+cmd_tables_pack(char *data)
+{
+    return pack(data, 0, "$4c", CMD_TABLES);
+}
+
+int 
+cmd_tables_unpack(char *data)
+{
+    return 0; 
+}
 
 int 
 cmd_count_pack(char *data, char *table, char *key, uint8_t attrnum, uint32_t *attrarray)

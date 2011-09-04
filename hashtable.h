@@ -21,7 +21,7 @@ typedef struct _memlink_table
 	char	 name[HASHTABLE_TABLE_NAME_SIZE];
 	uint8_t	 listtype;	// list type: list/queue/sortlist
 	uint8_t	 valuetype;  // value type for sortlist
-	uint8_t	 valuesize;
+	uint16_t valuesize;
 	uint8_t	 sortfield;  // which sort? 0:value, 1-255:attr[0-254]
 	uint8_t	 attrnum;    // number of attribute format
 	uint8_t	 attrsize;   // byte of attribute
@@ -69,6 +69,7 @@ uint32_t	hashtable_node_hash(char *key, int len);
 uint32_t	hashtable_table_hash(char *key, int len);
 
 
+int			hashtable_tables(HashTable *ht, char **data);
 int			hashtable_remove_table(HashTable *ht, char *tbname);
 int			hashtable_remove_key(HashTable *ht, char *tbname, char *key);
 int			hashtable_clear_key(HashTable *ht, char *tbname, char *key);

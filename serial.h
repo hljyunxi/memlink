@@ -46,15 +46,16 @@
 #define CMD_SET_CONFIG      31
 
 #define CMD_CLEAN_ALL       32
+#define CMD_TABLES			33
 
-#define CMD_WRITE			34
-#define CMD_WRITE_RESULT	35
-#define CMD_GETPORT			36
-#define CMD_BACKUP_ACK      37
+#define CMD_WRITE			100
+#define CMD_WRITE_RESULT	101
+#define CMD_GETPORT			102
+#define CMD_BACKUP_ACK      103
+#define CMD_HEARTBEAT       104
 
-#define CMD_SYNC            100
-#define CMD_GETDUMP		    101
-#define CMD_HEARTBEAT       102
+#define CMD_SYNC            150
+#define CMD_GETDUMP		    151
 
 #define CMD_VOTE_MIN		200
 #define CMD_VOTE            200
@@ -90,6 +91,9 @@ int cmd_rmkey_unpack(char *data, char *table, char *key);
 
 int cmd_rmtable_pack(char *data, char *table);
 int cmd_rmtable_unpack(char *data, char *table);
+
+int cmd_tables_pack(char *data);
+int cmd_tables_unpack(char *data);
 
 int cmd_count_pack(char *data, char *table, char *key, uint8_t attrnum, uint32_t *attrarray);
 int cmd_count_unpack(char *data, char *table, char *key, uint8_t *attrnum, uint32_t *attrarray);

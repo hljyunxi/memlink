@@ -508,6 +508,20 @@ hashtable_remove_table(HashTable *ht, char *tbname)
 
     return MEMLINK_OK;
 }
+
+int 
+hashtable_tables(HashTable *ht, char **data)
+{
+    int len = 0;
+    int i;
+    for (i=0; i<HASHTABLE_MAX_TABLE; i++) {
+        Table *t = ht->tables[i];
+        while (t) {
+            t = t->next;
+        }
+    }
+    return len;
+}
  
 int
 hashtable_remove_key(HashTable *ht, char *tbname, char *key)

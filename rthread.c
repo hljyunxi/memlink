@@ -211,6 +211,12 @@ rdata_ready(Conn *conn, char *data, int datalen)
             DINFO("send return: %d\n", ret);
             break;
         }
+        case CMD_TABLES: {
+            DINFO("<<< cmd TABLES >>>\n");
+            retlen = hashtable_tables(g_runtime->ht, &retdata);
+            ret = conn_send_buffer_reply(conn, ret, retdata, retlen);
+            break;
+        }
         case CMD_READ_CONN_INFO: {
             DINFO("<<< cmd READ_CONN_INFO >>>\n");
             ret = info_read_conn(conn);

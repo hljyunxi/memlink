@@ -173,7 +173,7 @@
 // key最大长度
 #define HASHTABLE_KEY_MAX           255
 // value最大长度
-#define HASHTABLE_VALUE_MAX         255
+#define HASHTABLE_VALUE_MAX         65535
 
 // 可见和标记删除
 #define MEMLINK_VALUE_ALL            0
