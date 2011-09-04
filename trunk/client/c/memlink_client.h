@@ -35,7 +35,7 @@ typedef struct _memlink_item
 {
 	struct _memlink_item *next;	
     char    value[256];
-	unsigned char	valuesize;
+	unsigned short	valuesize;
     char    attr[256];
 	unsigned char	attrsize;
 }MemLinkItem;
@@ -99,7 +99,17 @@ typedef struct _memlink_Sconn_info
 	MemLinkScItem   *items;
 }MemLinkScInfo;
 
-
+typedef struct
+{
+	char name[HASHTABLE_TABLE_NAME_SIZE];
+	unsigned char  listtype;
+	unsigned char  valuetype;
+	unsigned short valuesize;
+	unsigned char  sortfield;
+	unsigned char  attrnum;
+	unsigned char  attrsize;
+	char attrformat[16];
+}MemLinkTableInfo;
 
 int         memlink_result_parse(char *retdata, MemLinkResult *result);
 void        memlink_result_free(MemLinkResult *result);
@@ -114,18 +124,22 @@ int			memlink_cmd_clean(MemLink *m, char *table, char *key);
 int         memlink_cmd_clean_all(MemLink *m);
 int			memlink_cmd_stat(MemLink *m, char *table, char *key, MemLinkStat *stat);
 int			memlink_cmd_stat_sys(MemLink *m, MemLinkStatSys *stat);
-int			memlink_cmd_create_table(MemLink *m, char *table, int valuelen, char *attrstr, 
-                                unsigned char listtype, unsigned char valuetype);
+int			memlink_cmd_create_table(MemLink *m, char *table, int valuelen, 
+						char *attrstr, 
+                        unsigned char listtype, unsigned char valuetype);
 
-int			memlink_cmd_create_table_list(MemLink *m, char *table, int valuelen, char *attrstr);
-int			memlink_cmd_create_table_queue(MemLink *m, char *table, int valuelen, char *attrstr);
-int			memlink_cmd_create_table_sortlist(MemLink *m, char *table, int valuelen, char *attrstr, 
-                                        unsigned char valuetype);
+int			memlink_cmd_create_table_list(MemLink *m, char *table, int valuelen, 
+						char *attrstr);
+int			memlink_cmd_create_table_queue(MemLink *m, char *table, int valuelen, 
+						char *attrstr);
+int			memlink_cmd_create_table_sortlist(MemLink *m, char *table, int valuelen, 
+						char *attrstr, unsigned char valuetype);
 int			memlink_cmd_remove_table(MemLink *m, char *table);
 int			memlink_cmd_create_node(MemLink *m, char *table, char *key);
-int			memlink_cmd_del(MemLink *m, char *table,char *key, char *value, int valuelen);
-int			memlink_cmd_insert(MemLink *m, char *table,char *key, char *value, int valuelen, 
-                               char *attrstr, int pos);
+int			memlink_cmd_del(MemLink *m, char *table,char *key, char *value, 
+						int valuelen);
+int			memlink_cmd_insert(MemLink *m, char *table,char *key, char *value, 
+						int valuelen, char *attrstr, int pos);
 
 int			memlink_cmd_lpush(MemLink *m, char *table, char *key, char *value, int valuelen, char *attrstr);
 int			memlink_cmd_rpush(MemLink *m, char *table, char *key, char *value, int valuelen, char *attrstr);

@@ -304,8 +304,10 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
                 ret = MEMLINK_ERR_PARAM;
                 goto wdata_apply_over;
             }
-                
+            
+            pthread_mutex_lock(&g_runtime->wthread->rmlock);
             ret = hashtable_remove_table(g_runtime->ht, tbname);
+            pthread_mutex_unlock(&g_runtime->wthread->rmlock);
             DINFO("hashtable_remove_table ret: %d\n", ret);
             break;
 
@@ -1191,6 +1193,17 @@ wthread_create()
     pthread_attr_t  attr;
     int             ret;
     
+    ret = pthread_mutex_init(&wt->rmlock, NULL);
+    if (ret != 0) {
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("pthread_mutex_init error: %s\n",  errbuf);
+        MEMLINK_EXIT;
+        return NULL;
+    }
+    DINFO("mutex init ok!\n");
+
+
     ret = pthread_attr_init(&attr);
     if (ret != 0) {
         char errbuf[1024];
