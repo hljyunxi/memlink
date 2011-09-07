@@ -220,6 +220,12 @@ MemLinkResult.close   = memlinkresult_free
 MemLinkResult.__del__ = memlinkresult_free
 MemLinkResult.__str__ = memlinkresult_print
 
+def memlinkcount_print(self):
+    s = 'visible:%d tagdel:%d' % (self.visible_count, self.tagdel_count)
+    return s
+
+MemLinkCount.__str__ = memlinkcount_print
+
 def memlinkrcinfo_free(self):
     memlink_rcinfo_free(self)
 
@@ -270,7 +276,7 @@ MemLinkScInfo.__str__ = memlinkscinfo_print
 
 
 def memlinkstat_print(self):
-    s = 'valuesize:%d\nattrsize:%d\nblocks:%d\ndata:%d\ndata_used:%d\nmem:%d\n' % \
+    s = 'value_size:%d\nattr_size:%d\nblocks:%d\nvalue_alloc:%d\nvalue_used:%d\nmem:%d\n' % \
         (self.valuesize, self.attrsize, self.blocks, self.data, self.data_used, self.mem)
 
     return s

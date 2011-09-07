@@ -145,7 +145,7 @@ load_data()
     int    ret;
     int    havedump = 0;
     char   filename[PATH_MAX];
-    char   dumpfileok[PATH_MAX];
+    //char   dumpfileok[PATH_MAX];
     struct timeval start, end;
 
     snprintf(filename, PATH_MAX, "%s/dump.dat", g_cf->datadir);
@@ -155,8 +155,8 @@ load_data()
     if (ret == -1 && errno == ENOENT) {
         DINFO("not found dumpfile: %s\n", filename);
     }*/
-     ret = isfile(filename);
-    if (ret == 0) {
+    ret = isfile(filename);
+    /*if (ret == 0) {
         DINFO("node fount dumpfile: %s\n", filename);
         snprintf(dumpfileok, PATH_MAX, "%s/dump.dat.ok", g_cf->datadir);
         if (!isfile(dumpfileok)) {
@@ -165,7 +165,7 @@ load_data()
             rename(dumpfileok, filename);
             ret = 1;
         }
-    }    
+    }*/
   
     // have dumpfile, load
     if (ret == 1) {

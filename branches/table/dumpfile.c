@@ -28,6 +28,58 @@
 #include "runtime.h"
 #include "zzmalloc.h"
 
+
+int dumpfile_backup()
+{
+    //保存当前的dump.dat，在后面加上时间以区分
+    char dumpfile_bak[PATH_MAX];
+    char dumpfilemd5_bak[PATH_MAX];
+    char dumpfile[PATH_MAX]; 
+    char dumpfilemd5[PATH_MAX];
+
+    snprintf(dumpfile, PATH_MAX, "%s/%s", g_cf->datadir, DUMP_FILE_NAME);
+    snprintf(dumpfilemd5, PATH_MAX, "%s/%s.md5", g_cf->datadir, DUMP_FILE_NAME);
+
+    time_t timep;
+    struct tm result, *p;
+
+    time(&timep);
+    memcpy(&g_runtime->last_dump, &timep, sizeof(time_t));
+    localtime_r(&timep, &result);
+    p = &result;
+    snprintf(dumpfile_bak, PATH_MAX, "%s/%s.%d%02d%02d.%02d%02d%02d", 
+            g_cf->datadir, DUMP_FILE_NAME, 
+            p->tm_year + 1900, 1 + p->tm_mon, p->tm_mday, 
+            p->tm_hour, p->tm_min, p->tm_sec); 
+    snprintf(dumpfilemd5_bak, PATH_MAX, "%s/%s.md5.%d%02d%02d.%02d%02d%02d", 
+            g_cf->datadir, DUMP_FILE_NAME,
+            p->tm_year + 1900, 1 + p->tm_mon, p->tm_mday, 
+            p->tm_hour, p->tm_min, p->tm_sec);
+
+    create_filename(dumpfile_bak);
+    create_filename(dumpfilemd5_bak);
+
+    int ret = rename(dumpfile, dumpfile_bak);
+    DINFO("rename %s to %s return: %d\n", dumpfile, dumpfile_bak, ret);
+    if (ret == -1) {
+        char errbuf[1024];
+        strerror_r(errno, errbuf, 1024);
+        DERROR("dumpfile rename error %s\n",  errbuf);
+        return -1;
+    }
+    if (isfile(dumpfilemd5)) {
+        ret = rename(dumpfilemd5, dumpfilemd5_bak);
+        DINFO("rename %s to %s return: %d\n", dumpfilemd5, dumpfilemd5_bak, ret);
+        if (ret == -1) {
+            char errbuf[1024];
+            strerror_r(errno, errbuf, 1024);
+            DERROR("dumpfile rename error %s\n",  errbuf);
+            return -1;
+        }
+    }
+    return 0;
+}
+
 /**
  * Creates a dump file from the hash table. The old dump file is replaced by 
  * the new dump file. Sync log is also rotated.
@@ -45,14 +97,10 @@ dumpfile(HashTable *ht)
 {
     Table       *tb;
     HashNode    *node;
-    //Table       **tbs = ht->tables;
 
     char        tmpfile[PATH_MAX];
     char        dumpfile[PATH_MAX];
-    char        dumpfileok[PATH_MAX];
-    char        dumpfiletime[PATH_MAX];
     char        dumpfilemd5[PATH_MAX];
-    char        dumpfilemd5time[PATH_MAX];
     char        dumpfilemd5tmp[PATH_MAX];
     int         i;
     long long   size = 0;
@@ -62,7 +110,6 @@ dumpfile(HashTable *ht)
 
     snprintf(dumpfile, PATH_MAX, "%s/%s", g_cf->datadir, DUMP_FILE_NAME);
     snprintf(tmpfile, PATH_MAX, "%s/%s.tmp", g_cf->datadir, DUMP_FILE_NAME);
-    snprintf(dumpfileok, PATH_MAX, "%s/%s.ok", g_cf->datadir, DUMP_FILE_NAME);
     snprintf(dumpfilemd5, PATH_MAX, "%s/%s.md5", g_cf->datadir, DUMP_FILE_NAME);
     snprintf(dumpfilemd5tmp, PATH_MAX, "%s/%s.md5.tmp", g_cf->datadir, DUMP_FILE_NAME);
 
@@ -93,6 +140,7 @@ dumpfile(HashTable *ht)
     int n, k;
     int dump_count = 0;
     char nodeflag = 1;
+    uint32_t used; 
     
     for (k = 0; k < HASHTABLE_MAX_TABLE; k++) {
         tb = ht->tables[k];
@@ -124,19 +172,29 @@ dumpfile(HashTable *ht)
                     //DINFO("dump keylen: %d\n", keylen);
                     ffwrite(node->key, keylen, 1, fp);
                     ffwrite(&node->used, sizeof(int), 1, fp);
-
+                    
+                    long long ckpos = ftell(fp);
+                    used = 0;
                     DataBlock *dbk = node->data;
-
                     while (dbk) {
                         char *itemdata = dbk->data;
                         for (n = 0; n < dbk->data_count; n++) {
                             if (dataitem_have_data(tb, node, itemdata, 0)) {    
                                 ffwrite(itemdata, datalen, 1, fp);
                                 dump_count += 1;
+                                used++;
                             }
                             itemdata += datalen;
                         }
                         dbk = dbk->next;
+                    }
+                    if (used != node->used) {
+                        DWARNING("data used error, node->used:%d, used:%d in %s.%s\n", 
+                                node->used, used, tb->name, node->key);
+                        long long mypos = ftell(fp);
+                        fseek(fp, ckpos, SEEK_SET);
+                        ffwrite(&used, sizeof(int), 1, fp);
+                        fseek(fp, mypos, SEEK_SET);
                     }
                     node = node->next;
                 }
@@ -158,71 +216,29 @@ dumpfile(HashTable *ht)
 
     fclose(fp);
     
-    //把dump.dat.tmp变成dump.dat.ok，以备后面使用
-    int ret = rename(tmpfile, dumpfileok);
-    DINFO("rename %s to %s return: %d\n", tmpfile, dumpfileok, ret);
-    if (ret == -1) {
-        char errbuf[1024];
-        strerror_r(errno, errbuf, 1024);
-        DERROR("dumpfile rename error: %s\n",  errbuf);
-    }
+    int ret;
     char md5[33] = {0};
-    ret = md5_file(dumpfileok, md5, 32);
+    ret = md5_file(tmpfile, md5, 32);
     if (ret == 0) {
         FILE    *fp = fopen64(dumpfilemd5tmp, "wb");
         ffwrite(md5, sizeof(char), 32, fp);
         fclose(fp);
     }
  
-    if (isfile(dumpfile) && isfile(dumpfilemd5)) {
-        //保存当前的dump.dat，在后面加上时间以区分
-        time_t timep;
-        struct tm result, *p;
-
-        time(&timep);
-        memcpy(&g_runtime->last_dump, &timep, sizeof(time_t));
-        localtime_r(&timep, &result);
-        p = &result;
-        snprintf(dumpfiletime, PATH_MAX, "%s/%s.%d%02d%02d.%02d%02d%02d", g_cf->datadir, DUMP_FILE_NAME, 
-            p->tm_year + 1900, 1 + p->tm_mon, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec); 
-        snprintf(dumpfilemd5time, PATH_MAX, "%s/%s.md5.%d%02d%02d.%02d%02d%02d", g_cf->datadir, DUMP_FILE_NAME,
-            p->tm_year + 1900, 1 + p->tm_mon, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec);
-        //如果加了这个日期后缀的文件存在，再在文件后面加一个随机数
-        int i = 1;
-        while (isfile(dumpfiletime)) {
-            snprintf(dumpfiletime, PATH_MAX, "%s/%s.%d%02d%02d.%02d%02d%02d.%02d", g_cf->datadir, DUMP_FILE_NAME,
-                p->tm_year + 1900, 1 + p->tm_mon, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec, i);
-            i++;
-        }
-        while (isfile(dumpfilemd5time)) {
-            snprintf(dumpfiletime, PATH_MAX, "%s/%s.md5%d%02d%02d.%02d%02d%02d.%02d", g_cf->datadir, DUMP_FILE_NAME,
-                    p->tm_year + 1900, 1 + p->tm_mon, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec, i);
-            i++;
-        }
-
-        //如果dump.dat存在，则在后面加上日期后缀
-        ret = rename(dumpfile, dumpfiletime);
-        DINFO("rename %s to %s return: %d\n", dumpfile, dumpfiletime, ret);
-        if (ret == -1) {
-            char errbuf[1024];
-            strerror_r(errno, errbuf, 1024);
-            DERROR("dumpfile rename error %s\n",  errbuf);
-        }
-        ret = rename(dumpfilemd5, dumpfilemd5time);
-        DINFO("rename %s to %s return: %d\n", dumpfilemd5, dumpfilemd5time, ret);
-        if (ret == -1) {
-            char errbuf[1024];
-            strerror_r(errno, errbuf, 1024);
-            DERROR("dumpfile rename error %s\n",  errbuf);
+    if (isfile(dumpfile)) {
+        ret = dumpfile_backup();
+        if (ret < 0) {
+            return ret; 
         }
     }    
-    //把当前的dump.dat.ok，改名为dump.dat    
-    ret = rename (dumpfileok, dumpfile);
-    DINFO("rename %s to %s return: %d\n", dumpfileok, dumpfile, ret);
+    
+    ret = rename (tmpfile, dumpfile);
+    DINFO("rename %s to %s return: %d\n", tmpfile, dumpfile, ret);
     if (ret == -1) {
         char errbuf[1024];
         strerror_r(errno, errbuf, 1024);
         DERROR("dumpfile rename error %s\n",  errbuf);
+        return -1;
     }
     ret = rename(dumpfilemd5tmp, dumpfilemd5);
     DINFO("rename %s to %s return: %d\n", dumpfilemd5tmp, dumpfilemd5, ret);
@@ -230,6 +246,7 @@ dumpfile(HashTable *ht)
         char errbuf[1024];
         strerror_r(errno, errbuf, 1024);
         DERROR("dumpfile rename error %s\n",  errbuf);
+        return -1;
     }
     gettimeofday(&end, NULL);
     DNOTE("dump time: %u us\n", timediff(&start, &end));
@@ -337,13 +354,18 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
             attrarray[i] = attrformat[i];
         }
         
-        ret = hashtable_create_table(ht, name, valuesize, attrarray, attrnum, listtype, valuetype);
+        ret = hashtable_create_table(ht, name, valuesize, attrarray, attrnum, 
+                        listtype, valuetype);
         if (ret != MEMLINK_OK) {
-            DERROR("create table error! %d\n", ret);
-            return -1;
+            if (ret == MEMLINK_ERR_ETABLE) {
+                DINFO("table exist, go ahead\n"); 
+            }else{
+                DERROR("create table error! %d\n", ret);
+                return -1;
+            }
         }
-        tb = hashtable_find_table(ht, name);
 
+        tb = hashtable_find_table(ht, name);
         char nodeflag;
         while (1) {
             ffread(&nodeflag, sizeof(char), 1, fp);
