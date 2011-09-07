@@ -37,6 +37,7 @@ int			change_group_user(char *user);
 long long   get_process_mem(int pid);
 int         truncate_file(int fd, int len);
 int			int2string(char *s, unsigned int val);
+int			create_filename(char *filename);
 
 /*static inline void		
 atom_inc(unsigned int *v)
