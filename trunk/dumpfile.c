@@ -353,7 +353,7 @@ dumpfile_load(HashTable *ht, char *filename, int localdump)
         }
         
         ret = hashtable_create_table(ht, name, valuesize, attrarray, attrnum, listtype, valuetype);
-        if (ret != MEMLINK_OK) {
+        if (ret != MEMLINK_OK && ret != MEMLINK_ERR_ETABLE) {
             DERROR("create table error! %d\n", ret);
             return -1;
         }
