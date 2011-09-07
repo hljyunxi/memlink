@@ -1179,9 +1179,11 @@ hashtable_range(HashTable *ht, char *tbname, char *key, uint8_t kind,
             uint32_t *attrarray, int attrnum, 
             int frompos, int len, Conn *conn)
 {
+    int ret = MEMLINK_OK;
     Table *tb = hashtable_find_table(ht, tbname);
     if (NULL == tb) {
-        return MEMLINK_ERR_NOTABLE;
+        ret = MEMLINK_ERR_NOTABLE;
+        goto table_range_over;
     }
 
     char attrval[HASHTABLE_ATTR_MAX_ITEM * HASHTABLE_ATTR_MAX_BYTE] = {0};
@@ -1190,7 +1192,6 @@ hashtable_range(HashTable *ht, char *tbname, char *key, uint8_t kind,
     HashNode    *node;
     int         startn;
     char        *wbuf = NULL;
-    int         ret   = 0;
     int         n     = 0;
     //struct timeval start, end;
     
@@ -1312,16 +1313,17 @@ hashtable_sortlist_range(HashTable *ht, char *tbname, char *key, uint8_t kind,
                 uint32_t *attrarray, int attrnum, void *valmin, void *valmax,
                 Conn *conn)
 {
+    int ret = MEMLINK_OK;
     Table *tb = hashtable_find_table(ht, tbname);
     if (NULL == tb) {
-        return MEMLINK_ERR_NOTABLE;
+        ret = MEMLINK_ERR_NOTABLE;
+        goto table_sortlist_range_over;
     }
 
     char attrval[HASHTABLE_ATTR_MAX_ITEM * HASHTABLE_ATTR_MAX_BYTE] = {0};
     char attrflag[HASHTABLE_ATTR_MAX_ITEM * HASHTABLE_ATTR_MAX_BYTE] = {0};
+
     HashNode    *node;
-    int         ret   = 0;
-    
     node = table_find(tb, key);
     if (NULL == node) {
         DINFO("table_find not found node for key:%s\n", key);
@@ -1916,21 +1918,22 @@ hashtable_rpush(HashTable *ht, char *tbname, char *key, void *value, uint32_t *a
 int
 hashtable_lpop(HashTable *ht, char *tbname, char *key, int num, Conn *conn)
 {
-    Table *tb = hashtable_find_table(ht, tbname);
-    if (NULL == tb) {
-        return MEMLINK_ERR_NOTABLE;
-    }
+    int ret = MEMLINK_OK;
+    int idx = 0;
+    char *wbuf = NULL;
 
-    HashNode    *node;
-    char        *wbuf = NULL;
-    int         idx = 0;
-    int         ret = MEMLINK_OK;
-    
     if (num <= 0) {
         ret =  MEMLINK_ERR_PARAM;
         goto table_lpop_end;
     }
 
+    Table *tb = hashtable_find_table(ht, tbname);
+    if (NULL == tb) {
+        ret = MEMLINK_ERR_NOTABLE;
+        goto table_lpop_end;
+    }
+
+    HashNode    *node;
     node = table_find(tb, key);
     if (NULL == node) {
         DINFO("table_find not found node for key:%s\n", key);
@@ -2053,21 +2056,22 @@ table_lpop_end:
 int
 hashtable_rpop(HashTable *ht, char *tbname, char *key, int num, Conn *conn)
 {
-    Table *tb = hashtable_find_table(ht, tbname);
-    if (NULL == tb) {
-        return MEMLINK_ERR_NOTABLE;
-    }
-
-    HashNode    *node;
-    char        *wbuf = NULL;
-    int         idx = 0;
-    int         ret = MEMLINK_OK;
+    int ret = MEMLINK_OK;
+    int idx = 0;
+    char *wbuf = NULL;
     
     if (num <= 0) {
         ret =  MEMLINK_ERR_PARAM;
         goto table_rpop_end;
     }
 
+    Table *tb = hashtable_find_table(ht, tbname);
+    if (NULL == tb) {
+        ret = MEMLINK_ERR_NOTABLE;
+        goto table_rpop_end;
+    }
+
+    HashNode    *node;
     node = table_find(tb, key);
     if (NULL == node) {
         DINFO("table_find not found node for key:%s\n", key);
