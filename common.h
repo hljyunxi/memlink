@@ -142,7 +142,7 @@
 // format + version + index size
 #define SYNCLOG_HEAD_LEN	(sizeof(short)+sizeof(int)+sizeof(int))
 
-#define SYNCLOG_INDEXNUM    5000000
+#define SYNCLOG_INDEXNUM    1000
 #define SYNCPOS_LEN		    (sizeof(int)+sizeof(int))
 
 // 标记删除

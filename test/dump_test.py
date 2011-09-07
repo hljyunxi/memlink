@@ -88,9 +88,10 @@ def test():
     
     print 'create 1-200 %03d'
     for i in range(1, 200):
-        keynm = 'haha%03d' % i
+        #keynm = 'haha%03d' % i
+        key = '%s.haha%03d' % (name, i)
         #ret = m.create_node(key, 6, "4:3:1")
-        ret = m.create_node(name, keynm)
+        ret = m.create_node(key)
         if ret != MEMLINK_OK:
             print 'create error:', ret, keynm
             return -1

@@ -652,6 +652,21 @@ int2string(char *s, unsigned int val)
 }
 
 
+int	
+create_filename(char *filename)
+{
+    char ckname[PATH_MAX];
+    int  i = 1;
+
+    strcpy(ckname, filename);
+    while (isfile(ckname)) {
+        snprintf(ckname, PATH_MAX, "%s.%d", filename, i);
+        i++;
+    }
+    strcpy(filename, ckname);
+
+    return 0;
+}
 /**
  * @}
  */
