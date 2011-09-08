@@ -171,9 +171,10 @@ dumpfile(HashTable *ht)
                     ffwrite(&keylen, sizeof(char), 1, fp);
                     //DINFO("dump keylen: %d\n", keylen);
                     ffwrite(node->key, keylen, 1, fp);
-                    ffwrite(&node->used, sizeof(int), 1, fp);
                     
                     long long ckpos = ftell(fp);
+                    ffwrite(&node->used, sizeof(int), 1, fp);
+                    
                     used = 0;
                     DataBlock *dbk = node->data;
                     while (dbk) {
