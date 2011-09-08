@@ -298,11 +298,12 @@ typedef MemLinkStat HashTableStat;
 typedef struct _ht_stat_sys
 {
 	int          version;
+	unsigned int tables;
     unsigned int keys;
     unsigned int values;
     unsigned int blocks;
-	unsigned int data_all;
-	unsigned int ht_mem;
+	unsigned int value_alloc;
+	unsigned int hash_mem;
 	unsigned int pool_mem;
 	unsigned int pool_blocks;
 	unsigned int all_mem;

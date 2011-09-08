@@ -881,6 +881,8 @@ hashtable_del(HashTable *ht, char *tbname, char *key, void *value)
         datablock_resize(tb, node, dbk);
         //DINFO("after resize, used:%d, all:%d\n", node->used, node->all);
     }
+    
+    hashnode_auto_clean(tbname, node);
 
     return MEMLINK_OK;
 }
@@ -1005,6 +1007,8 @@ hashtable_sortlist_mdel(HashTable *ht, char *tbname, char *key, uint8_t kind, vo
         }
     }
 table_sortlist_mdel_over:
+    hashnode_auto_clean(tbname, node);
+
     return MEMLINK_OK;
 }
 
@@ -1604,8 +1608,8 @@ hashtable_stat_table(HashTable *ht, char *tbname, HashTableStatSys *stat)
     stat->keys   = keys;
     stat->values = datau;
     stat->blocks = blocks;
-    stat->data_all = dataall;
-    stat->ht_mem   = memu;
+    stat->value_alloc = dataall;
+    stat->hash_mem    = memu;
 
     return MEMLINK_OK;
 }
@@ -1617,6 +1621,7 @@ hashtable_stat_sys(HashTable *ht, HashTableStatSys *stat)
     Table       *tb = NULL;
     HashNode    *node;
     int i, k;
+    int tables  = 0;
     int keys    = 0;//统计memlink中key的数量
     int blocks  = 0;//统计memlink中分配的存储块数量
     int dataall = 0;//统计memlink中小块的数量
@@ -1629,6 +1634,7 @@ hashtable_stat_sys(HashTable *ht, HashTableStatSys *stat)
         if (tb == NULL) 
             continue;
         while (tb) {
+            tables++;
             for (i = 0; i < HASHTABLE_BUNKNUM; i++) {
                 node = tb->nodes[i];
                 if (node) {
@@ -1653,12 +1659,13 @@ hashtable_stat_sys(HashTable *ht, HashTableStatSys *stat)
         memu += (mp->freemem[i].total - mp->freemem[i].block_count) * mp->freemem[i].memsize;
         blocks += (mp->freemem[i].total - mp->freemem[i].block_count);
     }
-
+    
+    stat->tables = tables;
     stat->keys   = keys;
     stat->values = datau;
     stat->blocks = blocks;
-    stat->data_all = dataall;
-    stat->ht_mem   = memu;
+    stat->value_alloc = dataall;
+    stat->hash_mem    = memu;
     //stat->pool_blocks  = g_runtime->mpool->blocks;
 
     return MEMLINK_OK;
@@ -2176,6 +2183,51 @@ table_check(Table *tb, char *key)
     return hashnode_check(tb, node);
 }
 
+int
+hashnode_auto_clean(char *table, HashNode *node)
+{
+    if (time(NULL) % 10 > 3) {
+        return 0;
+    }
+
+    if (node->all == 0) {
+        return 0;
+    }
+
+    int blockcount = 0;
+    DataBlock *block = node->data;
+    while (block) {
+        blockcount++;
+        block = block->next;
+        if (blockcount >= g_cf->block_clean_start) {
+            break;
+        }
+    }
+    if (blockcount < g_cf->block_clean_start) {
+        return 0;
+    }
+
+    double rate = 1.0 - (double)node->used / node->all;
+    DINFO("check clean rate: %f, conf:%f\n", rate, g_cf->block_clean_cond);
+    if (g_cf->block_clean_cond > rate) {
+        return 0;
+    }
+
+    struct timeval start, end; 
+  
+    DNOTE("start clean %s ...\n", node->key);
+    gettimeofday(&start, NULL);
+    int ret = hashtable_clean(g_runtime->ht, table, node->key);
+    if (ret != 0) { 
+        DERROR("wdata_do_clean error: %d\n", ret);
+    }    
+    gettimeofday(&end, NULL);
+    DNOTE("clean %s complete, use %u us\n", node->key, timediff(&start, &end));
+    
+    return 1;
+}
+
+
 int 
 hashnode_check(Table *tb, HashNode *node)
 {
@@ -2284,7 +2336,8 @@ hashtable_del_by_attr(HashTable *ht, char *tbname, char *key, uint32_t *attrarra
     }
     datalen = tb->valuesize + tb->attrsize;
     if (attrnum > 0) {
-        attr_array2_binary_flag(table_attrformat(tb), attrarray, attrnum, tb->attrsize, attrval, attrflag);
+        attr_array2_binary_flag(table_attrformat(tb), attrarray, attrnum, 
+                                tb->attrsize, attrval, attrflag);
     }
     DataBlock *root = node->data;
 
@@ -2320,6 +2373,8 @@ hashtable_del_by_attr(HashTable *ht, char *tbname, char *key, uint32_t *attrarra
         root = root->next;
     }
     node->used -= count;
+    
+    hashnode_auto_clean(tbname, node);
 
     return count;
 }

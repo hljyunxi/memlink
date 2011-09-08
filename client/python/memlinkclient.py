@@ -105,6 +105,15 @@ class MemLinkClient:
             result = None
         return ret, result
 
+    def range_all(self, key, frompos, rlen, attrstr=''):
+        return self.range(key, MEMLINK_VALUE_ALL, frompos, rlen, attrstr)
+
+    def range_visible(self, key, frompos, rlen, attrstr=''):
+        return self.range(key, MEMLINK_VALUE_VISIBLE, frompos, rlen, attrstr)
+
+    def range_tagdel(self, key, frompos, rlen, attrstr=''):
+        return self.range(key, MEMLINK_VALUE_TAGDEL, frompos, rlen, attrstr)
+
     def rmkey(self, key):
         return memlink_cmd_rmkey(self.client, key)
 
@@ -284,8 +293,8 @@ def memlinkstat_print(self):
 MemLinkStat.__str__ = memlinkstat_print
 
 def memlinkstatsys_print(self):
-    s = 'keys:%d\nvalues:%d\nblocks:%d\ndata_all:%d\nht_mem:%d\npool.mem:%d\npool_blocks:%d\nall_mem:%d\nlogver:%d\nlogline:%d\n' % \
-        (self.keys, self.values, self.blocks, self.data_all, self.ht_mem, self.pool_mem, self.pool_blocks, self.all_mem, self.logver, self.logline)
+    s = 'keys:%d\nvalues:%d\nblocks:%d\nvalue_alloc:%d\nhash_mem:%d\npool.mem:%d\npool_blocks:%d\nall_mem:%d\nlogver:%d\nlogline:%d\n' % \
+        (self.keys, self.values, self.blocks, self.value_alloc, self.hash_mem, self.pool_mem, self.pool_blocks, self.all_mem, self.logver, self.logline)
 
     return s
 

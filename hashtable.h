@@ -53,7 +53,9 @@ HashNode*   table_find(Table *tb, char *key);
 int         table_print(Table *tb, char *key);
 int         table_check(Table *tb, char *key);
 int			table_create_node(Table *tb, char *key);
+
 int         hashnode_check(Table*, HashNode *node);
+int 		hashnode_auto_clean(char *table, HashNode *node);
 
 
 HashTable*  hashtable_create();
