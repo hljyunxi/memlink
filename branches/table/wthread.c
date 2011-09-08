@@ -58,6 +58,17 @@ static int
 is_clean_cond(HashNode *node)
 {
     DINFO("check clean cond, used:%d, all:%d, blocks:\n", node->used, node->all);
+    
+    if (node->all == 0) {
+        //DNOTE("no clean, no value.\n");
+        return 0;
+    }
+
+    /*if (g_runtime->inclean) {
+        //DNOTE("no clean, other inclean ...\n");
+        return 0;
+    }*/
+
     // not do clean, when blocks is small than block_clean_start
     int blockcount = 0;
     DataBlock *block = node->data;
@@ -73,19 +84,8 @@ is_clean_cond(HashNode *node)
         return 0;
     }
 
-    if (node->all == 0) {
-        //DNOTE("no clean, no value.\n");
-        return 0;
-    }
-
-    if (g_runtime->inclean) {
-        //DNOTE("no clean, other inclean ...\n");
-        return 0;
-    }
-
     double rate = 1.0 - (double)node->used / node->all;
     DINFO("check clean rate: %f\n", rate);
-
     if (g_cf->block_clean_cond > rate) {
         //DNOTE("no clean, rate:%f smaller than %f.\n", rate, g_cf->block_clean_cond);
         return 0;
@@ -129,6 +129,8 @@ wdata_do_clean_over:
     return NULL;
 }
 */
+
+/*
 void
 wdata_check_clean(char *tbname, char *key)
 {
@@ -139,7 +141,7 @@ wdata_check_clean(char *tbname, char *key)
         return;
     
     // not need 
-    if (g_cf->block_clean_cond < 0.001) {
+    if (g_cf->block_clean_cond < 0.0001) {
         return;
     }
     tb = hashtable_find_table(g_runtime->ht, tbname);
@@ -155,7 +157,7 @@ wdata_check_clean(char *tbname, char *key)
     }
     
     
-    /*
+    
     pthread_t       threadid;
     pthread_attr_t  attr;
     int             ret;
@@ -184,7 +186,45 @@ wdata_check_clean(char *tbname, char *key)
         DERROR("pthread_detach error; %s\n",  errbuf);
         MEMLINK_EXIT;
     }
-    */
+    
+}*/
+
+void
+wdata_check_clean(char *tbname, char *key)
+{
+    HashNode    *node;
+    Table       *tb; 
+
+    if (tbname == NULL || tbname[0] == 0 || key == NULL || key[0] == 0) 
+        return;
+    
+    // not need 
+    if (g_cf->block_clean_cond < 0.0001) {
+        return;
+    }
+    tb = hashtable_find_table(g_runtime->ht, tbname);
+    if (NULL == tb)
+        return;
+
+    node = table_find(tb, key);
+    if (NULL == node)
+        return;
+
+    if (is_clean_cond(node) == 0) {
+        return;
+    }
+    
+    struct timeval start, end;
+  
+    DNOTE("start clean %s ...\n", node->key);
+    gettimeofday(&start, NULL);
+    int ret = hashtable_clean(g_runtime->ht, tbname, node->key);
+    if (ret != 0) {
+        DERROR("wdata_do_clean error: %d\n", ret);
+    }
+    gettimeofday(&end, NULL);
+    DNOTE("clean %s complete, use %u us\n", node->key, timediff(&start, &end));
+
 }
 
 /**
@@ -313,7 +353,6 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
 
         case CMD_CREATE_NODE: {
             DINFO("<<< cmd CREATE_NODE >>>\n");
-            //char name[256] = {0};
             ret = cmd_create_node_unpack(data, keybuf);
             if (ret <= 0) {
                 DINFO("unpack create node error! ret:%d\n", ret);
@@ -337,7 +376,6 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             }
 
             DINFO("unpack del, key: %s, value: %s, valuelen: %d\n", key, value, valuelen);
-            
             ret = table_name(keybuf, &tbname, &key);
             if (ret < 0) {
                 goto wdata_apply_over;
@@ -370,7 +408,6 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             ret = hashtable_sortlist_mdel(g_runtime->ht, tbname, key, kind, 
                                 valmin, valmax, attrarray, attrnum);
             DINFO("hashtable_sortlist_del: %d\n", ret);
-
             break;
         }
         case CMD_INSERT: {
@@ -395,7 +432,6 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             if (ret < 0) {
                 goto wdata_apply_over;
             }  
-
             
             ret = hashtable_insert(g_runtime->ht, tbname, key, value, attrarray, attrnum, pos);
             DINFO("hashtable_insert: %d\n", ret);
@@ -482,7 +518,6 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
                 goto wdata_apply_over;
             }  
 
-
             ret = hashtable_remove_key(g_runtime->ht, tbname, key);
             DINFO("hashtable_remove_key ret: %d\n", ret);
             break;
@@ -561,17 +596,14 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
                 goto wdata_apply_over;
             }  
 
-
             if (num <= 0) {
                 DINFO("num:%d, key:%s\n", num, key);
                 ret = MEMLINK_ERR_PARAM;
                 goto wdata_apply_over;
             }   
 
-            //hashtable_print(g_runtime->ht, key);
             ret = hashtable_lpop(g_runtime->ht, tbname, key, num, conn); 
             DINFO("hashtable_range return: %d\n", ret);
-            //hashtable_print(g_runtime->ht, key);
 
             if (conn && ret >= 0 && writelog) {
                 ret = conn_send_buffer(conn);
@@ -597,23 +629,19 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
                 goto wdata_apply_over;
             }  
 
-
             if (num <= 0) {
                 DINFO("num:%d, key:%s\n", num, key);
                 ret = MEMLINK_ERR_PARAM;
                 goto wdata_apply_over;
             }   
 
-            //hashtable_print(g_runtime->ht, key);
             ret = hashtable_rpop(g_runtime->ht, tbname, key, num, conn); 
             DINFO("hashtable_range return: %d\n", ret);
-            //hashtable_print(g_runtime->ht, key);
 
             if (conn && ret >= 0 && writelog) {
                 ret = conn_send_buffer(conn);
             }
             DINFO("conn_send_buffer_reply return: %d\n", ret);
-            //ret = MEMLINK_REPLIED;
             if (ret >= 0) {
                 if (conn) {
                     ret = MEMLINK_REPLIED;
@@ -622,100 +650,99 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
                 }
             }
             break;
-        case CMD_INSERT_MKV:
-            {
-                uint32_t package_len = 0, valcount = 0;
-                uint32_t count = 0;//统计解析了多少字节的包    
-                uint32_t psize;
-                uint32_t keysize = 0;
-                uint8_t skip = 1;
-                char retdata[128];
-                
-                DINFO("<<< cmd INSERT MKV >>>\n");
-                //解析包的大小
-                psize = cmd_insert_mkv_unpack_packagelen(data, &package_len);
-                DINFO("package_len: %d\n", package_len);
-                count += psize;
-                //skip cmd
-                count += sizeof(char);
-                int i = 0;
-                int j = 0;
-                while (count < package_len && skip == 1) {
-                    char *countstart;
-                    //解析key    
-                    memset(key, 0x0, 512);    
-                    psize = cmd_insert_mkv_unpack_key(data + count, keybuf, &valcount, &countstart);
-                    keysize = psize;
-                    DINFO("key: %s, valcount: %d\n", key, valcount);
-                    count += psize;    
+        case CMD_INSERT_MKV: {
+            uint32_t package_len = 0, valcount = 0;
+            uint32_t count = 0;//统计解析了多少字节的包    
+            uint32_t psize;
+            uint32_t keysize = 0;
+            uint8_t skip = 1;
+            char retdata[128];
+            
+            DINFO("<<< cmd INSERT MKV >>>\n");
+            //解析包的大小
+            psize = cmd_insert_mkv_unpack_packagelen(data, &package_len);
+            DINFO("package_len: %d\n", package_len);
+            count += psize;
+            //skip cmd
+            count += sizeof(char);
+            int i = 0;
+            int j = 0;
+            while (count < package_len && skip == 1) {
+                char *countstart;
+                //解析key    
+                memset(key, 0x0, 512);    
+                psize = cmd_insert_mkv_unpack_key(data + count, keybuf, &valcount, &countstart);
+                keysize = psize;
+                DINFO("key: %s, valcount: %d\n", key, valcount);
+                count += psize;    
 
-                    ret = table_name(keybuf, &tbname, &key);
+                ret = table_name(keybuf, &tbname, &key);
+                if (ret < 0) {
+                    //当前key的第一个value就出错了
+                    count -= keysize;
+                    break;
+                }  
+
+
+                //解析value
+                j = 0;
+                while (j < valcount) {
+                    memset(value, 0x0, 512);
+                    psize = cmd_insert_mkv_unpack_val(data + count, value, &valuelen, &attrnum, attrarray, &pos);
+                    DINFO("i: %d, value: %s, valuelen: %d, attrnum: %d, pos: %d\n", i, value, valuelen, attrnum, pos);
+                    if (pos == -1) {
+                        pos = INT_MAX;
+                    } else if (pos < 0) {
+                        DINFO("insert pos < 0, %d\n", pos);
+                        ret = MEMLINK_ERR_PARAM;
+                        //发现插入的位置为负, 直接跳出循环
+                        skip = 0;
+                        if (j == 0) {
+                            //当前key的第一个value就出错了
+                            count -= keysize;
+                        } else {
+                            //当前key的第x个value出错了
+                            memcpy(countstart, &j, sizeof(int));
+                        }
+                        break;    
+                    }
+                    ret  = hashtable_insert(g_runtime->ht, tbname, key, value, 
+                                            attrarray, attrnum, pos);
+                    DINFO("hashtable_add_attr: %d\n", ret);
                     if (ret < 0) {
-                        //当前key的第一个value就出错了
-                        count -= keysize;
+                        //插入hashtable有错， 直接跳出循环
+                        skip = 0;
+                        if (j == 0) {
+                            count -= keysize;
+                        } else {
+                            memcpy(countstart, &j, sizeof(int));
+                        }
                         break;
-                    }  
-
-
-                    //解析value
-                    j = 0;
-                    while (j < valcount) {
-                        memset(value, 0x0, 512);
-                        psize = cmd_insert_mkv_unpack_val(data + count, value, &valuelen, &attrnum, attrarray, &pos);
-                        DINFO("i: %d, value: %s, valuelen: %d, attrnum: %d, pos: %d\n", i, value, valuelen, attrnum, pos);
-                        if (pos == -1) {
-                            pos = INT_MAX;
-                        } else if (pos < 0) {
-                            DINFO("insert pos < 0, %d\n", pos);
-                            ret = MEMLINK_ERR_PARAM;
-                            //发现插入的位置为负, 直接跳出循环
-                            skip = 0;
-                            if (j == 0) {
-                                //当前key的第一个value就出错了
-                                count -= keysize;
-                            } else {
-                                //当前key的第x个value出错了
-                                memcpy(countstart, &j, sizeof(int));
-                            }
-                            break;    
-                        }
-                        ret  = hashtable_insert(g_runtime->ht, tbname, key, value, 
-                                                attrarray, attrnum, pos);
-                        DINFO("hashtable_add_attr: %d\n", ret);
-                        if (ret < 0) {
-                            //插入hashtable有错， 直接跳出循环
-                            skip = 0;
-                            if (j == 0) {
-                                count -= keysize;
-                            } else {
-                                memcpy(countstart, &j, sizeof(int));
-                            }
-                            break;
-                        }
-                        count += psize;
-                        j++;//value计数
                     }
-                    i++;//key计数
+                    count += psize;
+                    j++;//value计数
                 }
-                DINFO("count: %d\n", count);
-                if (conn && writelog) {
-                    memcpy(retdata, &i, sizeof(int));
-                    memcpy(retdata + sizeof(int), &j, sizeof(int));
-                    conn_send_buffer_reply(conn, ret, retdata, sizeof(int) * 2);
-                    ret = MEMLINK_REPLIED;
-                    //如果插入第一个key的第一个value有错， 不记录binlog
-                    if (count == sizeof(int) + sizeof(char)) {
-                        goto wdata_apply_over;
-                    }
-                    //改变包的大小
-                    if (count < package_len) {
-                        datalen = count;
-                        count -= sizeof(int);
-                        memcpy(data, &count, sizeof(int));
-                    }
+                i++;//key计数
+            }
+            DINFO("count: %d\n", count);
+            if (conn && writelog) {
+                memcpy(retdata, &i, sizeof(int));
+                memcpy(retdata + sizeof(int), &j, sizeof(int));
+                conn_send_buffer_reply(conn, ret, retdata, sizeof(int) * 2);
+                ret = MEMLINK_REPLIED;
+                //如果插入第一个key的第一个value有错， 不记录binlog
+                if (count == sizeof(int) + sizeof(char)) {
+                    goto wdata_apply_over;
+                }
+                //改变包的大小
+                if (count < package_len) {
+                    datalen = count;
+                    count -= sizeof(int);
+                    memcpy(data, &count, sizeof(int));
                 }
             }
             break;
+        }
         case CMD_SET_CONFIG:
         {
             DINFO("<<< CMD SET CONFIG >>>\n"); 
@@ -730,7 +757,6 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
                 DINFO("set config error! ret: %d\n", ret);
                 goto wdata_apply_over;
             }
-
             //char master_sync_host[20] = {0};
             //int  master_sync_port = 0;
 
@@ -774,33 +800,18 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
 
             if (g_cf->role == ROLE_SLAVE) {//本身是从
                 if (setrole == ROLE_MASTER) {//需要切换成主
-                    //wait_thread_exit(g_runtime->slave->threadid);
                     sslave_stop(g_runtime->slave);
                     g_cf->role = ROLE_MASTER;
                     DINFO("=========slave to master\n");
                 } else if (setrole == ROLE_BACKUP) {//需要切换成backup状态
-                    //wait_thread_exit(g_runtime->slave->threadid);
                     sslave_stop(g_runtime->slave);
                     g_cf->role = ROLE_BACKUP;
                     DINFO("=========slave to backup\n");
                 } else if (need_kill && (setrole == ROLE_SLAVE || setrole == 0)) {//更改了ip或者port
-                    //wait_thread_exit(g_runtime->slave->threadid);
-                    /*
-                    if (g_runtime->slave) {
-                        sslave_thread(g_runtime->slave);
-                    } else {
-                        g_runtime->slave = sslave_create();
-                    }*/
                     sslave_go(g_runtime->slave);
                 }
-            } else if ((g_cf->role == ROLE_BACKUP || g_cf->role == ROLE_MASTER) && setrole == ROLE_SLAVE) {
-                //本身能时master或者backup,需要切换成从
-                /*
-                if (g_runtime->slave) {
-                    sslave_thread(g_runtime->slave);
-                } else {
-                    g_runtime->slave = sslave_create();
-                }*/
+            } else if ((g_cf->role == ROLE_BACKUP || g_cf->role == ROLE_MASTER) && \
+                        setrole == ROLE_SLAVE) {
                 g_cf->role = ROLE_SLAVE;
                 sslave_go(g_runtime->slave);
                 DINFO("=============master to slave\n");
@@ -823,16 +834,17 @@ wdata_apply(char *data, int datalen, int writelog, Conn *conn)
             DERROR("synclog_write error: %d\n", sret);
             MEMLINK_EXIT;
         }
-        sret = syncmem_write(g_runtime->syncmem, data, datalen, g_runtime->synclog->version, g_runtime->synclog->index_pos -1);
+        sret = syncmem_write(g_runtime->syncmem, data, datalen, g_runtime->synclog->version, 
+                             g_runtime->synclog->index_pos -1);
         if (sret < 0) {
             DERROR("synclog_write error: %d\n", sret);
             MEMLINK_EXIT;
         }
     }
     
-    if (time(NULL) % 10 < 3) {
+    /*if (time(NULL) % 10 < 3) {
         wdata_check_clean(tbname, key);
-    }
+    }*/
 wdata_apply_over:
     return ret;
 }
@@ -1003,132 +1015,6 @@ wthread_read(int fd, short event, void *arg)
     }
 }
 
-/**
- * Read client request, execute the command and send response. 
- *
- * @param fd
- * @param event
- * @param arg connection
- */
-/*void
-client_read(int fd, short event, void *arg)
-{
-    Conn *conn = (Conn*)arg;
-    int     ret;
-    //unsigned short   datalen = 0;
-    uint32_t datalen = 0;
-
-    zz_check(conn);
-
-    if (event & EV_TIMEOUT) {
-        DWARNING("read timeout:%d, close\n", fd);
-        //conn->destroy(conn);
-        conn->timeout(conn);
-        return;
-    }
-    //  Called more than one time for the same command and aready receive the 
-    //  2-byte command length.
-    if (conn->rlen >= sizeof(int)) {
-        //memcpy(&datalen, conn->rbuf, sizeof(short)); 
-        memcpy(&datalen, conn->rbuf, sizeof(int));
-    }
-    DINFO("client read datalen: %d, fd: %d, event:%x\n", datalen, fd, event);
-    DINFO("conn rlen: %d\n", conn->rlen);
-
-    while (1) {
-        int rlen = datalen;
-        // If command length is unavailable, use max length.
-        if (rlen == 0) {
-            rlen = CONN_MAX_READ_LEN - conn->rlen;
-        }
-        DINFO("try read len: %d\n", rlen);
-        if (conn->rsize - conn->rlen < rlen) {
-
-            DINFO("conn->rsize: %d, conn->rlen: %d, malloc new rbuf\n", conn->rsize, conn->rlen);
-            char *newbuf = (char *)zz_malloc(rlen + conn->rsize);
-            memcpy(newbuf, conn->rbuf, conn->rlen);
-            conn->rsize += rlen;
-            zz_free(conn->rbuf);
-            conn->rbuf = newbuf;
-        }
-        ret = read(fd, &conn->rbuf[conn->rlen], rlen);
-        DINFO("read return: %d\n", ret);
-        if (ret == -1) {
-            if (errno == EINTR) {
-                continue;
-            }else if (errno != EAGAIN) {
-                char errbuf[1024];
-                strerror_r(errno, errbuf, 1024);
-                DINFO("%d read error: %s, close conn.\n", fd,  errbuf);
-                conn->destroy(conn);
-                return;
-            }else{
-                char errbuf[1024];
-                strerror_r(errno, errbuf, 1024);
-                DERROR("%d read EAGAIN, error %d: %s\n", fd, errno,  errbuf);
-            }
-        }else if (ret == 0) {
-            DINFO("read 0, close conn %d.\n", fd);
-            conn->destroy(conn);
-            return;
-        }else{
-            conn->rlen += ret;
-            DINFO("2 conn rlen: %d\n", conn->rlen);
-        }
-
-        break;
-    }
-
-    zz_check(conn);
-
-    DINFO("conn rbuf len: %d\n", conn->rlen);
-    while (conn->rlen >= sizeof(int)) {
-        //memcpy(&datalen, conn->rbuf, sizeof(short));
-        memcpy(&datalen, conn->rbuf, sizeof(int));
-        DINFO("check datalen: %d, rlen: %d\n", datalen, conn->rlen);
-        //int mlen = datalen + sizeof(short);
-        int mlen = datalen + sizeof(int);
-
-        if (conn->rlen >= mlen) {
-            conn->ready(conn, conn->rbuf, mlen);
-            memmove(conn->rbuf, conn->rbuf + mlen, conn->rlen - mlen);
-            conn->rlen -= mlen;
-
-            zz_check(conn->rbuf);
-        }else{
-            break;
-        }
-    }
-}
-*/
-/**
- * Send data inside the connection to client. If all the data has been sent, 
- * register read event for this connection.
- *
- * @param fd
- * @param event
- * @param arg connection
- */
-/*void
-client_write(int fd, short event, void *arg)
-{
-    Conn  *conn = (Conn*)arg;
-    if (event & EV_TIMEOUT) {
-        DWARNING("write timeout:%d, close\n", fd);
-        //conn->destroy(conn);
-        conn->timeout(conn);
-        return;
-    }
-
-    if (conn->wpos == conn->wlen) {
-        DINFO("client write ok!\n");
-        conn->wlen = conn->wpos = 0;
-        conn->wrote(conn);
-        return;
-    }
-    conn_write(conn);
-}*/
-
 WThread*
 wthread_create()
 {
@@ -1179,8 +1065,6 @@ wthread_create()
         event_base_set(wt->base, &wt->sync_disk_evt);
         event_add(&wt->sync_disk_evt, &tm);
     }
-
-
 
     g_runtime->wthread = wt;
 

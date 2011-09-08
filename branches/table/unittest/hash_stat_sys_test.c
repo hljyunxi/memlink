@@ -22,16 +22,16 @@ int check_blocks(MemLinkStatSys *stat, int blocks)
     return 0;
 }
 
-int check_data_all(MemLinkStatSys *stat, int data_all)
+int check_value_alloc(MemLinkStatSys *stat, int value_alloc)
 {
-    if (stat->data_all != data_all)
+    if (stat->value_alloc != value_alloc)
         return -1;
     return 0;
 }
 
-int check_ht_mem(MemLinkStatSys *stat, int ht_mem)
+int check_hash_mem(MemLinkStatSys *stat, int hash_mem)
 {
-    if (stat->ht_mem != ht_mem)
+    if (stat->hash_mem != hash_mem)
         return -1;
     return 0;
 }
@@ -138,12 +138,12 @@ int main(int argc, char **argv)
         return ret;
     }
  
-    int ht_mem;
-    ht_mem = size;
-    ret = check_ht_mem(&stat, ht_mem);
+    int hash_mem;
+    hash_mem = size;
+    ret = check_hash_mem(&stat, hash_mem);
     if (ret < 0) {
-        DNOTE("stat->ht_mem: %d, ht_mem: %d\n", stat.ht_mem, ht_mem);
-        DERROR("check_ht_mem: %d\n", ret);
+        DNOTE("stat->hash_mem: %d, hash_mem: %d\n", stat.hash_mem, hash_mem);
+        DERROR("check_hash_mem: %d\n", ret);
         return ret;
     }
     return 0;
