@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <float.h>
+#include <math.h>
 #include "memlink_client.h"
 #include "test.h"
 #include "logfile.h"
@@ -57,7 +58,7 @@ int test()
         DERROR("memlink_cmd_get_config_info: %d\n", ret);
         return ++err;
     }
-    if (abs(newconfig.block_data_reduce - (config.block_data_reduce + 0.1)) > FLT_EPSILON) {
+    if (fabs(newconfig.block_data_reduce - (config.block_data_reduce + 0.1)) > FLT_EPSILON) {
         DERROR("memlink_cmd_get_config_info: %d\n", ret);
         return ++err;
     }
