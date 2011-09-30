@@ -65,7 +65,7 @@ def dumpfile(filename):
     if not os.path.isfile(filename):
         print 'not found:', filename
         return
-    f = open(filename, "rb") 
+    f = open(filename, "rb+") 
     headstr = f.read(2 + 4 + 4 + 4 + 8)
     dformat = struct.unpack('H', headstr[:2])[0]
     dfver, dlogver, dlogpos = struct.unpack('III', headstr[2:14]) 
@@ -101,18 +101,27 @@ def dumpfile(filename):
         maskformat = []
         for i in range(0, masknum):
             maskformat.append(struct.unpack('B', s[i])[0]) 
-
+        pos1=f.tell()
         itemnum  = struct.unpack('I', f.read(4))[0] 
         
-        print 'listtype:%d, valuetype:%d, sortfield:%d, key:%s, valuelen:%d, masklen:%d, masknum:%d, maskformat:%s, itemnum:%d' % \
-                (listtype, valuetype, sortfield, key, valuelen, masklen, masknum, maskformat, itemnum)
+        #print 'listtype:%d, valuetype:%d, sortfield:%d, key:%s, valuelen:%d, masklen:%d, masknum:%d, maskformat:%s, itemnum:%d' % \
+        #        (listtype, valuetype, sortfield, key, valuelen, masklen, masknum, maskformat, itemnum)
 
         datalen  = valuelen + masklen
 
         if itemnum > 0:
             for i in xrange(0, itemnum):
                 s = f.read(datalen)
-                print '\t' + repr(s)
+                #print '\t' + repr(s)
+                a,b,=struct.unpack('Ib',s)
+                if b!=1:
+                    f.seek(-1*datalen,1)
+                    pos2=f.tell()
+                    f.seek(pos1,0)
+                    f.write(struct.pack('I',i))
+                    f.seek(pos2,0)
+                    print key,"itenum error ",itemnum,i
+                    break
         
     f.close()
 

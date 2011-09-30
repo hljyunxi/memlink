@@ -112,6 +112,7 @@ int olddump_read_list(FILE *fp, OldDumpList *odump)
     ret = fread(odump->data, 1, datasize, fp);
     if (ret != datasize) {
         printf("read data error! %d, %d\n", ret, datasize);
+        olddump_print(odump);
         return -1;
     }
 
@@ -214,18 +215,30 @@ int main(int argc, char *argv[])
     char key[256] = {0};
     char *sp = NULL;
     while (olddump_read_list(oldf, &odump) == 0) {
-        //printf("load list: %s\n", odump.key);
+        printf("load list: %s\n", odump.key);
         olddump_print(&odump);
         memset(tbname, 0, sizeof(tbname));
         memset(key, 0, sizeof(key));
-        if ((sp = strchr(odump.key, '.')) != NULL) {
+        int i=0;
+        while( isalpha(odump.key[i]) )
+            i++;
+        if(i>0){
+            strncpy(tbname,odump.key,i);
+            strcpy(key,odump.key+i);
+        }
+        else{
+            strcpy(tbname, "test");
+            strcpy(key, odump.key);
+        }
+        printf("conv tab:%s key:%s \n",tbname,key);
+        /*if ((sp = strchr(odump.key, '.')) != NULL) {
             *sp = 0;     
             strcpy(tbname, odump.key);
             strcpy(key, (sp+1));
         }else{
             strcpy(tbname, "test");
             strcpy(key, odump.key);
-        }
+        }*/
         newdump_write_table(newf, tbname, &odump);
         newdump_write_table_list(newf, key, &odump);
         newdump_write_table_end(newf);
