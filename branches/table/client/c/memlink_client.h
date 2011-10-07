@@ -23,6 +23,7 @@ typedef struct _memlink_client
     int     writefd;
     int     timeout;
 	int		auto_reconn;
+	char	sp;
 }MemLink;
 
 typedef struct _memlink_count

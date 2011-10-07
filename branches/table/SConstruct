@@ -63,6 +63,7 @@ SConscript(['client/c/SConstruct',
 			'unittest/SConstruct', 
 			'test/SConstruct', 
 			'performance/SConstruct', 
-			'vote/SConstruct'])
+			'vote/SConstruct'
+			])
 
 

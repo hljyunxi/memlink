@@ -38,7 +38,8 @@ typedef struct _memlink_hashtable
 	int		table_count;
 }HashTable;
 
-int			table_name(char *keybuf, char **name, char **key);
+int			check_table_key(char *name, char *key);
+//int			table_name(char *keybuf, char **name, char **key);
 
 Table*		table_create(char *name, int valuesize, uint32_t *attrarray, uint8_t attrnum,
 						 uint8_t listtype, uint8_t valuetype);
@@ -70,7 +71,7 @@ void		hashtable_clear_all(HashTable *ht);
 uint32_t	hashtable_node_hash(char *key, int len);
 uint32_t	hashtable_table_hash(char *key, int len);
 
-
+int			hashtable_tables(HashTable *ht, char **data);
 int			hashtable_remove_table(HashTable *ht, char *tbname);
 int			hashtable_remove_key(HashTable *ht, char *tbname, char *key);
 int			hashtable_clear_key(HashTable *ht, char *tbname, char *key);
