@@ -101,6 +101,7 @@ def test():
 
     syncfile = ['ab_sync_test.py', 'cd_sync_test.py', 'f_sync_test.py', 'g_sync_test.py', 'h_sync_test.py']
     #syncfile = ['g_sync_test.py']
+
     result = {}
     
     for x in sources:

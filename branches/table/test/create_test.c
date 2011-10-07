@@ -27,6 +27,7 @@ int main()
 	{
 		//sprintf(key, "haha%d", i);
         sprintf(name, "test%d", i);
+        DINFO("create table:%s\n", name);
 		ret = memlink_cmd_create_table_list(m, name, 6, "4:3:1");
 		
 		if (ret != MEMLINK_OK) {
@@ -35,6 +36,7 @@ int main()
 		}
 	}
 	
+    DINFO("create table:%s\n", name);
 	ret = memlink_cmd_create_table_list(m, name, 6, "4:3:1");
 	if (ret == MEMLINK_OK) {
 		DERROR("memlink_cmd_create %s error: %d\n", key, ret);
@@ -42,6 +44,7 @@ int main()
 	}
 
 	strcpy(name, "haha1111");
+    DINFO("create table:%s\n", name);
 	ret = memlink_cmd_create_table_list(m, name, -1, "4:3:1");
 	if (ret == MEMLINK_OK) {
 		DERROR("memlink_cmd_create %s error: %d\n", key, ret);
@@ -49,6 +52,7 @@ int main()
 	}
 
 	strcpy(name, "haha2222");
+    DINFO("create table:%s\n", name);
 	ret = memlink_cmd_create_table_list(m, name, 12, "4:3:21474");
 	if (ret == MEMLINK_OK) {
 		DERROR("memlink_cmd_create %s error: %d, mask=%s\n", key, ret, "4:3:21474");
@@ -56,6 +60,7 @@ int main()
 	}
 
 	strcpy(name, "haha3333");
+    DINFO("create table:%s\n", name);
 	ret = memlink_cmd_create_table_list(m, name, 12, "");
 	if (ret != MEMLINK_OK) {
 		DERROR("memlink_cmd_create %s error: %d, mask=%s\n", key, ret, "");
@@ -65,32 +70,38 @@ int main()
     // test create node
     sprintf(key, "%s.haha", name);
     
+    DINFO("create table node:%s\n", key);
     ret = memlink_cmd_create_node(m, key);
     if (ret != MEMLINK_OK) {
         DERROR("create node error:%d\n", ret);
         return -1;
     }
+    DINFO("create table node:%s\n", key);
     ret = memlink_cmd_create_node(m, NULL);
     if (ret == MEMLINK_OK) {
         DERROR("create node error:%d\n", ret);
         return -1;
     }
+    DINFO("create table node:%s\n", key);
     ret = memlink_cmd_create_node(m, ".haha");
     if (ret == MEMLINK_OK) {
         DERROR("create node error:%d\n", ret);
         return -1;
     }
+    DINFO("create table node:%s\n", key);
     ret = memlink_cmd_create_node(m, "");
     if (ret == MEMLINK_OK) {
         DERROR("create node error:%d\n", ret);
         return -1;
     }
+    DINFO("create table node:%s\n", key);
     ret = memlink_cmd_create_node(m, "haha");
     if (ret == MEMLINK_OK) {
         DERROR("create node error:%d\n", ret);
         return -1;
     }
 
+    DINFO("create table node:%s\n", key);
     ret = memlink_cmd_create_node(m, key);
     if (ret == MEMLINK_OK) {
         DERROR("create node error:%d\n", ret);
